@@ -9,9 +9,9 @@ import csv
 import matplotlib.pyplot as plt
 
 ## user defined libraries
-import the_matplotlib_styler
-from the_useful_library import *
-from the_plotting_library import *
+import ThePlottingModule
+from TheUsefulModule import *
+from ThePlottingModule import PlotFuncs
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -33,7 +33,7 @@ def main():
     rel_filepath_plot = "figures/sub_sonic/"
     ## open data-object
     dataset_name = "kurtosis_data_gradv.csv"
-    abs_filepath_data = createFilepath([
+    abs_filepath_data = WWFnF.createFilepath([
         abs_filepath_base,
         rel_filepath_data,
         dataset_name
@@ -121,7 +121,7 @@ def main():
         r"Rm $\approx 3300$", color="black",
         ha="left", va="top", transform=ax.transAxes, fontsize=17
     )
-    addLegend(
+    PlotFuncs.addLegend(
         ax = ax,
         loc  = "upper left",
         bbox = (-0.0125, 0.9),
@@ -144,7 +144,7 @@ def main():
     ax.set_ylabel(r"$\mathcal{K} - 3$", fontsize=22)
     ## save figure
     plot_name = "fig_kurtosis.pdf"
-    abs_filepath_plot = createFilepath([
+    abs_filepath_plot = WWFnF.createFilepath([
         abs_filepath_base,
         rel_filepath_plot,
         plot_name
