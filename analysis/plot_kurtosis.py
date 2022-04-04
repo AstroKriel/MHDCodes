@@ -9,7 +9,7 @@ import csv
 import matplotlib.pyplot as plt
 
 ## user defined libraries
-from the_matplotlib_styler import *
+import the_matplotlib_styler
 from the_useful_library import *
 from the_plotting_library import *
 
