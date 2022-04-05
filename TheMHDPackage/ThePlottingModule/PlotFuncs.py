@@ -19,7 +19,7 @@ from matplotlib.offsetbox import TextArea, VPacker, AnnotationBbox
 from matplotlib.collections import LineCollection
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from TheUsefulModule import WWLists
+from TheUsefulModule import WWFnF
 from TheFittingModule import FitDistro
 
 
@@ -37,12 +37,12 @@ def aniEvolution(
     '''
     if not(bool_hide_updates): print("Animating plots...")
     ## create filepath to where plots are saved
-    filepath_input = WWLists.createFilepath([
+    filepath_input = WWFnF.createFilepath([
         filepath_frames,
         input_name
     ])
     ## create filepath to where animation should be saved
-    filepath_output = WWLists.createFilepath([
+    filepath_output = WWFnF.createFilepath([
         filepath_ani_movie,
         output_name
     ])

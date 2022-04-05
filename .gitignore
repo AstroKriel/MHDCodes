@@ -1,4 +1,9 @@
 # things to ignore in TheMHDPackage's modules
+# */*/*/__pycache__
+# */*/*/.ipynb_checkpoints
+# */*/*/.DS_STore
+
+*/*/__pycache__/*
 */*/__pycache__
 */*/.ipynb_checkpoints
 */*/.DS_STore
