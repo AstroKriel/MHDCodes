@@ -13,10 +13,10 @@ from matplotlib.collections import LineCollection
 
 ## user defined libraries
 from the_matplotlib_styler import *
-from the_useful_library import *
-from the_loading_library import *
-from the_fitting_library import *
-from the_plotting_library import *
+from OldModules.the_useful_library import *
+from OldModules.the_loading_library import *
+from OldModules.the_fitting_library import *
+from OldModules.the_plotting_library import *
 
 
 ## ###############################################################

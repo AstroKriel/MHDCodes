@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from os import path
 
 ## user defined libraries
-from the_useful_library import *
+from OldModules.the_useful_library import *
 
 
 ## ###############################################################

@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 
 ## import user defined libraries
-from the_useful_library import *
-from the_loading_library import *
-from the_fitting_library import *
-from the_plotting_library import *
+from OldModules.the_useful_library import *
+from OldModules.the_loading_library import *
+from OldModules.the_fitting_library import *
+from OldModules.the_plotting_library import *
 
 
 ##################################################################

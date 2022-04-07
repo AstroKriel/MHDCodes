@@ -4,7 +4,7 @@
 ## ###############################################################
 ## DEPENDENCIES: REQUIRED MODULES
 ## ###############################################################
-import os
+import os, io
 
 ## relative import of 'createFilepath'
 from TheUsefulModule import WWFnF

@@ -13,9 +13,9 @@ from scipy.interpolate import make_interp_spline
 from scipy.optimize import curve_fit
 
 ## user defined librariers
-from the_useful_library import *
-from the_fitting_library import *
-from the_plotting_library import *
+from OldModules.the_useful_library import *
+from OldModules.the_fitting_library import *
+from OldModules.the_plotting_library import *
 
 
 #################################################################

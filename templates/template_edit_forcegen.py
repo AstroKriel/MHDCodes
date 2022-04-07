@@ -7,7 +7,7 @@ import os
 import sys
 
 ## user defined libraries
-from the_useful_library import *
+from OldModules.the_useful_library import *
 
 
 ## ###############################################################

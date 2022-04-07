@@ -14,7 +14,7 @@ import cmasher as cmr # https://cmasher.readthedocs.io/user/diverging.html
 
 from matplotlib.gridspec import GridSpec
 
-from the_fitting_library import FitFromKDE
+from OldModules.the_fitting_library import FitFromKDE
 
 #################################################################
 ## PREPARE TERMINAL/WORKSPACE/CODE

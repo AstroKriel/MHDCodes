@@ -1,4 +1,4 @@
-from . import the_matplotlib_styler
+from . the_matplotlib_styler import *
 
 ## the list of module names (in the PACKAGE) that should be imported when "from PACKAGE import *"" is encountered
 __all__ = [

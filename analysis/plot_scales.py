@@ -8,15 +8,16 @@ import sys
 import numpy as np
 import cmasher as cmr # https://cmasher.readthedocs.io/user/introduction.html#colormap-overview
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 from matplotlib.collections import LineCollection
 
-## user defined libraries
-from the_matplotlib_styler import *
-from the_useful_library import *
-from the_loading_library import *
-from the_fitting_library import *
-from the_plotting_library import *
+## load old user defined libraries
+from OldModules import the_fitting_library
+sys.modules["the_fitting_library"] = the_fitting_library
+
+from TheUsefulModule import WWObjs, WWLists, WWFnF
+from ThePlottingModule import PlotFuncs
 
 
 ## ###############################################################
@@ -27,6 +28,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 # plt.style.use('dark_background')
 
 SPECTRA_NAME = "spectra_obj_full.pkl"
+SONIC_REGIME = "sub_sonic"
 
 ## ###############################################################
 ## FUNCTIONS
@@ -45,18 +47,18 @@ def funcLoadData_sim(
     ## #########################
     ## GET SIMULATION PARAMETERS
     ## ########
-    spectra_obj = loadPickleObject(
+    spectra_obj = WWObjs.loadPickleObject(
         filepath_sim,
         SPECTRA_NAME,
         bool_hide_updates = True
     )
     ## check that a time range has been defined to collect statistics about
-    sim_times = getCommonElements(spectra_obj.vel_sim_times, spectra_obj.mag_sim_times)
+    sim_times = WWLists.getCommonElements(spectra_obj.vel_sim_times, spectra_obj.mag_sim_times)
     ## find indices of magnetic fit time range
-    vel_index_start = getIndexClosestValue(sim_times, 2)
-    vel_index_end   = getIndexClosestValue(sim_times, 10)
-    mag_index_start = getIndexClosestValue(sim_times, 2)
-    mag_index_end   = getIndexClosestValue(sim_times, 10)
+    vel_index_start = WWLists.getIndexClosestValue(sim_times, 2)
+    vel_index_end   = WWLists.getIndexClosestValue(sim_times, 10)
+    mag_index_start = WWLists.getIndexClosestValue(sim_times, 2)
+    mag_index_end   = WWLists.getIndexClosestValue(sim_times, 10)
     ## load parameters
     Re = int(spectra_obj.Re)
     Rm = int(spectra_obj.Rm)
@@ -118,7 +120,7 @@ def funcLoadData(
         ## load simulation data
         funcLoadData_sim(
             ## input: simulation directory and name
-            createFilepath([ filepath_data, "Re10", "288", sim_label ]),
+            WWFnF.createFilepath([ filepath_data, "Re10", "288", sim_label ]),
             ## output: simulation parameters
             list_Re = list_Re,
             list_Rm = list_Rm,
@@ -141,7 +143,7 @@ def funcLoadData(
         ## load simulation data
         funcLoadData_sim(
             ## input: simulation directory and name
-            createFilepath([ filepath_data, "Re500", "288", sim_label ]),
+            WWFnF.createFilepath([ filepath_data, "Re500", "288", sim_label ]),
             ## output: simulation parameters
             list_Re = list_Re,
             list_Rm = list_Rm,
@@ -164,7 +166,7 @@ def funcLoadData(
         ## load simulation data
         funcLoadData_sim(
             ## input: simulation directory and name
-            createFilepath([ filepath_data, "Rm3000", "288", sim_label ]),
+            WWFnF.createFilepath([ filepath_data, "Rm3000", "288", sim_label ]),
             ## output: simulation parameters
             list_Re = list_Re,
             list_Rm = list_Rm,
@@ -201,7 +203,7 @@ def funcPlotScaleRelations(
     fig.subplots_adjust(wspace=0.225)
     ## plot scale distributions
     for sim_index in range(len(list_relation_k_nu)):
-        plotErrorBar(
+        PlotFuncs.plotErrorBar(
             axs[0],
             data_x = list_relation_k_nu[sim_index],
             data_y = list_k_nu_group[sim_index],
@@ -209,7 +211,7 @@ def funcPlotScaleRelations(
             marker = list_markers[sim_index],
             ms = 9
         )
-        plotErrorBar(
+        PlotFuncs.plotErrorBar(
             axs[1],
             data_x = list_relation_k_eta[sim_index],
             data_y = list_k_eta_group[sim_index],
@@ -237,7 +239,7 @@ def funcPlotScaleRelations(
     # axs[1].set_ylim([ 3*10**(-1), 20 ])
     ## save plot
     fig_name = "fig_scale_relation_full.pdf"
-    fig_filepath = createFilepath([filepath_plot, fig_name])
+    fig_filepath = WWFnF.createFilepath([filepath_plot, fig_name])
     plt.savefig(fig_filepath)
     print("\t> Figure saved: " + fig_name)
 
@@ -259,7 +261,7 @@ def funcPlotScaleDependance(
     ## plot scale distributions
     for sim_index in range(len(list_k_nu_group)):
         ## plot dependance on k_nu
-        plotErrorBar(
+        PlotFuncs.plotErrorBar(
             axs[0],
             data_x = list_k_nu_group[sim_index],
             data_y = list_k_max_group[sim_index],
@@ -268,7 +270,7 @@ def funcPlotScaleDependance(
             ms = 9
         )
         ## plot dependance on k_eta
-        plotErrorBar(
+        PlotFuncs.plotErrorBar(
             axs[1],
             data_x = list_k_eta_group[sim_index],
             data_y = list_k_max_group[sim_index],
@@ -296,7 +298,7 @@ def funcPlotScaleDependance(
     axs[1].set_ylim([ 1, 20 ])
     ## save plot
     fig_name = "fig_scale_dependance_full.pdf"
-    fig_filepath = createFilepath([filepath_plot, fig_name])
+    fig_filepath = WWFnF.createFilepath([filepath_plot, fig_name])
     plt.savefig(fig_filepath)
     print("\t> Figure saved: " + fig_name)
 
@@ -319,7 +321,7 @@ def funcPlotExponent(
     ## plot points
     for sim_index in range(len(list_alpha_group)):
         ## plot dependance on exponent on Re
-        plotErrorBar(
+        PlotFuncs.plotErrorBar(
             ax,
             data_x = list_Re[sim_index],
             data_y = list_alpha_group[sim_index],
@@ -334,7 +336,7 @@ def funcPlotExponent(
     ax.set_xscale("log")
     ## save plot
     fig_name = "fig_exponent_{}_full.pdf".format(str_var)
-    fig_filepath = createFilepath([filepath_plot, fig_name])
+    fig_filepath = WWFnF.createFilepath([filepath_plot, fig_name])
     plt.savefig(fig_filepath)
     print("\t> Figure saved: " + fig_name)
 
@@ -347,7 +349,7 @@ def main():
     ## INITIALISE VARIABLES
     ## ####################
     ## filepath to data
-    filepath_data = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/data/super_sonic/"
+    filepath_data = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/data/" + SONIC_REGIME
 
     ## ####################
     ## LOAD SIMULATION DATA
@@ -388,7 +390,7 @@ def main():
     ## PLOT SIMULATION DATA
     ## ####################
     ## filepath to figures
-    filepath_plot = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/figures/super_sonic/"
+    filepath_plot = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/figures/" + SONIC_REGIME
     print("Saving figures in: " + filepath_plot)
 
     ## plot measured vs predicted scales

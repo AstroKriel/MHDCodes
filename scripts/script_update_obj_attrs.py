@@ -8,9 +8,9 @@ import sys
 
 from os import path
 
-from the_useful_library import *
-from the_loading_library import *
-from the_fitting_library import *
+from OldModules.the_useful_library import *
+from OldModules.the_loading_library import *
+from OldModules.the_fitting_library import *
 
 
 ## ###############################################################
