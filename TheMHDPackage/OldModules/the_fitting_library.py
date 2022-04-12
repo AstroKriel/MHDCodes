@@ -13,7 +13,7 @@ from scipy.signal import find_peaks, argrelextrema
 from scipy.optimize import curve_fit, fsolve
 from scipy.special import k0, k1
 
-## user defined libraries
+## load old user defined modules
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *
 

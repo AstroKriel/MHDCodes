@@ -17,7 +17,7 @@ os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
 import copy # for making a seperate instance of object
 
-## user defined libraries
+## load old user defined modules
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *
 from OldModules.the_fitting_library import *

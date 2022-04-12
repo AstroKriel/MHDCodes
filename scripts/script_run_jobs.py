@@ -9,7 +9,7 @@ import subprocess
 
 from os import path
 
-## user defined libraries
+## load old user defined modules
 from OldModules.the_useful_library import *
 
 

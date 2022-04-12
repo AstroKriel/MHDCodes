@@ -22,7 +22,7 @@ warnings.simplefilter("ignore", OptimizeWarning)
 import matplotlib.pyplot as plt
 import copy # for making a seperate instance of object
 
-## user defined libraries
+## load old user defined modules
 from TheUsefulModule import *
 from TheLoadingModule import FlashData
 from TheFittingModule import FitMHDScales

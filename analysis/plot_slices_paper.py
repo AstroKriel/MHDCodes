@@ -10,8 +10,7 @@ import cmasher as cmr # https://cmasher.readthedocs.io/user/introduction.html#co
 import matplotlib as mpl
 import matplotlib.cm as cm
 
-## user defined libraries
-from the_matplotlib_styler import *
+## load old user defined modules
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *
 from OldModules.the_fitting_library import *

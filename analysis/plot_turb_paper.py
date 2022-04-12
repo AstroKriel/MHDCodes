@@ -13,7 +13,7 @@ import matplotlib.cm as cm
 from matplotlib.collections import LineCollection
 from scipy.interpolate import make_interp_spline
 
-## user defined libraries
+## load old user defined modules
 from the_matplotlib_styler import *
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *

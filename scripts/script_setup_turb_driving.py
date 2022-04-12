@@ -11,7 +11,7 @@ import shutil
 from os import path
 from datetime import datetime
 
-## user defined libraries
+## load old user defined modules
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *
 

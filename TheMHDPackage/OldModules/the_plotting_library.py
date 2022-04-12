@@ -21,7 +21,7 @@ from matplotlib.offsetbox import TextArea, VPacker, AnnotationBbox
 from matplotlib.ticker import ScalarFormatter, NullFormatter
 from matplotlib.collections import LineCollection
 
-## user defined libraries
+## load old user defined modules
 # from the_matplotlib_styler import *
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *

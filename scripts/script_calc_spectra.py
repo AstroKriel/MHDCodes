@@ -7,7 +7,7 @@ import os
 import argparse
 import numpy as np
 
-## user defined librariers
+## load new user defined modules
 from OldModules.the_useful_library import *
 
 

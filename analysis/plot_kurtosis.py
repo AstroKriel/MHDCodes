@@ -8,8 +8,8 @@ import sys
 import csv
 import matplotlib.pyplot as plt
 
-## user defined libraries
-import ThePlottingModule
+## load old user defined modules
+from ThePlottingModule import *
 from TheUsefulModule import *
 from ThePlottingModule import PlotFuncs
 

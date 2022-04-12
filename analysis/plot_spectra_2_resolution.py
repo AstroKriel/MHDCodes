@@ -14,7 +14,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.collections import LineCollection
 from math import floor, ceil
 
-## user defined libraries
+## load old user defined modules
 from the_matplotlib_styler import *
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *

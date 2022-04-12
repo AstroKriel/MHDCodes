@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-## user defined libraries
+## load old user defined modules
 from the_dynamo_library import *
 from OldModules.the_useful_library import *
 from the_matplotlib_styler import *

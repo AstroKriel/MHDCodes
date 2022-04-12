@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 ## use a non-interactive plotting backend
 plt.switch_backend('agg')
 
-## import user defined libraries
+## import user defined modules
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *
 from OldModules.the_fitting_library import *

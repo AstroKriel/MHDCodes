@@ -10,7 +10,7 @@ import cmasher as cmr # https://cmasher.readthedocs.io/user/diverging.html
 
 from matplotlib.gridspec import GridSpec
 
-## user defined libraries
+## load old user defined modules
 from the_matplotlib_styler import *
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *

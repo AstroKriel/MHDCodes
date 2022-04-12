@@ -6,16 +6,13 @@
 import os
 import sys
 import numpy as np
-import cmasher as cmr # https://cmasher.readthedocs.io/user/introduction.html#colormap-overview
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from matplotlib.collections import LineCollection
-
-## load old user defined libraries
+## load old user defined modules
 from OldModules import the_fitting_library
 sys.modules["the_fitting_library"] = the_fitting_library
 
+## load new user modules
 from TheUsefulModule import WWObjs, WWLists, WWFnF
 from ThePlottingModule import PlotFuncs
 
@@ -348,7 +345,7 @@ def main():
     ## ####################
     ## INITIALISE VARIABLES
     ## ####################
-    ## filepath to data
+    ## (absolute) filepath to data
     filepath_data = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/data/" + SONIC_REGIME
 
     ## ####################
