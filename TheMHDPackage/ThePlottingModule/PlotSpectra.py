@@ -6,13 +6,14 @@
 ## ###############################################################
 import numpy as np
 import matplotlib.pyplot as plt
+from pyrsistent import v
 
 from tqdm import tqdm
 from matplotlib.gridspec import GridSpec
 
 from ThePlottingModule import PlotFuncs
 from TheUsefulModule import WWLists, WWFnF
-from TheAnalysisModule import RemoveOutliers
+# from TheAnalysisModule import RemoveOutliers
 
 
 ## ###############################################################
@@ -52,9 +53,9 @@ class PlotSpectraFit():
             self.mag_index_start = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.mag_fit_start_t)
             self.mag_index_end   = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.mag_fit_end_t)
             ## subset data
-            k_nu_subset_t  = RemoveOutliers.cleanMeasuredScales(self.spectra_obj.k_nu_group_t[self.vel_index_start:self.vel_index_end])
-            k_eta_subset_t = RemoveOutliers.cleanMeasuredScales(self.spectra_obj.k_eta_group_t[self.mag_index_start:self.mag_index_end])
-            k_max_subset_t = RemoveOutliers.cleanMeasuredScales(self.spectra_obj.k_max_group_t[self.mag_index_start:self.mag_index_end])
+            k_nu_subset_t  = self.spectra_obj.k_nu_group_t[self.vel_index_start:self.vel_index_end]
+            k_eta_subset_t = self.spectra_obj.k_eta_group_t[self.mag_index_start:self.mag_index_end]
+            k_max_subset_t = self.spectra_obj.k_max_group_t[self.mag_index_start:self.mag_index_end]
             ## calculate mean of measured scales
             self.k_nu_mean  = np.mean(k_nu_subset_t)
             self.k_eta_mean = np.mean(k_eta_subset_t)
@@ -74,7 +75,7 @@ class PlotSpectraFit():
         fig, [ax0, ax1, ax2] = plt.subplots(1, 3, figsize=(18, 5))
         fig.subplots_adjust(wspace=0.25)
         ## initialise figure y-range
-        range_y = [ 0.05, 19 ]
+        range_y = [ 0.05, 150 ]
         ## extract data
         data_x_ax0 = self.spectra_obj.vel_sim_times
         data_x_ax1 = self.spectra_obj.mag_sim_times
@@ -91,20 +92,14 @@ class PlotSpectraFit():
             ## CLEANING DATA
             ## ########
             ## remove outliers in k_nu
-            data_x_ax0_subset, data_y_ax0_subset = RemoveOutliers.cleanMeasuredScales(
-                list_times  = data_x_ax0[self.vel_index_start:self.vel_index_end],
-                list_scales = data_y_ax0[self.vel_index_start:self.vel_index_end]
-            )
+            data_x_ax0_subset = data_x_ax0[self.vel_index_start : self.vel_index_end]
+            data_y_ax0_subset = data_y_ax0[self.vel_index_start : self.vel_index_end]
             ## remove outliers in k_eta
-            data_x_ax1_subset, data_y_ax1_subset = RemoveOutliers.cleanMeasuredScales(
-                list_times  = data_x_ax1[self.mag_index_start:self.mag_index_end],
-                list_scales = data_y_ax1[self.mag_index_start:self.mag_index_end]
-            )
+            data_x_ax1_subset = data_x_ax1[self.mag_index_start : self.mag_index_end]
+            data_y_ax1_subset = data_y_ax1[self.mag_index_start : self.mag_index_end]
             ## remove outliers in k_max
-            data_x_ax2_subset, data_y_ax2_subset = RemoveOutliers.cleanMeasuredScales(
-                list_times  = data_x_ax2[self.mag_index_start:self.mag_index_end],
-                list_scales = data_y_ax2[self.mag_index_start:self.mag_index_end]
-            )
+            data_x_ax2_subset = data_x_ax2[self.mag_index_start : self.mag_index_end]
+            data_y_ax2_subset = data_y_ax2[self.mag_index_start : self.mag_index_end]
             ## plot full dataset
             ax0.plot(data_x_ax0, data_y_ax0, "k.", alpha=0.1)
             ax1.plot(data_x_ax1, data_y_ax1, "k.", alpha=0.1)

@@ -8,6 +8,10 @@ import sys
 import argparse
 import numpy as np
 
+## load old user defined modules
+from OldModules import the_fitting_library
+sys.modules["the_fitting_library"] = the_fitting_library
+
 ## needs to be loaded before matplotlib
 ## so matplotlib cache is stored in a temporary location when plotting in parallel
 import tempfile
@@ -22,7 +26,7 @@ warnings.simplefilter("ignore", OptimizeWarning)
 import matplotlib.pyplot as plt
 import copy # for making a seperate instance of object
 
-## load old user defined modules
+## load user defined modules
 from TheUsefulModule import *
 from TheLoadingModule import FlashData
 from TheFittingModule import FitMHDScales
@@ -159,6 +163,8 @@ def funcLoadSpectraObj(
     ):
     ## loop over each simulation dataset
     print("Loading spectra objects...")
+    if len(list_data_filepaths) == 0:
+        raise Exception("ERROR: No data objects to look at.")
     for filepath_data, sim_index in zip(
             list_data_filepaths,
             range(len(list_data_filepaths))
@@ -456,7 +462,6 @@ def main():
     if bool_anlyse:
         print("Fitting '{:d}' spectra simulation(s):".format(len(list_data_filepaths)))
         for sim_index in range(len(list_data_filepaths)):
-            print(suite_name_group_sim[sim_index])
             funcPrintSimInfo(
                 sim_index     = sim_index,
                 sim_directory = list_data_filepaths[sim_index],
@@ -473,6 +478,18 @@ def main():
         print(" ")
     ## otherwise if reading in spectra objects
     else:
+        list_data_filepaths_remove = []
+        for data_filepath in list_data_filepaths:
+            ## check that the spectra object exists in the simulation folder
+            try: WWObjs.loadPickleObject(data_filepath, SPECTRA_NAME, bool_hide_updates=True)
+            ## remove simulations that don't have spectra object to look at
+            except: list_data_filepaths_remove.append(data_filepath)
+        list_data_filepaths = [
+            data_filepath
+            for data_filepath in list_data_filepaths
+            if data_filepath not in list_data_filepaths_remove
+        ]
+        ## indicate which simulations will be looked at
         print("Reading '{:d}' spectra object(s):".format(len(list_data_filepaths)))
         for sim_index in range(len(list_data_filepaths)):
             P2Term.printInfo("({:d}) sim directory:".format(sim_index), list_data_filepaths[sim_index], 20)

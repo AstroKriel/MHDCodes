@@ -4,18 +4,19 @@
 ## MODULES
 ## ###############################################################
 import os
+import sys
+import random
 import argparse
 import numpy as np
 import cmasher as cmr # https://cmasher.readthedocs.io/user/diverging.html
 
-import random
-
-from matplotlib.gridspec import GridSpec
-from matplotlib.collections import LineCollection
 from math import floor, ceil
 
 ## load old user defined modules
-from the_matplotlib_styler import *
+from OldModules import the_fitting_library
+sys.modules["the_fitting_library"] = the_fitting_library
+
+## load old user defined modules
 from OldModules.the_useful_library import *
 from OldModules.the_loading_library import *
 from OldModules.the_fitting_library import *
@@ -276,11 +277,13 @@ def main():
         ## ###################
         ## LOAD SPECTRA OBJECT
         ## ########
-        spectra_obj = loadPickleObject(
-            # createFilepath([filepath_base, str(res), SONIC_REGIME, sim_folder, sub_folder]),
-            createFilepath([filepath_base, str(sim_res), sim_folder, sub_folder]),
-            SPECTRA_NAME
-        )
+        try: spectra_obj = loadPickleObject(
+                # createFilepath([filepath_base, str(res), SONIC_REGIME, sim_folder, sub_folder]),
+                createFilepath([filepath_base, str(sim_res), sim_folder, sub_folder]),
+                SPECTRA_NAME,
+                bool_hide_updates=True
+            )
+        except: continue
         ## ##########################
         ## SAVE IMPORTANT INFORMATION
         ## ########
@@ -312,8 +315,8 @@ def main():
         list_k_max_group_res.append( list_k_max )
         ## ####################
         ## PLOT MEASURED SCALES
-        ## ########
-        plotErrorBar(axs[0], data_x=[sim_res], data_y=list_k_nu,  color="black")
+        ## ########N
+        # plotErrorBar(axs[0], data_x=[sim_res], data_y=list_k_nu,  color="black")
         plotErrorBar(axs[1], data_x=[sim_res], data_y=list_k_eta, color="black")
         plotErrorBar(axs[2], data_x=[sim_res], data_y=list_k_max, color="black")
     # ## ########################################
@@ -377,7 +380,7 @@ def main():
     axs[0].set_xticklabels([])
     axs[1].set_xticklabels([])
     ## label x-axis
-    axs[2].set_xlabel(r"Linear resolution ($N_\text{res}$)", fontsize=22)
+    # axs[2].set_xlabel(r"Linear resolution ($N_\text{res}$)", fontsize=22)
     ## #############
     ## SAVING FIGURE
     ## #############

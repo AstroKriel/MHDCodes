@@ -24,8 +24,6 @@ os.system("clear") # clear terminal window
 plt.switch_backend("agg") # use a non-interactive plotting backend
 # plt.style.use('dark_background')
 
-SPECTRA_NAME = "spectra_obj_full.pkl"
-SONIC_REGIME = "sub_sonic"
 
 ## ###############################################################
 ## FUNCTIONS
@@ -217,10 +215,9 @@ def funcPlotScaleRelations(
             ms = 9
         )
     ## plot reference lines
-    x0 = np.linspace(10,  1000, 100)
-    x1 = np.linspace(100, 1000, 100)
-    axs[0].plot(x0, x0/10, "k:")
-    axs[1].plot(x1, x1/50, "k:")
+    x = np.linspace(10, 1000, 100)
+    axs[0].plot(x, x/10, "k:")
+    axs[1].plot(x, x/50, "k:")
     ## label axis
     axs[0].set_xlabel(r"$k_{\nu, \mathrm{theory}} = \mathrm{Re}^{2/3}$", fontsize=20)
     axs[1].set_xlabel(r"$k_{\eta, \mathrm{theory}} = k_{\nu, \mathrm{theory}} \; \mathrm{Pm}^{1/2}$", fontsize=20)
@@ -231,11 +228,12 @@ def funcPlotScaleRelations(
     axs[1].set_xscale("log")
     axs[0].set_yscale("log")
     axs[1].set_yscale("log")
-    # axs[1].set_xlim([ 20, 1000 ])
-    # axs[0].set_ylim([ 10**(-1), 20 ])
-    # axs[1].set_ylim([ 3*10**(-1), 20 ])
+    axs[1].set_xlim([ 10, 1000 ])
+    axs[1].set_xlim([ 10, 1000 ])
+    axs[0].set_ylim([ 10**0, 10**2 ])
+    axs[1].set_ylim([ 10**0, 10**2 ])
     ## save plot
-    fig_name = "fig_scale_relation_full.pdf"
+    fig_name = "fig_scale_relation.pdf"
     fig_filepath = WWFnF.createFilepath([filepath_plot, fig_name])
     plt.savefig(fig_filepath)
     print("\t> Figure saved: " + fig_name)
@@ -294,7 +292,7 @@ def funcPlotScaleDependance(
     axs[1].set_xlim([ 1, 20 ])
     axs[1].set_ylim([ 1, 20 ])
     ## save plot
-    fig_name = "fig_scale_dependance_full.pdf"
+    fig_name = "fig_scale_dependance.pdf"
     fig_filepath = WWFnF.createFilepath([filepath_plot, fig_name])
     plt.savefig(fig_filepath)
     print("\t> Figure saved: " + fig_name)
@@ -332,12 +330,14 @@ def funcPlotExponent(
     ## adjust axis
     ax.set_xscale("log")
     ## save plot
-    fig_name = "fig_exponent_{}_full.pdf".format(str_var)
+    fig_name = "fig_exponent_{}.pdf".format(str_var)
     fig_filepath = WWFnF.createFilepath([filepath_plot, fig_name])
     plt.savefig(fig_filepath)
     print("\t> Figure saved: " + fig_name)
 
 
+SPECTRA_NAME = "spectra_obj_full.pkl"
+SONIC_REGIME = "super_sonic"
 ## ###############################################################
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
@@ -345,8 +345,9 @@ def main():
     ## ####################
     ## INITIALISE VARIABLES
     ## ####################
-    ## (absolute) filepath to data
-    filepath_data = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/data/" + SONIC_REGIME
+    filepath_base = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/"
+    filepath_data = filepath_base + "data/" + SONIC_REGIME
+    filepath_plot = filepath_base + "figures/" + SONIC_REGIME
 
     ## ####################
     ## LOAD SIMULATION DATA
@@ -386,8 +387,6 @@ def main():
     ## ####################
     ## PLOT SIMULATION DATA
     ## ####################
-    ## filepath to figures
-    filepath_plot = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/figures/" + SONIC_REGIME
     print("Saving figures in: " + filepath_plot)
 
     ## plot measured vs predicted scales

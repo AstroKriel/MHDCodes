@@ -7,21 +7,7 @@ import os
 import sys
 import argparse
 import numpy as np
-
-## needs to be loaded before matplotlib
-## so matplotlib cache is stored in a temporary location when plotting in parallel
-import tempfile
-os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
-
-## plotting stuff
 import matplotlib.pyplot as plt
-import copy # for making a seperate instance of object
-
-## load old user defined modules
-from OldModules.the_useful_library import *
-from OldModules.the_loading_library import *
-from OldModules.the_fitting_library import *
-from OldModules.the_plotting_library import *
 
 
 ## ###############################################################

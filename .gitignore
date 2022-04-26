@@ -1,18 +1,12 @@
-# things to ignore in TheMHDPackage's modules
-# */*/*/__pycache__
-# */*/*/.ipynb_checkpoints
-# */*/*/.DS_STore
+# things to ignore in the main repo
+.DS_STore
+.vscode
 
-*/*/__pycache__/*
+# things to ignore in the sub-folders
 */*/__pycache__
 */*/.ipynb_checkpoints
 */*/.DS_STore
 
-# things to ignore in the folders
 */__pycache__
 */.ipynb_checkpoints
 */.DS_STore
-
-# things to ignore in the main repo
-.DS_STore
-.vscode/
