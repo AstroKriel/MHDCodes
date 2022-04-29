@@ -39,59 +39,59 @@ def funcPlotTurb(axs, filepath_data):
   def fitExp(ax, data_x, data_y, index_start_fit, index_end_fit):
     ## define fit domain
     data_fit_domain = np.linspace(
-        data_x[index_start_fit],
-        data_x[index_end_fit],
-        10**2
+      data_x[index_start_fit],
+      data_x[index_end_fit],
+      10**2
     )
     ## interpolate the non-uniform data
     interp_spline = make_interp_spline(
-        data_x[index_start_fit : index_end_fit],
-        data_y[index_start_fit : index_end_fit]
+      data_x[index_start_fit : index_end_fit],
+      data_y[index_start_fit : index_end_fit]
     )
     ## uniformly sample interpolated data
     data_sampled_y = interp_spline(data_fit_domain)
     ## fit exponential function to sampled data (in log-linear domain)
     fit_params_log, _ = curve_fit(
-        UserModels.ListOfModels.exp_loge,
-        data_fit_domain,
-        np.log(data_sampled_y)
+      UserModels.ListOfModels.exp_loge,
+      data_fit_domain,
+      np.log(data_sampled_y)
     )
     ## undo log transformation
     fit_params_linear = [
-        np.exp(fit_params_log[0]),
-        fit_params_log[1]
+      np.exp(fit_params_log[0]),
+      fit_params_log[1]
     ]
     ## initialise the plot domain
     data_plot_domain = np.linspace(0, 100, 10**3)
     ## evaluate exponential
     data_E_exp = UserModels.ListOfModels.exp_linear(
-        data_plot_domain,
-        *fit_params_linear
+      data_plot_domain,
+      *fit_params_linear
     )
     ## find where exponential enters / exists fit range
     index_E_start = WWLists.getIndexClosestValue(data_E_exp, data_y[index_start_fit])
     index_E_end = WWLists.getIndexClosestValue(data_E_exp, data_y[index_end_fit])
     ## create line data
     line_fitted = [ np.column_stack((
-        data_plot_domain[index_E_start : index_E_end],
-        data_E_exp[index_E_start : index_E_end]
+      data_plot_domain[index_E_start : index_E_end],
+      data_E_exp[index_E_start : index_E_end]
     )) ]
     ## plot fitted line
     ax.add_collection(
-        LineCollection(line_fitted, colors="red", ls="--", linewidth=3, zorder=9),
-        autolim = False # ignore line when setting axis bounds
+      LineCollection(line_fitted, colors="red", ls="--", linewidth=3, zorder=9),
+      autolim = False # ignore line when setting axis bounds
     )
   def fitSat(ax, data_x, data_y, index_start_fit, index_end_fit):
     ## define fit domain
     data_fit_domain = np.linspace(
-        data_x[index_start_fit],
-        data_x[index_end_fit],
-        10**2
+      data_x[index_start_fit],
+      data_x[index_end_fit],
+      10**2
     )
     ## interpolate the non-uniform data
     interp_spline = make_interp_spline(
-        data_x[index_start_fit : index_end_fit],
-        data_y[index_start_fit : index_end_fit]
+      data_x[index_start_fit : index_end_fit],
+      data_y[index_start_fit : index_end_fit]
     )
     ## uniformly sample interpolated data
     data_sampled_y = interp_spline(data_fit_domain)
@@ -99,11 +99,11 @@ def funcPlotTurb(axs, filepath_data):
     mean_y = np.mean(data_sampled_y)
     ## create line data
     line_fitted = [ np.column_stack((
-        [
-          data_x[index_start_fit],
-          data_x[index_end_fit]
-        ],
-        [mean_y] * 2
+      [
+        data_x[index_start_fit],
+        data_x[index_end_fit]
+      ],
+      [mean_y] * 2
     )) ]
     ## plot fitted line
     ax.add_collection(
