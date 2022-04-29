@@ -28,7 +28,7 @@ import copy # for making a seperate instance of object
 
 ## load user defined modules
 from TheUsefulModule import *
-from TheLoadingModule import FlashData
+from TheLoadingModule import LoadFlashData
 from TheFittingModule import FitMHDScales
 from ThePlottingModule import *
 
@@ -98,12 +98,12 @@ def funcCreateSpectraObj(
         print("Looking at: " + filepath_data)
         ## load spectra data
         print("\tLoading spectra...")
-        list_vel_k_group, list_vel_power_group, list_vel_sim_times = FlashData.loadListSpectra(
+        list_vel_k_group, list_vel_power_group, list_vel_sim_times = LoadFlashData.loadListSpectra(
             filepath_data,
             str_spectra_type  = "vel",
             bool_hide_updates = bool_hide_updates
         )
-        list_mag_k_group, list_mag_power_group, list_mag_sim_times = FlashData.loadListSpectra(
+        list_mag_k_group, list_mag_power_group, list_mag_sim_times = LoadFlashData.loadListSpectra(
             filepath_data,
             str_spectra_type  = "mag",
             bool_hide_updates = bool_hide_updates

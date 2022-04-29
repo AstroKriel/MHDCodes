@@ -25,6 +25,7 @@ os.system("clear") # clear terminal window
 plt.switch_backend('agg') # use a non-interactive plotting backend
 
 
+bool_new_data = False
 ## ###############################################################
 ## FUNCTIONS
 ## ###############################################################
@@ -84,7 +85,7 @@ def funcFitExp(
     ## FITTING DATA
     ## #######
     ## fit exponential function to sampled data (in log-linear domain)
-    fit_params_log, fit_cov = curve_fit(
+    fit_params_log, _ = curve_fit(
         ListOfModels.exp_loge,
         data_fit_domain,
         np.log(data_sampled_y)
@@ -591,7 +592,7 @@ def main():
         ## load 'Mach' data
         data_time, data_Mach = loadTurbData(
             filepath_data = list_filepaths_data[sim_index],
-            var_y      = 8, # 13 (new), 8 (old)
+            var_y      = 13 if bool_new_data else 8, # 13 (new), 8 (old)
             t_eddy     = list_t_eddy[sim_index],
             time_start = plot_start,
             time_end   = plot_end
@@ -599,7 +600,7 @@ def main():
         ## load 'E_B' data
         data_time, data_E_B = loadTurbData(
             filepath_data = list_filepaths_data[sim_index],
-            var_y      = 29, # 11 (new), 29 (old)
+            var_y      = 11 if bool_new_data else 29, # 11 (new), 29 (old)
             t_eddy     = list_t_eddy[sim_index],
             time_start = plot_start,
             time_end   = plot_end
@@ -607,7 +608,7 @@ def main():
         ## load 'E_K' data
         data_time, data_E_K = loadTurbData(
             filepath_data = list_filepaths_data[sim_index],
-            var_y      = 6, # 9 (new), 6 (old)
+            var_y      = 9 if bool_new_data else 6, # 9 (new), 6 (old)
             t_eddy     = list_t_eddy[sim_index],
             time_start = plot_start,
             time_end   = plot_end
