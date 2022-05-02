@@ -17,7 +17,7 @@ from scipy.optimize import curve_fit
 os.environ['PYTHONPATH'].split(os.pathsep) 
 
 ## load user defined modules
-from ThePlottingModule import MatplotlibStyler, PlotFuncs
+from ThePlottingModule import PlotFuncs, TheMatplotlibStyler
 from TheUsefulModule import WWLists, WWFnF, WWObjs
 from TheLoadingModule import LoadFlashData
 from TheFittingModule import UserModels
