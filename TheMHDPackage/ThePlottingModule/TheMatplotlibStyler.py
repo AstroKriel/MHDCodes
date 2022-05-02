@@ -10,7 +10,18 @@ rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
 
 ## set default font characteristics
 rcParams["font.family"] = "DejaVu Sans"
-rcParams["font.size"]   = 16
+
+SMALL_SIZE  = 16
+MEDIUM_SIZE = 20
+BIGGER_SIZE = 25
+
+rcParams["font.size"]        = BIGGER_SIZE # controls default text sizes
+rcParams["axes.titlesize"]   = BIGGER_SIZE # fontsize of the axes title
+rcParams["axes.labelsize"]   = BIGGER_SIZE # fontsize of the x and y labels
+rcParams["xtick.labelsize"]  = MEDIUM_SIZE # fontsize of the tick labels
+rcParams["ytick.labelsize"]  = MEDIUM_SIZE # fontsize of the tick labels
+rcParams["legend.fontsize"]  = MEDIUM_SIZE # legend fontsize
+rcParams["figure.titlesize"] = SMALL_SIZE  # fontsize of the figure title
 
 ## set default lines
 rcParams["lines.linewidth"] = 1.2
@@ -46,10 +57,10 @@ rcParams["legend.frameon"]      = False
 
 ## set figure size/resolution
 rcParams["figure.figsize"] = (8.0, 5.0)
-rcParams["figure.dpi"]     = 200
+rcParams["figure.dpi"]     = 100
 
 ## set figure saving size/resolution
-rcParams["savefig.dpi"]  = 200
+rcParams["savefig.dpi"]  = 100
 rcParams["savefig.bbox"] = "tight"
 
 ## END OF STYLE SHEET
