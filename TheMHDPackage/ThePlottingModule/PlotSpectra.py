@@ -34,26 +34,26 @@ class PlotSpectraFit():
         self.spectra_obj.sim_suite,
         self.spectra_obj.sim_label
       ))
-    ## save the times when both the velocity and magnetic spectra were fitted
+    ## save the times when both the kinetic energy and magnetic spectra were fitted
     self.sim_times = WWLists.getCommonElements(
-      self.spectra_obj.vel_sim_times,
+      self.spectra_obj.kin_sim_times,
       self.spectra_obj.mag_sim_times
     )
     ## find which part of the data to collect statistics about
     self.bool_plot_ave_scales = False # initialise as false
-    bool_vel_fit = (self.spectra_obj.vel_fit_start_t is not None) and (self.spectra_obj.vel_fit_end_t is not None)
+    bool_kin_fit = (self.spectra_obj.kin_fit_start_t is not None) and (self.spectra_obj.kin_fit_end_t is not None)
     bool_mag_fit = (self.spectra_obj.mag_fit_start_t is not None) and (self.spectra_obj.mag_fit_end_t is not None)
-    if bool_vel_fit and bool_mag_fit:
+    if bool_kin_fit and bool_mag_fit:
       ## if a fitting domain has been defined
       self.bool_plot_ave_scales = True
-      ## find indices of velocity fit time range
-      self.vel_index_start = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.vel_fit_start_t)
-      self.vel_index_end   = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.vel_fit_end_t)
+      ## find indices of kinetic energy fit time range
+      self.kin_index_start = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.kin_fit_start_t)
+      self.kin_index_end   = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.kin_fit_end_t)
       ## find indices of magnetic fit time range
       self.mag_index_start = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.mag_fit_start_t)
       self.mag_index_end   = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.mag_fit_end_t)
       ## subset data
-      k_nu_subset_t  = self.spectra_obj.k_nu_group_t[self.vel_index_start:self.vel_index_end]
+      k_nu_subset_t  = self.spectra_obj.k_nu_group_t[self.kin_index_start:self.kin_index_end]
       k_eta_subset_t = self.spectra_obj.k_eta_group_t[self.mag_index_start:self.mag_index_end]
       k_max_subset_t = self.spectra_obj.k_max_group_t[self.mag_index_start:self.mag_index_end]
       ## calculate mean of measured scales
@@ -77,7 +77,7 @@ class PlotSpectraFit():
     ## initialise figure y-range
     range_y = [ 0.05, 150 ]
     ## extract data
-    data_x_ax0 = self.spectra_obj.vel_sim_times
+    data_x_ax0 = self.spectra_obj.kin_sim_times
     data_x_ax1 = self.spectra_obj.mag_sim_times
     data_x_ax2 = self.spectra_obj.mag_sim_times
     data_y_ax0 = self.spectra_obj.k_nu_group_t
@@ -92,8 +92,8 @@ class PlotSpectraFit():
       ## CLEANING DATA
       ## ########
       ## remove outliers in k_nu
-      data_x_ax0_subset = data_x_ax0[self.vel_index_start : self.vel_index_end]
-      data_y_ax0_subset = data_y_ax0[self.vel_index_start : self.vel_index_end]
+      data_x_ax0_subset = data_x_ax0[self.kin_index_start : self.kin_index_end]
+      data_y_ax0_subset = data_y_ax0[self.kin_index_start : self.kin_index_end]
       ## remove outliers in k_eta
       data_x_ax1_subset = data_x_ax1[self.mag_index_start : self.mag_index_end]
       data_y_ax1_subset = data_y_ax1[self.mag_index_start : self.mag_index_end]
@@ -222,9 +222,9 @@ class PlotSpectraFit():
     ## INITIALISE DATA
     ## ########
     ## left axis
-    data_x_ax0  = self.spectra_obj.vel_sim_times
-    data_y_ax0  = self.spectra_obj.vel_fit_k_index_group_t
-    range_y_ax0 = [ 0.5, max(self.spectra_obj.vel_list_k_group_t[0]) ]
+    data_x_ax0  = self.spectra_obj.kin_sim_times
+    data_y_ax0  = self.spectra_obj.kin_fit_k_index_group_t
+    range_y_ax0 = [ 0.5, max(self.spectra_obj.kin_list_k_group_t[0]) ]
     ## right axis
     data_x_ax1  = self.spectra_obj.mag_sim_times
     data_y_ax1  = self.spectra_obj.mag_fit_k_index_group_t
@@ -239,8 +239,8 @@ class PlotSpectraFit():
       ## left axis
       PlotFuncs.insetPlot(
         ax0,
-        data_x_ax0[self.vel_index_start:self.vel_index_end],
-        data_y_ax0[self.vel_index_start:self.vel_index_end],
+        data_x_ax0[self.kin_index_start:self.kin_index_end],
+        data_y_ax0[self.kin_index_start:self.kin_index_end],
         label_x    = r"$t / T$ (sub-domain)",
         label_y    = r"Last fitted k-mode",
         range_y    = range_y_ax0,
@@ -260,8 +260,8 @@ class PlotSpectraFit():
       ax1.plot(data_x_ax1, data_y_ax1, "k.", alpha=0.1)
       ## plot data in fit range
       ax0.plot(
-        data_x_ax0[self.vel_index_start:self.vel_index_end],
-        data_y_ax0[self.vel_index_start:self.vel_index_end],
+        data_x_ax0[self.kin_index_start:self.kin_index_end],
+        data_y_ax0[self.kin_index_start:self.kin_index_end],
         "r.", alpha=0.2
       )
       ax1.plot(
@@ -327,8 +327,8 @@ class PlotSpectraFit():
     ax1 = fig_scales.add_subplot(fig_grids[1])
     ## plot data
     ax0.plot(
-      self.spectra_obj.vel_list_fit_k_range_group_t[fit_index],
-      self.spectra_obj.vel_list_fit_2norm_group_t[fit_index],
+      self.spectra_obj.kin_list_fit_k_range_group_t[fit_index],
+      self.spectra_obj.kin_list_fit_2norm_group_t[fit_index],
       "k."
     )
     ax1.plot(
@@ -341,7 +341,7 @@ class PlotSpectraFit():
     ## ########
     ## add chosen number of fitted lines
     ax0.axvline(
-      x = self.spectra_obj.vel_fit_k_index_group_t[fit_index],
+      x = self.spectra_obj.kin_fit_k_index_group_t[fit_index],
       ls="--", color="k"
     )
     ax1.axvline(
@@ -444,9 +444,9 @@ class PlotSpectraFit():
     ## PLOT SPECTRA DATA
     ## #############
     ax.plot(
-      self.spectra_obj.vel_list_k_group_t[time_index],
-      self.spectra_obj.vel_list_power_group_t[time_index],
-      label=r"vel-spectra", color="blue", ls="", marker=".", markersize=8
+      self.spectra_obj.kin_list_k_group_t[time_index],
+      self.spectra_obj.kin_list_power_group_t[time_index],
+      label=r"kin-spectra", color="blue", ls="", marker=".", markersize=8
     )
     ax.plot(
       self.spectra_obj.mag_list_k_group_t[time_index],
@@ -458,9 +458,9 @@ class PlotSpectraFit():
     ## #############
     ## plot fitted spectra
     ax.plot(
-      self.spectra_obj.vel_list_fit_k_group_t[time_index],
-      self.spectra_obj.vel_list_fit_power_group_t[time_index],
-      label=r"vel-spectra (fitted)", color="blue", linestyle="--", dashes=(5, 2.5), linewidth=2
+      self.spectra_obj.kin_list_fit_k_group_t[time_index],
+      self.spectra_obj.kin_list_fit_power_group_t[time_index],
+      label=r"kin-spectra (fitted)", color="blue", linestyle="--", dashes=(5, 2.5), linewidth=2
     )
     ax.plot(
       self.spectra_obj.mag_list_fit_k_group_t[time_index],
@@ -502,18 +502,19 @@ class PlotSpectraFit():
       xpos = 0.025,
       ypos = 0.025,
       ## label appearance
-      alpha = 0.25,
+      alpha    = 0.25,
+      fontsize = 14,
       ## list of labels to place in box
       list_fig_labels = [
-        ## velocity spectra fit
-        r"$\mathcal{P}_{\rm vel}(k) = A k^{\alpha_1} \exp\left\{-\frac{k}{k_\nu}\right\}$",
+        ## kinetic energy spectra fit
+        r"$\mathcal{P}_{\rm kin}(k) = A k^{\alpha_{\rm kin}} \exp\left\{-\frac{k}{k_\nu}\right\}$",
         (
-          r"$A = $ "+"{:.2e}".format(self.spectra_obj.vel_list_fit_params_group_t[time_index][0]) +
-          r", $\alpha_\mathrm{kin} = $ "+"{:.2f}".format(self.spectra_obj.vel_list_fit_params_group_t[time_index][1]) +
-          r", $k_\nu = $ "+"{:.2f}".format(1 / self.spectra_obj.vel_list_fit_params_group_t[time_index][2])
+          r"$A = $ "+"{:.2e}".format(self.spectra_obj.kin_list_fit_params_group_t[time_index][0]) +
+          r", $\alpha_\mathrm{kin} = $ "+"{:.2f}".format(self.spectra_obj.kin_list_fit_params_group_t[time_index][1]) +
+          r", $k_\nu = $ "+"{:.2f}".format(1 / self.spectra_obj.kin_list_fit_params_group_t[time_index][2])
         ),
         ## magnetic spectra fit
-        r"$\mathcal{P}_{\rm mag}(k) = A k^{\alpha_1} K_0\left\{-\frac{k}{k_\eta}\right\}$",
+        r"$\mathcal{P}_{\rm mag}(k) = A k^{\alpha_{\rm mag}} K_0\left\{-\frac{k}{k_\eta}\right\}$",
         (
           r"$A = $ "+"{:.2e}".format(self.spectra_obj.mag_list_fit_params_group_t[time_index][0]) +
           r", $\alpha_\mathrm{mag} = $ "+"{:.2f}".format(self.spectra_obj.mag_list_fit_params_group_t[time_index][1]) +
@@ -522,13 +523,13 @@ class PlotSpectraFit():
         )
       ]
     )
-    ## add time stamp
-    ax.text(0.025, 0.975,
-      r"$t / t_{\rm eddy} = $ "+"{:.1f}".format(self.sim_times[time_index]), 
-      va="top", ha="left", transform=ax.transAxes, fontsize=16
-    )
     ## add legend
-    ax.legend(frameon=True, loc="upper right", facecolor="white", framealpha=0.5, fontsize=12)
+    ax.legend(frameon=True, loc="upper left", facecolor="white", framealpha=0.5, fontsize=14)
+    ## add time stamp
+    ax.text(0.975, 0.975,
+      r"$t / t_{\rm eddy} = $ "+"{:.1f}".format(self.sim_times[time_index]), 
+      va="top", ha="right", transform=ax.transAxes, fontsize=16
+    )
     ## adjust figure axes
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
@@ -580,15 +581,15 @@ class PlotSpectra():
   '''
   def __init__(self,
       ## spectra data
-      vel_k, vel_power, mag_k, mag_power,
+      kin_k, kin_power, mag_k, mag_power,
       ## frame information
       sim_times, sim_name,
       ## where to save plos / animation
       filepath_frames, filepath_ani
     ):
-    self.vel_k = vel_k
+    self.kin_k = kin_k
     self.mag_k = mag_k
-    self.vel_power = vel_power
+    self.kin_power = kin_power
     self.mag_power = mag_power
     self.sim_times = sim_times
     self.sim_name  = sim_name
@@ -602,7 +603,7 @@ class PlotSpectra():
     y_min = 1e-20
     y_max = 10
     x_min = 10**(-1)
-    x_max = max(len(self.vel_k[0]), len(self.mag_k[0]))
+    x_max = max(len(self.kin_k[0]), len(self.mag_k[0]))
     ## initialise spectra evolution figure
     fig, ax = plt.subplots(constrained_layout=True)
     ## loop over each time slice
@@ -614,9 +615,9 @@ class PlotSpectra():
       ## PLOT SPECTRA DATA
       ## #######
       ax.plot(
-        self.vel_k[time_index],
-        self.vel_power[time_index],
-        label=r"vel-spectra", color="blue", ls="", marker=".", markersize=8
+        self.kin_k[time_index],
+        self.kin_power[time_index],
+        label=r"kin-spectra", color="blue", ls="", marker=".", markersize=8
       )
       ax.plot(
         self.mag_k[time_index],

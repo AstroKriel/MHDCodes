@@ -43,12 +43,6 @@ def main():
   list_sim_data = []
   for sim_data in csv.reader(dataset_obj):
     list_sim_data.append(sim_data)
-  print("\t", list_sim_data[0])
-  print("\t", list_sim_data[1])
-  print("\t", list_sim_data[1][1])
-  print("\t", list_sim_data[1][3])
-  print("\t", list_sim_data[1][4])
-  print(" ")
 
   ## ######################
   ## PLOT DATA

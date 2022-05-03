@@ -192,7 +192,7 @@ def plotLabelBox(
   ):
   if len(list_fig_labels) == 0: return
   list_labels_str = [
-    TextArea(tmp_label)
+    TextArea(tmp_label, textprops={"fontsize":fontsize})
     for tmp_label in list_fig_labels
   ]
   texts_vbox = VPacker(

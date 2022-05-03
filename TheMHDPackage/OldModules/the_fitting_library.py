@@ -198,25 +198,25 @@ class SpectraFit():
       ## VELOCITY SPECTRA VARIABLES
       ## ###########
         ## data
-        vel_sim_times,
-        vel_list_k_group_t,
-        vel_list_power_group_t,
-        bool_vel_fixed_model,
+        kin_sim_times,
+        kin_list_k_group_t,
+        kin_list_power_group_t,
+        bool_kin_fixed_model,
         ## fitted spectra
-        vel_list_fit_k_group_t,
-        vel_list_fit_power_group_t,
+        kin_list_fit_k_group_t,
+        kin_list_fit_power_group_t,
         ## measured scale
         k_nu_group_t,
         ## best fit information
-        vel_list_fit_params_group_t,
-        vel_list_fit_std_group_t,
-        vel_fit_k_index_group_t,
+        kin_list_fit_params_group_t,
+        kin_list_fit_std_group_t,
+        kin_fit_k_index_group_t,
         ## history of fitting data
-        vel_list_fit_k_range_group_t,
-        vel_list_fit_2norm_group_t,
+        kin_list_fit_k_range_group_t,
+        kin_list_fit_2norm_group_t,
         ## fit time range
-        vel_fit_start_t,
-        vel_fit_end_t,
+        kin_fit_start_t,
+        kin_fit_end_t,
       ## ##########################
       ## MAGNETIC SPECTRA VARIABLES
       ## ###########
@@ -245,7 +245,7 @@ class SpectraFit():
     ## stamp when the spectra file was made
     self.date_analysed = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     ## simulation information
-    self.vel_sim_times = vel_sim_times
+    self.kin_sim_times = kin_sim_times
     self.mag_sim_times = mag_sim_times
     self.sim_suite = sim_suite
     self.sim_label = sim_label
@@ -253,40 +253,40 @@ class SpectraFit():
     self.Re = Re
     self.Rm = Rm
     self.Pm = Rm / Re
-    self.bool_vel_fixed_model = bool_vel_fixed_model
+    self.bool_kin_fixed_model = bool_kin_fixed_model
     self.bool_mag_fixed_model = bool_mag_fixed_model
     ## simulation data
-    self.vel_list_k_group_t = vel_list_k_group_t
+    self.kin_list_k_group_t = kin_list_k_group_t
     self.mag_list_k_group_t = mag_list_k_group_t
-    self.vel_list_power_group_t = vel_list_power_group_t
+    self.kin_list_power_group_t = kin_list_power_group_t
     self.mag_list_power_group_t = mag_list_power_group_t
     ## fitting time range
-    self.vel_fit_start_t = vel_fit_start_t
+    self.kin_fit_start_t = kin_fit_start_t
     self.mag_fit_start_t = mag_fit_start_t
-    self.vel_fit_end_t   = vel_fit_end_t
+    self.kin_fit_end_t   = kin_fit_end_t
     self.mag_fit_end_t   = mag_fit_end_t
     ## fitted spectras
-    self.vel_list_fit_k_group_t = vel_list_fit_k_group_t
+    self.kin_list_fit_k_group_t = kin_list_fit_k_group_t
     self.mag_list_fit_k_group_t = mag_list_fit_k_group_t
-    self.vel_list_fit_power_group_t = vel_list_fit_power_group_t
+    self.kin_list_fit_power_group_t = kin_list_fit_power_group_t
     self.mag_list_fit_power_group_t = mag_list_fit_power_group_t
     ## measured scales
     self.k_nu_group_t  = k_nu_group_t
     self.k_eta_group_t = k_eta_group_t
     self.k_max_group_t = k_max_group_t
     ## fitted spectra parameters
-    self.vel_list_fit_params_group_t = vel_list_fit_params_group_t
+    self.kin_list_fit_params_group_t = kin_list_fit_params_group_t
     self.mag_list_fit_params_group_t = mag_list_fit_params_group_t
     ## uncertainties in parameter fits
-    self.vel_list_fit_std_group_t = vel_list_fit_std_group_t
+    self.kin_list_fit_std_group_t = kin_list_fit_std_group_t
     self.mag_list_fit_std_group_t = mag_list_fit_std_group_t
     ## break point (k index) of best fits
-    self.vel_fit_k_index_group_t = vel_fit_k_index_group_t
+    self.kin_fit_k_index_group_t = kin_fit_k_index_group_t
     self.mag_fit_k_index_group_t = mag_fit_k_index_group_t
     ## full fitting information for all time realisations
-    self.vel_list_fit_k_range_group_t = vel_list_fit_k_range_group_t
+    self.kin_list_fit_k_range_group_t = kin_list_fit_k_range_group_t
     self.mag_list_fit_k_range_group_t = mag_list_fit_k_range_group_t
-    self.vel_list_fit_2norm_group_t = vel_list_fit_2norm_group_t
+    self.kin_list_fit_2norm_group_t = kin_list_fit_2norm_group_t
     self.mag_list_fit_2norm_group_t = mag_list_fit_2norm_group_t
 
 
@@ -685,9 +685,9 @@ class FitSpectra():
           sigma  = list_data_weight,
           maxfev = 10**4
         )
-      ## fit velocity spectra with fewer fit instructions
+      ## fit kinetic energy spectra with fewer fit instructions
       else:
-        ## fit velocity spectra with simple model
+        ## fit kinetic energy spectra with simple model
         list_fit_params_curve_loge, mat_fit_params_cov = curve_fit(
           self.func_fit,
           x_data_curve_linear, y_data_curve_loge,
@@ -861,22 +861,22 @@ class FitVelSpectra(FitSpectra):
     ## save fit output
     return {
       ## times fitted to
-      "vel_sim_times":self.list_sim_times,
+      "kin_sim_times":self.list_sim_times,
       ## spectra data fitted to
-      "vel_list_k_group_t":self.list_k_group_t,
-      "vel_list_power_group_t":self.list_power_group_t,
+      "kin_list_k_group_t":self.list_k_group_t,
+      "kin_list_power_group_t":self.list_power_group_t,
       ## fitted spectra
-      "vel_list_fit_k_group_t":self.list_fit_k_group_t,
-      "vel_list_fit_power_group_t":self.list_fit_power_group_t,
+      "kin_list_fit_k_group_t":self.list_fit_k_group_t,
+      "kin_list_fit_power_group_t":self.list_fit_power_group_t,
       ## fitted scales
       "k_nu_group_t":self.k_scale_group_t,
       ## fit information
-      "bool_vel_fixed_model":self.bool_fit_fixed_model,
-      "vel_list_fit_params_group_t":self.list_best_fit_params_group_t,
-      "vel_list_fit_std_group_t":self.list_best_fit_std_group_t,
-      "vel_fit_k_index_group_t":self.best_fit_k_index_group_t,
-      "vel_list_fit_k_range_group_t":self.list_fit_k_range_group_t,
-      "vel_list_fit_2norm_group_t":self.list_fit_2norm_group_t
+      "bool_kin_fixed_model":self.bool_fit_fixed_model,
+      "kin_list_fit_params_group_t":self.list_best_fit_params_group_t,
+      "kin_list_fit_std_group_t":self.list_best_fit_std_group_t,
+      "kin_fit_k_index_group_t":self.best_fit_k_index_group_t,
+      "kin_list_fit_k_range_group_t":self.list_fit_k_range_group_t,
+      "kin_list_fit_2norm_group_t":self.list_fit_2norm_group_t
     }
 
 class FitMagSpectra(FitSpectra):

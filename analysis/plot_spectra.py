@@ -102,7 +102,7 @@ print(" ")
 for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
   ## load spectra data
   print("Loading data from:", filepath_data)
-  vel_k, vel_power, vel_sim_times = loadSpectra(
+  kin_k, kin_power, kin_sim_times = loadSpectra(
     filepath_data,
     str_spectra_type  = "vel",
     plots_per_eddy    = plots_per_eddy,
@@ -115,13 +115,13 @@ for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
     bool_hide_updates = bool_hide_updates
   )
   sim_times = getCommonElements(
-    vel_sim_times,
+    kin_sim_times,
     mag_sim_times
   )
   print(" ")
   ## initialise plot object
   plot_obj = PlotSpectra(
-    vel_k, vel_power, mag_k, mag_power,
+    kin_k, kin_power, mag_k, mag_power,
     sim_times, sim_names[sim_index],
     filepath_frames, filepath_vis
   )

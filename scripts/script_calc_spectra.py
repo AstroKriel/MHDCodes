@@ -105,7 +105,7 @@ filenames_spect_vel = getFilesFromFolder(
 filenames_redo = []
 ## check if there are any files that haven"t been processed properly
 for file_name in filenames:
-    ## for each hdf5 file, check if there exists magnetic and velocity output files
+    ## for each hdf5 file, check if there exists magnetic and velocity spectra output files
     bool_mags_exists = False
     bool_vels_exists = False
     ## check if the file file has been analysed then don"t look at it again

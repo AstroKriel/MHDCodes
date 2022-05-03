@@ -295,19 +295,19 @@ def main():
     ## GET DISTRIBUTION OF SCALES
     ## ########
     ## check that a time range has been defined to collect statistics about
-    sim_times = getCommonElements(spectra_obj.vel_sim_times, spectra_obj.mag_sim_times)
-    # bool_vel_fit = (spectra_obj.vel_fit_start_t is not None) and (spectra_obj.vel_fit_end_t is not None)
+    sim_times = getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+    # bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
     # bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
-    # if not(bool_vel_fit) or not(bool_mag_fit):
+    # if not(bool_kin_fit) or not(bool_mag_fit):
     #     raise Exception("Fit range has not been defined.")
-    ## find indices of velocity fit time range
-    vel_index_start = getIndexClosestValue(sim_times, 2) # spectra_obj.vel_fit_start_t)
-    vel_index_end   = getIndexClosestValue(sim_times, 10) # spectra_obj.vel_fit_end_t)
+    ## find indices of kinetic energy fit time range
+    kin_index_start = getIndexClosestValue(sim_times, 2) # spectra_obj.kin_fit_start_t)
+    kin_index_end   = getIndexClosestValue(sim_times, 10) # spectra_obj.kin_fit_end_t)
     ## find indices of magnetic fit time range
     mag_index_start = getIndexClosestValue(sim_times, 2) # spectra_obj.mag_fit_start_t)
     mag_index_end   = getIndexClosestValue(sim_times, 10) # spectra_obj.mag_fit_end_t)
     ## subset measured scales
-    list_k_nu  = cleanMeasuredScales(spectra_obj.k_nu_group_t[vel_index_start  : vel_index_end])
+    list_k_nu  = cleanMeasuredScales(spectra_obj.k_nu_group_t[kin_index_start  : kin_index_end])
     list_k_eta = cleanMeasuredScales(spectra_obj.k_eta_group_t[mag_index_start : mag_index_end])
     list_k_max = cleanMeasuredScales(spectra_obj.k_max_group_t[mag_index_start : mag_index_end])
     list_k_nu_group_res.append(  list_k_nu )

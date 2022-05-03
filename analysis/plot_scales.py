@@ -37,7 +37,7 @@ def funcLoadData_sim(
     list_relation_k_nu, list_relation_k_eta,
     ## output: measured sclaes
     list_k_nu_group, list_k_eta_group, list_k_max_group,
-    list_alpha_vel_group, list_alpha_mag_group
+    list_alpha_kin_group, list_alpha_mag_group
   ):
   ## #########################
   ## GET SIMULATION PARAMETERS
@@ -48,10 +48,10 @@ def funcLoadData_sim(
     bool_hide_updates = True
   )
   ## check that a time range has been defined to collect statistics about
-  sim_times = WWLists.getCommonElements(spectra_obj.vel_sim_times, spectra_obj.mag_sim_times)
+  sim_times = WWLists.getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
   ## find indices of magnetic fit time range
-  vel_index_start = WWLists.getIndexClosestValue(sim_times, 2)
-  vel_index_end   = WWLists.getIndexClosestValue(sim_times, 10)
+  kin_index_start = WWLists.getIndexClosestValue(sim_times, 2)
+  kin_index_end   = WWLists.getIndexClosestValue(sim_times, 10)
   mag_index_start = WWLists.getIndexClosestValue(sim_times, 2)
   mag_index_end   = WWLists.getIndexClosestValue(sim_times, 10)
   ## load parameters
@@ -64,8 +64,8 @@ def funcLoadData_sim(
   ## load kazantsev exponent
   list_alpha_kin = [
     -abs(sub_list[1])
-    for sub_list in spectra_obj.vel_list_fit_params_group_t[
-      vel_index_start : vel_index_end
+    for sub_list in spectra_obj.kin_list_fit_params_group_t[
+      kin_index_start : kin_index_end
     ]
   ]
   list_alpha_mag = [
@@ -75,7 +75,7 @@ def funcLoadData_sim(
     ]
   ]
   ## load measured scales
-  list_k_nu  = spectra_obj.k_nu_group_t[vel_index_start : vel_index_end]
+  list_k_nu  = spectra_obj.k_nu_group_t[kin_index_start : kin_index_end]
   list_k_eta = spectra_obj.k_eta_group_t[mag_index_start : mag_index_end]
   list_k_max = spectra_obj.k_max_group_t[mag_index_start : mag_index_end]
   ## save data
@@ -84,7 +84,7 @@ def funcLoadData_sim(
   list_Pm.append(Pm)
   list_relation_k_nu.append(relation_k_nu)
   list_relation_k_eta.append(relation_k_eta)
-  list_alpha_vel_group.append(list_alpha_kin)
+  list_alpha_kin_group.append(list_alpha_kin)
   list_alpha_mag_group.append(list_alpha_mag)
   list_k_nu_group.append(list_k_nu)
   list_k_eta_group.append(list_k_eta)
@@ -99,7 +99,7 @@ def funcLoadData(
     list_relation_k_nu, list_relation_k_eta,
     ## output: measured scales
     list_k_nu_group, list_k_eta_group, list_k_max_group,
-    list_alpha_vel_group, list_alpha_mag_group,
+    list_alpha_kin_group, list_alpha_mag_group,
     ## output: simulation markers
     list_markers
   ):
@@ -128,7 +128,7 @@ def funcLoadData(
       list_k_eta_group = list_k_eta_group,
       list_k_max_group = list_k_max_group,
       ## output: fitted power-law exponents
-      list_alpha_vel_group = list_alpha_vel_group,
+      list_alpha_kin_group = list_alpha_kin_group,
       list_alpha_mag_group = list_alpha_mag_group
     )
   ## Re = 500
@@ -151,7 +151,7 @@ def funcLoadData(
       list_k_eta_group = list_k_eta_group,
       list_k_max_group = list_k_max_group,
       ## output: fitted power-law exponents
-      list_alpha_vel_group = list_alpha_vel_group,
+      list_alpha_kin_group = list_alpha_kin_group,
       list_alpha_mag_group = list_alpha_mag_group
     )
   ## Rm = 3000
@@ -174,7 +174,7 @@ def funcLoadData(
       list_k_eta_group = list_k_eta_group,
       list_k_max_group = list_k_max_group,
       ## output: fitted power-law exponents
-      list_alpha_vel_group = list_alpha_vel_group,
+      list_alpha_kin_group = list_alpha_kin_group,
       list_alpha_mag_group = list_alpha_mag_group
     )
   print(" ")
@@ -364,7 +364,7 @@ def main():
   list_k_eta_group = []
   list_k_max_group = []
   ## kazantsev exponent
-  list_alpha_vel_group = []
+  list_alpha_kin_group = []
   list_alpha_mag_group = []
   ## list of simlation markers
   list_markers = []
@@ -374,7 +374,7 @@ def main():
     list_Re, list_Rm, list_Pm,
     list_relation_k_nu, list_relation_k_eta,
     list_k_nu_group, list_k_eta_group, list_k_max_group,
-    list_alpha_vel_group, list_alpha_mag_group,
+    list_alpha_kin_group, list_alpha_mag_group,
     list_markers
   )
   ## define simulation points color
@@ -411,7 +411,7 @@ def main():
     filepath_plot,
     list_colors, list_markers,
     list_Re, list_Rm, list_Pm,
-    list_alpha_vel_group,
+    list_alpha_kin_group,
     str_var = "vel"
   )
 

@@ -214,16 +214,16 @@ def funcPlotSpectra(axs1, axs2, filepath_data, time_exp_start, time_exp_end):
   ## load spectra object
   spectra_obj = WWObjs.loadPickleObject(filepath_data, SPECTRA_NAME, bool_hide_updates=True)
   ## load time-evolving measured parameters
-  kin_sim_times = spectra_obj.vel_sim_times
+  kin_sim_times = spectra_obj.kin_sim_times
   mag_sim_times = spectra_obj.mag_sim_times
-  kin_num_points_fitted = spectra_obj.vel_fit_k_index_group_t
+  kin_num_points_fitted = spectra_obj.kin_fit_k_index_group_t
   mag_num_points_fitted = spectra_obj.mag_fit_k_index_group_t
   k_nu  = spectra_obj.k_nu_group_t
   k_eta = spectra_obj.k_eta_group_t
   k_max = spectra_obj.k_max_group_t
   kin_alpha = [
     list_fit_params[1]
-    for list_fit_params in spectra_obj.vel_list_fit_params_group_t
+    for list_fit_params in spectra_obj.kin_list_fit_params_group_t
   ]
   mag_alpha = [
     list_fit_params[1]
@@ -329,7 +329,7 @@ def funcPlotSimData(filepath_data, filepath_plot, fig_name):
   ## top row: 'Turb.dat' data
   ax00 = fig.add_subplot(gs[0, :2])
   ax01 = fig.add_subplot(gs[0, 2:])
-  ## middle row: velocity spectra fits
+  ## middle row: kinetic energy spectra fits
   ax10 = fig.add_subplot(gs[1, 0])
   ax11 = fig.add_subplot(gs[1, 1])
   ax12 = fig.add_subplot(gs[1, 2])

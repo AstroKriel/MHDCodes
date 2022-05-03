@@ -41,7 +41,7 @@ def funcLoadData_sim(
     list_relation_k_nu, list_relation_k_eta,
     ## output: converged (measured) sclaes
     list_k_nu_converged_group, list_k_eta_converged_group, list_k_max_converged_group,
-    list_alpha_vel_group, list_alpha_mag_group
+    list_alpha_kin_group, list_alpha_mag_group
   ):
   ## #########################
   ## GET SIMULATION PARAMETERS
@@ -52,14 +52,14 @@ def funcLoadData_sim(
     bool_hide_updates = True
   )
   ## check that a time range has been defined to collect statistics about
-  sim_times = getCommonElements(spectra_obj.vel_sim_times, spectra_obj.mag_sim_times)
-  bool_vel_fit = (spectra_obj.vel_fit_start_t is not None) and (spectra_obj.vel_fit_end_t is not None)
+  sim_times = getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+  bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
   bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
-  if not(bool_vel_fit) or not(bool_mag_fit):
+  if not(bool_kin_fit) or not(bool_mag_fit):
     raise Exception("Fit range has not been defined.")
   ## find indices of magnetic fit time range
-  vel_index_start = getIndexClosestValue(sim_times, spectra_obj.vel_fit_start_t)
-  vel_index_end   = getIndexClosestValue(sim_times, spectra_obj.vel_fit_end_t)
+  kin_index_start = getIndexClosestValue(sim_times, spectra_obj.kin_fit_start_t)
+  kin_index_end   = getIndexClosestValue(sim_times, spectra_obj.kin_fit_end_t)
   mag_index_start = getIndexClosestValue(sim_times, spectra_obj.mag_fit_start_t)
   mag_index_end   = getIndexClosestValue(sim_times, spectra_obj.mag_fit_end_t)
   ## load parameters
@@ -74,9 +74,9 @@ def funcLoadData_sim(
   list_alpha_kin, _ = cleanMeasuredScales(
     list_times  = [
       -abs(sub_list[1])
-      for sub_list in spectra_obj.vel_list_fit_params_group_t[vel_index_start : vel_index_end]
+      for sub_list in spectra_obj.kin_list_fit_params_group_t[kin_index_start : kin_index_end]
     ],
-    list_scales = spectra_obj.k_max_group_t[vel_index_start : vel_index_end]
+    list_scales = spectra_obj.k_max_group_t[kin_index_start : kin_index_end]
   )
   list_alpha_mag, _ = cleanMeasuredScales(
     list_times  = [
@@ -91,7 +91,7 @@ def funcLoadData_sim(
   list_Pm.append(Pm)
   list_relation_k_nu.append(relation_k_nu)
   list_relation_k_eta.append(relation_k_eta)
-  list_alpha_vel_group.append(list_alpha_kin)
+  list_alpha_kin_group.append(list_alpha_kin)
   list_alpha_mag_group.append(list_alpha_mag)
   ## #####################
   ## LOAD CONVERGED SCALES
@@ -115,7 +115,7 @@ def funcLoadData(
     list_relation_k_nu, list_relation_k_eta,
     ## output: measured scales
     list_k_nu_converged_group, list_k_eta_converged_group, list_k_max_converged_group,
-    list_alpha_vel_group, list_alpha_mag_group,
+    list_alpha_kin_group, list_alpha_mag_group,
     ## output: simulation markers
     list_markers
   ):
@@ -150,7 +150,7 @@ def funcLoadData(
       list_k_eta_converged_group = list_k_eta_converged_group,
       list_k_max_converged_group = list_k_max_converged_group,
       ## output: fitted power-law exponents
-      list_alpha_vel_group = list_alpha_vel_group,
+      list_alpha_kin_group = list_alpha_kin_group,
       list_alpha_mag_group = list_alpha_mag_group
     )
   ## Re = 500
@@ -178,7 +178,7 @@ def funcLoadData(
       list_k_eta_converged_group = list_k_eta_converged_group,
       list_k_max_converged_group = list_k_max_converged_group,
       ## output: fitted power-law exponents
-      list_alpha_vel_group = list_alpha_vel_group,
+      list_alpha_kin_group = list_alpha_kin_group,
       list_alpha_mag_group = list_alpha_mag_group
     )
   ## Rm = 3000
@@ -206,7 +206,7 @@ def funcLoadData(
       list_k_eta_converged_group = list_k_eta_converged_group,
       list_k_max_converged_group = list_k_max_converged_group,
       ## output: fitted power-law exponents
-      list_alpha_vel_group = list_alpha_vel_group,
+      list_alpha_kin_group = list_alpha_kin_group,
       list_alpha_mag_group = list_alpha_mag_group
     )
   ## keta = 2.5
@@ -234,7 +234,7 @@ def funcLoadData(
       list_k_eta_converged_group = list_k_eta_converged_group,
       list_k_max_converged_group = list_k_max_converged_group,
       ## output: fitted power-law exponents
-      list_alpha_vel_group = list_alpha_vel_group,
+      list_alpha_kin_group = list_alpha_kin_group,
       list_alpha_mag_group = list_alpha_mag_group
     )
   print(" ")
@@ -1235,22 +1235,22 @@ class PlotSpectraAndScales():
       axs, spectra_obj, list_colors
     ):
     ## check that a time range has been defined to collect statistics about
-    sim_times = getCommonElements(spectra_obj.vel_sim_times, spectra_obj.mag_sim_times)
-    bool_vel_fit = (spectra_obj.vel_fit_start_t is not None) and (spectra_obj.vel_fit_end_t is not None)
+    sim_times = getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+    bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
     bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
-    if not(bool_vel_fit) or not(bool_mag_fit):
+    if not(bool_kin_fit) or not(bool_mag_fit):
       raise Exception("Fit range has not been defined.")
-    ## find indices of velocity fit time range
-    vel_index_start = getIndexClosestValue(sim_times, spectra_obj.vel_fit_start_t)
-    vel_index_end   = getIndexClosestValue(sim_times, spectra_obj.vel_fit_end_t)
+    ## find indices of kinetic energy fit time range
+    kin_index_start = getIndexClosestValue(sim_times, spectra_obj.kin_fit_start_t)
+    kin_index_end   = getIndexClosestValue(sim_times, spectra_obj.kin_fit_end_t)
     ## find indices of magnetic fit time range
     mag_index_start = getIndexClosestValue(sim_times, spectra_obj.mag_fit_start_t)
     mag_index_end   = getIndexClosestValue(sim_times, spectra_obj.mag_fit_end_t)
     ## load spectra
-    list_vel_power = spectra_obj.vel_list_power_group_t[vel_index_start : vel_index_end]
+    list_kin_power = spectra_obj.kin_list_power_group_t[kin_index_start : kin_index_end]
     list_mag_power = spectra_obj.mag_list_power_group_t[mag_index_start : mag_index_end]
     ## load measured scales
-    list_k_nu  = cleanMeasuredScales(spectra_obj.k_nu_group_t[vel_index_start  : vel_index_end])
+    list_k_nu  = cleanMeasuredScales(spectra_obj.k_nu_group_t[kin_index_start  : kin_index_end])
     list_k_eta = cleanMeasuredScales(spectra_obj.k_eta_group_t[mag_index_start : mag_index_end])
     list_kaz, list_k_max = cleanMeasuredScales(
       list_times  = [
@@ -1259,21 +1259,21 @@ class PlotSpectraAndScales():
       ],
       list_scales = spectra_obj.k_max_group_t[mag_index_start : mag_index_end]
     )
-    ## plot velocity spectra
+    ## plot kinetic energy spectra
     self.plotSpectra(
       ax = axs[0],
       color  = list_colors[0],
-      list_k = spectra_obj.vel_list_k_group_t[0],
+      list_k = spectra_obj.kin_list_k_group_t[0],
       list_power = [
-        np.array(vel_power) / np.sum(vel_power)
-        for vel_power in list_vel_power
+        np.array(kin_power) / np.sum(kin_power)
+        for kin_power in list_kin_power
       ],
-      list_fit_k = spectra_obj.vel_list_fit_k_group_t[0],
+      list_fit_k = spectra_obj.kin_list_fit_k_group_t[0],
       list_fit_power = [
-        np.array(vel_fit_power) / np.sum(vel_power)
-        for vel_fit_power, vel_power in zip(
-          spectra_obj.vel_list_fit_power_group_t[vel_index_start : vel_index_end],
-          list_vel_power
+        np.array(kin_fit_power) / np.sum(kin_power)
+        for kin_fit_power, kin_power in zip(
+          spectra_obj.kin_list_fit_power_group_t[kin_index_start : kin_index_end],
+          list_kin_power
         )
       ]
     )
@@ -1298,12 +1298,12 @@ class PlotSpectraAndScales():
     ## plot measured k_nu
     self.plotScale(
       axs[0], list_colors[0], r"$k_\nu$",
-      list_fit_k = spectra_obj.vel_list_k_group_t[0],
+      list_fit_k = spectra_obj.kin_list_k_group_t[0],
       list_fit_power = [
-        np.array(vel_fit_power) / np.sum(vel_power)
-        for vel_fit_power, vel_power in zip(
-          spectra_obj.vel_list_power_group_t[vel_index_start : vel_index_end],
-          list_vel_power
+        np.array(kin_fit_power) / np.sum(kin_power)
+        for kin_fit_power, kin_power in zip(
+          spectra_obj.kin_list_power_group_t[kin_index_start : kin_index_end],
+          list_kin_power
         )
       ],
       list_scale   = list_k_nu,
@@ -1496,22 +1496,22 @@ class PlotSpectraAndScalesResiduals():
       axs, spectra_obj, list_colors
     ):
     ## check that a time range has been defined to collect statistics about
-    sim_times = getCommonElements(spectra_obj.vel_sim_times, spectra_obj.mag_sim_times)
-    bool_vel_fit = (spectra_obj.vel_fit_start_t is not None) and (spectra_obj.vel_fit_end_t is not None)
+    sim_times = getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+    bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
     bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
-    if not(bool_vel_fit) or not(bool_mag_fit):
+    if not(bool_kin_fit) or not(bool_mag_fit):
       raise Exception("Fit range has not been defined.")
-    ## find indices of velocity fit time range
-    vel_index_start = getIndexClosestValue(sim_times, spectra_obj.vel_fit_start_t)
-    vel_index_end   = getIndexClosestValue(sim_times, spectra_obj.vel_fit_end_t)
+    ## find indices of kinetic energy fit time range
+    kin_index_start = getIndexClosestValue(sim_times, spectra_obj.kin_fit_start_t)
+    kin_index_end   = getIndexClosestValue(sim_times, spectra_obj.kin_fit_end_t)
     ## find indices of magnetic fit time range
     mag_index_start = getIndexClosestValue(sim_times, spectra_obj.mag_fit_start_t)
     mag_index_end   = getIndexClosestValue(sim_times, spectra_obj.mag_fit_end_t)
     ## load spectra
-    list_vel_power = spectra_obj.vel_list_power_group_t[vel_index_start : vel_index_end]
+    list_kin_power = spectra_obj.kin_list_power_group_t[kin_index_start : kin_index_end]
     list_mag_power = spectra_obj.mag_list_power_group_t[mag_index_start : mag_index_end]
     ## load measured scales
-    list_k_nu  = cleanMeasuredScales(spectra_obj.k_nu_group_t[vel_index_start  : vel_index_end])
+    list_k_nu  = cleanMeasuredScales(spectra_obj.k_nu_group_t[kin_index_start  : kin_index_end])
     list_k_eta = cleanMeasuredScales(spectra_obj.k_eta_group_t[mag_index_start : mag_index_end])
     list_kaz, list_k_max = cleanMeasuredScales(
       list_times  = [
@@ -1520,25 +1520,25 @@ class PlotSpectraAndScalesResiduals():
       ],
       list_scales = spectra_obj.k_max_group_t[mag_index_start : mag_index_end]
     )
-    ## plot velocity spectra
+    ## plot kinetic energy spectra
     self.plotSpectra(
       ax_column = axs[:,0],
       color  = list_colors[0],
-      list_k = spectra_obj.vel_list_k_group_t[0],
+      list_k = spectra_obj.kin_list_k_group_t[0],
       list_power = [
-        np.array(vel_power) / np.sum(vel_power)
-        for vel_power in list_vel_power
+        np.array(kin_power) / np.sum(kin_power)
+        for kin_power in list_kin_power
       ],
-      list_fit_k = spectra_obj.vel_list_fit_k_group_t[0],
+      list_fit_k = spectra_obj.kin_list_fit_k_group_t[0],
       list_fit_power = [
-        np.array(vel_fit_power) / np.sum(vel_power)
-        for vel_fit_power, vel_power in zip(
-          spectra_obj.vel_list_fit_power_group_t[vel_index_start : vel_index_end],
-          list_vel_power
+        np.array(kin_fit_power) / np.sum(kin_power)
+        for kin_fit_power, kin_power in zip(
+          spectra_obj.kin_list_fit_power_group_t[kin_index_start : kin_index_end],
+          list_kin_power
         )
       ],
-      list_N = spectra_obj.vel_list_fit_k_range,
-      list_error = spectra_obj.vel_list_fit_2norm_group_t[(vel_index_start + vel_index_end) // 2]
+      list_N = spectra_obj.kin_list_fit_k_range,
+      list_error = spectra_obj.kin_list_fit_2norm_group_t[(kin_index_start + kin_index_end) // 2]
     )
     ## plot magnetic spectra
     self.plotSpectra(
@@ -1557,18 +1557,18 @@ class PlotSpectraAndScalesResiduals():
           list_mag_power
         )
       ],
-      list_N = spectra_obj.vel_list_fit_k_range,
+      list_N = spectra_obj.kin_list_fit_k_range,
       list_error = spectra_obj.mag_list_fit_2norm_group_t[(mag_index_start + mag_index_end) // 2]
     )
     ## plot measured k_nu
     self.plotScale(
       axs[0,0], list_colors[0], r"$k_\nu$",
-      list_fit_k = spectra_obj.vel_list_fit_k_group_t[0],
+      list_fit_k = spectra_obj.kin_list_fit_k_group_t[0],
       list_fit_power = [
-        np.array(vel_fit_power) / np.sum(vel_power)
-        for vel_fit_power, vel_power in zip(
-          spectra_obj.vel_list_fit_power_group_t[vel_index_start : vel_index_end],
-          list_vel_power
+        np.array(kin_fit_power) / np.sum(kin_power)
+        for kin_fit_power, kin_power in zip(
+          spectra_obj.kin_list_fit_power_group_t[kin_index_start : kin_index_end],
+          list_kin_power
         )
       ],
       list_scale   = list_k_nu,
@@ -1796,19 +1796,19 @@ class PlotScaleConvergence():
         SPECTRA_NAME
       )
       ## check that a time range has been defined to collect statistics about
-      sim_times = getCommonElements(spectra_obj.vel_sim_times, spectra_obj.mag_sim_times)
-      bool_vel_fit = (spectra_obj.vel_fit_start_t is not None) and (spectra_obj.vel_fit_end_t is not None)
+      sim_times = getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+      bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
       bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
-      if not(bool_vel_fit) or not(bool_mag_fit):
+      if not(bool_kin_fit) or not(bool_mag_fit):
         raise Exception("Fit range has not been defined.")
-      ## find indices of velocity fit time range
-      vel_index_start = getIndexClosestValue(sim_times, spectra_obj.vel_fit_start_t)
-      vel_index_end   = getIndexClosestValue(sim_times, spectra_obj.vel_fit_end_t)
+      ## find indices of kinetic energy fit time range
+      kin_index_start = getIndexClosestValue(sim_times, spectra_obj.kin_fit_start_t)
+      kin_index_end   = getIndexClosestValue(sim_times, spectra_obj.kin_fit_end_t)
       ## find indices of magnetic fit time range
       mag_index_start = getIndexClosestValue(sim_times, spectra_obj.mag_fit_start_t)
       mag_index_end   = getIndexClosestValue(sim_times, spectra_obj.mag_fit_end_t)
       ## load and subset distribution of measured scales
-      list_k_nu  = cleanMeasuredScales(spectra_obj.k_nu_group_t[vel_index_start  : vel_index_end])
+      list_k_nu  = cleanMeasuredScales(spectra_obj.k_nu_group_t[kin_index_start  : kin_index_end])
       list_k_eta = cleanMeasuredScales(spectra_obj.k_eta_group_t[mag_index_start : mag_index_end])
       list_k_max = cleanMeasuredScales(spectra_obj.k_max_group_t[mag_index_start : mag_index_end])
       list_k_nu_group_res.append(  list_k_nu )
@@ -1913,7 +1913,7 @@ def main():
   list_k_eta_converged_group = []
   list_k_max_converged_group = []
   ## kazantsev exponent
-  list_alpha_vel_group = []
+  list_alpha_kin_group = []
   list_alpha_mag_group = []
   ## list of simlation markers
   list_markers = []
@@ -1923,7 +1923,7 @@ def main():
     list_Re, list_Rm, list_Pm,
     list_relation_k_nu, list_relation_k_eta,
     list_k_nu_converged_group, list_k_eta_converged_group, list_k_max_converged_group,
-    list_alpha_vel_group, list_alpha_mag_group,
+    list_alpha_kin_group, list_alpha_mag_group,
     list_markers
   )
   ## define simulation points color
@@ -2008,7 +2008,7 @@ def main():
   #     str_k_nu  = funcPrintForm(list_k_nu_converged_group[sim_index])
   #     str_k_eta = funcPrintForm(list_k_eta_converged_group[sim_index])
   #     str_k_max = funcPrintForm(list_k_max_converged_group[sim_index])
-  #     str_alpha_vel = funcPrintForm(list_alpha_vel_group[sim_index])
+  #     str_alpha_vel = funcPrintForm(list_alpha_kin_group[sim_index])
   #     str_alpha_mag = funcPrintForm(list_alpha_mag_group[sim_index])
   #     print("& " + str_k_nu + " & " + str_k_eta  + " & " + str_k_max)
   #     print("\t" + " & " + str_alpha_vel + " & " + str_alpha_mag + " \\\\")

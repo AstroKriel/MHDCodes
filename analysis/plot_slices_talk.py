@@ -62,7 +62,7 @@ def funcPlotSlices(filepath_data, filepath_plot):
   ## LOAD RE 500 DATA
   ## ################
   print("Loading velocity slices...")
-  list_vel_field_0, _ = loadListFLASHFieldSlice(
+  list_kin_field_0, _ = loadListFLASHFieldSlice(
     filepath_0,
     str_field = "vel",
     num_blocks = num_blocks,
@@ -82,7 +82,7 @@ def funcPlotSlices(filepath_data, filepath_plot):
   ## LOAD RM 3000 DATA
   ## #################
   print("Loading velocity slices...")
-  list_vel_field_1, _ = loadListFLASHFieldSlice(
+  list_kin_field_1, _ = loadListFLASHFieldSlice(
     filepath_1,
     str_field = "vel",
     num_blocks = num_blocks,
@@ -102,7 +102,7 @@ def funcPlotSlices(filepath_data, filepath_plot):
   ## GET COLORBAR LIMITS
   ## ###################
   ## get colorbar limits
-  vel_lims = [ 10**(-2), 2 ]
+  kin_lims = [ 10**(-2), 2 ]
   mag_lims = [ 10**(-5), 10 ]
   ## #################
   ## PLOT FIELD SLICES
@@ -112,20 +112,20 @@ def funcPlotSlices(filepath_data, filepath_plot):
   fig, axs = plt.subplots(2, 2, figsize=(10, 10), sharex=True, sharey=True)
   fig.subplots_adjust(hspace=0.025, wspace=0.035)
   ## loop over each slice
-  for _, time_index in loopListWithUpdates(list_vel_field_0):
+  for _, time_index in loopListWithUpdates(list_kin_field_0):
     ## Re 500 velocity field
     im_obj_0 = axs[0,0].imshow(
-      list_vel_field_0[time_index],
+      list_kin_field_0[time_index],
       extent = [-1,1,-1,1],
       cmap = plt.get_cmap("cmr.freeze"),
-      norm = mpl.colors.LogNorm(vmin=vel_lims[0], vmax=vel_lims[1])
+      norm = mpl.colors.LogNorm(vmin=kin_lims[0], vmax=kin_lims[1])
     )
     ## Rm 3000 velocity field
     im_obj_0 = axs[1,0].imshow(
-      list_vel_field_1[time_index],
+      list_kin_field_1[time_index],
       extent = [-1,1,-1,1],
       cmap = plt.get_cmap("cmr.freeze"),
-      norm = mpl.colors.LogNorm(vmin=vel_lims[0], vmax=vel_lims[1])
+      norm = mpl.colors.LogNorm(vmin=kin_lims[0], vmax=kin_lims[1])
     )
     ## Re 500 magnetic field
     im_obj_1 = axs[0,1].imshow(

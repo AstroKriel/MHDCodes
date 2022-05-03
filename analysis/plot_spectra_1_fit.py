@@ -41,7 +41,7 @@ plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 SPECTRA_NAME = "spectra_obj_full.pkl"
-BOOL_VEL_FIXED_MODEL = False
+BOOL_KIN_FIXED_MODEL = False
 BOOL_MAG_FIXED_MODEL = False
 
 
@@ -54,8 +54,8 @@ def funcPrintSimInfo(
     sim_suite,
     sim_name,
     res_group_sim,
-    vel_start_fit,
-    vel_end_fit,
+    kin_start_fit,
+    kin_end_fit,
     mag_start_fit,
     mag_end_fit,
     Re,
@@ -65,7 +65,7 @@ def funcPrintSimInfo(
   print("\t> sim suite: {:}".format(sim_suite))
   print("\t> sim name: {:}".format(sim_name))
   print("\t> sim resolution: {:}".format(res_group_sim))
-  print("\t> fit domain (vel): [{:}, {:}]".format(vel_start_fit, vel_end_fit))
+  print("\t> fit domain (vel): [{:}, {:}]".format(kin_start_fit, kin_end_fit))
   print("\t> fit domain (mag): [{:}, {:}]".format(mag_start_fit, mag_end_fit))
   print("\t> Re: {:}, Rm: {:}, Pm: {:}".format(Re, Rm, Rm/Re))
 
@@ -80,13 +80,15 @@ def funcCreateSpectraObj(
     res_group_sim,
     Re_group_sim,
     Rm_group_sim,
-    vel_fit_start_t_group_sim,
+    kin_fit_start_t_group_sim,
     mag_fit_start_t_group_sim,
-    vel_fit_end_t_group_sim,
+    kin_fit_end_t_group_sim,
     mag_fit_end_t_group_sim,
     ## optional fit parameters
     bool_fit_sub_Ek_range_group_sim = False,
     log_Ek_range_group_sim = 6,
+    bool_kin_fixed = False,
+    bool_mag_fixed = False,
     ## hide terminal output
     bool_hide_updates = True
   ):
@@ -98,9 +100,9 @@ def funcCreateSpectraObj(
     print("Looking at: " + filepath_data)
     ## load spectra data
     print("\tLoading spectra...")
-    list_vel_k_group, list_vel_power_group, list_vel_sim_times = LoadFlashData.loadListSpectra(
+    list_kin_k_group, list_kin_power_group, list_kin_sim_times = LoadFlashData.loadListSpectra(
       filepath_data,
-      str_spectra_type  = "vel",
+      str_spectra_type  = "vel", # kinetic energy spectra \sim |velocity|
       bool_hide_updates = bool_hide_updates
     )
     list_mag_k_group, list_mag_power_group, list_mag_sim_times = LoadFlashData.loadListSpectra(
@@ -108,22 +110,22 @@ def funcCreateSpectraObj(
       str_spectra_type  = "mag",
       bool_hide_updates = bool_hide_updates
     )
-    ## fit velocity and magnetic spectra
+    ## fit kinetic energy and magnetic spectra
     print("\tFitting spectra...")
-    vel_fit = FitMHDScales.FitVelSpectra(
-      list_vel_k_group, list_vel_power_group, list_vel_sim_times,
-      bool_fit_fixed_model  = BOOL_VEL_FIXED_MODEL,
+    kin_fit = FitMHDScales.FitVelSpectra(
+      list_kin_k_group, list_kin_power_group, list_kin_sim_times,
       bool_fit_sub_Ek_range = bool_fit_sub_Ek_range_group_sim[sim_index],
       log_Ek_range          = log_Ek_range_group_sim[sim_index],
+      bool_fit_fixed_model  = bool_kin_fixed,
       bool_hide_updates     = bool_hide_updates
     )
     mag_fit = FitMHDScales.FitMagSpectra(
       list_mag_k_group, list_mag_power_group, list_mag_sim_times,
-      bool_fit_fixed_model = BOOL_MAG_FIXED_MODEL,
+      bool_fit_fixed_model = bool_mag_fixed,
       bool_hide_updates    = bool_hide_updates
     )
     ## store spectra object variables
-    vel_args = vel_fit.getFitArgs()
+    kin_args = kin_fit.getFitArgs()
     mag_args = mag_fit.getFitArgs()
     sim_args = {
       "sim_suite":suite_name_group_sim[sim_index],
@@ -131,13 +133,13 @@ def funcCreateSpectraObj(
       "sim_res":res_group_sim[sim_index],
       "Re":Re_group_sim[sim_index],
       "Rm":Rm_group_sim[sim_index],
-      "vel_fit_start_t":vel_fit_start_t_group_sim[sim_index],
+      "kin_fit_start_t":kin_fit_start_t_group_sim[sim_index],
       "mag_fit_start_t":mag_fit_start_t_group_sim[sim_index],
-      "vel_fit_end_t":vel_fit_end_t_group_sim[sim_index],
+      "kin_fit_end_t":kin_fit_end_t_group_sim[sim_index],
       "mag_fit_end_t":mag_fit_end_t_group_sim[sim_index]
     }
     ## create and save spectra object
-    spectra_obj = FitMHDScales.SpectraFit(**sim_args, **vel_args, **mag_args)
+    spectra_obj = FitMHDScales.SpectraFit(**sim_args, **kin_args, **mag_args)
     WWObjs.savePickleObject(spectra_obj, filepath_data, SPECTRA_NAME)
     ## append object
     list_spectra_objs.append(spectra_obj)
@@ -154,9 +156,9 @@ def funcLoadSpectraObj(
     res_group_sim,
     Re_group_sim,
     Rm_group_sim,
-    vel_fit_start_t_group_sim,
+    kin_fit_start_t_group_sim,
+    kin_fit_end_t_group_sim,
     mag_fit_start_t_group_sim,
-    vel_fit_end_t_group_sim,
     mag_fit_end_t_group_sim,
     ## show object attributes
     bool_print_obj_attrs
@@ -181,9 +183,9 @@ def funcLoadSpectraObj(
     bool_updated_obj |= WWObjs.updateAttr(spectra_obj, "sim_res",         res_group_sim[sim_index])
     bool_updated_obj |= WWObjs.updateAttr(spectra_obj, "Re",              Re_group_sim[sim_index])
     bool_updated_obj |= WWObjs.updateAttr(spectra_obj, "Rm",              Rm_group_sim[sim_index])
-    bool_updated_obj |= WWObjs.updateAttr(spectra_obj, "vel_fit_start_t", vel_fit_start_t_group_sim[sim_index])
+    bool_updated_obj |= WWObjs.updateAttr(spectra_obj, "kin_fit_start_t", kin_fit_start_t_group_sim[sim_index])
     bool_updated_obj |= WWObjs.updateAttr(spectra_obj, "mag_fit_start_t", mag_fit_start_t_group_sim[sim_index])
-    bool_updated_obj |= WWObjs.updateAttr(spectra_obj, "vel_fit_end_t",   vel_fit_end_t_group_sim[sim_index])
+    bool_updated_obj |= WWObjs.updateAttr(spectra_obj, "kin_fit_end_t",   kin_fit_end_t_group_sim[sim_index])
     bool_updated_obj |= WWObjs.updateAttr(spectra_obj, "mag_fit_end_t",   mag_fit_end_t_group_sim[sim_index])
     new_obj = vars(spectra_obj)
     ## if at least one of the attributes have been updated, then overwrite the spectra object
@@ -252,7 +254,7 @@ def funcPlotSpectra(
           spectra_obj.sim_suite
       ))
       print("\t(Total of '{:d}' spectra fits. Plotting every '{:d}' fits from fit '{:d}')".format(
-          len(WWLists.getCommonElements(spectra_obj.vel_sim_times, spectra_obj.mag_sim_times)),
+          len(WWLists.getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)),
           plot_spectra_every,
           plot_spectra_from
         )
@@ -330,12 +332,14 @@ def main():
   args_opt.add_argument("-plot_spectra_every", type=int, default=1, required=False) # step in index when plotting spectra
   args_opt.add_argument("-check_fit_times",    type=float, **optional_list_args) # times to check spectra fits
   ## fitting parameters
-  args_opt.add_argument("-vel_start_fits",   type=float, **optional_list_args) # (vel) start fitting
+  args_opt.add_argument("-kin_start_fits",   type=float, **optional_list_args) # (vel) start fitting
   args_opt.add_argument("-mag_start_fits",   type=float, **optional_list_args) # (mag) start fitting
-  args_opt.add_argument("-vel_end_fits",     type=float, **optional_list_args) # (vel) stop fitting
+  args_opt.add_argument("-kin_end_fits",     type=float, **optional_list_args) # (vel) stop fitting
   args_opt.add_argument("-mag_end_fits",     type=float, **optional_list_args) # (mag) stop fitting
-  args_opt.add_argument("-fit_sub_Ek_range", type=WWArgparse.str2bool, default=[False], required=False, nargs="+") # fit to a subset of the kinetic spectrum
-  args_opt.add_argument("-log_Ek_range",     type=float,    **optional_list_args) # the width of the fitting range
+  args_opt.add_argument("-kin_fixed",        type=float, **optional_list_args) # (kin) fit the fixed model
+  args_opt.add_argument("-mag_fixed",        type=float, **optional_list_args) # (mag) fit the fixed model
+  args_opt.add_argument("-fit_sub_Ek_range", type=WWArgparse.str2bool, default=[False], required=False, nargs="+") # fit to a subset of the kinetic energy spectrum
+  args_opt.add_argument("-log_Ek_range",     type=float,    **optional_list_args) # the height of the fitting range
   ## simulation information
   args_opt.add_argument("-sim_suites", type=str,   **optional_list_args) # simulation suites
   args_opt.add_argument("-sim_res",    type=int,   **optional_list_args) # simulation resolutions
@@ -354,32 +358,34 @@ def main():
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
   ## (boolean) workflow parameters
-  bool_hide_updates    = args["hide_updates"]
-  bool_print_obj_attrs = args["print_obj_attrs"]
-  bool_anlyse          = args["analyse"]
-  bool_plot_spectra    = args["plot_spectra"]
-  bool_check_fits      = args["check_fits"]
+  bool_hide_updates               = args["hide_updates"]
+  bool_print_obj_attrs            = args["print_obj_attrs"]
+  bool_anlyse                     = args["analyse"]
+  bool_plot_spectra               = args["plot_spectra"]
+  bool_check_fits                 = args["check_fits"]
   ## fitting & simulation parameters
-  vel_fit_start_t_group_sim = args["vel_start_fits"]
-  mag_fit_start_t_group_sim = args["mag_start_fits"]
-  vel_fit_end_t_group_sim   = args["vel_end_fits"]
-  mag_fit_end_t_group_sim   = args["mag_end_fits"]
+  kin_fit_start_t_group_sim       = args["kin_start_fits"]
+  mag_fit_start_t_group_sim       = args["mag_start_fits"]
+  kin_fit_end_t_group_sim         = args["kin_end_fits"]
+  mag_fit_end_t_group_sim         = args["mag_end_fits"]
   bool_fit_sub_Ek_range_group_sim = args["fit_sub_Ek_range"]
   log_Ek_range_group_sim          = args["log_Ek_range"]
   ## plotting parameters
-  folder_vis           = args["vis_folder"]
-  plot_spectra_from    = args["plot_spectra_from"]
-  plot_spectra_every   = args["plot_spectra_every"]
-  list_check_fit_times = args["check_fit_times"]
+  folder_vis                      = args["vis_folder"]
+  plot_spectra_from               = args["plot_spectra_from"]
+  plot_spectra_every              = args["plot_spectra_every"]
+  list_check_fit_times            = args["check_fit_times"]
   ## simulation information
-  filepath_base        = args["base_path"]
-  folder_sub           = args["sub_folder"]
-  suite_name_group_sim = args["sim_suites"]
-  label_group_sim      = args["sim_folders"]
-  res_group_sim        = args["sim_res"]
-  Re_group_sim         = args["Re"]
-  Rm_group_sim         = args["Rm"]
-  Pm_group_sim         = args["Pm"]
+  filepath_base                   = args["base_path"]
+  folder_sub                      = args["sub_folder"]
+  suite_name_group_sim            = args["sim_suites"]
+  label_group_sim                 = args["sim_folders"]
+  res_group_sim                   = args["sim_res"]
+  Re_group_sim                    = args["Re"]
+  Rm_group_sim                    = args["Rm"]
+  Pm_group_sim                    = args["Pm"]
+  bool_kin_fixed                  = args["kin_fixed"]
+  bool_mag_fixed                  = args["mag_fixed"]
 
   ## ######################
   ## INITIALISING VARIABLES
@@ -401,9 +407,9 @@ def main():
   WWLists.extendInputList(suite_name_group_sim, "suite_name_group_sim", num_sims)
   WWLists.extendInputList(res_group_sim,        "res_group_sim",        num_sims)
   ## if a time-range isn"t specified for one of the simulations, then use the default time-range
-  WWLists.extendInputList(vel_fit_start_t_group_sim, "vel_fit_start_t_group_sim", num_sims)
+  WWLists.extendInputList(kin_fit_start_t_group_sim, "kin_fit_start_t_group_sim", num_sims)
   WWLists.extendInputList(mag_fit_start_t_group_sim, "mag_fit_start_t_group_sim", num_sims)
-  WWLists.extendInputList(vel_fit_end_t_group_sim,   "vel_fit_end_t_group_sim",   num_sims)
+  WWLists.extendInputList(kin_fit_end_t_group_sim,   "kin_fit_end_t_group_sim",   num_sims)
   WWLists.extendInputList(mag_fit_end_t_group_sim,   "mag_fit_end_t_group_sim",   num_sims)
   ## check if user wants to fit to a subset of the kinetic energy spectrum
   WWLists.extendInputList(bool_fit_sub_Ek_range_group_sim, "bool_fit_sub_Ek_range_group_sim", num_sims)
@@ -463,17 +469,17 @@ def main():
     print("Fitting '{:d}' spectra simulation(s):".format(len(list_data_filepaths)))
     for sim_index in range(len(list_data_filepaths)):
       funcPrintSimInfo(
-        sim_index     = sim_index,
-        sim_directory = list_data_filepaths[sim_index],
-        sim_suite     = suite_name_group_sim[sim_index],
-        sim_name      = label_group_sim[sim_index],
-        res_group_sim = res_group_sim[sim_index],
-        vel_start_fit = vel_fit_start_t_group_sim[sim_index],
-        vel_end_fit   = vel_fit_end_t_group_sim[sim_index],
-        mag_start_fit = mag_fit_start_t_group_sim[sim_index],
-        mag_end_fit   = mag_fit_end_t_group_sim[sim_index],
-        Re            = Re_group_sim[sim_index],
-        Rm            = Rm_group_sim[sim_index]
+        sim_index      = sim_index,
+        sim_directory  = list_data_filepaths[sim_index],
+        sim_suite      = suite_name_group_sim[sim_index],
+        sim_name       = label_group_sim[sim_index],
+        res_group_sim  = res_group_sim[sim_index],
+        kin_start_fit  = kin_fit_start_t_group_sim[sim_index],
+        kin_end_fit    = kin_fit_end_t_group_sim[sim_index],
+        mag_start_fit  = mag_fit_start_t_group_sim[sim_index],
+        mag_end_fit    = mag_fit_end_t_group_sim[sim_index],
+        Re             = Re_group_sim[sim_index],
+        Rm             = Rm_group_sim[sim_index]
       )
     print(" ")
   ## otherwise if reading in spectra objects
@@ -504,44 +510,46 @@ def main():
   if bool_anlyse:
     funcCreateSpectraObj(
       ## directory to spectra
-      list_data_filepaths = list_data_filepaths,
+      list_data_filepaths             = list_data_filepaths,
       ## output
-      list_spectra_objs = list_spectra_objs,
+      list_spectra_objs               = list_spectra_objs,
       ## input
-      suite_name_group_sim = suite_name_group_sim,
-      label_group_sim = label_group_sim,
-      res_group_sim = res_group_sim,
-      Re_group_sim  = Re_group_sim,
-      Rm_group_sim  = Rm_group_sim,
-      vel_fit_start_t_group_sim = vel_fit_start_t_group_sim,
-      mag_fit_start_t_group_sim = mag_fit_start_t_group_sim,
-      vel_fit_end_t_group_sim   = vel_fit_end_t_group_sim,
-      mag_fit_end_t_group_sim   = mag_fit_end_t_group_sim,
+      suite_name_group_sim            = suite_name_group_sim,
+      label_group_sim                 = label_group_sim,
+      res_group_sim                   = res_group_sim,
+      Re_group_sim                    = Re_group_sim,
+      Rm_group_sim                    = Rm_group_sim,
+      kin_fit_start_t_group_sim       = kin_fit_start_t_group_sim,
+      kin_fit_end_t_group_sim         = kin_fit_end_t_group_sim,
+      mag_fit_start_t_group_sim       = mag_fit_start_t_group_sim,
+      mag_fit_end_t_group_sim         = mag_fit_end_t_group_sim,
       ## optional fit parameters
       bool_fit_sub_Ek_range_group_sim = bool_fit_sub_Ek_range_group_sim,
-      log_Ek_range_group_sim = log_Ek_range_group_sim,
+      log_Ek_range_group_sim          = log_Ek_range_group_sim,
+      bool_kin_fixed                  = bool_kin_fixed,
+      bool_mag_fixed                  = bool_mag_fixed,
       ## hide terminal output
-      bool_hide_updates = bool_hide_updates
+      bool_hide_updates               = bool_hide_updates
     )
   ## otherwise read in previously fitted spectra
   else:
     funcLoadSpectraObj(
       ## directory to spectra
-      list_data_filepaths,
-      ## output
-      list_spectra_objs,
-      ## input
-      suite_name_group_sim,
-      label_group_sim,
-      res_group_sim,
-      Re_group_sim,
-      Rm_group_sim,
-      vel_fit_start_t_group_sim,
-      mag_fit_start_t_group_sim,
-      vel_fit_end_t_group_sim,
-      mag_fit_end_t_group_sim,
+      list_data_filepaths       = list_data_filepaths,
+      ## output: list of loaded spectra
+      list_spectra_objs         = list_spectra_objs,
+      ## input: list of spectra variables
+      suite_name_group_sim      = suite_name_group_sim,
+      label_group_sim           = label_group_sim,
+      res_group_sim             = res_group_sim,
+      Re_group_sim              = Re_group_sim,
+      Rm_group_sim              = Rm_group_sim,
+      kin_fit_start_t_group_sim = kin_fit_start_t_group_sim,
+      kin_fit_end_t_group_sim   = kin_fit_end_t_group_sim,
+      mag_fit_start_t_group_sim = mag_fit_start_t_group_sim,
+      mag_fit_end_t_group_sim   = mag_fit_end_t_group_sim,
       ## show object attributes
-      bool_print_obj_attrs
+      bool_print_obj_attrs      = bool_print_obj_attrs
     )
 
   ## #############################
@@ -550,11 +558,11 @@ def main():
   if bool_check_fits:
     funcCheckFits(
       ## list of spectra objects
-      list_spectra_objs,
+      list_spectra_objs    = list_spectra_objs,
       ## plotting variables
-      filepath_plot,
-      filepath_check,
-      list_check_fit_times
+      filepath_plot        = filepath_plot,
+      filepath_check       = filepath_check,
+      list_check_fit_times = list_check_fit_times
     )
 
   ## ######################
@@ -563,15 +571,15 @@ def main():
   if bool_plot_spectra:
     funcPlotSpectra(
       ## list of spectra objects
-      list_spectra_objs,
+      list_spectra_objs   = list_spectra_objs,
       ## plotting variables
-      filepath_plot_spect, # save frames
-      filepath_plot,       # save animation
-      plot_spectra_every,
-      plot_spectra_from,
+      filepath_plot_spect = filepath_plot_spect,
+      filepath_plot       = filepath_plot,
+      plot_spectra_every  = plot_spectra_every,
+      plot_spectra_from   = plot_spectra_from,
       ## workflow inputs
-      bool_plot_spectra,
-      bool_hide_updates
+      bool_plot_spectra   = bool_plot_spectra,
+      bool_hide_updates   = bool_hide_updates
     )
 
 

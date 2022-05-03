@@ -41,7 +41,7 @@ def funcPlotSlices(filepath_data_base, filepath_plot_base):
   ## ################
   ## LOAD RE 500 DATA
   ## ################
-  vel_field_0 = loadFLASHFieldSlice(
+  kin_field_0 = loadFLASHFieldSlice(
     filepath_data_0,
     str_field = "vel",
     num_blocks = num_blocks,
@@ -58,7 +58,7 @@ def funcPlotSlices(filepath_data_base, filepath_plot_base):
   ## #################
   ## LOAD RM 3000 DATA
   ## #################
-  vel_field_1 = loadFLASHFieldSlice(
+  kin_field_1 = loadFLASHFieldSlice(
     filepath_data_1,
     str_field = "vel",
     num_blocks = num_blocks,
@@ -107,14 +107,14 @@ def funcPlotSlices(filepath_data_base, filepath_plot_base):
   )
   ## first dataset velocity field
   im_obj_0 = axs[0,0].imshow(
-    vel_field_0,
+    kin_field_0,
     extent = [-1,1,-1,1],
     cmap = plt.get_cmap("cmr.freeze"),
     norm = mpl.colors.LogNorm(vmin=cbar_lims_vel[0], vmax=cbar_lims_vel[1])
   )
   ## second dataset velocity field
   im_obj_0 = axs[0,1].imshow(
-    vel_field_1,
+    kin_field_1,
     extent = [-1,1,-1,1],
     cmap = plt.get_cmap("cmr.freeze"),
     norm = mpl.colors.LogNorm(vmin=cbar_lims_vel[0], vmax=cbar_lims_vel[1])
