@@ -65,14 +65,14 @@ sim_names     = args["sim_names"]   # name of figures
 ##################################################################
 ## ---------------------------- START CODE
 if len(sim_names) < len(folders_sims):
-    raise Exception("You need to give a label to every simulation.")
+  raise Exception("You need to give a label to every simulation.")
 ## if a time-range isn't specified for one of the simulations, then use the default time-range
 if len(start_time) < len(folders_sims): start_time.extend( [1] * (len(folders_sims) - len(start_time)) )
 if len(end_time) < len(folders_sims): end_time.extend( [np.inf] * (len(folders_sims) - len(end_time)) )
 ## folders where spectra data is
 filepaths_data = []
 for folder_sim in folders_sims:
-    filepaths_data.append(createFilepath([filepath_base, folder_sim, folders_data]))
+  filepaths_data.append(createFilepath([filepath_base, folder_sim, folders_data]))
 ## folder where visualisations will be saved
 filepath_vis = createFilepath([filepath_base, folder_vis])
 createFolder(filepath_vis)
@@ -83,47 +83,47 @@ createFolder(filepath_frames)
 printInfo("Base filepath:", filepath_base)
 printInfo("Figure folder:", filepath_vis)
 for sim_index in range(len(filepaths_data)):
-    printInfo("\t> Sim name:", sim_names[sim_index])
-    printInfo("\t> Sim directory:", filepaths_data[sim_index])
-    print(" ")
+  printInfo("\t> Sim name:", sim_names[sim_index])
+  printInfo("\t> Sim directory:", filepaths_data[sim_index])
+  print(" ")
 
 
 ##################################################################
 ## RUNNING CODE
 ##################################################################
 for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
-    ## find min and max colorbar limits, save field slices and simulation times
-    print("Loading data...")
-    col_min_val, col_max_val, list_flash_fields, list_sim_times = loadFLASHFieldDataList(
-        filepath_data,
-        start_time[sim_index],
-        end_time[sim_index],
-        str_field  = "mag",
-        num_blocks = num_blocks,
-        num_procs  = num_procs,
-        plots_per_eddy   = plots_per_eddy,
-        plot_every_index = plot_every
+  ## find min and max colorbar limits, save field slices and simulation times
+  print("Loading data...")
+  col_min_val, col_max_val, list_flash_fields, list_sim_times = loadFLASHFieldDataList(
+    filepath_data,
+    start_time[sim_index],
+    end_time[sim_index],
+    str_field  = "mag",
+    num_blocks = num_blocks,
+    num_procs  = num_procs,
+    plots_per_eddy   = plots_per_eddy,
+    plot_every_index = plot_every
+  )
+  ## plot simulation frames
+  print("Plotting data slices...")
+  for _, time_index in loopListWithUpdates(list_sim_times):
+    plot2DField(
+      field = list_flash_fields[time_index],
+      filepath_fig = "{}/{}_{}.png".format(
+        filepath_frames, sim_names[sim_index], str(int(time_index)).zfill(4)
+      ),
+      cmap_str   = "cmr.ocean",
+      cbar_label = r"$\log_{10}(B^2)$",
+      cbar_lims  = [col_min_val, col_max_val]
     )
-    ## plot simulation frames
-    print("Plotting data slices...")
-    for _, time_index in loopListWithUpdates(list_sim_times):
-        plot2DField(
-            field = list_flash_fields[time_index],
-            filepath_fig = "{}/{}_{}.png".format(
-                filepath_frames, sim_names[sim_index], str(int(time_index)).zfill(4)
-            ),
-            cmap_str   = "cmr.ocean",
-            cbar_label = r"$\log_{10}(B^2)$",
-            cbar_lims  = [col_min_val, col_max_val]
-        )
-    # ## animate frames
-    # if len(list_sim_times) > 3:
-    #     aniEvolution(
-    #         filepath_frames,
-    #         filepath_vis,
-    #         createName([ sim_names[sim_index], "slice=%*.png" ]),
-    #         createName([ sim_names[sim_index], "ani_slice.mp4" ])
-    #     )
+  # ## animate frames
+  # if len(list_sim_times) > 3:
+  #     aniEvolution(
+  #         filepath_frames,
+  #         filepath_vis,
+  #         createName([ sim_names[sim_index], "slice=%*.png" ]),
+  #         createName([ sim_names[sim_index], "ani_slice.mp4" ])
+  #     )
 
 
 ## END OF PROGRAM

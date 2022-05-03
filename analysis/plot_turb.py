@@ -13,6 +13,7 @@ from scipy.interpolate import make_interp_spline
 from scipy.optimize import curve_fit
 
 ## load new user defined modules
+from ThePlottingModule import TheMatplotlibStyler
 from OldModules.the_useful_library import *
 from OldModules.the_fitting_library import *
 from OldModules.the_plotting_library import *
@@ -25,7 +26,7 @@ os.system("clear") # clear terminal window
 plt.switch_backend('agg') # use a non-interactive plotting backend
 
 
-bool_new_data = False
+bool_new_data = True
 ## ###############################################################
 ## FUNCTIONS
 ## ###############################################################

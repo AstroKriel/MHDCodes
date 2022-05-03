@@ -66,8 +66,8 @@ sim_names     = args["sim_names"]
 ## PREPARE WORKSPACE
 #################################################################
 if not(bool_hide_updates):
-    os.system("clear") # clear terminal window
-    plt.close("all")   # close all pre-existing plots
+  os.system("clear") # clear terminal window
+  plt.close("all")   # close all pre-existing plots
 
 
 ##################################################################
@@ -75,11 +75,11 @@ if not(bool_hide_updates):
 ##################################################################
 ## check there are enough simulation names defined
 if len(sim_names) < len(folders_sims):
-    raise Exception("You need to define a figure name for each simulation.")
+  raise Exception("You need to define a figure name for each simulation.")
 ## folders where spectra data is
 filepaths_data = []
 for sim_index in range(len(folders_sims)):
-    filepaths_data.append( createFilePath([filepath_base, folders_sims[sim_index], folders_data]) )
+  filepaths_data.append( createFilePath([filepath_base, folders_sims[sim_index], folders_data]) )
 ## folder where visualisations will be saved
 filepath_vis = createFilePath([filepath_base, folder_vis])
 createFolder(filepath_vis)
@@ -90,8 +90,8 @@ createFolder(filepath_frames)
 printInfo("Base filepath:", filepath_base)
 printInfo("Figure folder:", filepath_vis)
 for sim_index in range(len(filepaths_data)):
-    printInfo("({:d}) sim directory:".format(sim_index), filepaths_data[sim_index], 23)
-    printInfo("\t> Sim name:", sim_names[sim_index])
+  printInfo("({:d}) sim directory:".format(sim_index), filepaths_data[sim_index], 23)
+  printInfo("\t> Sim name:", sim_names[sim_index])
 print(" ")
 
 
@@ -100,39 +100,39 @@ print(" ")
 ##################################################################
 ## loop over each simulation dataset
 for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
-    ## load spectra data
-    print("Loading data from:", filepath_data)
-    vel_k, vel_power, vel_sim_times = loadSpectra(
-        filepath_data,
-        str_spectra_type  = "vel",
-        plots_per_eddy    = plots_per_eddy,
-        bool_hide_updates = bool_hide_updates
-    )
-    mag_k, mag_power, mag_sim_times = loadSpectra(
-        filepath_data,
-        str_spectra_type  = "mag",
-        plots_per_eddy    = plots_per_eddy,
-        bool_hide_updates = bool_hide_updates
-    )
-    sim_times = getCommonElements(
-        vel_sim_times,
-        mag_sim_times
-    )
-    print(" ")
-    ## initialise plot object
-    plot_obj = PlotSpectra(
-        vel_k, vel_power, mag_k, mag_power,
-        sim_times, sim_names[sim_index],
-        filepath_frames, filepath_vis
-    )
-    ## plot spectra data
-    if bool_plot_spectra:
-        print("Plotting spectra...")
-        plot_obj.plotSpectra(bool_hide_updates)
-    ## animate spectra
-    if bool_animate_spectra:
-        plot_obj.aniSpectra()
-    print(" ")
+  ## load spectra data
+  print("Loading data from:", filepath_data)
+  vel_k, vel_power, vel_sim_times = loadSpectra(
+    filepath_data,
+    str_spectra_type  = "vel",
+    plots_per_eddy    = plots_per_eddy,
+    bool_hide_updates = bool_hide_updates
+  )
+  mag_k, mag_power, mag_sim_times = loadSpectra(
+    filepath_data,
+    str_spectra_type  = "mag",
+    plots_per_eddy    = plots_per_eddy,
+    bool_hide_updates = bool_hide_updates
+  )
+  sim_times = getCommonElements(
+    vel_sim_times,
+    mag_sim_times
+  )
+  print(" ")
+  ## initialise plot object
+  plot_obj = PlotSpectra(
+    vel_k, vel_power, mag_k, mag_power,
+    sim_times, sim_names[sim_index],
+    filepath_frames, filepath_vis
+  )
+  ## plot spectra data
+  if bool_plot_spectra:
+    print("Plotting spectra...")
+    plot_obj.plotSpectra(bool_hide_updates)
+  ## animate spectra
+  if bool_animate_spectra:
+    plot_obj.aniSpectra()
+  print(" ")
 
 
 ## END OF PROGRAM
