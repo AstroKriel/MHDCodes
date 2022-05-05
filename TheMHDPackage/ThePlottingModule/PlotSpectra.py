@@ -75,6 +75,8 @@ class PlotAveSpectra():
     self.ax.set_ylabel(r"$\mathcal{P}(k)$")
     self.ax.set_xscale("log")
     self.ax.set_yscale("log")
+    ## add log axis-ticks
+    PlotFuncs.addLogAxisTicks(ax, bool_major_ticks=True, max_num_major_ticks=5)
   def plotSpectra(
       self,
       list_power, list_fit_power,

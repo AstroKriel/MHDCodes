@@ -16,7 +16,7 @@ from scipy.interpolate import make_interp_spline
 from scipy.optimize import curve_fit
 
 ## load old user defined modules
-from ThePlottingModule import TheMatplotlibStyler
+from ThePlottingModule import TheMatplotlibStyler, PlotFuncs
 from TheUsefulModule import WWLists, WWFnF
 from TheFittingModule import UserModels
 from TheLoadingModule import LoadFlashData
@@ -192,17 +192,8 @@ class PlotEnergyRatio():
     ax.fill_betweenx(y, 1, 10,   facecolor="yellow", alpha=0.5, zorder=1)
     ax.fill_betweenx(y, 10, 30,  facecolor="green",  alpha=0.5, zorder=1)
     ax.fill_betweenx(y, 30, 100, facecolor="blue",   alpha=0.5, zorder=1)
-    ## add minor axis ticks
-    y_minor = mpl.ticker.LogLocator(
-      base=10.0,
-      subs=np.arange(2, 10) * 0.1,
-      numticks=100
-    )
-    ax.yaxis.set_minor_locator(y_minor)
-    ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
-    ## add major axis ticks
-    y_major = mpl.ticker.LogLocator(base=10.0, numticks=6)
-    ax.yaxis.set_major_locator(y_major)
+    ## add log axis-ticks
+    PlotFuncs.addLogAxisTicks(ax)
     ## save figure
     fig_filepath = WWFnF.createFilepath([self.filepath_figure, "fig_dynamo_regimes.pdf"])
     plt.savefig(fig_filepath)

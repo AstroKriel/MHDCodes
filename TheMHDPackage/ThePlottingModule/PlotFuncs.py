@@ -6,6 +6,7 @@
 ## ###############################################################
 import os
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import cmasher as cmr
@@ -180,6 +181,30 @@ class FixLogAxis():
 ## ###############################################################
 ## ADD TO PLOTS
 ## ###############################################################
+def addLogAxisTicks(
+    ax,
+    bool_minor_ticks    = False,
+    bool_major_ticks    = False,
+    max_num_minor_ticks = 100,
+    max_num_major_ticks = 6
+  ):
+  ## add minor axis ticks
+  if bool_minor_ticks:
+    y_minor = mpl.ticker.LogLocator(
+      base     = 10.0,
+      subs     = np.arange(2, 10) * 0.1,
+      numticks = max_num_minor_ticks
+    )
+    ax.yaxis.set_minor_locator(y_minor)
+    ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+  ## add major axis ticks
+  if bool_major_ticks:
+    y_major = mpl.ticker.LogLocator(
+      base     = 10.0,
+      numticks = max_num_major_ticks
+    )
+    ax.yaxis.set_major_locator(y_major)
+
 def plotLabelBox(
     fig, ax,
     list_fig_labels = [],
@@ -273,24 +298,26 @@ def insetPDF(
   return ax_inset
 
 def addLegend(
-    ax, artists, legend_labels,
-    # place_pos = 1,
-    colors   = [ "k" ],
-    loc      = "upper right",
-    bbox     = (1.0, 1.0),
-    ms       = 8,
-    lw       = 2,
-    fontsize = None,
-    title    = None,
-    ncol     = None,
-    tpad     = None,
-    rspacing = None,
-    cspacing = None,
-    labelcolor = None
+    ax, list_artists, list_legend_labels,
+    list_marker_colors = [ "k" ],
+    label_color = "black",
+    loc         = "upper right",
+    bbox        = (1.0, 1.0),
+    ms          = 8,
+    lw          = 2,
+    title       = None,
+    ncol        = 1,
+    bpad        = 0.8,
+    tpad        = 0.5,
+    rspacing    = 0.5,
+    cspacing    = 0.5,
+    fontsize    = 16,
   ):
+  def checkList(list_input, list_ref):
+    if len(list_input) < len(list_ref): list_input.extend( list_input[0] * len(list_ref) )
   ## check that the inputs are the correct length
-  if len(artists) < len(legend_labels): artists.extend( artists[0] * len(legend_labels) )
-  if len(colors)  < len(legend_labels): colors.extend( colors[0] * len(legend_labels) )
+  checkList(list_artists, list_legend_labels)
+  checkList(list_marker_colors, list_legend_labels)
   ## useful lists
   list_markers = [ ".", "o", "s", "D", "^", "v" ] # list of marker styles
   list_lines   = [
@@ -301,28 +328,28 @@ def addLegend(
     (0, (6, 3, 1, 3, 1, 3, 1, 3))
   ] # list of line styles
   ## iniialise list of artists for legend
-  legend_artists = []
+  list_legend_artists = []
   ## create legend artists
-  for artist, color in  zip(artists, colors):
+  for artist, marker_color in zip(list_artists, list_marker_colors):
     ## if the artist is a marker
     if artist in list_markers:
-      legend_artists.append( 
+      list_legend_artists.append( 
         Line2D(
           [0], [0],
-          marker = artist,
-          color  = color,
-          linewidth = 0,
+          marker          = artist,
+          color           = marker_color,
+          linewidth       = 0,
           markeredgecolor = "white",
-          markersize = ms
+          markersize      = ms
         )
       )
     ## if the artist is a line
     elif artist in list_lines:
-      legend_artists.append(
+      list_legend_artists.append(
         Line2D(
           [0], [0],
           linestyle = artist,
-          color     = color,
+          color     = marker_color,
           linewidth = lw
         )
       )
@@ -330,15 +357,18 @@ def addLegend(
     else: raise Exception("Artist '{}' is not valid.".format(artist))
   ## draw the legend
   legend = ax.legend(
-    legend_artists, legend_labels, title=title,
-    loc = loc,
+    list_legend_artists, list_legend_labels,
+    frameon=False, facecolor=None,
+    title          = title,
+    loc            = loc,
     bbox_to_anchor = bbox,
-    handletextpad  = 0.5 if tpad is None else tpad,
-    labelspacing   = 0.5 if rspacing is None else rspacing,
-    columnspacing  = 0.5 if cspacing is None else cspacing,
-    fontsize = 16 if fontsize is None else fontsize,
-    ncol = 1 if ncol is None else ncol,
-    labelcolor = "black" if labelcolor is None else labelcolor
+    ncol           = ncol,
+    borderpad      = bpad,
+    handletextpad  = tpad,
+    labelspacing   = rspacing,
+    columnspacing  = cspacing,
+    fontsize       = fontsize,
+    labelcolor     = label_color
   )
   ## add legend
   ax.add_artist(legend)
