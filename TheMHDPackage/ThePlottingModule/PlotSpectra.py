@@ -21,62 +21,82 @@ class PlotAveSpectra():
     ## save figure axis
     self.ax = ax
     ## extract indices corresponding with the time range
-    kin_index_start = WWLists.getIndexClosestValue(spectra_obj.kin_sim_times, time_range[0])
-    kin_index_end   = WWLists.getIndexClosestValue(spectra_obj.kin_sim_times, time_range[1])
-    mag_index_start = WWLists.getIndexClosestValue(spectra_obj.mag_sim_times, time_range[0])
-    mag_index_end   = WWLists.getIndexClosestValue(spectra_obj.mag_sim_times, time_range[1])
+    kin_sim_times = spectra_obj.kin_sim_times
+    mag_sim_times = spectra_obj.mag_sim_times
+    if len(kin_sim_times) > 0:
+      bool_kin_spectra_fitted = True
+      kin_index_start = WWLists.getIndexClosestValue(kin_sim_times, time_range[0])
+      kin_index_end   = WWLists.getIndexClosestValue(kin_sim_times, time_range[1])
+    else: bool_kin_spectra_fitted = False
+    if len(mag_sim_times) > 0:
+      bool_mag_spectra_fitted = True
+      mag_index_start = WWLists.getIndexClosestValue(mag_sim_times, time_range[0])
+      mag_index_end   = WWLists.getIndexClosestValue(mag_sim_times, time_range[1])
+    else: bool_mag_spectra_fitted = False
     ## load spectra data
-    self.list_k    = spectra_obj.kin_list_k_group_t[0]
-    list_kin_power = spectra_obj.kin_list_power_group_t[kin_index_start : kin_index_end]
-    list_mag_power = spectra_obj.mag_list_power_group_t[mag_index_start : mag_index_end]
-    self.list_fit_k    = spectra_obj.kin_list_fit_k_group_t[0]
-    list_kin_fit_power = spectra_obj.kin_list_fit_power_group_t[kin_index_start : kin_index_end]
-    list_mag_fit_power = spectra_obj.mag_list_fit_power_group_t[mag_index_start : mag_index_end]
-    ## normalise spectra data
-    list_norm_kin_power = [
-      np.array(kin_power) / np.sum(kin_power)
-          for kin_power in list_kin_power
-    ]
-    list_norm_mag_power = [
-      np.array(mag_power) / np.sum(mag_power)
-          for mag_power in list_mag_power
-    ]
-    ## normalise spectra fit
-    list_norm_kin_fit_power = [
-      np.array(kin_fit_power) / np.sum(kin_power)
-          for kin_fit_power, kin_power in zip(
-            list_kin_fit_power, list_kin_power
-          )
-    ]
-    list_norm_mag_fit_power = [
-      np.array(mag_fit_power) / np.sum(mag_power)
-          for mag_fit_power, mag_power in zip(
-            list_mag_fit_power, list_mag_power
-          )
-    ]
-    ## plot kinematic spectra
-    self.plotSpectra(
-      list_power     = list_norm_kin_power,
-      list_fit_power = list_norm_kin_fit_power,
-      label = "kin-spectra",
-      color = "blue"
-    )
-    ## plot magnetic spectra
-    self.plotSpectra(
-      list_power     = list_norm_mag_power,
-      list_fit_power = list_norm_mag_fit_power,
-      label = "mag-spectra",
-      color = "red"
-    )
-    ## add legend
-    self.ax.legend(frameon=False, loc="lower left", fontsize=14)
-    ## log axis
-    self.ax.set_xlabel(r"$k$")
-    self.ax.set_ylabel(r"$\mathcal{P}(k)$")
-    self.ax.set_xscale("log")
-    self.ax.set_yscale("log")
-    ## add log axis-ticks
-    PlotFuncs.addLogAxisTicks(ax, bool_major_ticks=True, max_num_major_ticks=5)
+    if bool_kin_spectra_fitted:
+      list_kin_power     = spectra_obj.kin_list_power_group_t[kin_index_start : kin_index_end]
+      list_kin_fit_power = spectra_obj.kin_list_fit_power_group_t[kin_index_start : kin_index_end]
+      bool_kin_spectra_fitted = len(list_kin_fit_power) > 0
+    if bool_mag_spectra_fitted:
+      self.list_k        = spectra_obj.mag_list_k_group_t[0]
+      list_mag_power     = spectra_obj.mag_list_power_group_t[mag_index_start : mag_index_end]
+      self.list_fit_k    = spectra_obj.mag_list_fit_k_group_t[0]
+      list_mag_fit_power = spectra_obj.mag_list_fit_power_group_t[mag_index_start : mag_index_end]
+      bool_mag_spectra_fitted = len(list_mag_fit_power) > 0
+    ## calculate kinetic energy spectra plots
+    if bool_kin_spectra_fitted:
+      ## normalise spectra data
+      list_norm_kin_power = [
+        np.array(kin_power) / np.sum(kin_power)
+            for kin_power in list_kin_power
+      ]
+      ## normalise spectra fit
+      list_norm_kin_fit_power = [
+        np.array(kin_fit_power) / np.sum(kin_power)
+            for kin_fit_power, kin_power in zip(
+              list_kin_fit_power, list_kin_power
+            )
+      ]
+      ## plot kinematic spectra
+      self.plotSpectra(
+        list_power     = list_norm_kin_power,
+        list_fit_power = list_norm_kin_fit_power,
+        label = "kin-spectra",
+        color = "blue"
+      )
+    ## calculate kinetic energy spectra plots
+    if bool_mag_spectra_fitted:
+      ## normalise spectra data
+      list_norm_mag_power = [
+        np.array(mag_power) / np.sum(mag_power)
+            for mag_power in list_mag_power
+      ]
+      ## normalise spectra fit
+      list_norm_mag_fit_power = [
+        np.array(mag_fit_power) / np.sum(mag_power)
+            for mag_fit_power, mag_power in zip(
+              list_mag_fit_power, list_mag_power
+            )
+      ]
+      ## plot magnetic spectra
+      self.plotSpectra(
+        list_power     = list_norm_mag_power,
+        list_fit_power = list_norm_mag_fit_power,
+        label = "mag-spectra",
+        color = "red"
+      )
+    ## label and tune figure
+    if bool_kin_spectra_fitted or bool_mag_spectra_fitted:
+      ## add legend
+      self.ax.legend(frameon=False, loc="lower left", fontsize=14)
+      ## log axis
+      self.ax.set_xlabel(r"$k$")
+      self.ax.set_ylabel(r"$\mathcal{P}(k)$")
+      self.ax.set_xscale("log")
+      self.ax.set_yscale("log")
+      ## add log axis-ticks
+      PlotFuncs.addLogAxisTicks(ax, bool_major_ticks=True, max_num_major_ticks=5)
   def plotSpectra(
       self,
       list_power, list_fit_power,

@@ -21,55 +21,65 @@ plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
-SONIC_REGIME = "super_sonic"
-GADI_BASEPATH = "/scratch/ek9/nk7952/"
-FILENAME = "Turb.dat"
+BASEPATH_MAC  = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/data/"
+BASEPATH_GADI = "/scratch/ek9/nk7952/"
+SONIC_REGIME  = "super_sonic"
+FILENAME      = "*_check.png"
 ## ###############################################################
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
 def main():
-  my_filepath_base = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/data/" + SONIC_REGIME
   for suite_folder in [
       "Re10", "Re500", "Rm3000"
-    ]: # "Re10", "Re500", "keta", "Rm3000"
+    ]: # "Re10", "Re500", "Rm3000", "keta"
 
     for sim_res in [
         "18", "36", "72", "144", "288"
       ]: # "72", "144", "288", "576"
+
       ## ################################
       ## CREATE FILEPATH TO FOLDER ON MAC
       ## ################################
-      mac_filepath_figures = createFilepath([
-        my_filepath_base, suite_folder, sim_res, "vis_folder"
+      filepath_mac_figures = createFilepath([
+        BASEPATH_MAC, SONIC_REGIME, suite_folder, sim_res, "vis_folder"
       ])
       ## check that the filepath exists on MAC
-      if not path.exists(mac_filepath_figures):
-        print("{} does not exist.".format( mac_filepath_figures ))
+      if not path.exists(filepath_mac_figures):
+        print("{} does not exist.".format( filepath_mac_figures ))
         continue
-      str_message = "Downloading from suite: {}, Nres = {}".format( suite_folder, sim_res )
+      str_message = "Downloading from suite: {}, Nres = {}".format(
+        suite_folder,
+        sim_res
+      )
       print(str_message)
       print("=" * len(str_message))
 
       ## ##############################
       ## DOWNLOAD FIT FIGURES FROM GADI
       ## ##############################
-      gadi_filepath_figures = createFilepath([
-        "gadi:"+GADI_BASEPATH, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
+      filepath_gadi_figures = createFilepath([
+        "gadi:"+BASEPATH_GADI, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
       ])
-      print("Downloading from:", gadi_filepath_figures)
+      print("Downloading from:", filepath_gadi_figures)
       ## download plots checking fits
-      os.system("scp " + gadi_filepath_figures + "/*_check_MeasuredScales.pdf " + mac_filepath_figures + "/.")
-      os.system("scp " + gadi_filepath_figures + "/check_fits/*.pdf " + mac_filepath_figures + "/check_fits/.")
+      os.system("scp {}/{} {}/.".format(
+        filepath_gadi_figures,
+        FILENAME,
+        filepath_mac_figures
+      ))
 
       ## #############################
       ## DOWNLOAD FIT VIDEOS FROM GADI
       ## #############################
-      gadi_filepath_figures = createFilepath([
-          "gadi:"+GADI_BASEPATH, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
+      filepath_gadi_videos = createFilepath([
+          "gadi:"+BASEPATH_GADI, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
       ])
-      print("Downloading from:", gadi_filepath_figures)
+      print("Downloading from:", filepath_gadi_videos)
       ## download plots + animations
-      os.system("scp " + gadi_filepath_figures + "/*.mp4 " + mac_filepath_figures + "/.")
+      os.system("scp {}/*.mp4 {}/.".format(
+        filepath_gadi_videos,
+        filepath_mac_figures
+      ))
       print(" ")
 
 

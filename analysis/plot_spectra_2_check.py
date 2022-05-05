@@ -30,7 +30,10 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 ## FUNCTIONS
 ## ###############################################################
-def funcPlotTurb(axs, filepath_data):
+def funcPlotTurb(
+    axs, filepath_data,
+    t_turb = 0.1 # ell_turb / (Mach * c_s)
+  ):
   color_fits = "black"
   color_data = "orange"
   def fitExp(ax, data_x, data_y, index_start_fit, index_end_fit):
@@ -109,25 +112,25 @@ def funcPlotTurb(axs, filepath_data):
   data_time, data_Mach = LoadFlashData.loadTurbData(
     filepath_data = filepath_data,
     var_y      = 13, # 13 (new), 8 (old)
-    t_eddy     = 0.1, # TODO input: list_t_eddy,
-    time_start = 0.1, # TODO input: plot_start,
-    time_end   = np.inf, # TODO input: plot_end
+    t_eddy     = t_turb,
+    time_start = 0.1,
+    time_end   = np.inf
   )
   ## load magnetic energy
   data_time, data_E_B = LoadFlashData.loadTurbData(
     filepath_data = filepath_data,
     var_y      = 11, # 11 (new), 29 (old)
-    t_eddy     = 0.1, # TODO input: list_t_eddy,
-    time_start = 0.1, # TODO input: plot_start,
-    time_end   = np.inf, # TODO input: plot_end
+    t_eddy     = t_turb,
+    time_start = 0.1,
+    time_end   = np.inf
   )
   ## load kinetic energy
   data_time, data_E_K = LoadFlashData.loadTurbData(
     filepath_data = filepath_data,
     var_y      = 9, # 9 (new), 6 (old)
-    t_eddy     = 0.1, # TODO input: list_t_eddy,
-    time_start = 0.1, # TODO input: plot_start,
-    time_end   = np.inf, # TODO input: plot_end
+    t_eddy     = t_turb,
+    time_start = 0.1,
+    time_end   = np.inf
   )
   ## calculate energy ratio: 'E_B / E_K'
   data_E_ratio = [
@@ -240,69 +243,105 @@ def funcPlotSpectra(
   ## LOAD SPECTRA DATA
   ## #################
   ## load spectra object
-  spectra_obj = WWObjs.loadPickleObject(filepath_data, "spectra_obj.pkl", bool_hide_updates=True)
+  spectra_obj = WWObjs.loadPickleObject(filepath_data, FILENAME_SPECTRA_OBJ, bool_hide_updates=True)
   ## load time-evolving measured parameters
   kin_sim_times = spectra_obj.kin_sim_times
   mag_sim_times = spectra_obj.mag_sim_times
   kin_num_points_fitted = spectra_obj.kin_fit_k_index_group_t
   mag_num_points_fitted = spectra_obj.mag_fit_k_index_group_t
-  print(spectra_obj.kin_list_k_group_t)
-  k_modes = spectra_obj.kin_list_k_group_t[0]
-  k_nu  = spectra_obj.k_nu_group_t
-  k_eta = spectra_obj.k_eta_group_t
-  k_max = spectra_obj.k_max_group_t
-  kin_alpha = [
-    list_fit_params[1]
-    for list_fit_params in spectra_obj.kin_list_fit_params_group_t
-  ]
-  mag_alpha = [
-    list_fit_params[1]
-    for list_fit_params in spectra_obj.mag_list_fit_params_group_t
-  ]
-  ## ######################
-  ## PLOT SPECTRA PARMETERS
-  ## ######################
-  ## plot number of points fitted to
-  plotData(axs[0], kin_sim_times, kin_num_points_fitted, label=r"kin-spectra", color="blue")
-  plotData(axs[0], mag_sim_times, mag_num_points_fitted, label=r"mag-spectra", color="red")
-  axs[0].legend(frameon=False, loc="lower right", fontsize=14)
-  axs[0].set_xlabel(r"$t / t_\mathrm{turb}$")
-  axs[0].set_ylabel(r"max k-mode")
-  axs[0].set_yscale("log")
-  axs[0].set_xlim([0, max(kin_sim_times)])
-  axs[0].set_ylim([1, max(k_modes)])
-  ## plot alpha exponents
-  range_alpha = [ -4, 4 ]
-  plotData(axs[1], kin_sim_times, kin_alpha, label=r"$\alpha_{\rm kin} =$ ", color="blue")
-  plotData(axs[1], mag_sim_times, mag_alpha, label=r"$\alpha_{\rm alpha} =$ ", color="red")
-  axs[1].legend(frameon=False, loc="best", fontsize=14)
-  axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
-  axs[1].set_ylabel(r"$\alpha$")
-  axs[1].set_xlim([0, max(kin_sim_times)])
-  axs[1].set_ylim(range_alpha)
-  ## plot k modes
-  min_k_nu  = min(k_nu)
-  min_k_eta = min(k_eta)
-  min_k_max = min(k_max)
-  range_k = [ 
-    min([ 1, min([min_k_nu, min_k_eta, min_k_max]) ]),
-    max(k_modes)
-  ]
-  plotData(axs[2], kin_sim_times, k_nu,  label=r"$k_\nu =$ ",     color="blue")
-  plotData(axs[2], mag_sim_times, k_eta, label=r"$k_\eta =$ ",    color="red")
-  plotData(axs[2], mag_sim_times, k_max, label=r"$k_{\rm p} =$ ", color="green")
-  axs[2].legend(frameon=False, loc="upper right", fontsize=14)
-  axs[2].set_xlabel(r"$t / t_\mathrm{turb}$")
-  axs[2].set_ylabel(r"$k$")
-  axs[2].set_yscale("log")
-  axs[2].set_xlim([0, max(kin_sim_times)])
-  axs[2].set_ylim(range_k)
+  ## check that there is sufficient data points to plot
+  bool_kin_spectra_fitted = len(kin_sim_times) > 0
+  bool_mag_spectra_fitted = len(mag_sim_times) > 0
+  bool_plot_fit_params = bool_kin_spectra_fitted or bool_mag_spectra_fitted
+  if bool_plot_fit_params:
+    ## load kinetic energy spectra fit paramaters
+    if bool_kin_spectra_fitted:
+      k_nu = spectra_obj.k_nu_group_t
+      kin_alpha = [
+        list_fit_params[1]
+        for list_fit_params in spectra_obj.kin_list_fit_params_group_t
+      ]
+    ## load magnetic energy spectra fit paramaters
+    if bool_mag_spectra_fitted:
+      k_modes   = spectra_obj.mag_list_k_group_t[0]
+      k_eta     = spectra_obj.k_eta_group_t
+      k_max     = spectra_obj.k_max_group_t
+      mag_alpha = [
+        list_fit_params[1]
+        for list_fit_params in spectra_obj.mag_list_fit_params_group_t
+      ]
+    elif bool_kin_spectra_fitted:
+      k_modes = spectra_obj.kin_list_k_group_t[0]
+    ## define the end of the k-domain
+    max_k_mode = 1.2 * max(k_modes)
   ## #####################
   ## PLOT AVERAGED SPECTRA
   ## #####################
-  if (time_range[0] is not None) and (time_range[1] is not None):
-    PlotSpectra.PlotAveSpectra(ax_spectra, spectra_obj, time_range)
-    ax_spectra.set_ylim([ 10**(-8), 3*10**(0) ])
+  PlotSpectra.PlotAveSpectra(ax_spectra, spectra_obj, time_range)
+  ax_spectra.set_ylim([ 10**(-8), 3*10**(0) ])
+  ## ######################
+  ## PLOT SPECTRA PARMETERS
+  ## ######################
+  if bool_plot_fit_params:
+    ## plot number of points fitted to
+    if bool_kin_spectra_fitted:
+      plotData(axs[0], kin_sim_times, kin_num_points_fitted, label=r"kin-spectra", color="blue")
+      max_sim_time = max(kin_sim_times)
+    if bool_mag_spectra_fitted:
+      plotData(axs[0], mag_sim_times, mag_num_points_fitted, label=r"mag-spectra", color="red")
+      max_sim_time = max(mag_sim_times)
+    ## label and tune figure
+    axs[0].legend(frameon=False, loc="lower right", fontsize=14)
+    axs[0].set_xlabel(r"$t / t_\mathrm{turb}$")
+    axs[0].set_ylabel(r"max k-mode")
+    axs[0].set_yscale("log")
+    axs[0].set_xlim([0, max_sim_time])
+    axs[0].set_ylim([1, max_k_mode])
+    ## plot alpha exponents
+    range_alpha = [ -4, 4 ]
+    if bool_kin_spectra_fitted:
+      plotData(axs[1], kin_sim_times, kin_alpha, label=r"$\alpha_{\rm kin} =$ ", color="blue")
+    if bool_mag_spectra_fitted:
+      plotData(axs[1], mag_sim_times, mag_alpha, label=r"$\alpha_{\rm alpha} =$ ", color="red")
+    ## label and tune figure
+    axs[1].legend(frameon=False, loc="right", fontsize=14)
+    axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
+    axs[1].set_ylabel(r"$\alpha$")
+    axs[1].set_xlim([0, max_sim_time])
+    axs[1].set_ylim(range_alpha)
+    ## plot k modes
+    if bool_kin_spectra_fitted:
+      min_k_nu = min(k_nu)
+      plotData(axs[2], kin_sim_times, k_nu,  label=r"$k_\nu =$ ",     color="blue")
+    if bool_mag_spectra_fitted:
+      min_k_eta = min(k_eta)
+      min_k_max = min(k_max)
+      plotData(axs[2], mag_sim_times, k_eta, label=r"$k_\eta =$ ",    color="red")
+      plotData(axs[2], mag_sim_times, k_max, label=r"$k_{\rm p} =$ ", color="green")
+    ## define y-range
+    if bool_kin_spectra_fitted and bool_mag_spectra_fitted:
+      range_k = [ 
+        min([ 1, min([min_k_nu, min_k_eta, min_k_max]) ]),
+        max_k_mode
+      ]
+    elif bool_mag_spectra_fitted:
+      range_k = [ 
+        min([ 1, min([min_k_eta, min_k_max]) ]),
+        max_k_mode
+      ]
+    else:
+      range_k = [ 
+        min([ 1, min_k_nu ]),
+        max_k_mode
+      ]
+    ## label and tune figure
+    axs[2].legend(frameon=False, loc="upper right", fontsize=14)
+    axs[2].set_xlabel(r"$t / t_\mathrm{turb}$")
+    axs[2].set_ylabel(r"$k$")
+    axs[2].set_yscale("log")
+    axs[2].set_xlim([0, max_sim_time])
+    axs[2].set_ylim(range_k)
+  ## return simulation parameters
   return spectra_obj.Re, spectra_obj.Rm, spectra_obj.Pm
 
 
@@ -322,7 +361,7 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
   ax_num_k   = fig.add_subplot(gs[2, 0])
   ## plot Turb.dat
   filepath_data_turb = filepath_sim
-  if os.path.exists(WWFnF.createFilepath([filepath_data_turb, "Turb.dat"])):
+  if os.path.exists(WWFnF.createFilepath([filepath_data_turb, FILENAME_TURB])):
     bool_plot_energy = True
     time_exp_start, time_exp_end = funcPlotTurb([ax_mach, ax_energy], filepath_data_turb)
   else:
@@ -330,7 +369,7 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
     time_exp_start, time_exp_end = None, None
   ## plot fitted spectra
   filepath_data_spect = filepath_sim + "/spect/"
-  if os.path.exists(WWFnF.createFilepath([filepath_data_spect, "spectra_obj.pkl"])):
+  if os.path.exists(WWFnF.createFilepath([filepath_data_spect, FILENAME_SPECTRA_OBJ])):
     bool_plot_spectra = True
     Re, Rm, Pm = funcPlotSpectra(
       axs = [ax_num_k, ax_alpha, ax_kmodes],
@@ -339,24 +378,25 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
       time_exp_start = time_exp_start,
       time_exp_end   = time_exp_end
     )
-    PlotFuncs.addLegend(
-      ax = ax_mach,
-      list_legend_labels = [
-        r"$N_{\rm res} =$ " + sim_res,
-        r"Re $=$ " + "{:.0f}".format(Re),
-        r"Pm $=$ " + "{:.0f}".format(Pm),
-        r"Rm $=$ " + "{:.0f}".format(Rm)
-      ],
-      list_marker_colors = [ "w" ],
-      list_artists       = [ "." ],
-      loc      = "lower left",
-      bbox     = (0.0, 0.0),
-      ncol     = 2,
-      bpad     = 0,
-      tpad     = -1,
-      cspacing = 0,
-      fontsize = 14
-    )
+    if (Re is not None) and (Rm is not None) and (Pm is not None):
+      PlotFuncs.addLegend(
+        ax = ax_mach,
+        list_legend_labels = [
+          r"$N_{\rm res} =$ " + sim_res,
+          r"Re $=$ " + "{:.0f}".format(Re),
+          r"Pm $=$ " + "{:.0f}".format(Pm),
+          r"Rm $=$ " + "{:.0f}".format(Rm)
+        ],
+        list_marker_colors = [ "w" ],
+        list_artists       = [ "." ],
+        loc      = "lower left",
+        bbox     = (0.0, 0.0),
+        ncol     = 2,
+        bpad     = 0,
+        tpad     = -1,
+        cspacing = 0,
+        fontsize = 14
+      )
   else: bool_plot_spectra = False
   ## check if the data was plotted
   if not(bool_plot_energy) and not(bool_plot_spectra):
@@ -366,9 +406,11 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
   else:
     ## check what data was missing
     if not(bool_plot_energy):
-      print("\t> ERROR: No 'Turb.dat' data in:", filepath_data_turb)
+      print("\t> ERROR: No '{}' data in:".format(FILENAME_TURB))
+      print("\t\t", filepath_data_turb)
     elif not(bool_plot_spectra):
-      print("\t> ERROR: No spectra data in:", filepath_data_spect)
+      print("\t> ERROR: No '{}' data in:".format(FILENAME_SPECTRA_OBJ))
+      print("\t\t", filepath_data_spect)
     ## save the figure
     fig_filepath = WWFnF.createFilepath([filepath_plot, fig_name])
     plt.savefig(fig_filepath)
@@ -376,8 +418,10 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
     print("\t> Figure saved:", fig_name)
 
 
-SONIC_REGIME = "super_sonic"
-BASEPATH = "/scratch/ek9/nk7952/"
+SONIC_REGIME         = "super_sonic"
+BASEPATH             = "/scratch/ek9/nk7952/"
+FILENAME_TURB        = "Turb.dat"
+FILENAME_SPECTRA_OBJ = "spectra_obj.pkl"
 ## ###############################################################
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
@@ -392,8 +436,9 @@ def main():
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
     for sim_res in [
-        "288", "576"
+        "72", "144", "288", "576"
       ]: # "18", "36", "72", "144", "288", "576"
+
       ## ####################################
       ## CREATE FILEPATH TO SIMULATION FOLDER
       ## ####################################
@@ -415,6 +460,7 @@ def main():
       for sim_folder in [
           "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
+
         ## create filepath to the simulation folder
         filepath_sim = WWFnF.createFilepath([
           filepath_base, suite_folder, sim_res, SONIC_REGIME, sim_folder
