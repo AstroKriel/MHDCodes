@@ -132,7 +132,7 @@ class ListOfModels():
   ## EXPONENTIAL
   ## -----------
   def exp_linear(x, a0, a1):
-    """ exponential with offset in linear-domain:
+    """ exponential in linear-domain:
       y = a0 * exp(-a1 * x)
     """
     return a0 * np.exp(-a1 * np.array(x))

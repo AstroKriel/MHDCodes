@@ -35,7 +35,6 @@ def aniEvolution(
   ):
   ''' Animate the plot frames.
   '''
-  if not(bool_hide_updates): print("Animating plots...")
   ## create filepath to where plots are saved
   filepath_input = WWFnF.createFilepath([
     filepath_frames,
@@ -53,7 +52,7 @@ def aniEvolution(
     " -vb 40M -framerate 40 -vf scale=1440:-1 -vcodec mpeg4 " + filepath_output
   )
   if not(bool_hide_updates):
-    print("Animation finished: " + filepath_output)
+    print("Saved animation:", filepath_output)
     print(" ")
 
 

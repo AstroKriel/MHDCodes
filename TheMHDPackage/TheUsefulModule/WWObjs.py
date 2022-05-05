@@ -20,14 +20,13 @@ except ModuleNotFoundError: import pickle
 def savePickleObject(obj, filepath_folder, obj_filename):
   ## create filepath where object will be saved
   obj_filepath = WWFnF.createFilepath([filepath_folder, obj_filename])
-  ## if the file exists, then delete it
+  ## delete the pickle-file if it already exists
   if os.path.isfile(obj_filepath):
     os.remove(obj_filepath)
-  ## save new object
+  ## save (new) pickle-file
   with open(obj_filepath, "wb") as output:
     pickle.dump(obj, output, -1)
-  ## print success to terminal
-  print("\t> Object saved: " + obj_filepath)
+  print("Saved pickle:", obj_filepath)
 
 def loadPickleObject(
     filepath_folder,
@@ -39,15 +38,19 @@ def loadPickleObject(
   obj_filepath = WWFnF.createFilepath([filepath_folder, obj_filename])
   ## if the file exists, then read it in
   if os.path.isfile(obj_filepath):
-    if not bool_hide_updates: print("\t> Loading: " + obj_filepath)
+    if not bool_hide_updates:
+      print("\t> Reading in:", obj_filepath)
     with open(obj_filepath, "rb") as input:
       return pickle.load(input)
+  ## indicate that the pickle file was not found
   else:
-    if bool_check: return -1
-    else: raise Exception("No object '{:s}' found in '{:s}'.".format(
-      obj_filename,
-      filepath_folder
-    ))
+    if bool_check:
+      return -1
+    else:
+      raise Exception("No pickle-file '{:s}' found in '{:s}'.".format(
+        obj_filename,
+        filepath_folder
+      ))
 
 def updateAttr(obj, attr, desired_val):
   ## check that the new attribute value is not None
@@ -61,7 +64,7 @@ def updateAttr(obj, attr, desired_val):
   return False
 
 def printObjAttrNames(obj):
-  ## loop over all the attribute variable names in the object
+  ## loop over all the attribute-names in the object
   for attr in vars(obj):
     print(attr)
 

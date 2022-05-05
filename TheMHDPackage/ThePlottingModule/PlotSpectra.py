@@ -6,18 +6,100 @@
 ## ###############################################################
 import numpy as np
 import matplotlib.pyplot as plt
-from pyrsistent import v
 
 from tqdm import tqdm
-from matplotlib.gridspec import GridSpec
 
 from ThePlottingModule import PlotFuncs
 from TheUsefulModule import WWLists, WWFnF
-# from TheAnalysisModule import RemoveOutliers
 
+
+class PlotAveSpectra():
+  def __init__(
+      self,
+      ax, spectra_obj, time_range
+    ):
+    ## save figure axis
+    self.ax = ax
+    ## extract indices corresponding with the time range
+    kin_index_start = WWLists.getIndexClosestValue(spectra_obj.kin_sim_times, time_range[0])
+    kin_index_end   = WWLists.getIndexClosestValue(spectra_obj.kin_sim_times, time_range[1])
+    mag_index_start = WWLists.getIndexClosestValue(spectra_obj.mag_sim_times, time_range[0])
+    mag_index_end   = WWLists.getIndexClosestValue(spectra_obj.mag_sim_times, time_range[1])
+    ## load spectra data
+    self.list_k    = spectra_obj.kin_list_k_group_t[0]
+    list_kin_power = spectra_obj.kin_list_power_group_t[kin_index_start : kin_index_end]
+    list_mag_power = spectra_obj.mag_list_power_group_t[mag_index_start : mag_index_end]
+    self.list_fit_k    = spectra_obj.kin_list_fit_k_group_t[0]
+    list_kin_fit_power = spectra_obj.kin_list_fit_power_group_t[kin_index_start : kin_index_end]
+    list_mag_fit_power = spectra_obj.mag_list_fit_power_group_t[mag_index_start : mag_index_end]
+    ## normalise spectra data
+    list_norm_kin_power = [
+      np.array(kin_power) / np.sum(kin_power)
+          for kin_power in list_kin_power
+    ]
+    list_norm_mag_power = [
+      np.array(mag_power) / np.sum(mag_power)
+          for mag_power in list_mag_power
+    ]
+    ## normalise spectra fit
+    list_norm_kin_fit_power = [
+      np.array(kin_fit_power) / np.sum(kin_power)
+          for kin_fit_power, kin_power in zip(
+            list_kin_fit_power, list_kin_power
+          )
+    ]
+    list_norm_mag_fit_power = [
+      np.array(mag_fit_power) / np.sum(mag_power)
+          for mag_fit_power, mag_power in zip(
+            list_mag_fit_power, list_mag_power
+          )
+    ]
+    ## plot kinematic spectra
+    self.plotSpectra(
+      list_power     = list_norm_kin_power,
+      list_fit_power = list_norm_kin_fit_power,
+      label = "kin-spectra",
+      color = "blue"
+    )
+    ## plot magnetic spectra
+    self.plotSpectra(
+      list_power     = list_norm_mag_power,
+      list_fit_power = list_norm_mag_fit_power,
+      label = "mag-spectra",
+      color = "red"
+    )
+    ## add legend
+    self.ax.legend(frameon=False, loc="lower left", fontsize=14)
+    ## log axis
+    self.ax.set_xlabel(r"$k$")
+    self.ax.set_ylabel(r"$\mathcal{P}(k)$")
+    self.ax.set_xscale("log")
+    self.ax.set_yscale("log")
+  def plotSpectra(
+      self,
+      list_power, list_fit_power,
+      label, color
+    ):
+    ## plot time-averaged spectra
+    self.ax.plot(
+      self.list_k, np.median(list_power, axis=0),
+      label=label, color=color, ls="-", lw=2, zorder=3
+    )
+    ## plot time-averaged spectra
+    self.ax.fill_between(
+      self.list_k,
+      1.2 * np.percentile(list_power, 16, axis=0),
+      1.2 * np.percentile(list_power, 84, axis=0),
+      facecolor=color, alpha=0.3, zorder=1
+    )
+    ## plot time-averaged spectra fit
+    self.ax.plot(
+      self.list_fit_k, np.median(list_fit_power, axis=0),
+      color="black", ls="-.", lw=2, zorder=5
+    )
 
 ## ###############################################################
-## SPECTRA STATISTICS OF SPECTRA FITS FOR SINGLE SIMULATION
+## SPECTRA STATISTICS OF SPECTRA FITS FOR A SINGLE SIMULATION
 ## ###############################################################
 class PlotSpectraFit():
   ''' Plotting fitted spectra.
@@ -39,353 +121,6 @@ class PlotSpectraFit():
       self.spectra_obj.kin_sim_times,
       self.spectra_obj.mag_sim_times
     )
-    ## find which part of the data to collect statistics about
-    self.bool_plot_ave_scales = False # initialise as false
-    bool_kin_fit = (self.spectra_obj.kin_fit_start_t is not None) and (self.spectra_obj.kin_fit_end_t is not None)
-    bool_mag_fit = (self.spectra_obj.mag_fit_start_t is not None) and (self.spectra_obj.mag_fit_end_t is not None)
-    if bool_kin_fit and bool_mag_fit:
-      ## if a fitting domain has been defined
-      self.bool_plot_ave_scales = True
-      ## find indices of kinetic energy fit time range
-      self.kin_index_start = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.kin_fit_start_t)
-      self.kin_index_end   = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.kin_fit_end_t)
-      ## find indices of magnetic fit time range
-      self.mag_index_start = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.mag_fit_start_t)
-      self.mag_index_end   = WWLists.getIndexClosestValue(self.sim_times, self.spectra_obj.mag_fit_end_t)
-      ## subset data
-      k_nu_subset_t  = self.spectra_obj.k_nu_group_t[self.kin_index_start:self.kin_index_end]
-      k_eta_subset_t = self.spectra_obj.k_eta_group_t[self.mag_index_start:self.mag_index_end]
-      k_max_subset_t = self.spectra_obj.k_max_group_t[self.mag_index_start:self.mag_index_end]
-      ## calculate mean of measured scales
-      self.k_nu_mean  = np.mean(k_nu_subset_t)
-      self.k_eta_mean = np.mean(k_eta_subset_t)
-      self.k_max_mean = np.mean(k_max_subset_t)
-      ## calculate 1-sigma of measured scales
-      self.k_nu_std  = np.std(k_nu_subset_t)
-      self.k_eta_std = np.std(k_eta_subset_t)
-      self.k_max_std = np.std(k_max_subset_t)
-  def plotMeasuredScales(
-      self,
-      filepath_plot
-    ):
-    ## ########################
-    ## CREATE FIGURE
-    ## ########
-    ## initialise figure
-    fig, [ax0, ax1, ax2] = plt.subplots(1, 3, figsize=(18, 5))
-    fig.subplots_adjust(wspace=0.25)
-    ## initialise figure y-range
-    range_y = [ 0.05, 150 ]
-    ## extract data
-    data_x_ax0 = self.spectra_obj.kin_sim_times
-    data_x_ax1 = self.spectra_obj.mag_sim_times
-    data_x_ax2 = self.spectra_obj.mag_sim_times
-    data_y_ax0 = self.spectra_obj.k_nu_group_t
-    data_y_ax1 = self.spectra_obj.k_eta_group_t
-    data_y_ax2 = self.spectra_obj.k_max_group_t
-    ## #######################
-    ## PLOTTING DATA
-    ## ########
-    ## show data within the fit range
-    if self.bool_plot_ave_scales:
-      ## #######################
-      ## CLEANING DATA
-      ## ########
-      ## remove outliers in k_nu
-      data_x_ax0_subset = data_x_ax0[self.kin_index_start : self.kin_index_end]
-      data_y_ax0_subset = data_y_ax0[self.kin_index_start : self.kin_index_end]
-      ## remove outliers in k_eta
-      data_x_ax1_subset = data_x_ax1[self.mag_index_start : self.mag_index_end]
-      data_y_ax1_subset = data_y_ax1[self.mag_index_start : self.mag_index_end]
-      ## remove outliers in k_max
-      data_x_ax2_subset = data_x_ax2[self.mag_index_start : self.mag_index_end]
-      data_y_ax2_subset = data_y_ax2[self.mag_index_start : self.mag_index_end]
-      ## plot full dataset
-      ax0.plot(data_x_ax0, data_y_ax0, "k.", alpha=0.1)
-      ax1.plot(data_x_ax1, data_y_ax1, "k.", alpha=0.1)
-      ax2.plot(data_x_ax2, data_y_ax2, "k.", alpha=0.1)
-      ## plot subsetted data (in fit range)
-      ax0.plot(data_x_ax0_subset, data_y_ax0_subset, "r.", alpha=0.2)
-      ax1.plot(data_x_ax1_subset, data_y_ax1_subset, "r.", alpha=0.2)
-      ax2.plot(data_x_ax2_subset, data_y_ax2_subset, "r.", alpha=0.2)
-      ## distribution of k_nu (in fit range)
-      ax0_inset = PlotFuncs.insetPDF(
-        ax0,
-        data_y_ax0_subset,
-        label_x = r"$k_\nu$ (subsetted)",
-        label_y = r"$P(k_\nu)$"
-      )
-      ax0_inset.axvline(
-        x=np.percentile(data_y_ax0_subset, 16),
-        ls="--", color="k"
-      )
-      ax0_inset.axvline(
-        x=np.percentile(data_y_ax0_subset, 50),
-        ls="--", color="k"
-      )
-      ax0_inset.axvline(
-        x=np.percentile(data_y_ax0_subset, 84),
-        ls="--", color="k"
-      )
-      ## distribution of k_eta (in fit range)
-      ax1_inset = PlotFuncs.insetPDF(
-        ax1,
-        data_y_ax1_subset,
-        label_x = r"$k_\eta$ (subsetted)",
-        label_y = r"$P(k_\eta)$"
-      )
-      ax1_inset.axvline(
-        x=np.percentile(data_y_ax1_subset, 16),
-        ls="--", color="k"
-      )
-      ax1_inset.axvline(
-        x=np.percentile(data_y_ax1_subset, 50),
-        ls="--", color="k"
-      )
-      ax1_inset.axvline(
-        x=np.percentile(data_y_ax1_subset, 84),
-        ls="--", color="k"
-      )
-      ## distribution of k_p (in fit range)
-      ax2_inset = PlotFuncs.insetPDF(
-        ax2,
-        data_y_ax2_subset,
-        label_x = r"$k_p$ (subsetted)",
-        label_y = r"$P(k_p)$"
-      )
-      ax2_inset.axvline(
-        x=np.percentile(data_y_ax2_subset, 16),
-        ls="--", color="k"
-      )
-      ax2_inset.axvline(
-        x=np.percentile(data_y_ax2_subset, 50),
-        ls="--", color="k"
-      )
-      ax2_inset.axvline(
-        x=np.percentile(data_y_ax2_subset, 84),
-        ls="--", color="k"
-      )
-    else:
-      ## plot data
-      ax0.plot(data_x_ax0, data_y_ax0, "k.")
-      ax1.plot(data_x_ax1, data_y_ax1, "k.")
-      ax2.plot(data_x_ax2, data_y_ax2, "k.")
-    ## label axis
-    ax0.set_xlabel(r"$t / T$",  fontsize=20)
-    ax1.set_xlabel(r"$t / T$",  fontsize=20)
-    ax2.set_xlabel(r"$t / T$",  fontsize=20)
-    ax0.set_ylabel(r"$k_\nu$",  fontsize=20)
-    ax1.set_ylabel(r"$k_\eta$", fontsize=20)
-    ax2.set_ylabel(r"$k_p$", fontsize=20)
-    ## ########################
-    ## SCALE FIGURE AXIS
-    ## ########
-    ## set figure axis range
-    ax0.set_ylim(range_y)
-    ax1.set_ylim(range_y)
-    ax2.set_ylim(range_y)
-    ## scale figure axis
-    ax0.set_yscale("log")
-    ax1.set_yscale("log")
-    ax2.set_yscale("log")
-    PlotFuncs.FixLogAxis(ax0, bool_fix_y_axis=True)
-    PlotFuncs.FixLogAxis(ax1, bool_fix_y_axis=True)
-    PlotFuncs.FixLogAxis(ax2, bool_fix_y_axis=True)
-    ## check if any points are outside of the figure window
-    PlotFuncs.showDataOutsideAxis(ax0, data_x_ax0, data_y_ax0, range_y)
-    PlotFuncs.showDataOutsideAxis(ax0, data_x_ax1, data_y_ax1, range_y)
-    PlotFuncs.showDataOutsideAxis(ax0, data_x_ax2, data_y_ax2, range_y)
-    ## ########################
-    ## SAVE FIGURE
-    ## ########
-    ## create figure name
-    fig_name = WWFnF.createName([
-      self.spectra_obj.sim_suite,
-      self.spectra_obj.sim_label,
-      "check_MeasuredScales"
-    ]) + ".pdf"
-    ## create filepath where figure will be saved
-    filepath_fig = WWFnF.createFilepath([
-      filepath_plot,
-      fig_name
-    ])
-    ## save figure
-    plt.savefig(filepath_fig)
-    print("\t> Figure saved: " + fig_name)
-    # close plot
-    plt.close(fig)
-  def plotNumFitPoints(
-      self,
-      filepath_plot
-    ):
-    ## ########################
-    ## INITIALISE DATA
-    ## ########
-    ## left axis
-    data_x_ax0  = self.spectra_obj.kin_sim_times
-    data_y_ax0  = self.spectra_obj.kin_fit_k_index_group_t
-    range_y_ax0 = [ 0.5, max(self.spectra_obj.kin_list_k_group_t[0]) ]
-    ## right axis
-    data_x_ax1  = self.spectra_obj.mag_sim_times
-    data_y_ax1  = self.spectra_obj.mag_fit_k_index_group_t
-    range_y_ax1 = [ 0.5, max(self.spectra_obj.mag_list_k_group_t[0]) ]
-    ## ########################
-    ## CREATE FIGURE
-    ## ########
-    fig, [ax0, ax1] = plt.subplots(1, 2, figsize=(12, 5))
-    fig.subplots_adjust(wspace=0.2)
-    ## show data within the fit range
-    if self.bool_plot_ave_scales:
-      ## left axis
-      PlotFuncs.insetPlot(
-        ax0,
-        data_x_ax0[self.kin_index_start:self.kin_index_end],
-        data_y_ax0[self.kin_index_start:self.kin_index_end],
-        label_x    = r"$t / T$ (sub-domain)",
-        label_y    = r"Last fitted k-mode",
-        range_y    = range_y_ax0,
-        bool_log_y = True
-      )
-      ## right axis
-      PlotFuncs.insetPlot(
-        ax1,
-        data_x_ax1[self.mag_index_start:self.mag_index_end],
-        data_y_ax1[self.mag_index_start:self.mag_index_end],
-        label_x    = r"$t / T$ (sub-domain)",
-        range_y    = range_y_ax1,
-        bool_log_y = True
-      )
-      ## plot data
-      ax0.plot(data_x_ax0, data_y_ax0, "k.", alpha=0.1)
-      ax1.plot(data_x_ax1, data_y_ax1, "k.", alpha=0.1)
-      ## plot data in fit range
-      ax0.plot(
-        data_x_ax0[self.kin_index_start:self.kin_index_end],
-        data_y_ax0[self.kin_index_start:self.kin_index_end],
-        "r.", alpha=0.2
-      )
-      ax1.plot(
-        data_x_ax1[self.mag_index_start:self.mag_index_end],
-        data_y_ax1[self.mag_index_start:self.mag_index_end],
-        "r.", alpha=0.2
-      )
-    else:
-      ## plot data
-      ax0.plot(data_x_ax0, data_y_ax0, "k.")
-      ax1.plot(data_x_ax1, data_y_ax1, "k.")
-    ## label axis
-    ax0.set_xlabel(r"$t / T$", fontsize=20)
-    ax1.set_xlabel(r"$t / T$", fontsize=20)
-    ax0.set_ylabel(r"Number of points fitted", fontsize=20)
-    ## ########################
-    ## SCALE FIGURE AXIS
-    ## ########
-    ## set axis y-range
-    ax0.set_ylim(range_y_ax0)
-    ax1.set_ylim(range_y_ax1)
-    ## scale figure axis
-    ax0.set_yscale("log")
-    ax1.set_yscale("log")
-    PlotFuncs.FixLogAxis(ax0, bool_fix_y_axis=True)
-    PlotFuncs.FixLogAxis(ax1, bool_fix_y_axis=True)
-    ## check if any points are outside of the figure window
-    PlotFuncs.showDataOutsideAxis(ax0, data_x_ax0, data_y_ax0, range_y_ax0)
-    ## check if any points are outside of the figure window
-    PlotFuncs.showDataOutsideAxis(ax1, data_x_ax1, data_y_ax1, range_y_ax1)
-    ## ########################
-    ## SAVE FIGURE
-    ## ########
-    ## create figure name
-    fig_name = WWFnF.createName([
-      self.spectra_obj.sim_suite,
-      self.spectra_obj.sim_label,
-      "check_NumFitPoints"
-    ]) + ".pdf"
-    ## create filepath where figure will be saved
-    filepath_fig = WWFnF.createFilepath([
-      filepath_plot,
-      fig_name
-    ])
-    ## save figure
-    plt.savefig(filepath_fig)
-    print("\t> Figure saved: " + fig_name)
-    # close plot
-    plt.close(fig)
-  def plotFit2Norm_NumFitPoints(
-      self,
-      filepath_plot, target_time
-    ):
-    ## get fit index associated with the target time
-    fit_index = WWLists.getIndexClosestValue(self.sim_times, target_time)
-    ## ########################
-    ## CREATE FIGURE
-    ## ########
-    ## initialise figure
-    fig_scales = plt.figure(figsize=(12, 5))
-    fig_grids = GridSpec(ncols=2, nrows=1, figure=fig_scales)
-    ax0 = fig_scales.add_subplot(fig_grids[0])
-    ax1 = fig_scales.add_subplot(fig_grids[1])
-    ## plot data
-    ax0.plot(
-      self.spectra_obj.kin_list_fit_k_range_group_t[fit_index],
-      self.spectra_obj.kin_list_fit_2norm_group_t[fit_index],
-      "k."
-    )
-    ax1.plot(
-      self.spectra_obj.mag_list_fit_k_range_group_t[fit_index],
-      self.spectra_obj.mag_list_fit_2norm_group_t[fit_index],
-      "k."
-    )
-    ## ########################
-    ## LABEL FIGURE
-    ## ########
-    ## add chosen number of fitted lines
-    ax0.axvline(
-      x = self.spectra_obj.kin_fit_k_index_group_t[fit_index],
-      ls="--", color="k"
-    )
-    ax1.axvline(
-      x = self.spectra_obj.mag_fit_k_index_group_t[fit_index],
-      ls="--", color="k"
-    )
-    ## add time label
-    ax1.text(
-      0.95, 0.95, r"$t / T = {}$".format(str(target_time)),
-      va="top", ha="right", transform=ax1.transAxes, fontsize=16
-    )
-    ## add spectra label
-    ax0.text(
-      0.05, 0.95, r"Velocity energy spectra",
-      va="top", ha="left", transform=ax0.transAxes, fontsize=16
-    )
-    ## add spectra label
-    ax1.text(
-      0.05, 0.95, r"Magnetic power spectra",
-      va="top", ha="left", transform=ax1.transAxes, fontsize=16
-    )
-    ## label axis
-    ax0.set_xlabel(r"Number of points fitted", fontsize=20)
-    ax1.set_xlabel(r"Number of points fitted", fontsize=20)
-    ax0.set_ylabel(r"$\sum_{i = 1}^{N} |y_i - f(x_i)|^2$", fontsize=20)
-    ## ########################
-    ## SAVE FIGURE
-    ## ########
-    ## create figure name
-    fig_name = WWFnF.createName([
-      self.spectra_obj.sim_suite,
-      self.spectra_obj.sim_label,
-      "check_FitError_NumFitPoints_{0:04}".format(int(fit_index))
-    ]) + ".pdf"
-    ## create filepath where figure will be saved
-    filepath_fig = WWFnF.createFilepath([
-      filepath_plot,
-      fig_name
-    ])
-    ## save figure
-    plt.savefig(filepath_fig)
-    print("\t> Figure saved: " + fig_name)
-    # close plot
-    plt.close(fig_scales)
   def plotSpectra_TargetTime(
       self,
       filepath_plot, target_time
@@ -401,7 +136,7 @@ class PlotSpectraFit():
     ## initialise spectra evolution figure
     fig, ax = plt.subplots(constrained_layout=True)
     ## plot spectra data
-    self.plotSpectra(
+    self.plotAnnotatedSpectra(
       fig, ax,
       filepath_plot, fit_index, fig_name,
       y_min = 1e-18,
@@ -428,10 +163,10 @@ class PlotSpectraFit():
         miniters = (len(self.sim_times) - plot_index_start) / 10,
         disable  = bool_hide_updates or (len(self.sim_times) < 3)
       ):
-      self.plotSpectra(fig, ax, filepath_plot, time_index)
+      self.plotAnnotatedSpectra(fig, ax, filepath_plot, time_index)
     ## close figure
     plt.close(fig)
-  def plotSpectra(
+  def plotAnnotatedSpectra(
       self,
       fig, ax, filepath_plot, time_index,
       fig_name = None,
@@ -440,9 +175,9 @@ class PlotSpectraFit():
       x_min = 10**(-1),
       x_max = 300
     ):
-    ## ###############################
+    ## #################
     ## PLOT SPECTRA DATA
-    ## #############
+    ## #################
     ax.plot(
       self.spectra_obj.kin_list_k_group_t[time_index],
       self.spectra_obj.kin_list_power_group_t[time_index],
@@ -453,9 +188,9 @@ class PlotSpectraFit():
       self.spectra_obj.mag_list_power_group_t[time_index],
       label=r"mag-spectra", color="red", ls="", marker=".", markersize=8
     )
-    ## ###############################
+    ## ####################
     ## PLOT FITTED SPECTRAS
-    ## #############
+    ## ####################
     ## plot fitted spectra
     ax.plot(
       self.spectra_obj.kin_list_fit_k_group_t[time_index],
@@ -471,30 +206,20 @@ class PlotSpectraFit():
     ax.axvline(x=self.spectra_obj.k_nu_group_t[time_index],  ls="--", color="blue",  label=r"$k_\nu$")
     ax.axvline(x=self.spectra_obj.k_eta_group_t[time_index], ls="--", color="red",   label=r"$k_\eta$")
     ax.axvline(x=self.spectra_obj.k_max_group_t[time_index], ls="--", color="black", label=r"$k_p$")
-    ## plot measured scales if a time range to average over has been defined
-    if self.bool_plot_ave_scales:
-      ax.fill_betweenx(
-        np.linspace(y_min, y_max, 100),
-        (self.k_nu_mean - self.k_nu_std),
-        (self.k_nu_mean + self.k_nu_std),
-        facecolor="blue", alpha=0.15, zorder=1
-      )
-      ax.fill_betweenx(
-        np.linspace(y_min, y_max, 100),
-        (self.k_eta_mean - self.k_eta_std),
-        (self.k_eta_mean + self.k_eta_std),
-        facecolor="red", alpha=0.15, zorder=1
-      )
-      ax.fill_betweenx(
-        np.linspace(y_min, y_max, 100),
-        (self.k_max_mean - self.k_max_std),
-        (self.k_max_mean + self.k_max_std),
-        facecolor="black", alpha=0.15, zorder=1
-      )
-    ## ###############################
-    ## LABEL FIGURE
-    ## #############
-    ## label spectra models
+    ## #################
+    ## ADD FIGURE LABELS
+    ## #################
+    ## kinetic energy spectra labels
+    str_kin_spectra = r"$\mathcal{P}_{\rm kin}(k) = A_{\rm kin} k^{\alpha_{\rm kin}} \exp\left\{-\frac{k}{k_\nu}\right\}$"
+    str_A_kin       = r"$A_{\rm kin} = $ "+"{:.2e}".format(self.spectra_obj.kin_list_fit_params_group_t[time_index][0])
+    str_alpha_kin   = r"$\alpha_\mathrm{kin} = $ "+"{:.2f}".format(self.spectra_obj.kin_list_fit_params_group_t[time_index][1])
+    str_knu         = r"$k_\nu = $ "+"{:.2f}".format(1 / self.spectra_obj.kin_list_fit_params_group_t[time_index][2])
+    ## magnetic energy spectra labels
+    str_mag_spectra = r"$\mathcal{P}_{\rm mag}(k) = A_{\rm mag} k^{\alpha_{\rm mag}} K_0\left\{-\frac{k}{k_\eta}\right\}$"
+    str_A_mag       = r"$A_{\rm mag} = $ "+"{:.2e}".format(self.spectra_obj.mag_list_fit_params_group_t[time_index][0])
+    str_alpha_mag   = r"$\alpha_\mathrm{mag} = $ "+"{:.2f}".format(self.spectra_obj.mag_list_fit_params_group_t[time_index][1])
+    str_keta        = r"$k_\eta = $ "+"{:.2f}".format(1 / self.spectra_obj.mag_list_fit_params_group_t[time_index][2])
+    str_kmax        = r"$k_p = $ "+"{:.2f}".format(self.spectra_obj.k_max_group_t[time_index])
     PlotFuncs.plotLabelBox(
       fig, ax,
       ## box placement
@@ -506,28 +231,17 @@ class PlotSpectraFit():
       fontsize = 14,
       ## list of labels to place in box
       list_fig_labels = [
-        ## kinetic energy spectra fit
-        r"$\mathcal{P}_{\rm kin}(k) = A k^{\alpha_{\rm kin}} \exp\left\{-\frac{k}{k_\nu}\right\}$",
-        (
-          r"$A = $ "+"{:.2e}".format(self.spectra_obj.kin_list_fit_params_group_t[time_index][0]) +
-          r", $\alpha_\mathrm{kin} = $ "+"{:.2f}".format(self.spectra_obj.kin_list_fit_params_group_t[time_index][1]) +
-          r", $k_\nu = $ "+"{:.2f}".format(1 / self.spectra_obj.kin_list_fit_params_group_t[time_index][2])
-        ),
-        ## magnetic spectra fit
-        r"$\mathcal{P}_{\rm mag}(k) = A k^{\alpha_{\rm mag}} K_0\left\{-\frac{k}{k_\eta}\right\}$",
-        (
-          r"$A = $ "+"{:.2e}".format(self.spectra_obj.mag_list_fit_params_group_t[time_index][0]) +
-          r", $\alpha_\mathrm{mag} = $ "+"{:.2f}".format(self.spectra_obj.mag_list_fit_params_group_t[time_index][1]) +
-          r", $k_\eta = $ "+"{:.2f}".format(1 / self.spectra_obj.mag_list_fit_params_group_t[time_index][2]) + 
-          r", $k_p = $ "+"{:.2f}".format(self.spectra_obj.k_max_group_t[time_index])
-        )
+        str_kin_spectra,
+        str_A_kin + r", " + str_alpha_kin + r", " + str_knu,
+        str_mag_spectra,
+        str_A_mag + r", " + str_alpha_mag + r", " + str_keta + r", " + str_kmax
       ]
     )
     ## add legend
     ax.legend(frameon=True, loc="upper left", facecolor="white", framealpha=0.5, fontsize=14)
     ## add time stamp
     ax.text(0.975, 0.975,
-      r"$t / t_{\rm eddy} = $ "+"{:.1f}".format(self.sim_times[time_index]), 
+      r"$t / t_{\rm turb} = $ "+"{:.1f}".format(self.sim_times[time_index]), 
       va="top", ha="right", transform=ax.transAxes, fontsize=16
     )
     ## adjust figure axes
@@ -537,10 +251,10 @@ class PlotSpectraFit():
     ax.set_yscale("log")
     ## label axes
     ax.set_xlabel(r"$k$")
-    ax.set_ylabel(r"$\mathcal{P}$")
-    ## ###############################
-    ## SAVE FIGURE
-    ## #############
+    ax.set_ylabel(r"$\mathcal{P}(k)$")
+    ## ###############
+    ## SAVE THE FIGURE
+    ## ###############
     ## make sure that a name for the figure has been defined
     if fig_name is None:
       fig_name = WWFnF.createName([
@@ -561,14 +275,16 @@ class PlotSpectraFit():
     ax.clear()
   def aniSpectra(
       self,
-      filepath_plot,
-      filepath_ani_movie
+      filepath_frames,
+      filepath_ani_movie,
+      bool_hide_updates = False
     ):
     PlotFuncs.aniEvolution(
-      filepath_plot,
-      filepath_ani_movie,
-      WWFnF.createName([ self.spectra_obj.sim_suite, self.spectra_obj.sim_label, "spectra_fit=%*.png" ]),
-      WWFnF.createName([ self.spectra_obj.sim_suite, self.spectra_obj.sim_label, "ani_spectra_fit.mp4" ])
+      filepath_frames    = filepath_frames,
+      filepath_ani_movie = filepath_ani_movie,
+      input_name  = WWFnF.createName([ self.spectra_obj.sim_suite, self.spectra_obj.sim_label, "spectra_fit=%*.png" ]),
+      output_name = WWFnF.createName([ self.spectra_obj.sim_suite, self.spectra_obj.sim_label, "ani_spectra_fit.mp4" ]),
+      bool_hide_updates = bool_hide_updates
     )
 
 
@@ -629,7 +345,7 @@ class PlotSpectra():
       ## #######
       ## add time stamp
       ax.text(0.975, 0.975, 
-        r"$t/t_{\rm eddy} = $ "+"{:.1f}".format(self.sim_times[time_index]), 
+        r"$t/t_{\rm turb} = $ "+"{:.1f}".format(self.sim_times[time_index]), 
         va="top", ha="right", transform=ax.transAxes, fontsize=16
       )
       ## add legend

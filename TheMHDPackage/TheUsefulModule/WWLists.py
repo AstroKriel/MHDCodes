@@ -68,7 +68,7 @@ def loopListWithUpdates(list_elems, bool_hide_updates=False):
   )
 
 def extendInputList(list_elems, list_str, des_len, des_val=None):
-  ## if (the input list is not empty) and (desired value is not specified)
+  ## if (the input list is not empty) and (desired value is None / not specified)
   if (len(list_elems) > 0) and (des_val is None):
     ## then extend the list with the list's first entry
     des_val = list_elems[0]
@@ -79,7 +79,7 @@ def extendInputList(list_elems, list_str, des_len, des_val=None):
         (list_elems[0] is None) and 
         ( isinstance(des_val, list) and (len(des_val) == des_len) )
       ):
-      print("\t> Extended '{:s}' from length '{:d}' to length '{:d}' with '{:}'...".format(
+      print("\t> Set contents of '{:s}' to '{:}'".format(
         list_str,
         len(list_elems),
         len(des_val),
@@ -88,7 +88,7 @@ def extendInputList(list_elems, list_str, des_len, des_val=None):
       ## set the contents of the input list as the desired list's contents
       list_elems[:] = des_val
     else:
-      print("\t> Extended '{:s}' from length '{:d}' to length '{:d}' with '{:}'...".format(
+      print("\t> Extended '{:s}' from length '{:d}' to length '{:d}' with '{:}'".format(
         list_str,
         len(list_elems),
         des_len,

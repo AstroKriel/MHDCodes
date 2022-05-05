@@ -28,15 +28,17 @@ def funcPrepSimulation(
   ## CALCULATE NU AND ETA FOR SIMULATION
   ## ###################################
   if (Re is not None) and (Pm is not None):
+    ## Re and Pm have been defined
     nu  = round(float(rms_Mach) * ell_turb / float(Re), 5)
     eta = round(nu / float(Pm), 5)
     Rm  = round(float(rms_Mach) * ell_turb / eta)
   elif (Rm is not None) and (Pm is not None):
+    ## Rm and Pm have been defined
     eta = round(float(rms_Mach) * ell_turb / float(Rm), 5)
     nu  = round(eta * float(Pm), 5)
     Re  = round(float(rms_Mach) * ell_turb / nu)
   else:
-    print("You have not defined the required number of plasma Reynolds numbers (Re = {:}, Rm = {:}, Pm = {:}).".format(
+    Exception("You have not defined the required number of plasma Reynolds numbers (Re = {:} or Rm = {:}, and Pm = {:}).".format(
       Re, Rm, Pm
     ))
     return
@@ -327,6 +329,9 @@ def funcCreateFitJob(
   filename_execute_program = "plot_spectra_1_fit.py"
   job_name     = "job_fit_spect.sh"
   filepath_job = filepath_sim_spect + "/" + job_name
+  filepath_sim_suite = createFilepath([
+    filepath_base, suite_folder, sim_res, sonic_regime
+  ])
   job_tagname  = suite_folder + sim_folder + "fit" + sim_res
   max_hours    = int(8)
   num_cpus     = int(2)
@@ -347,14 +352,12 @@ def funcCreateFitJob(
     job_file.write("#PBS -m bea\n")
     job_file.write("#PBS -M {}\n".format( EMAIL_ADDRESS ))
     job_file.write("\n")
-    job_file.write("{} -base_path {} -sim_folders {} -analyse 1 -Re {} -Rm {} -sim_suites super_{} -plot_spectra 1 -hide_updates 1 -fit_sub_Ek_range 1 -log_Ek_range 6 1>shell_fit.out00 2>&1\n".format(
-      filename_execute_program, # program
-      createFilepath([
-        filepath_base, suite_folder, sim_res, sonic_regime
-      ]),
-      sim_folder,  # simulation name
-      Re, Rm,      # plasma Reynolds numbers
-      suite_folder # suite name
+    job_file.write("{} -base_path {} -sim_folders {} -sim_suites super_{} -Re {} -Rm {} fit_spectra 1 -plot_spectra 1 -hide_updates 1 -fit_sub_Ek_range 1 -log_Ek_range 6 1>shell_fit.out00 2>&1\n".format(
+      filename_execute_program, # fitting program
+      filepath_sim_suite,       # base_path: path to simulation suite
+      sim_folder,               # sim_folders: simulation name
+      suite_folder,             # sim_suites: suite name
+      Re, Rm                    # plasma Reynolds numbers
     ))
   ## print to terminal that job file has been created
   print("\t> Created job '{}' to run '{}'".format(
@@ -405,13 +408,11 @@ def main():
   ## define typical input requirements
   bool_args = {"required":False, "type":str2bool, "nargs":"?", "const":True}
   ## program inputs
-  args_opt.add_argument("-make_sim",     default=False, **bool_args)
+  args_opt.add_argument("-prep_sim",     default=False, **bool_args)
   args_opt.add_argument("-calc_spectra", default=False, **bool_args)
   args_opt.add_argument("-fit_spectra",  default=False, **bool_args)
-  ## information about the directory
-  args_opt.add_argument("-sub_folder",   required=False, type=str, default="")
-  args_opt.add_argument("-sonic_regime", required=False, type=str, default="super_sonic")
   ## simulation details
+  args_opt.add_argument("-sonic_regime", required=False, type=str, default="super_sonic")
   args_opt.add_argument("-num_blocks",   required=False, type=int, default=[36, 36, 48], nargs="+")
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description='Required processing arguments:')
@@ -428,7 +429,7 @@ def main():
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
   ## booleans to determine what jobs the program creates
-  bool_make_sim      = args["make_sim"]
+  bool_prep_sim      = args["prep_sim"]
   bool_calc_spectra  = args["calc_spectra"]
   bool_fit_spectra   = args["fit_spectra"]
   ## directory information
@@ -437,7 +438,6 @@ def main():
   list_sim_res       = args["sim_res"]
   sonic_regime       = args["sonic_regime"]
   list_sim_folders   = args["sim_folders"]
-  sub_folder         = args["sub_folder"]
   ## simulation details
   num_blocks         = args["num_blocks"]
 
@@ -460,7 +460,7 @@ def main():
         ## ##################################
         ## create filepath to simulation folder (on GADI)
         filepath_sim = createFilepath([
-          filepath_base, suite_folder, sim_res, sonic_regime, sim_folder, sub_folder
+          filepath_base, suite_folder, sim_res, sonic_regime, sim_folder
         ])
         ## check that the simulation directory exists
         if not os.path.exists(filepath_sim):
@@ -472,11 +472,10 @@ def main():
         ## #################################
         ## CREATE JOB FILE TO RUN SIMULATION
         ## #################################
-        if bool_make_sim:
+        if bool_prep_sim:
           funcPrepSimulation(
             ## directories
-            filepath_base, # home (SCRATCH) directory
-            filepath_sim,  # simulation directory
+            filepath_base, filepath_sim,
             ## simulation details
             suite_folder, sim_res, sonic_regime, sim_folder,
             num_blocks = num_blocks,
@@ -506,10 +505,7 @@ def main():
         ## ##############################
         if bool_fit_spectra:
           funcPrepSpectraFit(
-            filepath_base,
-            createFilepath([
-              filepath_base, suite_folder, sim_res, sonic_regime, sim_folder
-            ]),
+            filepath_base, filepath_sim,
             suite_folder, sim_res, sonic_regime, sim_folder
           )
 
