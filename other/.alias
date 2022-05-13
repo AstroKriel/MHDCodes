@@ -1,0 +1,37 @@
+alias e='emacs $OPTIONS'
+
+## creating interactive jobs
+alias job_48cpus_ek9="qsub -I -X -P ek9 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=48,mem=192GB"
+alias job_8cpus_ek9="qsub -I -X -P ek9 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=8,mem=32GB"
+
+alias job_48cpus_jh2="qsub -I -X -P jh2 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=48,mem=192GB"
+alias job_8cpus_jh2="qsub -I -X -P jh2 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=8,mem=32GB"
+
+## query group status
+alias info_ek9="lquota; nci-files-report -f scratch -p ek9; nci-files-report -f gdata -p ek9; nci_account -v"
+alias info_jh2="lquota; nci-files-report -f scratch -p jh2; nci-files-report -f gdata -p ek9; nci_account -v"
+
+## query active jobs
+alias myps='ps -elf | grep $USER'
+alias qs='qstat | grep -e $USER'
+alias qa='nqstat_anu'
+alias qn='qstat -f | grep "Job_Name"'
+alias qi='qstat -f | grep "Job Id"'
+
+## check the size / number of folders / files in current directory
+alias dir_size='du -hcs * | sort -h'
+alias num_files='find . -maxdepth 1 -mindepth 1 -type d -exec sh -c '\''echo "{} : $(find "{}" -type f | wc -l)" file\(s\)'\'' \;'
+
+## list contents in directory
+alias lss="ls -XG" # list files in column format
+alias lsl="ls -XG -l" # list files + orgnaise by name
+alias lst="ls -trlG -h" # list files + orgnaise by last time changed
+alias lsh="ls -XlhG"
+
+## python 3
+alias py="python3"
+
+## view long column-formated files
+alias less="less -S"
+
+## end of file

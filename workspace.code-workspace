@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{ "path": "." },
+    { "path": "../nk-tools" },
+    { "path": "../nk-python" },
+		{ "path": "../scratch" },
+    { "path": "../flash" },
+    // { "path": ".." },
+	],
+  "settings": {
+    "editor.fontSize": 10.5
+  }
+}
