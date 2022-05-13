@@ -105,7 +105,7 @@ class PlotAveSpectra():
     ## plot time-averaged spectra
     self.ax.plot(
       self.list_k, np.median(list_power, axis=0),
-      label=label, color=color, ls="-", lw=2, zorder=3
+      label=label, color=color, ls="-", lw=1.5, zorder=3
     )
     ## plot time-averaged spectra
     self.ax.fill_between(

@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../../scratch"
+		},
+		{
+			"path": ".."
+		}
+	],
+  "settings": {
+    "editor.fontSize": 10.5
+  }
+}

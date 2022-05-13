@@ -132,6 +132,8 @@ def funcPlotTurb(
     time_start = 0.1,
     time_end   = np.inf
   )
+  ## calculate max of the plot domain
+  max_time = max([ 100, max(data_time) ])
   ## calculate energy ratio: 'E_B / E_K'
   data_E_ratio = [
     (E_B / E_K) for E_B, E_K in zip(data_E_B, data_E_K)
@@ -139,28 +141,42 @@ def funcPlotTurb(
   ## plot mach
   axs[0].plot(
     data_time, data_Mach,
-    color=color_data, marker=".", ms=1, ls="-", lw=1, zorder=3
+    color=color_data, ls="-", lw=1.5, zorder=3
   )
   axs[0].set_xlabel(r"$t / t_\mathrm{turb}$")
   axs[0].set_ylabel(r"$\mathcal{M}$")
-  axs[0].set_xlim([0, max(data_time)])
+  axs[0].set_xlim([ 0, max_time ])
   ## plot energy ratio
-  axs1_min = min(data_E_ratio)
   axs[1].plot(
     data_time, data_E_ratio,
-    color=color_data, marker=".", ms=1, ls="-", lw=1, zorder=3
+    color=color_data, ls="-", lw=1.5, zorder=3
   )
+
+  min_E_ratio         = min(data_E_ratio)
+  log_min_E_ratio     = np.log10(min_E_ratio)
+  new_log_min_E_ratio = np.floor(log_min_E_ratio)
+  num_decades         = 1 + (-new_log_min_E_ratio)
+  new_min_E_ratio     = 10**new_log_min_E_ratio
+  num_y_major_ticks   = np.ceil(num_decades / 2)
+
+  # print(min_E_ratio)
+  # print(log_min_E_ratio)
+  # print(new_log_min_E_ratio)
+  # print(num_decades)
+  # print(new_min_E_ratio)
+  # print(num_y_major_ticks)
+
   axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
   axs[1].set_ylabel(r"$E_\mathrm{mag} / E_\mathrm{kin}$")
-  axs[1].set_xlim([0, max(data_time)])
   axs[1].set_yscale("log")
-  axs[1].set_ylim([ axs1_min, 10**(1) ])
+  axs[1].set_xlim([ 0, max_time ])
+  axs[1].set_ylim([ new_min_E_ratio, 10**(1) ])
   ## add log axis-ticks
   PlotFuncs.addLogAxisTicks(
     axs[1],
     # bool_minor_ticks    = True,
     bool_major_ticks    = True,
-    max_num_major_ticks = 4
+    max_num_major_ticks = num_y_major_ticks
   )
   ## get index range corresponding with kinematic phase of the dynamo
   index_exp_start = WWLists.getIndexClosestValue(data_E_ratio, 10**(-9))
@@ -211,15 +227,11 @@ def funcPlotSpectra(
       label = None,
       color = "black",
     ):
-    plot_args = { "color":color, "ls":"-", "lw":1, "marker":".", "ms":1 }
     if (time_range[0] is not None) and (time_range[1] is not None):
       index_start = WWLists.getIndexClosestValue(data_x, time_range[0])
       index_end   = WWLists.getIndexClosestValue(data_x, time_range[1])
-      ## full dataset
-      ax.plot(data_x, data_y, **plot_args, alpha=0.1, zorder=3)
       ## measure data statistics in the fitting range
       if "=" in label:
-        ## measure average saturation level
         data_x_sub  = data_x[index_start : index_end]
         data_y_sub  = data_y[index_start : index_end]
         data_y_mean = np.mean(data_y_sub)
@@ -231,14 +243,15 @@ def funcPlotSpectra(
           [data_y_mean] * len(data_x_sub),
           color="black", ls=":", lw=2, zorder=7
         )
-      ## subset of data
+      ## plot full dataset
+      ax.plot(data_x, data_y, color=color, ls="-", lw=1, alpha=0.1, zorder=3)
+      ## plot subset of data
       ax.plot(
         data_x[index_start : index_end],
         data_y[index_start : index_end],
-        label = label,
-        **plot_args, zorder=5
+        label=label, color=color, ls="-", lw=1.5, zorder=5
       )
-    else: ax.plot(data_x, data_y, label=label, **plot_args, zorder=3)
+    else: ax.plot(data_x, data_y, label=label, color=color, ls="-", lw=1.5, zorder=3)
   ## #################
   ## LOAD SPECTRA DATA
   ## #################
@@ -302,7 +315,7 @@ def funcPlotSpectra(
     if bool_kin_spectra_fitted:
       plotData(axs[1], kin_sim_times, kin_alpha, label=r"$\alpha_{\rm kin} =$ ", color="blue")
     if bool_mag_spectra_fitted:
-      plotData(axs[1], mag_sim_times, mag_alpha, label=r"$\alpha_{\rm alpha} =$ ", color="red")
+      plotData(axs[1], mag_sim_times, mag_alpha, label=r"$\alpha_{\rm mag} =$ ", color="red")
     ## label and tune figure
     axs[1].legend(frameon=False, loc="right", fontsize=14)
     axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
@@ -406,10 +419,10 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
   else:
     ## check what data was missing
     if not(bool_plot_energy):
-      print("\t> ERROR: No '{}' data in:".format(FILENAME_TURB))
+      print("\t> ERROR: No '{}' file in:".format(FILENAME_TURB))
       print("\t\t", filepath_data_turb)
     elif not(bool_plot_spectra):
-      print("\t> ERROR: No '{}' data in:".format(FILENAME_SPECTRA_OBJ))
+      print("\t> ERROR: No '{}' file in:".format(FILENAME_SPECTRA_OBJ))
       print("\t\t", filepath_data_spect)
     ## save the figure
     fig_filepath = WWFnF.createFilepath([filepath_plot, fig_name])

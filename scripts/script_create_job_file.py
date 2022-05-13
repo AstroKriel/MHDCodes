@@ -247,7 +247,7 @@ def funcCreateCalcSpectraJob(
     suite_folder, sim_res, sim_folder
   ):
   # define job details
-  filename_execute_program = "calc_spectra_data.py"
+  filename_execute_program = "script_calc_spectra.py"
   job_name     = "job_calc_spect.sh"
   filepath_job = filepath_sim + "/" + job_name
   job_tagname  = suite_folder + sim_folder + "spectra" + sim_res

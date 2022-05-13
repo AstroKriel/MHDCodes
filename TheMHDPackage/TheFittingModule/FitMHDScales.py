@@ -162,13 +162,13 @@ class FitSpectra():
     self.list_sim_times     = WWLists.subsetListByIndices(list_sim_times,   list_subset_indices)
     ## fitting parameters
     self.bool_fit_magnetic_spectra = bool_fit_magnetic_spectra
-    self.bool_fit_fixed_model = bool_fit_fixed_model
-    self.bool_fit_sub_Ek_range = bool_fit_sub_Ek_range
-    self.log_Ek_range = log_Ek_range
-    self.func_fit_simple = func_fit_simple
-    self.func_fit   = func_fit
-    self.func_plot  = func_plot
-    self.fit_bounds = fit_bounds
+    self.bool_fit_fixed_model      = bool_fit_fixed_model
+    self.bool_fit_sub_Ek_range     = bool_fit_sub_Ek_range
+    self.log_Ek_range              = log_Ek_range
+    self.func_fit_simple           = func_fit_simple
+    self.func_fit                  = func_fit
+    self.func_plot                 = func_plot
+    self.fit_bounds                = fit_bounds
     ## ----------------
     ## INITIALISE LISTS
     ## ----------------
@@ -179,23 +179,23 @@ class FitSpectra():
     self.k_scale_group_t = []
     self.k_max_group_t   = []
     ## fit information (for each time realisation)
-    self.list_best_fit_params_group_t = [] # (best) fit parameters
+    self.list_best_fit_params_group_t = [] # best fit parameters
     self.list_best_fit_std_group_t    = [] # list of fit param std
-    self.best_fit_k_index_group_t     = [] # break point (k index) of best fits
-    self.list_fit_k_range_group_t     = [] # list of number of points fitted to
-    self.list_fit_2norm_group_t       = [] # list of fit errors (obj func) evaluated for all possible k break points, for all fits
+    self.best_fit_k_index_group_t     = [] # break point (k index) of best fit
+    self.list_fit_k_range_group_t     = [] # number of points fitted to
+    self.list_fit_2norm_group_t       = [] # objective func evaluated for all possible k break points
     ## -----------
     ## FIT SPECTRA
     ## -----------
     ## for each time slice
     for _, time_index in WWLists.loopListWithUpdates(self.list_sim_times, bool_hide_updates):
       ## fit spectra and store information
-      self.fitToSpectraSubset(time_index)
-  def fitToSpectraSubset(
+      self.fitToSpectra(time_index)
+  def fitToSpectra(
       self,
       time_index,
-      start_index = 2,
-      step_index  = 1,
+      start_index = 2, # TODO: k=1 for magnetic and k=3 for kinetic energy spectra fits
+      step_index  = 1, # change index to mode
       end_index   = None
     ):
     ## -----------------------------
@@ -221,7 +221,7 @@ class FitSpectra():
     ## ---------------------
     ## save the range of k explored when fitting at t/T
     list_fit_k_range = range(start_index, end_index, step_index)
-    for break_index in range(start_index, end_index, step_index):
+    for break_index in list_fit_k_range:
       ## subset spectra curve
       x_data_curve_linear = np.array(data_k[:break_index])
       y_data_curve_loge   = np.log(data_power[:break_index])
