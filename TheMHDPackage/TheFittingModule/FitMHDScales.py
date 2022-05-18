@@ -23,14 +23,14 @@ class SpectraScales():
   def __init__(
       self,
       Pm,
-      list_k_nu_converged, list_k_eta_converged, list_k_max_converged
+      list_k_nu_converged, list_k_eta_converged, list_k_p_converged
     ):
     ## simulation setup information
     self.Pm = Pm
     ## converged scales
     self.list_k_nu_converged  = list_k_nu_converged
     self.list_k_eta_converged = list_k_eta_converged
-    self.list_k_max_converged = list_k_max_converged
+    self.list_k_p_converged   = list_k_p_converged
 
 class SpectraFit():
   def __init__(
@@ -39,7 +39,7 @@ class SpectraFit():
       ## SIMULATION SETUP
       ## ###########
         ## identifiers
-        sim_suite, sim_label, Re, Rm, sim_res,
+        sim_suite, sim_label, Re, Rm, Pm, sim_res,
       ## ##########################
       ## VELOCITY SPECTRA VARIABLES
       ## ###########
@@ -76,6 +76,7 @@ class SpectraFit():
         mag_list_fit_power_group_t,
         ## measured scale
         k_eta_group_t,
+        k_p_group_t,
         k_max_group_t,
         ## best fit information
         mag_list_fit_params_group_t,
@@ -91,49 +92,50 @@ class SpectraFit():
     ## stamp when the spectra file was made
     self.date_analysed = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     ## simulation information
-    self.kin_sim_times = kin_sim_times
-    self.mag_sim_times = mag_sim_times
-    self.sim_suite = sim_suite
-    self.sim_label = sim_label
-    self.sim_res = sim_res
-    self.Re = Re
-    self.Rm = Rm
-    self.Pm = Rm / Re
-    self.bool_kin_fixed_model = bool_kin_fixed_model
-    self.bool_mag_fixed_model = bool_mag_fixed_model
-    ## simulation data
-    self.kin_list_k_group_t = kin_list_k_group_t
-    self.mag_list_k_group_t = mag_list_k_group_t
-    self.kin_list_power_group_t = kin_list_power_group_t
-    self.mag_list_power_group_t = mag_list_power_group_t
-    ## fitting time range
-    self.kin_fit_start_t = kin_fit_start_t
-    self.mag_fit_start_t = mag_fit_start_t
-    self.kin_fit_end_t   = kin_fit_end_t
-    self.mag_fit_end_t   = mag_fit_end_t
-    ## fitted spectras
-    self.kin_list_fit_k_group_t = kin_list_fit_k_group_t
-    self.mag_list_fit_k_group_t = mag_list_fit_k_group_t
-    self.kin_list_fit_power_group_t = kin_list_fit_power_group_t
-    self.mag_list_fit_power_group_t = mag_list_fit_power_group_t
+    self.sim_suite                    = sim_suite
+    self.sim_label                    = sim_label
+    self.sim_res                      = sim_res
+    self.Re                           = Re
+    self.Rm                           = Rm
+    self.Pm                           = Pm
+    self.bool_kin_fixed_model         = bool_kin_fixed_model
+    self.bool_mag_fixed_model         = bool_mag_fixed_model
+    ## spectra data
+    self.kin_sim_times                = kin_sim_times
+    self.mag_sim_times                = mag_sim_times
+    self.kin_list_k_group_t           = kin_list_k_group_t
+    self.mag_list_k_group_t           = mag_list_k_group_t
+    self.kin_list_power_group_t       = kin_list_power_group_t
+    self.mag_list_power_group_t       = mag_list_power_group_t
+    ## fit time range
+    self.kin_fit_start_t              = kin_fit_start_t
+    self.mag_fit_start_t              = mag_fit_start_t
+    self.kin_fit_end_t                = kin_fit_end_t
+    self.mag_fit_end_t                = mag_fit_end_t
+    ## fitted spectra
+    self.kin_list_fit_k_group_t       = kin_list_fit_k_group_t
+    self.mag_list_fit_k_group_t       = mag_list_fit_k_group_t
+    self.kin_list_fit_power_group_t   = kin_list_fit_power_group_t
+    self.mag_list_fit_power_group_t   = mag_list_fit_power_group_t
     ## measured scales
-    self.k_nu_group_t  = k_nu_group_t
-    self.k_eta_group_t = k_eta_group_t
-    self.k_max_group_t = k_max_group_t
+    self.k_nu_group_t                 = k_nu_group_t
+    self.k_eta_group_t                = k_eta_group_t
+    self.k_p_group_t                  = k_p_group_t
+    self.k_max_group_t                = k_max_group_t
     ## fitted spectra parameters
-    self.kin_list_fit_params_group_t = kin_list_fit_params_group_t
-    self.mag_list_fit_params_group_t = mag_list_fit_params_group_t
-    ## uncertainties in parameter fits
-    self.kin_list_fit_std_group_t = kin_list_fit_std_group_t
-    self.mag_list_fit_std_group_t = mag_list_fit_std_group_t
-    ## break point (k index) of best fits
-    self.kin_fit_k_index_group_t = kin_fit_k_index_group_t
-    self.mag_fit_k_index_group_t = mag_fit_k_index_group_t
-    ## fit quality information
+    self.kin_list_fit_params_group_t  = kin_list_fit_params_group_t
+    self.mag_list_fit_params_group_t  = mag_list_fit_params_group_t
+    ## uncertainties in fit parameter
+    self.kin_list_fit_std_group_t     = kin_list_fit_std_group_t
+    self.mag_list_fit_std_group_t     = mag_list_fit_std_group_t
+    ## max k-mode fitted (break point) for best fits
+    self.kin_fit_k_index_group_t      = kin_fit_k_index_group_t
+    self.mag_fit_k_index_group_t      = mag_fit_k_index_group_t
+    ## fit information
     self.kin_list_fit_k_range_group_t = kin_list_fit_k_range_group_t
     self.mag_list_fit_k_range_group_t = mag_list_fit_k_range_group_t
-    self.kin_list_fit_2norm_group_t = kin_list_fit_2norm_group_t
-    self.mag_list_fit_2norm_group_t = mag_list_fit_2norm_group_t
+    self.kin_list_fit_2norm_group_t   = kin_list_fit_2norm_group_t
+    self.mag_list_fit_2norm_group_t   = mag_list_fit_2norm_group_t
 
 
 ## ###############################################################
@@ -378,7 +380,9 @@ class FitSpectra():
 class FitVelSpectra(FitSpectra):
   def __init__(
       self,
-      list_k_group_t, list_power_group_t, list_sim_times,
+      list_k_group_t,
+      list_power_group_t,
+      list_sim_times,
       bool_fit_fixed_model = False,
       bool_fit_sub_Ek_range = False,
       log_Ek_range = 6,
