@@ -30,57 +30,5 @@ module load fftw3/3.3.8
 module load openmpi/4.0.2
 module load ffmpeg
 
-## minimal display name
-export PS1="\n\u: \W$ "
-
-# ## Add extra line after executing command
-# PS1="\n$PS1"
-
-## home
-export HOME=/home/586/$USER
-alias dhome="cd $HOME"
-
-## bin
-export BIN=$HOME/bin
-alias dbin="cd $BIN"
-
-## SCRATCH directories
-export SCRATCH_ek9=/scratch/ek9/$USER
-export SCRATCH_jh2=/scratch/jh2/$USER
-
-alias dscrek9="cd $SCRATCH_ek9"
-alias dscrjh2="cd $SCRATCH_jh2"
-
-# GDATA
-export GDATA_ek9=/g/data1b/ek9/$USER
-export GDATA_jh2=/g/data1b/jh2/$USER
-
-alias dgdek9="cd $GDATA_ek9"
-alias dgdjh2="cd $GDATA_jh2"
-
-## analysis codes / MHD packaage
-export MHDCodes=$HOME/MHDCodes
-export MHDPackage=$MHDCodes/TheMHDPackage
-
-alias dmhd="cd $MHDCodes"
-
-export PATH=$PATH:$MHDCodes/analysis
-export PATH=$PATH:$MHDCodes/scripts
-export PYTHONPATH=$PYTHONPATH:$MHDPackage
-
-## FLASH directories
-export FLASH=$HOME/nk-flash
-export FORCE=$FLASH/source/physics/sourceTerms/Stir/StirFromFileMain/forcing_generator
-export STIR=$FLASH/source/Simulation/SimulationMain/StirFromFile
-
-alias dflash="cd $FLASH"
-alias dforce="cd $FORCE"
-alias dstir="cd $STIR"
-
-## useful 'tool' directories
-export TOOLS=$HOME/nk-tools
-export SPECTRA=$TOOLS/spectra
-
-alias dtools="cd $TOOLS"
 
 ## END OF FILE

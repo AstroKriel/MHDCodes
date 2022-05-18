@@ -41,7 +41,7 @@ def funcCreateFolderNMoveFiles(
   sim_filepath_sub_folder = WWFnF.createFilepath([filepath_sim, file_n_folder_name])
   ## get the list of file instances in the base simulation folder
   list_files_in_mainfolder = WWFnF.getFilesFromFolder(
-    folder_directory = filepath_sim,
+    filepath         = filepath_sim,
     str_startswith   = "Turb",
     str_contains     = file_n_folder_name,
     str_not_contains = file_name_not_conatins
@@ -59,7 +59,7 @@ def funcCreateFolderNMoveFiles(
   if os.path.exists(sim_filepath_sub_folder):
     ## get the list of files instances in the sub-folder
     list_files_in_subfolder = WWFnF.getFilesFromFolder(
-      folder_directory = sim_filepath_sub_folder,
+      filepath         = sim_filepath_sub_folder,
       str_startswith   = "Turb",
       str_contains     = file_n_folder_name,
       str_not_contains = file_name_not_conatins
@@ -184,7 +184,7 @@ def main():
         filepath_spect = filepath_sim + "/spect"
         ## get the number of 'spect' files in 'plt' folder
         list_spect_files_in_plt_folder = WWFnF.getFilesFromFolder(
-          folder_directory = filepath_plt,
+          filepath     = filepath_plt,
           str_contains = "spect",
           str_endswith = ".dat"
         )
@@ -203,7 +203,7 @@ def main():
         ## ##################################
         ## get number of 'chk' files
         list_chk_files = WWFnF.getFilesFromFolder(
-          folder_directory = filepath_sim,
+          filepath       = filepath_sim,
           str_startswith = "Turb_hdf5_chk_"
         )
         ## if there are many 'chk' files
@@ -237,3 +237,5 @@ def main():
 if __name__ == "__main__":
   main()
   sys.exit()
+
+## END OF PROGRAM

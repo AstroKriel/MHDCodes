@@ -1,13 +1,23 @@
 {
 	"folders": [
-		{ "path": "." },
-    { "path": "../nk-tools" },
-    { "path": "../nk-python" },
-		{ "path": "../scratch" },
-    { "path": "../flash" },
-    // { "path": ".." },
-	],
+    {
+      "path": "."
+    },
+    {
+      "path": "../nk-tools"
+    },
+    {
+      "path": "../nk-python"
+    },
+    {
+      "path": "../nk-flash"
+    },
+    {
+      "path": "../scratch"
+    }
+  ],
   "settings": {
-    "editor.fontSize": 10.5
+    "editor.fontSize": 10.5,
+    "makefile.extensionOutputFolder": "./.vscode"
   }
 }

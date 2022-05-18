@@ -34,12 +34,6 @@ def main():
         if not path.exists(sim_filepath_data):
           print(sim_filepath_data, "does not exist.")
           continue
-        # ## create TAR file for data
-        # tar_filename = suite_folder+"_"+sim_res+"_"+sim_folder+".tar"
-        # os.system("tar -cvf {:s} {:s}/Turb_hdf5_plt_cnt_*".format(
-        #     tar_filename,
-        #     sim_filepath_data
-        # ))
         ## archive data
         os.chdir(sim_filepath_data) # change the directory
         os.system("pwd") # check the directory

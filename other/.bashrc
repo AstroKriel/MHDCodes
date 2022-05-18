@@ -54,8 +54,12 @@ fi
 ## source .alias if exists
 test -s ~/.alias && . ~/.alias || true
 
-## add $HOME/bin to PATH, so own programs (e.g., prep_restart.py, etc.) should go in there
+## minimal display name
+export PS1="\n\u: \W$ "
+
+## ------------ add bin directories to PATH ------------
 export PATH=$HOME/bin:$PATH
+export PATH=$PATH:/bin/gnuplot
 
 ## ------------ set Python envirnoment vars ------------
 export PYTHONPATH=$HOME/PYTHON
@@ -65,8 +69,56 @@ export PATH=$PATH:$HOME/.local/bin/
 export MATPLOTLIBRC=$PYTHONPATH/matplotlib/matplotlibrc
 export MPLCONFIGDIR=$PYTHONPATH/matplotlib
 
-## for IDL environment
-export IDL_STARTUP=${HOME}/IDL/idlstartup
+## ------------ set user envirnoment vars ------------
+## home
+export HOME=/home/586/$USER
+alias dhome="cd $HOME"
+
+## bin
+export BIN=$HOME/bin
+alias dbin="cd $BIN"
+
+## scratch directories
+export SCRATCH_ek9=/scratch/ek9/$USER
+export SCRATCH_jh2=/scratch/jh2/$USER
+
+alias dscrek9="cd $SCRATCH_ek9"
+alias dscrjh2="cd $SCRATCH_jh2"
+
+## gdata
+export GDATA_ek9=/g/data1b/ek9/$USER
+export GDATA_jh2=/g/data1b/jh2/$USER
+
+alias dgdek9="cd $GDATA_ek9"
+alias dgdjh2="cd $GDATA_jh2"
+
+## analysis codes / MHD packaage
+export MHDCodes=$HOME/MHDCodes
+export MHDPackage=$MHDCodes/TheMHDPackage
+
+alias dmhd="cd $MHDCodes"
+
+export PATH=$PATH:$MHDCodes/analysis
+export PATH=$PATH:$MHDCodes/scripts
+export PYTHONPATH=$PYTHONPATH:$MHDPackage
+
+## FLASH directories
+export FLASH=$HOME/nk-flash
+export FORCE=$FLASH/source/physics/sourceTerms/Stir/StirFromFileMain/forcing_generator
+export STIR=$FLASH/source/Simulation/SimulationMain/StirFromFile
+
+alias dflash="cd $FLASH"
+alias dforce="cd $FORCE"
+alias dstir="cd $STIR"
+
+## useful 'tool' directories
+export TOOLS=$HOME/nk-tools
+export SPECTRA=$TOOLS/spectra
+
+alias dtools="cd $TOOLS"
+
+# ## for IDL environment
+# export IDL_STARTUP=${HOME}/IDL/idlstartup
 
 # for PETSC
 export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH

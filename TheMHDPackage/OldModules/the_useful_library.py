@@ -90,7 +90,7 @@ def makeFilter(
   return meetsCondition
 
 def getFilesFromFolder(
-    folder_directory, 
+    filepath, 
     str_contains       = None,
     str_startswith     = None,
     str_endswith       = None,

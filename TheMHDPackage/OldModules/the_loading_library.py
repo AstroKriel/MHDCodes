@@ -93,7 +93,7 @@ def loadListFLASHFieldSlice(
   list_data_mag_sorted = []
   ## filter for datacube files
   flash_filenames = getFilesFromFolder(
-    filepath_folder, 
+    filepath           = filepath_folder, 
     str_contains       = "Turb_hdf5_plt_cnt_",
     str_not_contains   = "spect",
     file_index_placing = -1,
@@ -160,7 +160,7 @@ def loadFLASHFieldDataList(
   '''
   ## filter the files in the directory for the HDF5 plot files
   filenames = getFilesFromFolder(
-    filepath_data,
+    filepath           = filepath_data,
     str_contains       = "Turb_hdf5_plt_cnt_",
     str_not_contains   = "spect",
     file_index_placing = -1,
@@ -275,9 +275,9 @@ def loadListSpectra(
   list_failed_to_load = []
   ## filter for spectra files
   spectra_filenames = getFilesFromFolder(
-    filepath_data, 
-    str_contains = "hdf5_plt_cnt",
-    str_endswith = "spect_" + str_spectra_type + "s.dat",
+    filepath           = filepath_data, 
+    str_contains       = "hdf5_plt_cnt",
+    str_endswith       = "spect_" + str_spectra_type + "s.dat",
     file_index_placing = -3,
     file_start_index   = file_start_index,
     file_end_index     = file_end_index

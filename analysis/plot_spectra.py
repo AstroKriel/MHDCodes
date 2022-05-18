@@ -1,138 +1,126 @@
 #!/usr/bin/env python3
 
-##################################################################
+## ###############################################################
 ## MODULES
-##################################################################
+## ###############################################################
 import os
-import sys
-import argparse
-import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-## load old user defined modules
-from OldModules.the_useful_library import *
-from OldModules.the_loading_library import *
-from OldModules.the_plotting_library import *
+## load user defined modules
+from TheUsefulModule import WWArgparse, P2Term, WWFnF, WWLists
+from TheLoadingModule import LoadFlashData
+from ThePlottingModule import PlotSpectra
 
 
-##################################################################
+## ##############################################################
 ## PREPARE WORKSPACE
-#################################################################
+## ##############################################################
+os.system("clear") # clear terminal window
 ## work in a non-interactive environment
-mpl.use("Agg")
 plt.ioff()
+mpl.use("Agg")
 
 
-##################################################################
-## INPUT COMMAND LINE ARGUMENTS
-##################################################################
-args_input = argparse.ArgumentParser(description="A bunch of input arguments:") 
-## ------------------- DEFINE OPTIONAL ARGUMENTS
-optional_bool_args = {"required":False, "type":str2bool, "nargs":"?", "const":True}
-args_opt = args_input.add_argument_group(description='Optional processing arguments:') # optional argument group
-## program workflow parameters
-args_opt.add_argument("-hide_updates", default=False, **optional_bool_args) # hide progress bar
-args_opt.add_argument("-plot_spectra",      default=True,  **optional_bool_args) # plot spectra frames
-args_opt.add_argument("-animate_spectra",   default=True,  **optional_bool_args) # animate spectra frames
-## directory information
-args_opt.add_argument("-vis_folder", type=str, default="vis_folder", required=False) # where figures are saved
-args_opt.add_argument("-dat_folder", type=str, default="spect", required=False)      # subfolder where spectras are stored
-## simulation information
-args_opt.add_argument("-plots_per_eddy", type=float, default=10, required=False) # plot files per T_eddy
-## ------------------- DEFINE REQUIRED ARGUMENTS
-args_req = args_input.add_argument_group(description='Required processing arguments:') # required argument group
-args_req.add_argument("-base_path",   type=str, required=True)
-args_req.add_argument("-sim_folders", type=str, required=True, nargs="+")
-args_req.add_argument("-sim_names",   type=str, required=True, nargs="+")
-## ---------------------------- OPEN ARGUMENTS
-args = vars(args_input.parse_args())
-## ---------------------------- SAVE PARAMETERS
-## program workflow parameters
-bool_hide_updates   = args["hide_updates"] # should the progress bar be displayed?
-bool_plot_spectra    = args["plot_spectra"]      # should evolution of the spectra be plotted?
-bool_animate_spectra = args["animate_spectra"]   # should spectra frames be animated?
-## fitting & simulation parameters
-plots_per_eddy = args["plots_per_eddy"] # number of plot files in eddy turnover time
-## ---------------------------- DIRECTORY PARAMETERS
-filepath_base = args["base_path"]   # home directory
-folders_sims  = args["sim_folders"] # list of subfolders where each simulation's data is stored
-folders_data  = args["dat_folder"]  # subfolder where data is stored in sim_folders
-folder_vis    = args["vis_folder"]  # subfolder where animation and plots will be saved
-sim_names     = args["sim_names"]
+## ##############################################################
+## DEFINE MAIN PROGRAM
+## ##############################################################
+def main():
+  ## ############################
+  ## INPUT COMMAND LINE ARGUMENTS
+  ## ############################
+  parser = WWArgparse.MyParser()
+  ## ------------------- DEFINE OPTIONAL ARGUMENTS
+  args_opt = parser.add_argument_group(description="Optional processing arguments:")
+  args_opt.add_argument("-hide_updates", type=WWArgparse.str2bool, default=False, required=False, nargs="?", const=True)
+  args_opt.add_argument("-vis_folder",   type=str, default="vis_folder", required=False)
+  args_opt.add_argument("-spect_folder", type=str, default="spect",      required=False)
+  ## ------------------- DEFINE REQUIRED ARGUMENTS
+  args_req = parser.add_argument_group(description="Required processing arguments:")
+  args_req.add_argument("-base_path",    type=str, required=True)
+  args_req.add_argument("-sim_folder",   type=str, required=True)
+  ## ---------------------------- OPEN ARGUMENTS
+  args = vars(parser.parse_args())
+  ## ---------------------------- SAVE PARAMETERS
+  filepath_base     = args["base_path"]
+  folder_sim        = args["sim_folder"]
+  folder_spect      = args["spect_folder"]
+  folder_vis        = args["vis_folder"]
+  bool_hide_updates = args["hide_updates"]
 
+  ## ###############################
+  ## INITIALISING FILEPATH VARIABLES
+  ## ###############################
+  ## filepath to where spectra data is stored
+  filepath_sim   = WWFnF.createFilepath([filepath_base, folder_sim])
+  filepath_spect = WWFnF.createFilepath([filepath_sim, folder_spect])
+  ## filepath to where visualisations will be saved
+  filepath_vis    = WWFnF.createFilepath([filepath_base, folder_vis])
+  filepath_frames = WWFnF.createFilepath([filepath_vis, "plotSpectra"])
+  WWFnF.createFolder(filepath_vis)
+  WWFnF.createFolder(filepath_frames)
+  ## print filepath information to the console
+  P2Term.printInfo("Base directory:", filepath_base)
+  P2Term.printInfo("Data directory:", filepath_spect)
+  P2Term.printInfo("Vis. directory:", filepath_vis)
+  print(" ")
 
-##################################################################
-## PREPARE WORKSPACE
-#################################################################
-if not(bool_hide_updates):
-  os.system("clear") # clear terminal window
-  plt.close("all")   # close all pre-existing plots
-
-
-##################################################################
-## INITIALISING VARIABLES
-##################################################################
-## check there are enough simulation names defined
-if len(sim_names) < len(folders_sims):
-  raise Exception("You need to define a figure name for each simulation.")
-## folders where spectra data is
-filepaths_data = []
-for sim_index in range(len(folders_sims)):
-  filepaths_data.append( createFilePath([filepath_base, folders_sims[sim_index], folders_data]) )
-## folder where visualisations will be saved
-filepath_vis = createFilePath([filepath_base, folder_vis])
-createFolder(filepath_vis)
-## folder where spectra plots will be saved
-filepath_frames = createFilePath([filepath_vis, "plotSpectra"])
-createFolder(filepath_frames)
-## print filepath information to the console
-printInfo("Base filepath:", filepath_base)
-printInfo("Figure folder:", filepath_vis)
-for sim_index in range(len(filepaths_data)):
-  printInfo("({:d}) sim directory:".format(sim_index), filepaths_data[sim_index], 23)
-  printInfo("\t> Sim name:", sim_names[sim_index])
-print(" ")
-
-
-##################################################################
-## LOAD & PLOT SPECTRA DATA
-##################################################################
-## loop over each simulation dataset
-for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
-  ## load spectra data
-  print("Loading data from:", filepath_data)
-  kin_k, kin_power, kin_sim_times = loadSpectra(
-    filepath_data,
+  ## ############################
+  ## LOAD SIMULATION PLT PER EDDY
+  ## ############################
+  str_plot_every_eddy = WWFnF.readLineFromFile(
+    filepath = WWFnF.createFilepath([filepath_sim, "flash.par"]),
+    des_str  = "plotFileIntervalTime"
+  ).split(" # ")[1]
+  if "T" not in str_plot_every_eddy:
+    raise Exception("Could not read eddy-turnover-time from 'flash.par'.")
+  plots_per_eddy = 1 / float(
+    str_plot_every_eddy.split("T")[0] # plot interval in t_turb
+  )
+  print("Number of plt files per t_turb = {} from 'flash.par'.".format( plots_per_eddy ))
+  print(" ")
+  
+  ## ##########################
+  ## LOAD AND PLOT SPECTRA DATA
+  ## ##########################
+  kin_k, kin_power, kin_sim_times = LoadFlashData.loadListSpectra(
+    filepath_data     = filepath_spect,
     str_spectra_type  = "vel",
     plots_per_eddy    = plots_per_eddy,
     bool_hide_updates = bool_hide_updates
   )
-  mag_k, mag_power, mag_sim_times = loadSpectra(
-    filepath_data,
+  mag_k, mag_power, mag_sim_times = LoadFlashData.loadListSpectra(
+    filepath_data     = filepath_spect,
     str_spectra_type  = "mag",
     plots_per_eddy    = plots_per_eddy,
     bool_hide_updates = bool_hide_updates
   )
-  sim_times = getCommonElements(
+  sim_times = WWLists.getCommonElements(
     kin_sim_times,
     mag_sim_times
   )
-  print(" ")
   ## initialise plot object
-  plot_obj = PlotSpectra(
-    kin_k, kin_power, mag_k, mag_power,
-    sim_times, sim_names[sim_index],
-    filepath_frames, filepath_vis
+  plot_obj = PlotSpectra.PlotSpectra(
+    kin_k           = kin_k,
+    kin_power       = kin_power,
+    mag_k           = mag_k,
+    mag_power       = mag_power,
+    sim_times       = sim_times,
+    fig_name        = folder_sim,
+    filepath_frames = filepath_frames,
+    filepath_ani    = filepath_vis
   )
   ## plot spectra data
-  if bool_plot_spectra:
-    print("Plotting spectra...")
-    plot_obj.plotSpectra(bool_hide_updates)
-  ## animate spectra
-  if bool_animate_spectra:
-    plot_obj.aniSpectra()
+  plot_obj.plotSpectra(bool_hide_updates)
+  plot_obj.aniSpectra(bool_hide_updates)
   print(" ")
+
+
+## ###############################################################
+## RUN PROGRAM
+## ###############################################################
+if __name__ == "__main__":
+  main()
 
 
 ## END OF PROGRAM

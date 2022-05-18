@@ -21,8 +21,9 @@ def str2bool(v):
 
 class MyParser(argparse.ArgumentParser):
   def error(self, message):
+    sys.stderr.write('error: %s\n' % message)
     self.print_help()
-    sys.exit(1)
+    sys.exit(2)
 
 
 ## END OF MODULE
