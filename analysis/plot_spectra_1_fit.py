@@ -32,16 +32,16 @@ from ThePlottingModule import *
 
 ## ###############################################################
 ## PREPARE WORKSPACE
-##################################################################
+## ###############################################################
 os.system("clear") # clear terminal window
 plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 SPECTRA_OBJ_NAME = "spectra_obj.pkl"
-## #########################################
-## CLASS TO HANDLE CALLS TO FITTING ROUTINES
-## #########################################
+## ###############################################################
+## CLASS TO MANAGE CALLS TO SPECTRA FITTING ROUTINES
+## ###############################################################
 class CreateUpdateSpectraObject():
   def __init__(
       self,
@@ -67,11 +67,11 @@ class CreateUpdateSpectraObject():
     self.mag_fit_end_time   = mag_fit_end_time
   def createSpectraObj(
       self,
-      bool_kin_fit_sub_range = False,
-      kin_num_decades_to_fit = 6,
-      bool_kin_fit_fixed     = False,
-      bool_mag_fit_fixed     = False,
-      bool_hide_updates      = False
+      bool_kin_fit_sub_y_range = False,
+      kin_num_decades_to_fit   = 6,
+      bool_kin_fit_fixed       = False,
+      bool_mag_fit_fixed       = False,
+      bool_hide_updates        = False
     ):
     print("\tLoading spectra...")
     ## load kinetic energy spectra
@@ -89,19 +89,19 @@ class CreateUpdateSpectraObject():
     print("\tFitting spectra...")
     ## fit kinetic energy spectra
     kin_fit_obj = FitMHDScales.FitVelSpectra(
-      list_k_group_t        = list_kin_k_group_t,
-      list_power_group_t    = list_kin_power_group_t,
-      list_sim_times        = list_kin_sim_times,
-      bool_fit_sub_Ek_range = bool_kin_fit_sub_range,
-      log_Ek_range          = kin_num_decades_to_fit,
-      bool_fit_fixed_model  = bool_kin_fit_fixed,
-      bool_hide_updates     = bool_hide_updates
+      list_sim_times       = list_kin_sim_times,
+      list_k_group_t       = list_kin_k_group_t,
+      list_power_group_t   = list_kin_power_group_t,
+      bool_fit_fixed_model = bool_kin_fit_fixed,
+      bool_fit_sub_y_range = bool_kin_fit_sub_y_range,
+      num_decades_to_fit   = kin_num_decades_to_fit,
+      bool_hide_updates    = bool_hide_updates
     )
     ## fit magnetic energy spectra
     mag_fit_obj = FitMHDScales.FitMagSpectra(
+      list_sim_times       = list_mag_sim_times,
       list_k_group_t       = list_mag_k_group_t,
       list_power_group_t   = list_mag_power_group_t,
-      list_sim_times       = list_mag_sim_times,
       bool_fit_fixed_model = bool_mag_fit_fixed,
       bool_hide_updates    = bool_hide_updates
     )
@@ -258,7 +258,7 @@ def main():
   args_opt.add_argument("-kin_fit_fixed",    default=False, **opt_bool_args)
   args_opt.add_argument("-mag_fit_fixed",    default=False, **opt_bool_args)
   ## energy range to fit kinetic energy spectra
-  args_opt.add_argument("-kin_fit_sub_range",      default=False, **opt_bool_args)
+  args_opt.add_argument("-kin_fit_sub_y_range",    default=False, **opt_bool_args)
   args_opt.add_argument("-kin_num_decades_to_fit", type=float,    **opt_args)
   ## time range to fit spectra
   args_opt.add_argument("-kin_start_fit",   type=float, **opt_args)
@@ -286,35 +286,35 @@ def main():
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
   ## (boolean) workflow parameters
-  bool_hide_updates     = args["hide_updates"]
-  bool_print_obj_attrs  = args["print_obj_attrs"]
-  bool_fit_spectra      = args["fit_spectra"]
-  bool_plot_spectra     = args["plot_spectra"]
+  bool_hide_updates        = args["hide_updates"]
+  bool_print_obj_attrs     = args["print_obj_attrs"]
+  bool_fit_spectra         = args["fit_spectra"]
+  bool_plot_spectra        = args["plot_spectra"]
   ## fit fixed spectra models
-  bool_kin_fit_fixed    = args["kin_fit_fixed"]
-  bool_mag_fit_fixed    = args["mag_fit_fixed"]
+  bool_kin_fit_fixed       = args["kin_fit_fixed"]
+  bool_mag_fit_fixed       = args["mag_fit_fixed"]
   ## energy range to fit kinetic energy spectra
-  bool_kin_fit_sub_range = args["kin_fit_sub_range"]
-  kin_num_decades_to_fit = args["kin_num_decades_to_fit"]
+  bool_kin_fit_sub_y_range = args["kin_fit_sub_y_range"]
+  kin_num_decades_to_fit   = args["kin_num_decades_to_fit"]
   ## time range to fit spectra
-  kin_fit_start_time    = args["kin_start_fit"]
-  mag_fit_start_time    = args["mag_start_fit"]
-  kin_fit_end_time      = args["kin_end_fit"]
-  mag_fit_end_time      = args["mag_end_fit"]
+  kin_fit_start_time       = args["kin_start_fit"]
+  mag_fit_start_time       = args["mag_start_fit"]
+  kin_fit_end_time         = args["kin_end_fit"]
+  mag_fit_end_time         = args["mag_end_fit"]
   ## plotting parameters
-  plot_spectra_from     = args["plot_spectra_from"]
-  plot_spectra_every    = args["plot_spectra_every"]
+  plot_spectra_from        = args["plot_spectra_from"]
+  plot_spectra_every       = args["plot_spectra_every"]
   ## important directory information
-  filepath_base         = args["base_path"]
-  folder_vis            = args["vis_folder"]
-  folder_data           = args["data_folder"]
-  sim_suite             = args["sim_suite"]
-  sim_label             = args["sim_folder"]
-  sim_res               = args["sim_res"]
+  filepath_base            = args["base_path"]
+  folder_vis               = args["vis_folder"]
+  folder_data              = args["data_folder"]
+  sim_suite                = args["sim_suite"]
+  sim_label                = args["sim_folder"]
+  sim_res                  = args["sim_res"]
   ## simulation parameters
-  Re                    = args["Re"]
-  Rm                    = args["Rm"]
-  Pm                    = args["Pm"]
+  Re                       = args["Re"]
+  Rm                       = args["Rm"]
+  Pm                       = args["Pm"]
 
   ## ######################
   ## INITIALISING VARIABLES
@@ -391,11 +391,11 @@ def main():
   ## read and fit spectra data
   if bool_fit_spectra:
     cuso.createSpectraObj(
-      bool_kin_fit_sub_range = bool_kin_fit_sub_range,
-      kin_num_decades_to_fit = kin_num_decades_to_fit,
-      bool_kin_fit_fixed     = bool_kin_fit_fixed,
-      bool_mag_fit_fixed     = bool_mag_fit_fixed,
-      bool_hide_updates      = bool_hide_updates
+      bool_kin_fit_sub_y_range = bool_kin_fit_sub_y_range,
+      kin_num_decades_to_fit   = kin_num_decades_to_fit,
+      bool_kin_fit_fixed       = bool_kin_fit_fixed,
+      bool_mag_fit_fixed       = bool_mag_fit_fixed,
+      bool_hide_updates        = bool_hide_updates
     )
   ## read in already fitted spectra
   else: cuso.loadSpectraObj(bool_print_obj_attrs)

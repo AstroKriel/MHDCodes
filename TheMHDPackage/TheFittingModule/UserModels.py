@@ -60,7 +60,7 @@ class SpectraModels():
         y   = A  * k^p  * exp(- (1 / k_scale) * k)
           = a0 * x^a1 * exp(- a2 * x)
       Note:
-        y' = 0 when k_max := k = p * k_scale = a1 / a2
+        y' = 0 when k_p := k = p * k_scale = a1 / a2
     """
     return (a0_loge) + (a1) * np.log(x) - a2 * np.array(x)
   def magnetic_simple_loge_fixed(x, a0_loge, a2):
@@ -68,10 +68,10 @@ class SpectraModels():
         y   = A  * k^(3/2) * exp(- (1 / k_scale) * k)
           = a0 * x^(3/2) * exp(- a2 * x)
       Note:
-        y' = 0 when k_max := k = (3/2) * k_scale = (3/2) / a2
+        y' = 0 when k_p := k = (3/2) * k_scale = (3/2) / a2
     """
     return (a0_loge) + (3/2) * np.log(x) - a2 * np.array(x)
-  def k_max_implicit(x, a1, a2):
+  def k_p_implicit(x, a1, a2):
     ''' Implicit peak scale of the magnetic spectra model (Kulsrud and Anderson 1992)
       From: y'= 0
       ->  k_p = p  * k_scale  * K0( (1 / k_scale) * k_p ) / K1( (1 / k_scale) * k_p )
