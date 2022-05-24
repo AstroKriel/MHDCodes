@@ -261,8 +261,8 @@ def loadListSpectra(
     filepath_data,
     str_spectra_type  = "mag",
     plots_per_eddy    = 10,
-    file_start_index  = 2,
-    file_end_index    = np.inf,
+    file_start_time   = 2,
+    file_end_time     = np.inf,
     bool_hide_updates = False
   ):
   ## initialise list of spectra data
@@ -276,8 +276,8 @@ def loadListSpectra(
     str_contains       = "hdf5_plt_cnt",
     str_endswith       = "spect_" + str_spectra_type + "s.dat",
     file_index_placing = -3,
-    file_start_index   = file_start_index,
-    file_end_index     = file_end_index
+    file_start_index   = plots_per_eddy * file_start_time,
+    file_end_index     = plots_per_eddy * file_end_time
   )
   ## loop over each of the spectra file names
   for filename, _ in WWLists.loopListWithUpdates(spectra_filenames, bool_hide_updates):

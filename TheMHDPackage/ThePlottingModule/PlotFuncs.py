@@ -48,10 +48,11 @@ def aniEvolution(
   ])
   ## animate the plot-frames
   os.system(
-    "ffmpeg -y -start_number 0 -i " + filepath_input +
-    ("" if not(bool_hide_updates) else " -loglevel quiet") +
-    " -vb 40M -framerate 40 -vf scale=1440:-1 -vcodec mpeg4 " + filepath_output
-  )
+    "ffmpeg -y -start_number 0 -i {} {} -vb 40M -framerate 40 -vf scale=1440:-1 -vcodec mpeg4 {}".format(
+      filepath_input,
+      "" if not(bool_hide_updates) else " -loglevel quiet",
+      filepath_output
+  ))
   if not(bool_hide_updates):
     print("Saved animation:", filepath_output)
     print(" ")

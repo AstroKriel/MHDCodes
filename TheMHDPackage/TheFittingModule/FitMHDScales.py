@@ -201,17 +201,17 @@ class FitSpectra(metaclass=abc.ABCMeta): # Abstract base class (ABC)
     if k_end is None:
       ## find the k-mode where the power spectra is the closest to cutoff y-range
       if self.bool_fit_sub_y_range:
-        k_end = WWLists.getIndexClosestValue(
+        k_end = int(WWLists.getIndexClosestValue(
           np.log10(np.array(data_power)),
           -self.num_decades_to_fit
-        )
+        ))
       ## fit up to the final k-mode
-      else: k_end = data_k[-1]
+      else: k_end = int(data_k[-1])
     ## ###################################
     ## FIT TO AN INCREASING SUBSET OF DATA
     ## ###################################
     ## save the range of k explored when fitting at t/T
-    list_fit_k_range = range(k_start, k_end, k_step)
+    list_fit_k_range = list(range(k_start+3, k_end, k_step))
     for k_break in list_fit_k_range:
       ## ###################
       ## SUBSET SPECTRA DATA
@@ -337,7 +337,10 @@ class FitSpectra(metaclass=abc.ABCMeta): # Abstract base class (ABC)
   ## ################################
   ## EMPTY IMPLEMENTATIONS OF METHODS
   ## ################################
-  def measurePeakScales(self):
+  def measurePeakScales(
+      self,
+      a1, a2, k_p_guess, data_power
+    ):
     return
   ## ######################################
   ## THE FOLLOWING ARE ALL ABSTRACT METHODS
@@ -354,7 +357,7 @@ class FitSpectra(metaclass=abc.ABCMeta): # Abstract base class (ABC)
     pass
 
 
-class FitVelSpectra(FitSpectra):
+class FitKinSpectra(FitSpectra):
   def __init__(
       self,
       list_sim_times, list_k_group_t, list_power_group_t,
@@ -384,7 +387,9 @@ class FitVelSpectra(FitSpectra):
     FitSpectra.__init__(
       self,
       ## pass input spectra information
-      list_k_group_t, list_power_group_t, list_sim_times,
+      list_sim_times       = list_sim_times,
+      list_k_group_t       = list_k_group_t,
+      list_power_group_t   = list_power_group_t,
       func_plot            = SpectraModels.kinetic_linear, # complete kinetic spectra model
       bool_fit_sub_y_range = bool_fit_sub_y_range,
       num_decades_to_fit   = num_decades_to_fit,
@@ -466,9 +471,10 @@ class FitMagSpectra(FitSpectra):
     ## call parent class and pass fitting instructions
     FitSpectra.__init__(
       self,
-      list_k_group_t, list_power_group_t, list_sim_times,
+      list_sim_times       = list_sim_times,
+      list_k_group_t       = list_k_group_t,
+      list_power_group_t   = list_power_group_t,
       func_plot            = SpectraModels.magnetic_linear,
-      bool_fit_fixed_model = bool_fit_fixed_model,
       bool_hide_updates    = bool_hide_updates
     )
   def fitSubsettedSpectra(
@@ -505,9 +511,7 @@ class FitMagSpectra(FitSpectra):
     return a0, a1, a2
   def measurePeakScales(
       self,
-      a1, a2,
-      k_p_guess,
-      data_power
+      a1, a2, k_p_guess, data_power
     ):
     ## fitted peak scale from the Kulsrud and Anderson 1992 model
     try:

@@ -78,17 +78,21 @@ class CreateUpdateSpectraObject():
     list_kin_k_group_t, list_kin_power_group_t, list_kin_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
+      ## TODO: read in plots per eddy
+      file_end_time     = 5,
       bool_hide_updates = bool_hide_updates
     )
     ## load magnetic energy spectra
     list_mag_k_group_t, list_mag_power_group_t, list_mag_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
+      ## TODO: read in plots per eddy
+      file_end_time     = 5,
       bool_hide_updates = bool_hide_updates
     )
     print("\tFitting spectra...")
     ## fit kinetic energy spectra
-    kin_fit_obj = FitMHDScales.FitVelSpectra(
+    kin_fit_obj = FitMHDScales.FitKinSpectra(
       list_sim_times       = list_kin_sim_times,
       list_k_group_t       = list_kin_k_group_t,
       list_power_group_t   = list_kin_power_group_t,
@@ -132,7 +136,7 @@ class CreateUpdateSpectraObject():
     print(" ")
   def loadSpectraObj(
       self,
-      bool_print_obj_attrs = False
+      bool_show_obj_attrs = False
     ):
     ## load spectra object
     spectra_obj = WWObjs.loadPickleObject(self.filepath_data, SPECTRA_OBJ_NAME)
@@ -176,7 +180,7 @@ class CreateUpdateSpectraObject():
     ## ###################################
     ## PRINT ALL SPECTRA OBJECT ATTRIBUTES
     ## ###################################
-    if bool_print_obj_attrs:
+    if bool_show_obj_attrs:
       print("\t> Object attributes:")
       ## print each paramater name and value stored in the spectra object
       for attr_name in new_obj:
@@ -194,7 +198,7 @@ class CreateUpdateSpectraObject():
             "= {}".format(new_obj[attr_name])
           )
     ## for aesthetics: if any information had been printed to the screen
-    if bool_obj_was_updated or bool_print_obj_attrs:
+    if bool_obj_was_updated or bool_show_obj_attrs:
       print(" ")
     ## store the updated spectra object
     self.spectra_obj
@@ -241,43 +245,49 @@ def main():
   ## #############################
   ## DEFINE COMMAND LINE ARGUMENTS
   ## #############################
-  parser = WWArgparse.MyParser()
+  parser = WWArgparse.MyParser(description="Fit kinetic and magnetic energy spectra.")
+  opt_bool_arg = {
+    "required":False, "default":False, "action":"store_true",
+    "help":"type: bool, default: %(default)s"
+  }
+  opt_arg = {
+    "required":False, "metavar":"",
+    "help":"type: %(type)s, default: %(default)s",
+  }
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
   args_opt = parser.add_argument_group(description="Optional processing arguments:")
   ## program workflow parameters
-  opt_bool_args = {"required":False, "type":WWArgparse.str2bool, "nargs":"?", "const":True}
-  opt_args      = {"required":False, "default":None}
-  args_opt.add_argument("-hide_updates",    default=False, **opt_bool_args)
-  args_opt.add_argument("-print_obj_attrs", default=False, **opt_bool_args)
-  args_opt.add_argument("-fit_spectra",     default=False, **opt_bool_args)
-  args_opt.add_argument("-plot_spectra",    default=False, **opt_bool_args)
+  args_opt.add_argument("-v", "--verbose",        **opt_bool_arg)
+  args_opt.add_argument("-s", "--show_obj_attrs", **opt_bool_arg)
+  args_opt.add_argument("-f", "--fit_spectra",    **opt_bool_arg)
+  args_opt.add_argument("-p", "--plot_spectra",   **opt_bool_arg)
   ## directory information
-  args_opt.add_argument("-vis_folder",  type=str, default="vis_folder", required=False)
-  args_opt.add_argument("-data_folder", type=str, default="spect",      required=False)
+  args_opt.add_argument("-vis_folder",  type=str, default="vis_folder", **opt_arg)
+  args_opt.add_argument("-data_folder", type=str, default="spect",      **opt_arg)
   ## fit fixed spectra models
-  args_opt.add_argument("-kin_fit_fixed",    default=False, **opt_bool_args)
-  args_opt.add_argument("-mag_fit_fixed",    default=False, **opt_bool_args)
+  args_opt.add_argument("-kin_fit_fixed", **opt_bool_arg)
+  args_opt.add_argument("-mag_fit_fixed", **opt_bool_arg)
   ## energy range to fit kinetic energy spectra
-  args_opt.add_argument("-kin_fit_sub_y_range",    default=False, **opt_bool_args)
-  args_opt.add_argument("-kin_num_decades_to_fit", type=float,    **opt_args)
+  args_opt.add_argument("-kin_fit_sub_y_range",    **opt_bool_arg)
+  args_opt.add_argument("-kin_num_decades_to_fit", type=float, default=None, **opt_arg)
   ## time range to fit spectra
-  args_opt.add_argument("-kin_start_fit",   type=float, **opt_args)
-  args_opt.add_argument("-mag_start_fit",   type=float, **opt_args)
-  args_opt.add_argument("-kin_end_fit",     type=float, **opt_args)
-  args_opt.add_argument("-mag_end_fit",     type=float, **opt_args)
+  args_opt.add_argument("-kin_start_fit", type=float, default=None, **opt_arg)
+  args_opt.add_argument("-mag_start_fit", type=float, default=None, **opt_arg)
+  args_opt.add_argument("-kin_end_fit",   type=float, default=None, **opt_arg)
+  args_opt.add_argument("-mag_end_fit",   type=float, default=None, **opt_arg)
   ## plotting parameters
-  args_opt.add_argument("-plot_spectra_from",  type=int, default=0, required=False, help="first plot index")
-  args_opt.add_argument("-plot_spectra_every", type=int, default=1, required=False, help="index step size")
+  args_opt.add_argument("-plot_spectra_from",  type=int, default=0, **opt_arg)
+  args_opt.add_argument("-plot_spectra_every", type=int, default=1, **opt_arg)
   ## simulation information
-  args_opt.add_argument("-sim_suite", type=str,   **opt_args)
-  args_opt.add_argument("-sim_res",   type=int,   **opt_args)
-  args_opt.add_argument("-Re",        type=float, **opt_args)
-  args_opt.add_argument("-Rm",        type=float, **opt_args)
-  args_opt.add_argument("-Pm",        type=float, **opt_args)
+  args_opt.add_argument("-sim_suite", type=str,   default=None, **opt_arg)
+  args_opt.add_argument("-sim_res",   type=int,   default=None, **opt_arg)
+  args_opt.add_argument("-Re",        type=float, default=None, **opt_arg)
+  args_opt.add_argument("-Rm",        type=float, default=None, **opt_arg)
+  args_opt.add_argument("-Pm",        type=float, default=None, **opt_arg)
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description="Required processing arguments:")
-  args_req.add_argument("-base_path",  type=str, required=True)
-  args_req.add_argument("-sim_folder", type=str, required=True)
+  args_req.add_argument("-suite_path", type=str, required=True, help="type: %(type)s")
+  args_req.add_argument("-sim_folder", type=str, required=True, help="type: %(type)s")
 
   ## #########################
   ## INTERPRET INPUT ARGUMENTS
@@ -286,8 +296,8 @@ def main():
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
   ## (boolean) workflow parameters
-  bool_hide_updates        = args["hide_updates"]
-  bool_print_obj_attrs     = args["print_obj_attrs"]
+  bool_hide_updates        = not(args["verbose"])
+  bool_show_obj_attrs      = args["show_obj_attrs"]
   bool_fit_spectra         = args["fit_spectra"]
   bool_plot_spectra        = args["plot_spectra"]
   ## fit fixed spectra models
@@ -305,7 +315,7 @@ def main():
   plot_spectra_from        = args["plot_spectra_from"]
   plot_spectra_every       = args["plot_spectra_every"]
   ## important directory information
-  filepath_base            = args["base_path"]
+  filepath_suite           = args["suite_path"]
   folder_vis               = args["vis_folder"]
   folder_data              = args["data_folder"]
   sim_suite                = args["sim_suite"]
@@ -339,9 +349,9 @@ def main():
   ## PREPARING DIRECTORIES
   ## #####################
   ## folders where spectra data is
-  filepath_data = WWFnF.createFilepath([ filepath_base, sim_label, folder_data ])
+  filepath_data = WWFnF.createFilepath([ filepath_suite, sim_label, folder_data ])
   ## folder where visualisations will be saved
-  filepath_vis = WWFnF.createFilepath([ filepath_base, folder_vis ])
+  filepath_vis = WWFnF.createFilepath([ filepath_suite, folder_vis ])
   ## folder where spectra plots will be saved
   filepath_vis_frames = WWFnF.createFilepath([ filepath_vis, "plotSpectra" ])
 
@@ -355,9 +365,9 @@ def main():
   ## ######################################
   ## PRINT SIMULATION PARAMETERS TO CONSOLE
   ## ######################################
-  P2Term.printInfo("Base filepath:", filepath_base)
-  P2Term.printInfo("Data filepath:", filepath_data)
-  P2Term.printInfo("Vis. filepath:", filepath_vis)
+  P2Term.printInfo("Suite filepath:", filepath_suite)
+  P2Term.printInfo("Data filepath:",  filepath_data)
+  P2Term.printInfo("Vis. filepath:",  filepath_vis)
   ## print simulation parameters
   if bool_fit_spectra:
     print("\t> sim suite: {}".format(sim_suite))
@@ -398,7 +408,7 @@ def main():
       bool_hide_updates        = bool_hide_updates
     )
   ## read in already fitted spectra
-  else: cuso.loadSpectraObj(bool_print_obj_attrs)
+  else: cuso.loadSpectraObj(bool_show_obj_attrs)
 
   ## #############################
   ## PLOT EVOLUTION OF THE SPECTRA
