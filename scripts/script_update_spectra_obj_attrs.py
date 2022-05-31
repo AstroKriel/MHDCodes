@@ -17,14 +17,14 @@ from OldModules.the_fitting_library import *
 ## FUNCTIONS
 ## ###############################################################
 def funcUpdateReynolds(filepath_data, spectra_name, Re, Rm, fit_range):
-  spectra_obj = loadPickleObject(filepath_data, spectra_name)
-  updateAttr(spectra_obj, "Re", Re)
-  updateAttr(spectra_obj, "Rm", Rm)
-  updateAttr(spectra_obj, "kin_fit_start_t", fit_range[0])
-  updateAttr(spectra_obj, "kin_fit_end_t", fit_range[1])
-  updateAttr(spectra_obj, "mag_fit_start_t", fit_range[2])
-  updateAttr(spectra_obj, "mag_fit_end_t", fit_range[3])
-  savePickleObject(spectra_obj, filepath_data, spectra_name)
+  spectra_obj = loadPickle(filepath_data, spectra_name)
+  updateObjAttr(spectra_obj, "Re", Re)
+  updateObjAttr(spectra_obj, "Rm", Rm)
+  updateObjAttr(spectra_obj, "kin_fit_start_t", fit_range[0])
+  updateObjAttr(spectra_obj, "kin_fit_end_t", fit_range[1])
+  updateObjAttr(spectra_obj, "mag_fit_start_t", fit_range[2])
+  updateObjAttr(spectra_obj, "mag_fit_end_t", fit_range[3])
+  savePickle(spectra_obj, filepath_data, spectra_name)
 
 
 ## ###############################################################

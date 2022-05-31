@@ -16,7 +16,7 @@ from scipy.optimize import curve_fit
 from ThePlottingModule import TheMatplotlibStyler, PlotSpectra, PlotFuncs
 from TheUsefulModule import WWLists, WWFnF, WWObjs
 from TheLoadingModule import LoadFlashData
-from TheFittingModule import UserModels
+from TheFittingModule import FitMHDScales, UserModels
 
 
 ## ###############################################################
@@ -27,6 +27,10 @@ plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
+SONIC_REGIME     = "super_sonic"
+BASEPATH         = "/scratch/ek9/nk7952/"
+FILENAME_TURB    = "Turb.dat"
+FILENAME_SPECTRA = "spectra_fits.json"
 ## ###############################################################
 ## FUNCTIONS
 ## ###############################################################
@@ -158,14 +162,7 @@ def funcPlotTurb(
   num_decades         = 1 + (-new_log_min_E_ratio)
   new_min_E_ratio     = 10**new_log_min_E_ratio
   num_y_major_ticks   = np.ceil(num_decades / 2)
-
-  # print(min_E_ratio)
-  # print(log_min_E_ratio)
-  # print(new_log_min_E_ratio)
-  # print(num_decades)
-  # print(new_min_E_ratio)
-  # print(num_y_major_ticks)
-
+  
   axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
   axs[1].set_ylabel(r"$E_\mathrm{mag} / E_\mathrm{kin}$")
   axs[1].set_yscale("log")
@@ -255,13 +252,19 @@ def funcPlotSpectra(
   ## #################
   ## LOAD SPECTRA DATA
   ## #################
-  ## load spectra object
-  spectra_obj = WWObjs.loadPickleObject(filepath_data, FILENAME_SPECTRA_OBJ, bool_hide_updates=True)
+  ## load spectra-fit data as a dictionary
+  spectra_fits_dict = WWObjs.loadJson2Dict(
+    filepath = filepath_data,
+    filename = FILENAME_SPECTRA,
+    bool_hide_updates = True
+  )
+  ## store dictionary data in spectra-fit object
+  spectra_fits_obj = FitMHDScales.SpectraFit(**spectra_fits_dict)
   ## load time-evolving measured parameters
-  kin_sim_times = spectra_obj.kin_sim_times
-  mag_sim_times = spectra_obj.mag_sim_times
-  kin_num_points_fitted = spectra_obj.kin_fit_k_index_group_t
-  mag_num_points_fitted = spectra_obj.mag_fit_k_index_group_t
+  kin_sim_times = spectra_fits_obj.kin_sim_times
+  mag_sim_times = spectra_fits_obj.mag_sim_times
+  kin_num_points_fitted = spectra_fits_obj.kin_fit_k_index_group_t
+  mag_num_points_fitted = spectra_fits_obj.mag_fit_k_index_group_t
   ## check that there is sufficient data points to plot
   bool_kin_spectra_fitted = len(kin_sim_times) > 0
   bool_mag_spectra_fitted = len(mag_sim_times) > 0
@@ -269,28 +272,28 @@ def funcPlotSpectra(
   if bool_plot_fit_params:
     ## load kinetic energy spectra fit paramaters
     if bool_kin_spectra_fitted:
-      k_nu = spectra_obj.k_nu_group_t
+      k_nu = spectra_fits_obj.k_nu_group_t
       kin_alpha = [
         list_fit_params[1]
-        for list_fit_params in spectra_obj.kin_list_fit_params_group_t
+        for list_fit_params in spectra_fits_obj.kin_list_fit_params_group_t
       ]
     ## load magnetic energy spectra fit paramaters
     if bool_mag_spectra_fitted:
-      k_modes   = spectra_obj.mag_list_k_group_t[0]
-      k_eta     = spectra_obj.k_eta_group_t
-      k_max     = spectra_obj.k_max_group_t
+      k_modes   = spectra_fits_obj.mag_list_k_group_t[0]
+      k_eta     = spectra_fits_obj.k_eta_group_t
+      k_max     = spectra_fits_obj.k_max_group_t
       mag_alpha = [
         list_fit_params[1]
-        for list_fit_params in spectra_obj.mag_list_fit_params_group_t
+        for list_fit_params in spectra_fits_obj.mag_list_fit_params_group_t
       ]
     elif bool_kin_spectra_fitted:
-      k_modes = spectra_obj.kin_list_k_group_t[0]
+      k_modes = spectra_fits_obj.kin_list_k_group_t[0]
     ## define the end of the k-domain
     max_k_mode = 1.2 * max(k_modes)
   ## #####################
   ## PLOT AVERAGED SPECTRA
   ## #####################
-  PlotSpectra.PlotAveSpectra(ax_spectra, spectra_obj, time_range)
+  PlotSpectra.PlotAveSpectra(ax_spectra, spectra_fits_obj, time_range)
   ax_spectra.set_ylim([ 10**(-8), 3*10**(0) ])
   ## ######################
   ## PLOT SPECTRA PARMETERS
@@ -355,7 +358,7 @@ def funcPlotSpectra(
     axs[2].set_xlim([0, max_sim_time])
     axs[2].set_ylim(range_k)
   ## return simulation parameters
-  return spectra_obj.Re, spectra_obj.Rm, spectra_obj.Pm
+  return spectra_fits_obj.Re, spectra_fits_obj.Rm, spectra_fits_obj.Pm
 
 
 def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
@@ -382,7 +385,7 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
     time_exp_start, time_exp_end = None, None
   ## plot fitted spectra
   filepath_data_spect = filepath_sim + "/spect/"
-  if os.path.exists(WWFnF.createFilepath([filepath_data_spect, FILENAME_SPECTRA_OBJ])):
+  if os.path.exists(WWFnF.createFilepath([filepath_data_spect, FILENAME_SPECTRA])):
     bool_plot_spectra = True
     Re, Rm, Pm = funcPlotSpectra(
       axs = [ax_num_k, ax_alpha, ax_kmodes],
@@ -422,7 +425,7 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
       print("\t> ERROR: No '{}' file in:".format(FILENAME_TURB))
       print("\t\t", filepath_data_turb)
     elif not(bool_plot_spectra):
-      print("\t> ERROR: No '{}' file in:".format(FILENAME_SPECTRA_OBJ))
+      print("\t> ERROR: No '{}' file in:".format(FILENAME_SPECTRA))
       print("\t\t", filepath_data_spect)
     ## save the figure
     fig_filepath = WWFnF.createFilepath([filepath_plot, fig_name])
@@ -431,10 +434,6 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
     print("\t> Figure saved:", fig_name)
 
 
-SONIC_REGIME         = "super_sonic"
-BASEPATH             = "/scratch/ek9/nk7952/"
-FILENAME_TURB        = "Turb.dat"
-FILENAME_SPECTRA_OBJ = "spectra_obj.pkl"
 ## ###############################################################
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
@@ -445,11 +444,11 @@ def main():
   ## LOOK AT EACH SIMULATION
   ## #######################
   for suite_folder in [
-      "Re10", "Re500", "Rm3000"
+      "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
     for sim_res in [
-        "72", "144", "288", "576"
+        "144"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## ####################################
@@ -471,7 +470,7 @@ def main():
       ## PLOT SIMULATION DATA
       ## ####################
       for sim_folder in [
-          "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
+          "Pm5"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
         ## create filepath to the simulation folder

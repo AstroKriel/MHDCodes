@@ -263,6 +263,7 @@ def loadListSpectra(
     plots_per_eddy    = 10,
     file_start_time   = 2,
     file_end_time     = np.inf,
+    read_every        = 1,
     bool_hide_updates = False
   ):
   ## initialise list of spectra data
@@ -270,7 +271,7 @@ def loadListSpectra(
   power_group_times   = []
   list_sim_times      = []
   list_failed_to_load = []
-  ## filter for spectra files
+  ## filter for spectra data-files
   spectra_filenames = WWFnF.getFilesFromFolder(
     filepath           = filepath_data, 
     str_contains       = "hdf5_plt_cnt",
@@ -280,7 +281,7 @@ def loadListSpectra(
     file_end_index     = plots_per_eddy * file_end_time
   )
   ## loop over each of the spectra file names
-  for filename, _ in WWLists.loopListWithUpdates(spectra_filenames, bool_hide_updates):
+  for filename, _ in WWLists.loopListWithUpdates(spectra_filenames[::read_every], bool_hide_updates):
     ## load data
     spectra_k, spectra_power, bool_failed_to_read = loadSpectra(
       filepath_data    = WWFnF.createFilepath([ filepath_data, filename ]),
@@ -290,7 +291,7 @@ def loadListSpectra(
     if bool_failed_to_read:
       list_failed_to_load.append(filename)
       continue
-    ## append data
+    ## store data
     k_group_times.append(spectra_k)
     power_group_times.append(spectra_power)
     list_sim_times.append(

@@ -227,7 +227,7 @@ class PlotSpectraFit():
     ## plot measured scales
     ax.axvline(x=self.spectra_obj.k_nu_group_t[time_index],  ls="--", color="blue",  label=r"$k_\nu$")
     ax.axvline(x=self.spectra_obj.k_eta_group_t[time_index], ls="--", color="red",   label=r"$k_\eta$")
-    ax.axvline(x=self.spectra_obj.k_max_group_t[time_index], ls="--", color="black", label=r"$k_p$")
+    ax.axvline(x=self.spectra_obj.k_p_group_t[time_index],   ls="--", color="black", label=r"$k_p$")
     ## #################
     ## ADD FIGURE LABELS
     ## #################
@@ -235,13 +235,13 @@ class PlotSpectraFit():
     str_kin_spectra = r"$\mathcal{P}_{\rm kin}(k) = A_{\rm kin} k^{\alpha_{\rm kin}} \exp\left\{-\frac{k}{k_\nu}\right\}$"
     str_A_kin       = r"$A_{\rm kin} = $ "+"{:.2e}".format(self.spectra_obj.kin_list_fit_params_group_t[time_index][0])
     str_alpha_kin   = r"$\alpha_\mathrm{kin} = $ "+"{:.2f}".format(self.spectra_obj.kin_list_fit_params_group_t[time_index][1])
-    str_knu         = r"$k_\nu = $ "+"{:.2f}".format(1 / self.spectra_obj.kin_list_fit_params_group_t[time_index][2])
+    str_k_nu        = r"$k_\nu = $ "+"{:.2f}".format(1 / self.spectra_obj.k_nu_group_t[time_index])
     ## magnetic energy spectra labels
     str_mag_spectra = r"$\mathcal{P}_{\rm mag}(k) = A_{\rm mag} k^{\alpha_{\rm mag}} K_0\left\{-\frac{k}{k_\eta}\right\}$"
     str_A_mag       = r"$A_{\rm mag} = $ "+"{:.2e}".format(self.spectra_obj.mag_list_fit_params_group_t[time_index][0])
     str_alpha_mag   = r"$\alpha_\mathrm{mag} = $ "+"{:.2f}".format(self.spectra_obj.mag_list_fit_params_group_t[time_index][1])
-    str_keta        = r"$k_\eta = $ "+"{:.2f}".format(1 / self.spectra_obj.mag_list_fit_params_group_t[time_index][2])
-    str_kmax        = r"$k_p = $ "+"{:.2f}".format(self.spectra_obj.k_max_group_t[time_index])
+    str_k_eta       = r"$k_\eta = $ "+"{:.2f}".format(1 / self.spectra_obj.k_eta_group_t[time_index])
+    str_k_p         = r"$k_p = $ "+"{:.2f}".format(self.spectra_obj.k_p_group_t[time_index])
     PlotFuncs.plotLabelBox(
       fig, ax,
       ## box placement
@@ -249,18 +249,18 @@ class PlotSpectraFit():
       xpos = 0.025,
       ypos = 0.025,
       ## label appearance
-      alpha    = 0.25,
+      alpha    = 0.0,
       fontsize = 14,
       ## list of labels to place in box
       list_fig_labels = [
         str_kin_spectra,
-        str_A_kin + r", " + str_alpha_kin + r", " + str_knu,
+        str_A_kin + r", " + str_alpha_kin + r", " + str_k_nu,
         str_mag_spectra,
-        str_A_mag + r", " + str_alpha_mag + r", " + str_keta + r", " + str_kmax
+        str_A_mag + r", " + str_alpha_mag + r", " + str_k_eta + r", " + str_k_p
       ]
     )
     ## add legend
-    ax.legend(frameon=True, loc="upper left", facecolor="white", framealpha=0.5, fontsize=14)
+    ax.legend(frameon=False, loc="upper left", facecolor="white", framealpha=0.0, fontsize=14)
     ## add time stamp
     ax.text(0.975, 0.975,
       r"$t / t_{\rm turb} = $ "+"{:.1f}".format(self.sim_times[time_index]), 

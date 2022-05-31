@@ -42,7 +42,7 @@ def funcLoadData_sim(
   ## #########################
   ## GET SIMULATION PARAMETERS
   ## ########
-  spectra_obj = WWObjs.loadPickleObject(
+  spectra_obj = WWObjs.loadPickle(
     filepath_sim,
     SPECTRA_NAME,
     bool_hide_updates = True
