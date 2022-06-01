@@ -27,8 +27,8 @@ plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
-SONIC_REGIME     = "super_sonic"
 BASEPATH         = "/scratch/ek9/nk7952/"
+SONIC_REGIME     = "super_sonic"
 FILENAME_TURB    = "Turb.dat"
 FILENAME_SPECTRA = "spectra_fits.json"
 ## ###############################################################
@@ -445,11 +445,9 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
 def main():
-  filepath_base = BASEPATH
-
-  ## #######################
-  ## LOOK AT EACH SIMULATION
-  ## #######################
+  ## ##############################
+  ## LOOK AT EACH SIMULATION FOLDER
+  ## ##############################
   for suite_folder in [
       "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
@@ -462,7 +460,7 @@ def main():
       ## CREATE FILEPATH TO SIMULATION FOLDER
       ## ####################################
       filepath_figures = WWFnF.createFilepath([
-        filepath_base, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
+        BASEPATH, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
       ])
       ## check that the filepath exists on MAC
       if not os.path.exists(filepath_figures):
@@ -482,7 +480,7 @@ def main():
 
         ## create filepath to the simulation folder
         filepath_sim = WWFnF.createFilepath([
-          filepath_base, suite_folder, sim_res, SONIC_REGIME, sim_folder
+          BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder
         ])
         ## check that the filepath exists
         if not os.path.exists(filepath_sim):

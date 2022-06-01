@@ -4,7 +4,7 @@
 ## ###############################################################
 ## DEPENDENCIES: REQUIRED MODULES
 ## ###############################################################
-import os
+import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -186,11 +186,8 @@ class PlotSpectraFit():
         self.spectra_obj.sim_label,
         "spectra_fit=*"
       ]) + ".png"
-      filepath_frames = WWFnF.createFilepath([
-        filepath_plot,
-        frame_names
-      ])
-      os.remove(filepath_frames)
+      p = subprocess.Popen([ "rm", frame_names ], cwd=filepath_plot)
+      p.wait()
     ## initialise spectra evolution figure
     fig, ax = plt.subplots()
     ## loop over each time slice
