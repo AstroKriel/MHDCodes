@@ -46,7 +46,7 @@ def funcLoadData_sim(
   ## #########################
   ## GET SIMULATION PARAMETERS
   ## ########
-  spectra_obj = loadPickleObject(
+  spectra_obj = loadPickle(
     createFilepath([filepath_suite, "288", sim_folder]),
     SPECTRA_NAME,
     bool_hide_updates = True
@@ -96,7 +96,7 @@ def funcLoadData_sim(
   ## #####################
   ## LOAD CONVERGED SCALES
   ## ############
-  converge_obj = loadPickleObject(
+  converge_obj = loadPickle(
     filepath_suite,
     sim_folder + SCALE_NAME,
     bool_hide_updates = True
@@ -1791,7 +1791,7 @@ class PlotScaleConvergence():
     ## load and plot simulation scales
     for sim_res in list_res:
       ## load spectra object
-      spectra_obj = loadPickleObject(
+      spectra_obj = loadPickle(
         createFilepath([ self.filepath_data, sim_name, str(sim_res), "Pm2" ]),
         SPECTRA_NAME
       )
@@ -1968,12 +1968,12 @@ def main():
   # ## plot spectra + measured scales
   # PlotSpectraAndScales(
   #     filepath_plot,
-  #     loadPickleObject(
+  #     loadPickle(
   #         createFilepath([ filepath_data, "Re500",  "288", "Pm2" ]),
   #         SPECTRA_NAME,
   #         bool_hide_updates = True
   #     ),
-  #     loadPickleObject(
+  #     loadPickle(
   #         createFilepath([ filepath_data, "Rm3000",  "288", "Pm2" ]),
   #         SPECTRA_NAME,
   #         bool_hide_updates = True
@@ -1982,12 +1982,12 @@ def main():
   # print(" ")
   # PlotSpectraAndScalesResiduals(
   #     filepath_plot,
-  #     loadPickleObject(
+  #     loadPickle(
   #         createFilepath([ filepath_data, "Re500",  "288", "Pm2" ]),
   #         SPECTRA_NAME,
   #         bool_hide_updates = True
   #     ),
-  #     loadPickleObject(
+  #     loadPickle(
   #         createFilepath([ filepath_data, "Rm3000",  "288", "Pm2" ]),
   #         SPECTRA_NAME,
   #         bool_hide_updates = True

@@ -277,7 +277,7 @@ def main():
     ## ###################
     ## LOAD SPECTRA OBJECT
     ## ########
-    try: spectra_obj = loadPickleObject(
+    try: spectra_obj = loadPickle(
         # createFilepath([filepath_base, str(res), SONIC_REGIME, sim_folder, sub_folder]),
         createFilepath([filepath_base, str(sim_res), sim_folder, sub_folder]),
         SPECTRA_NAME,
@@ -404,7 +404,7 @@ def main():
   #     list_k_eta_converged = list_k_eta_converged,
   #     list_k_max_converged = list_k_max_converged
   # )
-  # savePickleObject(
+  # savePickle(
   #     spectra_scale_obj,
   #     filepath_base,
   #     sim_folder+SCALE_NAME

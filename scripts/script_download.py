@@ -27,7 +27,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 def funcCheckSpectraObjNeedsUpdate(mac_filepath_data, spectra_name):
   ## load spectra object
   try:
-    spectra_obj = loadPickleObject(
+    spectra_obj = loadPickle(
       mac_filepath_data,
       spectra_name,
       bool_check = True,

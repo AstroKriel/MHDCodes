@@ -13,19 +13,21 @@ from ThePlottingModule import *
 from TheUsefulModule import *
 from ThePlottingModule import PlotFuncs
 
+
 ## ###############################################################
 ## PREPARE WORKSPACE
 ##################################################################
 os.system("clear") # clear terminal window
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
+
 ## ###############################################################
-## PREPARE WORKSPACE
+## DEFINE MAIN PROGRAM
 ##################################################################
 def main():
-  ## ######################
-  ## LOAD DATASET
-  ## ######################
+  ## #####################
+  ## LOAD KURTOSIS DATASET
+  ## #####################
   print("Loading data...")
   ## dataset name
   abs_filepath_base = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/"
@@ -44,9 +46,9 @@ def main():
   for sim_data in csv.reader(dataset_obj):
     list_sim_data.append(sim_data)
 
-  ## ######################
-  ## PLOT DATA
-  ## ######################
+  ## ##################
+  ## PLOT KURTOSIS DATA
+  ## ##################
   print("Plotting data...")
   ## create figure
   factor = 1.45
@@ -63,33 +65,18 @@ def main():
     else:
       marker = "D"
     print("\t", Re, val, err)
-    if Re > 2000:
-      ax.errorbar(
-        x      = Re,
-        y      = val,
-        yerr   = err,
-        marker = marker,
-        color  = "darkgray",
-        # alpha  = 0.3,
-        markeredgecolor = "black",
-        markersize = 9,
-        elinewidth = 2,
-        capsize    = 7.5,
-        zorder     = 10
-      )
-    else:
-      ax.errorbar(
-        x      = Re,
-        y      = val,
-        yerr   = err,
-        marker = marker,
-        color  = "cornflowerblue" if Re < 100 else "orangered",
-        markeredgecolor = "black",
-        markersize = 9,
-        elinewidth = 2,
-        capsize    = 7.5,
-        zorder     = 10
-      )
+    ax.errorbar(
+      x      = Re,
+      y      = val,
+      yerr   = err,
+      marker = marker,
+      color  = "cornflowerblue" if Re < 100 else "darkgray" if Re > 2000 else "orangered",
+      markeredgecolor = "black",
+      markersize = 9,
+      elinewidth = 2,
+      capsize    = 7.5,
+      zorder     = 10
+    )
   ## undject y-axis range
   ax.set_ylim([-1.0, 2.0])
   ## log-scale x-axis
@@ -153,5 +140,6 @@ def main():
 if __name__ == "__main__":
   main()
   sys.exit()
+
 
 ## END OF PROGRAM

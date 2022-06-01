@@ -13,7 +13,6 @@ from tqdm import tqdm
 ## load old user defined modules
 from OldModules.the_useful_library import *
 from OldModules.the_plotting_library import *
-from the_matplotlib_styler import *
 
 
 #################################################################
@@ -67,8 +66,10 @@ sim_names     = args["sim_names"]   # name of figures
 if len(sim_names) < len(folders_sims):
   raise Exception("You need to give a label to every simulation.")
 ## if a time-range isn't specified for one of the simulations, then use the default time-range
-if len(start_time) < len(folders_sims): start_time.extend( [1] * (len(folders_sims) - len(start_time)) )
-if len(end_time) < len(folders_sims): end_time.extend( [np.inf] * (len(folders_sims) - len(end_time)) )
+if len(start_time) < len(folders_sims):
+  start_time.extend( [1] * (len(folders_sims) - len(start_time)) )
+if len(end_time) < len(folders_sims):
+  end_time.extend( [np.inf] * (len(folders_sims) - len(end_time)) )
 ## folders where spectra data is
 filepaths_data = []
 for folder_sim in folders_sims:
@@ -116,14 +117,14 @@ for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
       cbar_label = r"$\log_{10}(B^2)$",
       cbar_lims  = [col_min_val, col_max_val]
     )
-  # ## animate frames
-  # if len(list_sim_times) > 3:
-  #     aniEvolution(
-  #         filepath_frames,
-  #         filepath_vis,
-  #         createName([ sim_names[sim_index], "slice=%*.png" ]),
-  #         createName([ sim_names[sim_index], "ani_slice.mp4" ])
-  #     )
+  ## animate frames
+  if len(list_sim_times) > 3:
+      aniEvolution(
+          filepath_frames,
+          filepath_vis,
+          createName([ sim_names[sim_index], "slice=%*.png" ]),
+          createName([ sim_names[sim_index], "ani_slice.mp4" ])
+      )
 
 
 ## END OF PROGRAM

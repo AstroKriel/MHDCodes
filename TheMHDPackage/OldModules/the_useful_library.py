@@ -90,7 +90,7 @@ def makeFilter(
   return meetsCondition
 
 def getFilesFromFolder(
-    folder_directory, 
+    filepath, 
     str_contains       = None,
     str_startswith     = None,
     str_endswith       = None,
@@ -311,7 +311,7 @@ def sampleGaussFromQuantiles(
 ## ###############################################################
 ## WORKING WITH OBJECTS
 ## ###############################################################
-def savePickleObject(obj, filepath_folder, obj_filename):
+def savePickle(obj, filepath_folder, obj_filename):
   ## create filepath where object will be saved
   obj_filepath = createFilepath([filepath_folder, obj_filename])
   ## if the file exists, then delete it
@@ -323,7 +323,7 @@ def savePickleObject(obj, filepath_folder, obj_filename):
   ## print success to terminal
   print("\t> Object saved: " + obj_filepath)
 
-def loadPickleObject(
+def loadPickle(
     filepath_folder,
     obj_filename,
     bool_check = False,
@@ -343,7 +343,7 @@ def loadPickleObject(
       filepath_folder
     ))
 
-def updateAttr(obj, attr, desired_val):
+def updateObjAttr(obj, attr, desired_val):
   ## check that the new attribute value is not None
   if desired_val is not None:
     ## check that the new value is not the same as the old value

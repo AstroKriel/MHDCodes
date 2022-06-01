@@ -62,8 +62,9 @@ def makeFilter(
     else: return False
   return meetsCondition
 
+
 def getFilesFromFolder(
-    folder_directory, 
+    filepath, 
     str_contains       = None,
     str_startswith     = None,
     str_endswith       = None,
@@ -84,30 +85,47 @@ def getFilesFromFolder(
     file_start_index,
     file_end_index
   )
-  return list(filter(myFilter, sorted(os.listdir(folder_directory))))
+  return list(filter(myFilter, sorted(os.listdir(filepath))))
 
-def createFolder(folder_name, bool_hide_updates=False):
+
+def readLineFromFile(filepath, des_str):
+  ''' readLineFromFile
+    PURPOSE: Return the first line from a file where an intance of a desired target string appears.
+  '''
+  for line in open(filepath).readlines():
+    if des_str in line:
+      return line
+  return None
+
+
+def createFolder(filepath, bool_hide_updates=False):
   """ createFolder
   PURPOSE: Create a folder if and only if it does not already exist.
   """
-  if not(os.path.exists(folder_name)):
-    os.makedirs(folder_name)
+  if not(os.path.exists(filepath)):
+    os.makedirs(filepath)
     if not(bool_hide_updates):
-      print("SUCCESS: Folder created. \n\t" + folder_name + "\n")
+      print("SUCCESS: Folder created. \n\t" + filepath + "\n")
   elif not(bool_hide_updates):
-    print("WARNING: Folder already exists (folder not created). \n\t" + folder_name + "\n")
+    print("WARNING: Folder already exists (folder not created). \n\t" + filepath + "\n")
 
-def createFilepath(folder_names):
-  """ creatFilePath
-  PURPOSE: Concatinate a list of folder names into a single string separated by '/'.
-  """
-  return re.sub( '/+', '/', "/".join([folder for folder in folder_names if folder != ""]) )
 
-def createName(name_elems):
+def createFilepath(list_filepath_folders):
   """ creatFilePath
-  PURPOSE: Concatinate a list of folder names into a single string separated by '_.
+  PURPOSE: Concatinate a list of strings into a single string separated by '/'.
   """
-  return re.sub( '_+', '_', "_".join([elems for elems in name_elems if elems != ""]) )
+  return re.sub( '/+', '/', "/".join([
+    folder for folder in list_filepath_folders if not(folder == "")
+  ]) )
+
+
+def createName(list_name_elems):
+  """ creatFilePath
+  PURPOSE: Concatinate a list of strings into a single string separated by '_'.
+  """
+  return re.sub( '_+', '_', "_".join([
+    elems for elems in list_name_elems if not(elems == "")
+  ]) )
 
 
 ## END OF MODULE
