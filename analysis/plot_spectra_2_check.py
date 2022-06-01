@@ -221,9 +221,11 @@ def funcPlotSpectra(
   time_range = [time_exp_start, time_exp_end]
   def plotData(
       ax, data_x, data_y,
-      label = None,
-      color = "black",
+      label  = None,
+      color  = "black",
+      zorder = 5
     ):
+    ## if a fitting range is defined
     if (time_range[0] is not None) and (time_range[1] is not None):
       index_start = WWLists.getIndexClosestValue(data_x, time_range[0])
       index_end   = WWLists.getIndexClosestValue(data_x, time_range[1])
@@ -238,17 +240,23 @@ def funcPlotSpectra(
         ax.plot(
           data_x_sub,
           [data_y_mean] * len(data_x_sub),
-          color="black", ls=":", lw=2, zorder=7
+          color="black", ls=":", lw=2, zorder=(zorder+2)
         )
       ## plot full dataset
-      ax.plot(data_x, data_y, color=color, ls="-", lw=1, alpha=0.1, zorder=3)
+      ax.plot(data_x, data_y, color=color, ls="-", lw=1, alpha=0.1, zorder=(zorder-2))
       ## plot subset of data
       ax.plot(
         data_x[index_start : index_end],
         data_y[index_start : index_end],
-        label=label, color=color, ls="-", lw=1.5, zorder=5
+        label=label, color=color, ls="-", lw=1.5, zorder=zorder
       )
-    else: ax.plot(data_x, data_y, label=label, color=color, ls="-", lw=1.5, zorder=3)
+      ## return minimum of sub-setted measured scales
+      return min(data_y[index_start : index_end])
+    else:
+      ## plot full dataset
+      ax.plot(data_x, data_y, label=label, color=color, ls="-", lw=1.5, zorder=(zorder-2))
+      ## return minimum of full range of measured scales
+      return min(data_y)
   ## #################
   ## LOAD SPECTRA DATA
   ## #################
@@ -281,6 +289,7 @@ def funcPlotSpectra(
     if bool_mag_spectra_fitted:
       k_modes   = spectra_fits_obj.mag_list_k_group_t[0]
       k_eta     = spectra_fits_obj.k_eta_group_t
+      k_p       = spectra_fits_obj.k_p_group_t
       k_max     = spectra_fits_obj.k_max_group_t
       mag_alpha = [
         list_fit_params[1]
@@ -295,11 +304,11 @@ def funcPlotSpectra(
   ## #####################
   PlotSpectra.PlotAveSpectra(ax_spectra, spectra_fits_obj, time_range)
   ax_spectra.set_ylim([ 10**(-8), 3*10**(0) ])
-  ## ######################
-  ## PLOT SPECTRA PARMETERS
-  ## ######################
+  ## ##########################
+  ## PLOT SPECTRA FIT PARMETERS
+  ## ##########################
   if bool_plot_fit_params:
-    ## plot number of points fitted to
+    ## number of points fitted to as a function of time realisation
     if bool_kin_spectra_fitted:
       plotData(axs[0], kin_sim_times, kin_num_points_fitted, label=r"kin-spectra", color="blue")
       max_sim_time = max(kin_sim_times)
@@ -313,7 +322,7 @@ def funcPlotSpectra(
     axs[0].set_yscale("log")
     axs[0].set_xlim([0, max_sim_time])
     axs[0].set_ylim([1, max_k_mode])
-    ## plot alpha exponents
+    ## fitted alpha exponents
     range_alpha = [ -4, 4 ]
     if bool_kin_spectra_fitted:
       plotData(axs[1], kin_sim_times, kin_alpha, label=r"$\alpha_{\rm kin} =$ ", color="blue")
@@ -325,24 +334,22 @@ def funcPlotSpectra(
     axs[1].set_ylabel(r"$\alpha$")
     axs[1].set_xlim([0, max_sim_time])
     axs[1].set_ylim(range_alpha)
-    ## plot k modes
+    ## fitted k modes
     if bool_kin_spectra_fitted:
-      min_k_nu = min(k_nu)
-      plotData(axs[2], kin_sim_times, k_nu,  label=r"$k_\nu =$ ",     color="blue")
+      min_k_nu  = plotData(axs[2], kin_sim_times, k_nu,  label=r"$k_\nu =$ ",     color="blue")
     if bool_mag_spectra_fitted:
-      min_k_eta = min(k_eta)
-      min_k_max = min(k_max)
-      plotData(axs[2], mag_sim_times, k_eta, label=r"$k_\eta =$ ",    color="red")
-      plotData(axs[2], mag_sim_times, k_max, label=r"$k_{\rm p} =$ ", color="green")
+      min_k_eta = plotData(axs[2], mag_sim_times, k_eta, label=r"$k_\eta =$ ",      color="red")
+      min_k_p   = plotData(axs[2], mag_sim_times, k_p,   label=r"$k_{\rm p} =$ ",   color="green", zorder=7)
+      min_k_max = plotData(axs[2], mag_sim_times, k_max, label=r"$k_{\rm max} =$ ", color="purple")
     ## define y-range
     if bool_kin_spectra_fitted and bool_mag_spectra_fitted:
       range_k = [ 
-        min([ 1, min([min_k_nu, min_k_eta, min_k_max]) ]),
+        min([ 1, min([min_k_nu, min_k_eta, min_k_p, min_k_max]) ]),
         max_k_mode
       ]
     elif bool_mag_spectra_fitted:
       range_k = [ 
-        min([ 1, min([min_k_eta, min_k_max]) ]),
+        min([ 1, min([min_k_eta, min_k_p, min_k_max]) ]),
         max_k_mode
       ]
     else:

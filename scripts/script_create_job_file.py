@@ -6,9 +6,9 @@
 import os
 import sys
 import shutil
-import argparse
+
 ## load old user defined modules
-from OldModules.the_useful_library import *
+from TheUsefulModule import WWArgparse, WWFnF
 
 
 ## ###############################################################
@@ -68,7 +68,7 @@ def funcPrepSimulation(
   # # )
   ## copy forcing input file from the Nres=144 directory
   funcCopy(
-    directory_from = createFilepath([
+    directory_from = WWFnF.createFilepath([
       filepath_home, suite_folder, "144", sonic_regime, sim_folder
     ]),
     directory_to   = filepath_sim,
@@ -76,7 +76,7 @@ def funcPrepSimulation(
   )
   ## copy forcing data file from the Nres=144 directory
   funcCopy(
-    directory_from = createFilepath([
+    directory_from = WWFnF.createFilepath([
       filepath_home, suite_folder, "144", sonic_regime, sim_folder
     ]),
     directory_to   = filepath_sim,
@@ -329,7 +329,7 @@ def funcCreateFitJob(
   filename_execute_program = "plot_spectra_1_fit.py"
   job_name     = "job_fit_spect.sh"
   filepath_job = filepath_sim_spect + "/" + job_name
-  filepath_sim_suite = createFilepath([
+  filepath_sim_suite = WWFnF.createFilepath([
     filepath_base, suite_folder, sim_res, sonic_regime
   ])
   job_tagname  = suite_folder + sim_folder + "fit" + sim_res
@@ -352,12 +352,14 @@ def funcCreateFitJob(
     job_file.write("#PBS -m bea\n")
     job_file.write("#PBS -M {}\n".format( EMAIL_ADDRESS ))
     job_file.write("\n")
-    job_file.write("{} -base_path {} -sim_folders {} -sim_suites super_{} -Re {} -Rm {} fit_spectra 1 -plot_spectra 1 -hide_updates 1 -fit_sub_Ek_range 1 -log_Ek_range 6 1>shell_fit.out00 2>&1\n".format(
+    job_file.write("{} -suite_path {} -sim_folder {} -sim_suite {}_{} -Re {} -Rm {} -sim_res {} -kin_fit_sub_y_range 1 -kin_num_decades_to_fit 6 -f -p 1>shell_fit.out00 2>&1\n".format(
       filename_execute_program, # fitting program
-      filepath_sim_suite,       # base_path: path to simulation suite
-      sim_folder,               # sim_folders: simulation name
-      suite_folder,             # sim_suites: suite name
-      Re, Rm                    # plasma Reynolds numbers
+      filepath_sim_suite,       # path to simulation suite
+      sim_folder,               # simulation name
+      sonic_regime.split("_")[0],
+      suite_folder,             # suite name
+      Re, Rm,                   # plasma Reynolds numbers
+      sim_res
     ))
   ## print to terminal that job file has been created
   print("\t> Created job '{}' to run '{}'".format(
@@ -402,25 +404,35 @@ def main():
   ## #############################
   ## DEFINE COMMAND LINE ARGUMENTS
   ## #############################
-  parser = MyParser()
+  parser = WWArgparse.MyParser(description="Fit kinetic and magnetic energy spectra.")
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
   args_opt = parser.add_argument_group(description='Optional processing arguments:')
   ## define typical input requirements
-  bool_args = {"required":False, "type":str2bool, "nargs":"?", "const":True}
+  opt_bool_arg = {
+    "required":False, "default":False, "action":"store_true",
+    "help":"type: bool, default: %(default)s"
+  }
+  opt_arg = {
+    "required":False, "metavar":"",
+    "help":"type: %(type)s, default: %(default)s",
+  }
+  req_arg = {
+    "required":True, "help":"type: %(type)s"
+  }
   ## program inputs
-  args_opt.add_argument("-prep_sim",     default=False, **bool_args)
-  args_opt.add_argument("-calc_spectra", default=False, **bool_args)
-  args_opt.add_argument("-fit_spectra",  default=False, **bool_args)
+  args_opt.add_argument("-p", "--prep_sim",     **opt_bool_arg)
+  args_opt.add_argument("-c", "--calc_spectra", **opt_bool_arg)
+  args_opt.add_argument("-f", "--fit_spectra",  **opt_bool_arg)
   ## simulation details
-  args_opt.add_argument("-sonic_regime", required=False, type=str, default="super_sonic")
-  args_opt.add_argument("-num_blocks",   required=False, type=int, default=[36, 36, 48], nargs="+")
+  args_opt.add_argument("-sonic_regime", type=str, default="super_sonic",           **opt_arg)
+  args_opt.add_argument("-num_blocks",   type=int, default=[36, 36, 48], nargs="+", **opt_arg)
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description='Required processing arguments:')
   ## required inputs
-  args_req.add_argument("-base_path",    type=str, required=True)
-  args_req.add_argument("-sim_suites",   type=str, required=True, nargs="+")
-  args_req.add_argument("-sim_res",      type=str, required=True, nargs="+")
-  args_req.add_argument("-sim_folders",  type=str, required=True, nargs="+")
+  args_req.add_argument("-base_path",   type=str,            **req_arg)
+  args_req.add_argument("-sim_suites",  type=str, nargs="+", **req_arg)
+  args_req.add_argument("-sim_res",     type=str, nargs="+", **req_arg)
+  args_req.add_argument("-sim_folders", type=str, nargs="+", **req_arg)
 
   ## #########################
   ## INTERPRET INPUT ARGUMENTS
@@ -444,22 +456,19 @@ def main():
   ## ####################
   ## PROCESS MAIN PROGRAM
   ## ####################
-  ## loop over the simulation suites
-  for suite_folder in list_suite_folders:
-    ## loop over the different resolution runs
-    for sim_res in list_sim_res:
+  for suite_folder in list_suite_folders: # "Re10", "Re500", "Rm3000", "keta"
+    for sim_res in list_sim_res: # "18", "36", "72", "144", "288", "576"
       ## print to the terminal what suite is being looked at
       str_msg = "Looking at suite: {}, Nres = {}".format( suite_folder, sim_res )
       print(str_msg)
       print("=" * len(str_msg))
-      ## loop over the simulation folders
-      for sim_folder in list_sim_folders:
+      for sim_folder in list_sim_folders: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
         ## ##################################
         ## CHECK THE SIMULATION FOLDER EXISTS
         ## ##################################
         ## create filepath to simulation folder (on GADI)
-        filepath_sim = createFilepath([
+        filepath_sim = WWFnF.createFilepath([
           filepath_base, suite_folder, sim_res, sonic_regime, sim_folder
         ])
         ## check that the simulation directory exists

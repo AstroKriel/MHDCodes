@@ -79,8 +79,8 @@ class SpectraObject():
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
       ## TODO: read in plots per eddy
-      file_end_time     = 20,
-      read_every        = 5,
+      # file_end_time     = 20,
+      # read_every        = 5,
       bool_hide_updates = bool_hide_updates
     )
     ## load magnetic energy spectra
@@ -88,8 +88,8 @@ class SpectraObject():
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
       ## TODO: read in plots per eddy
-      file_end_time     = 20,
-      read_every        = 5,
+      # file_end_time     = 20,
+      # read_every        = 5,
       bool_hide_updates = bool_hide_updates
     )
     print("\tFitting spectra data...")
@@ -249,10 +249,11 @@ class SpectraObject():
     )
     ## plot spectra evolution
     spectra_plot_obj.plotSpectraEvolution(
-      filepath_plot     = filepath_vis_frames,
-      plot_index_start  = plot_spectra_from,
-      plot_index_step   = plot_spectra_every,
-      bool_hide_updates = bool_hide_updates
+      filepath_plot         = filepath_vis_frames,
+      plot_index_start      = plot_spectra_from,
+      plot_index_step       = plot_spectra_every,
+      bool_delete_old_frams = True,
+      bool_hide_updates     = bool_hide_updates
     )
     ## animate spectra evolution
     spectra_plot_obj.aniSpectra(

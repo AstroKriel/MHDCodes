@@ -4,6 +4,7 @@
 ## ###############################################################
 ## DEPENDENCIES: REQUIRED MODULES
 ## ###############################################################
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -173,10 +174,23 @@ class PlotSpectraFit():
   def plotSpectraEvolution(
       self,
       filepath_plot,
-      plot_index_start  = 0,
-      plot_index_step   = 1,
-      bool_hide_updates = False
+      plot_index_start      = 0,
+      plot_index_step       = 1,
+      bool_delete_old_frams = False,
+      bool_hide_updates     = False
     ):
+    ## remove old frames
+    if bool_delete_old_frams:
+      frame_names = WWFnF.createName([
+        self.spectra_obj.sim_suite,
+        self.spectra_obj.sim_label,
+        "spectra_fit=*"
+      ]) + ".png"
+      filepath_frames = WWFnF.createFilepath([
+        filepath_plot,
+        frame_names
+      ])
+      os.remove(filepath_frames)
     ## initialise spectra evolution figure
     fig, ax = plt.subplots()
     ## loop over each time slice

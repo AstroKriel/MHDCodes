@@ -10,7 +10,7 @@ import subprocess
 from os import path
 
 ## load old user defined modules
-from OldModules.the_useful_library import *
+from TheUsefulModule import WWArgparse, WWFnF
 
 
 ## ###############################################################
@@ -20,19 +20,31 @@ def main():
   ## #############################
   ## DEFINE COMMAND LINE ARGUMENTS
   ## #############################
-  parser = MyParser()
+  parser = WWArgparse.MyParser(description="Fit kinetic and magnetic energy spectra.")
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
   args_opt = parser.add_argument_group(description='Optional processing arguments:')
+  ## define typical input requirements
+  opt_bool_arg = {
+    "required":False, "default":False, "action":"store_true",
+    "help":"type: bool, default: %(default)s"
+  }
+  opt_arg = {
+    "required":False, "metavar":"",
+    "help":"type: %(type)s, default: %(default)s",
+  }
+  req_arg = {
+    "required":True, "help":"type: %(type)s"
+  }
   ## define directory inputs
-  args_opt.add_argument("-sub_folder",   required=False, type=str, default="")
-  args_opt.add_argument("-sonic_regime", required=False, type=str, default="super_sonic")
+  args_opt.add_argument("-sub_folder",   type=str, default="",            **opt_arg)
+  args_opt.add_argument("-sonic_regime", type=str, default="super_sonic", **opt_arg)
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description='Required processing arguments:')
   ## define inputs
-  args_req.add_argument("-base_path",   type=str, required=True)
-  args_req.add_argument("-sim_suites",  type=str, required=True, nargs="+")
-  args_req.add_argument("-sim_res",     type=str, required=True, nargs="+")
-  args_req.add_argument("-sim_folders", type=str, required=True, nargs="+")
+  args_req.add_argument("-base_path",   type=str,            **req_arg)
+  args_req.add_argument("-sim_suites",  type=str, nargs="+", **req_arg)
+  args_req.add_argument("-sim_res",     type=str, nargs="+", **req_arg)
+  args_req.add_argument("-sim_folders", type=str, nargs="+", **req_arg)
   ## define job name input
   args_req.add_argument("-job_name", type=str, required=True)
 
@@ -70,7 +82,7 @@ def main():
         ## CHECK THE SIMULATION FOLDER EXISTS
         ## ##################################
         ## create filepath to simulation folder (on GADI)
-        filepath_sim = createFilepath([
+        filepath_sim = WWFnF.createFilepath([
           filepath_base, suite_folder, sim_res, sonic_regime, sim_folder, sub_folder
         ])
         ## check that the simulation filepath exists
