@@ -3,12 +3,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import sys
-import subprocess
-
-from os import path
-
-## load old user defined modules
+import sys, subprocess
 from TheUsefulModule import WWFnF
 
 
@@ -51,7 +46,7 @@ def main():
           BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder, DATA_SUBFOLDER
         ])
         ## check that the simulation filepath exists
-        if not path.exists(filepath_sim):
+        if not os.path.exists(filepath_sim):
           print(filepath_sim, "does not exist.")
           continue
 
@@ -59,7 +54,7 @@ def main():
         ## CHECK THE JOB FILE EXISTS
         ## #########################
         ## check that the job exists in the folder
-        if not path.isfile(filepath_sim + "/" + JOB_NAME):
+        if not os.path.isfile(filepath_sim + "/" + JOB_NAME):
           print(JOB_NAME, "does not exist in", filepath_sim)
           continue
         ## indicate which folder is being worked on

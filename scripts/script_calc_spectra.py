@@ -55,7 +55,10 @@ def main():
   file_start      = args["file_start"] # first file to process
   file_end        = args["file_end"]   # last file to process
   num_proc        = args["num_proc"]   # number of processors
-  ## ---------------------------- START CODE
+
+  ## ###############################
+  ## PRINT JOB PARAMETERS TO CONSOLE
+  ## ###############################
   print("Began running the spectra code in folder: " + directory_data)
   print("First file index to process: "              + str(file_start))
   print("Last file index to process: "               + str(file_end))
@@ -63,7 +66,7 @@ def main():
   print(" ")
 
   ## #########################
-  ## PROCESS ALL THE PLT FILES
+  ## PROCESS ALL THE PLT-FILES
   ## #########################
   # loop over the data directory and compute spectra files
   list_filenames = WWFnF.getFilesFromFolder(
@@ -84,7 +87,7 @@ def main():
       funcProcessPltFile(list_filenames, num_proc)
 
   ## ########################################
-  ## CHECK WHICH PLT FILES WERE NOT PROCESSED
+  ## CHECK WHICH PLT-FILES WERE NOT PROCESSED
   ## ########################################
   ## now check which spectra files have successfully been computed
   list_filenames_spect_mag = WWFnF.getFilesFromFolder(
@@ -127,7 +130,8 @@ def main():
     ## loop over plt file names and processes them
     print("Processing these plt files again...")
     funcProcessPltFile(list_filenames_redo, num_proc)
-  else: print("There are no more plt files to process.")
+  else:
+    print("There are no more plt files to process.")
   print(" ")
   print("Finished running the spectra code.")
 

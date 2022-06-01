@@ -3,51 +3,47 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import sys
-import matplotlib.pyplot as plt
-
-from os import path
-
-## load old user defined modules
-from OldModules.the_useful_library import *
-
+import os, sys
+from TheUsefulModule import WWFnF
 
 ## ###############################################################
 ## PREPARE WORKSPACE
 ##################################################################
 os.system("clear") # clear terminal window
-plt.ioff()
-plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
-BASEPATH_MAC    = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/data/"
+BASEPATH_MAC    = "/Users/necoturb/Documents/Studies/Dynamo"
 BASEPATH_GADI   = "/scratch/ek9/nk7952/"
 SONIC_REGIME    = "super_sonic"
-FILENAME        = "*_check.png"
-BOOL_GET_PLOTS  = True
-BOOL_GET_VIDEOS = False
+FILENAME_FIGS   = "*_check.png"
+BOOL_GET_PLOTS  = 0
+BOOL_GET_VIDEOS = 1
 ## ###############################################################
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
 def main():
+  ## #################################
+  ## LOOK AT EACH SUITE'S PLOTS FOLDER
+  ## #################################
+  ## loop over the simulation suites
   for suite_folder in [
       "Re10", "Re500", "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
+    ## loop over the different resolution runs
     for sim_res in [
-        "72", "144", "288", "576"
+        "72", "144", "288"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## ################################
       ## CREATE FILEPATH TO FOLDER ON MAC
       ## ################################
-      filepath_mac_figures = createFilepath([
-        BASEPATH_MAC, SONIC_REGIME, suite_folder, sim_res, "vis_folder"
+      filepath_mac_vis = WWFnF.createFilepath([
+        BASEPATH_MAC, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
       ])
       ## check that the filepath exists on MAC
-      if not path.exists(filepath_mac_figures):
-        print("{} does not exist.".format( filepath_mac_figures ))
+      if not os.path.exists(filepath_mac_vis):
+        print("{} does not exist.".format( filepath_mac_vis ))
         continue
       str_message = "Downloading from suite: {}, Nres = {}".format(
         suite_folder,
@@ -60,29 +56,28 @@ def main():
       ## DOWNLOAD FIT FIGURES FROM GADI
       ## ##############################
       if BOOL_GET_PLOTS:
-        filepath_gadi_figures = createFilepath([
+        filepath_gadi_vis = WWFnF.createFilepath([
           "gadi:"+BASEPATH_GADI, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
         ])
-        print("Downloading from:", filepath_gadi_figures)
+        print("Downloading from:", filepath_gadi_vis)
         ## download plots checking fits
         os.system("scp {}/{} {}/.".format(
-          filepath_gadi_figures,
-          FILENAME,
-          filepath_mac_figures
+          filepath_gadi_vis, FILENAME_FIGS,
+          filepath_mac_vis
         ))
 
       ## #############################
       ## DOWNLOAD FIT VIDEOS FROM GADI
       ## #############################
       if BOOL_GET_VIDEOS:
-        filepath_gadi_videos = createFilepath([
+        filepath_gadi_videos = WWFnF.createFilepath([
             "gadi:"+BASEPATH_GADI, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
         ])
         print("Downloading from:", filepath_gadi_videos)
         ## download plots + animations
         os.system("scp {}/*.mp4 {}/.".format(
           filepath_gadi_videos,
-          filepath_mac_figures
+          filepath_mac_vis
         ))
       print(" ")
 
