@@ -2,7 +2,7 @@
 
 
 ## ###############################################################
-## DEPENDENCIES: REQUIRED MODULES
+## MODULES
 ## ###############################################################
 import h5py
 import numpy as np
@@ -197,11 +197,9 @@ def loadFLASHFieldDataList(
 
 
 def loadTurbData(
-    ## where data is
     filepath_data,
-    ## data index and eddy turnover
-    var_y, t_eddy,
-    ## time to subset data
+    var_y,
+    t_eddy, # ell_turb / (c_s Mach)
     time_start = 1,
     time_end   = np.inf
   ):

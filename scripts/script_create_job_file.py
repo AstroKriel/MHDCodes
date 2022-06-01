@@ -254,7 +254,7 @@ def funcCreateCalcSpectraJob(
     suite_folder, sim_res, sim_folder
   ):
   # define job details
-  filename_execute_program = "script_calc_spectra.py"
+  program_name = "script_calc_spectra.py"
   job_name     = "job_calc_spect.sh"
   filepath_job = filepath_sim + "/" + job_name
   job_tagname  = suite_folder + sim_folder + "spectra" + sim_res
@@ -278,129 +278,128 @@ def funcCreateCalcSpectraJob(
     job_file.write("#PBS -M {}\n".format( EMAIL_ADDRESS ))
     job_file.write("\n")
     job_file.write("{} -base_path {} -num_proc {} -check_only 1 1>shell_calc.out00 2>&1\n".format(
-      filename_execute_program, # program
+      program_name, # program
       filepath_sim,
       num_cpus
     ))
   ## print to terminal that job file has been created
   print("\t> Created job '{}' to run '{}'".format(
     job_name,
-    filename_execute_program
+    program_name
   ))
 
 
 ## ###############################################################
-## FUNCTION: Create a job file that runs spectra fitting
+## CREATE JOB: FIT SPECTRA
 ## ###############################################################
-def funcGetPlasmaNumbers(filepath_sim, rms_Mach):
-  filepath_flash_param_file = filepath_sim + "/flash.par"
-  nu = None
-  eta = None
-  with open(filepath_flash_param_file) as file_lines:
-    for line in file_lines:
-      list_line_elems = line.split()
-      ## ignore empty lines
-      if len(list_line_elems) == 0:
-        continue
-      ## read value for 'diff_visc_nu'
-      if list_line_elems[0] == "diff_visc_nu":
-        nu = float(list_line_elems[2])
-      ## read value for 'resistivity'
-      if list_line_elems[0] == "resistivity":
-        eta = float(list_line_elems[2])
-      ## stop searching if both parameters have been identified
-      if (nu is not None) and (eta is not None):
-        break
-  ## display parameter values found
-  if (nu is not None) and (eta is not None):
-    Re = int(rms_Mach / nu)
-    Rm = int(rms_Mach / eta)
-    Pm = int(nu / eta)
-    print("\t> Re = {:}, Rm = {:}, Pm = {:}, nu = {:0.2e}, eta = {:0.2e},".format(
-      Re, Rm, Pm,
-      nu, eta
+class PrepSpectraFit():
+  def __init__(
+      self,
+      filepath_base,
+      filepath_sim,
+      suite_folder,
+      sim_res,
+      sonic_regime,
+      sim_folder,
+      rms_Mach
+    ):
+    ## store provided information
+    self.filepath_base  = filepath_base
+    self.filepath_sim   = filepath_sim
+    self.suite_folder   = suite_folder
+    self.sim_res        = sim_res
+    self.sonic_regime   = sonic_regime
+    self.sim_folder     = sim_folder
+    self.rms_Mach       = rms_Mach # TODO: read from Turb.dat
+    self.filepath_suite = WWFnF.createFilepath([
+      self.filepath_base,
+      self.suite_folder,
+      self.sim_res,
+      self.sonic_regime
+    ])
+    self.filepath_plt   = self.filepath_sim + "/plt"
+    self.filepath_spect = self.filepath_sim + "/spect"
+    if not os.path.exists(self.filepath_plt):
+      print(self.filepath_plt, "does not exist.")
+      return
+    if not os.path.exists(self.filepath_spect):
+      print(self.filepath_spect, "does not exist.")
+      return
+    self.getPlasmaNumbers()
+    self.createJob()
+  def getPlasmaNumbers(self):
+    nu  = None
+    eta = None
+    with open(self.filepath_sim + "/flash.par") as file_lines:
+      for line in file_lines:
+        list_line_elems = line.split()
+        ## ignore empty lines
+        if len(list_line_elems) == 0:
+          continue
+        ## read value for 'diff_visc_nu'
+        if list_line_elems[0] == "diff_visc_nu":
+          nu = float(list_line_elems[2])
+        ## read value for 'resistivity'
+        if list_line_elems[0] == "resistivity":
+          eta = float(list_line_elems[2])
+        ## stop searching if both parameters have been identified
+        if (nu is not None) and (eta is not None):
+          break
+    ## display parameter values found
+    if (nu is not None) and (eta is not None):
+      self.nu  = nu
+      self.eta = eta
+      self.Re  = int(self.rms_Mach / self.nu)
+      self.Rm  = int(self.rms_Mach / self.eta)
+      self.Pm  = int(self.nu / self.eta)
+      print("\t> Re = {:}, Rm = {:}, Pm = {:}, nu = {:0.2e}, eta = {:0.2e},".format(
+        self.Re, self.Rm, self.Pm,
+        self.nu, self.eta
+      ))
+    else: Exception("\t> ERROR: Could not find {}{}{}.".format(
+      "nu"   if (nu is None)  else "",
+      " or " if (nu is None)  and (eta is None) else "",
+      "eta"  if (eta is None) else ""
     ))
-    return Re, Rm, Pm, nu, eta
-  else: Exception("\t> ERROR: Could not find {}{}{}.".format(
-    "nu"   if (nu is None)  else "",
-    " or " if (nu is None)  and (eta is None) else "",
-    "eta"  if (eta is None) else ""
-  ))
-
-def funcCreateFitJob(
-    filepath_base, filepath_sim_spect,
-    suite_folder, sim_res, sonic_regime, sim_folder,
-    Re, Rm
-  ):
-  # define job details
-  filename_execute_program = "plot_spectra_1_fit.py"
-  job_name     = "job_fit_spect.sh"
-  filepath_job = filepath_sim_spect + "/" + job_name
-  filepath_sim_suite = WWFnF.createFilepath([
-    filepath_base, suite_folder, sim_res, sonic_regime
-  ])
-  job_tagname  = suite_folder + sim_folder + "fit" + sim_res
-  max_hours    = int(8)
-  num_cpus     = int(2)
-  max_mem      = int(4*num_cpus)
-  ## create/overwrite job file
-  with open(filepath_job, "w") as job_file:
-    ## write contents
-    job_file.write("#!/bin/bash\n")
-    job_file.write("#PBS -P ek9\n")
-    job_file.write("#PBS -q normal\n")
-    job_file.write("#PBS -l walltime={}:00:00\n".format( max_hours ))
-    job_file.write("#PBS -l ncpus={}\n".format( num_cpus ))
-    job_file.write("#PBS -l mem={}GB\n".format( max_mem ))
-    job_file.write("#PBS -l storage=scratch/ek9+gdata/ek9\n")
-    job_file.write("#PBS -l wd\n")
-    job_file.write("#PBS -N {}\n".format( job_tagname ))
-    job_file.write("#PBS -j oe\n")
-    job_file.write("#PBS -m bea\n")
-    job_file.write("#PBS -M {}\n".format( EMAIL_ADDRESS ))
-    job_file.write("\n")
-    job_file.write("{} -suite_path {} -sim_folder {} -sim_suite {}_{} -sim_res {} -Re {} -Rm {} -kin_fit_sub_y_range -kin_num_decades_to_fit 6 -f -p 1>shell_fit.out00 2>&1\n".format(
-      filename_execute_program,   # fitting program
-      filepath_sim_suite,         # path to simulation suite
-      sim_folder,                 # simulation name
-      sonic_regime.split("_")[0], # sonic regime (sub / super)
-      suite_folder,               # suite name
-      sim_res,                    # simulation linear resolution
-      Re, Rm                      # plasma Reynolds numbers
+  def createJob(self):
+    ## job details
+    program_name = "plot_spectra_1_fit.py"
+    job_name     = "job_fit_spect.sh"
+    job_tagname  = self.suite_folder + self.sim_folder + "fit" + self.sim_res
+    max_hours    = int(8)
+    num_cpus     = int(2)
+    max_mem      = int(4 * num_cpus)
+    ## create/overwrite job file
+    filepath_job = self.filepath_spect + "/" + job_name
+    with open(filepath_job, "w") as job_file:
+      ## write contents
+      job_file.write("#!/bin/bash\n")
+      job_file.write("#PBS -P ek9\n")
+      job_file.write("#PBS -q normal\n")
+      job_file.write("#PBS -l walltime={}:00:00\n".format( max_hours ))
+      job_file.write("#PBS -l ncpus={}\n".format( num_cpus ))
+      job_file.write("#PBS -l mem={}GB\n".format( max_mem ))
+      job_file.write("#PBS -l storage=scratch/ek9+gdata/ek9\n")
+      job_file.write("#PBS -l wd\n")
+      job_file.write("#PBS -N {}\n".format( job_tagname ))
+      job_file.write("#PBS -j oe\n")
+      job_file.write("#PBS -m bea\n")
+      job_file.write("#PBS -M {}\n".format( EMAIL_ADDRESS ))
+      job_file.write("\n")
+      job_file.write("{} -suite_path {} -sim_folder {} -sim_suite {}_{} -sim_res {} -Re {} -Rm {} -kin_fit_sub_y_range -kin_num_decades_to_fit 6 -f -p 1>shell_fit.out00 2>&1\n".format(
+        program_name,               # fitting program
+        self.filepath_suite,        # path to simulation suite
+        self.sim_folder,            # simulation name
+        SONIC_REGIME.split("_")[0], # sonic regime (sub / super)
+        self.suite_folder,          # suite name
+        self.sim_res,               # simulation linear resolution
+        self.Re, self.Rm            # plasma Reynolds numbers
+      ))
+    ## print to terminal that job file has been created
+    print("\t> Created job '{}' to run '{}'".format(
+      job_name,
+      program_name
     ))
-  ## print to terminal that job file has been created
-  print("\t> Created job '{}' to run '{}'".format(
-    job_name,
-    filename_execute_program
-  ))
-
-def funcPrepSpectraFit(
-    filepath_base, filepath_sim,
-    suite_folder, sim_res, sonic_regime, sim_folder,
-    rms_Mach = 5.0 # TODO: read from Turb.dat
-  ):
-  filepath_sim_plt   = filepath_sim + "/plt"
-  filepath_sim_spect = filepath_sim + "/spect"
-  ## check that the 'plt' folder exists
-  if not os.path.exists(filepath_sim_plt):
-    print(filepath_sim_plt, "does not exist.")
-    return
-  ## check that the 'spect' folder exists
-  if not os.path.exists(filepath_sim_spect):
-    print(filepath_sim_spect, "does not exist.")
-    return
-  ## #############################
-  ## READ RE AND RM FROM FLASH.PAR
-  ## #############################
-  Re, Rm, _, _, _ = funcGetPlasmaNumbers(filepath_sim, rms_Mach)
-  ## ################################
-  ## CREATE JOB FILE: FITTING SPECTRA
-  ## ################################
-  funcCreateFitJob(
-    filepath_base, filepath_sim_spect,
-    suite_folder, sim_res, sonic_regime, sim_folder,
-    Re, Rm
-  )
 
 
 ## ###############################################################
@@ -433,7 +432,7 @@ def main():
         ## ##################################
         ## CHECK THE SIMULATION FOLDER EXISTS
         ## ##################################
-        ## create filepath to simulation folder (on GADI)
+        ## create filepath to simulation directory
         filepath_sim = WWFnF.createFilepath([
           BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder
         ])
@@ -484,7 +483,7 @@ def main():
         ## CREATE JOB FILE TO FIT SPECTRA
         ## ##############################
         if BOOL_FIT_SPECTRA:
-          funcPrepSpectraFit(
+          PrepSpectraFit(
             filepath_base = BASEPATH,
             filepath_sim  = filepath_sim,
             suite_folder  = suite_folder,

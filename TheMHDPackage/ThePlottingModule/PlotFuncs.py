@@ -2,7 +2,7 @@
 
 
 ## ###############################################################
-## DEPENDENCIES: REQUIRED MODULES
+## MODULES
 ## ###############################################################
 import os
 import numpy as np
@@ -22,6 +22,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from TheUsefulModule import WWFnF
 from TheFittingModule import FitDistro
+from ThePlottingModule import TheMatplotlibStyler
 
 
 ## ###############################################################

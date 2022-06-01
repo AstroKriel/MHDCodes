@@ -2,7 +2,7 @@
 
 
 ## ###############################################################
-## DEPENDENCIES: REQUIRED MODULES
+## MODULES
 ## ###############################################################
 import subprocess
 import numpy as np
@@ -14,6 +14,9 @@ from ThePlottingModule import PlotFuncs
 from TheUsefulModule import WWLists, WWFnF
 
 
+## ###############################################################
+## PLOT TIME-AVERAGED SPECTRA
+## ###############################################################
 class PlotAveSpectra():
   def __init__(
       self,

@@ -13,7 +13,7 @@ from scipy.interpolate import make_interp_spline
 from scipy.optimize import curve_fit
 
 ## load user defined modules
-from ThePlottingModule import TheMatplotlibStyler, PlotSpectra, PlotFuncs
+from ThePlottingModule import PlotSpectra, PlotFuncs
 from TheUsefulModule import WWLists, WWFnF, WWObjs
 from TheLoadingModule import LoadFlashData
 from TheFittingModule import FitMHDScales, UserModels
@@ -448,21 +448,22 @@ def main():
   ## ##############################
   ## LOOK AT EACH SIMULATION FOLDER
   ## ##############################
+  ## loop over the simulation suites
   for suite_folder in [
       "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
+    ## loop over the different resolution runs
     for sim_res in [
         "144"
       ]: # "18", "36", "72", "144", "288", "576"
 
-      ## ####################################
-      ## CREATE FILEPATH TO SIMULATION FOLDER
-      ## ####################################
+      ## ######################################
+      ## CHECK THE SUITE'S FIGURE FOLDER EXISTS
+      ## ######################################
       filepath_figures = WWFnF.createFilepath([
         BASEPATH, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
       ])
-      ## check that the filepath exists on MAC
       if not os.path.exists(filepath_figures):
         print("{} does not exist.".format(filepath_figures))
         continue
@@ -474,6 +475,7 @@ def main():
       ## ####################
       ## PLOT SIMULATION DATA
       ## ####################
+      ## loop over the simulation folders
       for sim_folder in [
           "Pm5"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"

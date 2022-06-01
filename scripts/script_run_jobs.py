@@ -46,7 +46,7 @@ def main():
         ## ##################################
         ## CHECK THE SIMULATION FOLDER EXISTS
         ## ##################################
-        ## create filepath to simulation folder (on GADI)
+        ## create filepath to simulation folder
         filepath_sim = WWFnF.createFilepath([
           BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder, DATA_SUBFOLDER
         ])
@@ -58,7 +58,7 @@ def main():
         ## #########################
         ## CHECK THE JOB FILE EXISTS
         ## #########################
-        ## check that the job exists in the folder
+        ## check that the job exists
         if not path.isfile(filepath_sim + "/" + JOB_NAME):
           print(JOB_NAME, "does not exist in", filepath_sim)
           continue
