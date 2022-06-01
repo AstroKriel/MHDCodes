@@ -1,5 +1,5 @@
 ## ~/.bashrc
-eval "echo 'Source-ing: .bashrc...'"
+eval "echo 'Source: .bashrc...'"
 
 
 ## ======== SOURCE ~/.ALIAS ========
@@ -52,6 +52,12 @@ export PATH="$PATH:$PYENV_ROOT/bin"
 export PATH="$PATH:AMReX_ROOT"
 export PATH="$PATH:/Applications/VisIt.app/Contents/Resources/bin"
 export PATH="$PATH:/Applications/Blender.app/Contents/MacOS"
+
+## user directories: MHD analysis codes
+export PATH=$PATH:$MHDCodes/analysis
+export PATH=$PATH:$MHDCodes/scripts
+export PATH=$PATH:$MHDPackage
+export PYTHONPATH=$PYTHONPATH:$MHDPackage
 
 
 ## ======== ENABLE PYENV ENVIRONMENT ========
