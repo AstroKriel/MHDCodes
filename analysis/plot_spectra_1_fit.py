@@ -73,26 +73,37 @@ class SpectraObject():
       kin_num_decades_to_fit   = 6,
       bool_hide_updates        = False
     ):
-    print("\tLoading spectra data...")
+    ## read in plots_per_eddy
+    flash_par_line = WWFnF.readLineFromFile(
+      filepath = self.filepath_data + "/../flash.par",
+      des_str  = "plotFileIntervalTime"
+    )
+    ## extract plots per eddy from flash.par
+    str_plot_per_eddy = flash_par_line.split("=")[1].split("#")[1].split("T")[0].replace("~", "")
+    if "/" in str_plot_per_eddy:
+      numer = str_plot_per_eddy.split("/")[0]
+      denom = str_plot_per_eddy.split("/")[1]
+      plots_per_eddy = float(denom) / float(numer)
+    else: plots_per_eddy = 1 / float(str_plot_per_eddy)
+    print("\t> Plots per eddy:", plots_per_eddy)
+    print("\t> Loading spectra data...")
     ## load kinetic energy spectra
     list_kin_k_group_t, list_kin_power_group_t, list_kin_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
-      ## TODO: read in plots per eddy
-      # file_end_time     = 20,
-      # read_every        = 5,
+      plots_per_eddy    = plots_per_eddy,
+      read_every        = 10,
       bool_hide_updates = bool_hide_updates
     )
     ## load magnetic energy spectra
     list_mag_k_group_t, list_mag_power_group_t, list_mag_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
-      ## TODO: read in plots per eddy
-      # file_end_time     = 20,
-      # read_every        = 5,
+      plots_per_eddy    = plots_per_eddy,
+      read_every        = 10,
       bool_hide_updates = bool_hide_updates
     )
-    print("\tFitting spectra data...")
+    print("\t> Fitting spectra data...")
     ## fit kinetic energy spectra
     kin_fit_obj = FitMHDScales.FitKinSpectra(
       list_sim_times       = list_kin_sim_times,
@@ -100,7 +111,7 @@ class SpectraObject():
       list_power_group_t   = list_kin_power_group_t,
       bool_fit_fixed_model = bool_kin_fit_fixed,
       k_start              = 3, # exclude driving modes
-      k_fit_from           = 10,
+      k_fit_from           = 7,
       k_step_size          = 1,
       bool_fit_sub_y_range = bool_kin_fit_sub_y_range,
       num_decades_to_fit   = kin_num_decades_to_fit,
@@ -197,7 +208,7 @@ class SpectraObject():
           if not(prev_dict[prev_attr_name] == new_dict[new_attr_name]):
             list_updated_attrs.append(prev_attr_name)
       ## print updated attributes
-      print("\tUpdated attributes:", ", ".join(list_updated_attrs))
+      print("\t> Updated attributes:", ", ".join(list_updated_attrs))
     ## ###################################
     ## PRINT ALL SPECTRA OBJECT ATTRIBUTES
     ## ###################################
@@ -234,7 +245,7 @@ class SpectraObject():
     ## create plotting object looking at simulation fit
     spectra_plot_obj = PlotSpectra.PlotSpectraFit(self.spectra_fits_obj)
     ## create frames of spectra evolution
-    print("\tPlotting spectra from simulation '{:}' in '{:}'...".format(
+    print("\t> Plotting spectra from simulation '{:}' in '{:}'...".format(
         self.spectra_fits_obj.sim_label,
         self.spectra_fits_obj.sim_suite
     ))
@@ -249,11 +260,11 @@ class SpectraObject():
     )
     ## plot spectra evolution
     spectra_plot_obj.plotSpectraEvolution(
-      filepath_plot         = filepath_vis_frames,
-      plot_index_start      = plot_spectra_from,
-      plot_index_step       = plot_spectra_every,
-      bool_delete_old_frams = True,
-      bool_hide_updates     = bool_hide_updates
+      filepath_plot          = filepath_vis_frames,
+      plot_index_start       = plot_spectra_from,
+      plot_index_step        = plot_spectra_every,
+      bool_delete_old_frames = True,
+      bool_hide_updates      = bool_hide_updates
     )
     ## animate spectra evolution
     spectra_plot_obj.aniSpectra(
@@ -294,7 +305,7 @@ def main():
   args_opt.add_argument("-mag_fit_fixed", **opt_bool_arg)
   ## energy range to fit kinetic energy spectra
   args_opt.add_argument("-kin_fit_sub_y_range",    **opt_bool_arg)
-  args_opt.add_argument("-kin_num_decades_to_fit", type=float, default=None, **opt_arg)
+  args_opt.add_argument("-kin_num_decades_to_fit", type=float, default=6, **opt_arg)
   ## time range to fit spectra
   args_opt.add_argument("-kin_start_fit", type=float, default=None, **opt_arg)
   args_opt.add_argument("-mag_start_fit", type=float, default=None, **opt_arg)

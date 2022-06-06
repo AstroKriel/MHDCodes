@@ -327,7 +327,7 @@ def main():
             data_time, data_Mach = loadTurbData(
               filepath_data = filepath_sim,
               var_y      = 13,
-              t_eddy     = 1 / (des_k_driv * des_Mach),
+              t_turb     = 1 / (des_k_driv * des_Mach),
               time_start = 2,
               time_end   = 15
             )

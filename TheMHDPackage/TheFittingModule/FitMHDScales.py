@@ -391,9 +391,9 @@ class FitSpectra(metaclass=abc.ABCMeta): # Abstract base class (ABC)
         minima_index
         for minima_index in list_minima_index
         if (
-          fit_2norm_group_k[minima_index] < max_fit_2norm # small error
+          fit_2norm_group_k[minima_index] < max_fit_2norm
           and
-          1 / list_fit_params_group_k[minima_index][2] < 20 # TODO: remove hard-coded dissipation cut-off scale
+          1 / list_fit_params_group_k[minima_index][2] < len(data_k)
         )
       ]
       ## if there are any fits with little error
@@ -624,8 +624,8 @@ class FitMagSpectra(FitSpectra):
       self,
       a1, a2, k_p_guess, data_power
     ):
-    ## fitted peak scale from the Kulsrud and Anderson 1992 model
     try:
+      ## fit peak scale from the Kulsrud and Anderson 1992 model
       k_p = fsolve(
         functools.partial(
           SpectraModels.k_p_implicit,
@@ -634,8 +634,10 @@ class FitMagSpectra(FitSpectra):
         ),
         x0 = k_p_guess # give a guess
       )[0]
-    except (RuntimeError, ValueError): k_p = k_p_guess
-    ## measured peak scale
+    except (RuntimeError, ValueError):
+      ## use the guess
+      k_p = k_p_guess
+    ## measured true peak scale (for reference)
     k_max = np.argmax(data_power) + 1
     ## save scales
     self.k_p_group_t.append(k_p)

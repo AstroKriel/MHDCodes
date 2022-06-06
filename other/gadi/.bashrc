@@ -1,5 +1,5 @@
 ## ~/.bashrc
-eval "echo 'Source: .bashrc...'"
+# eval "echo 'Source: .bashrc...'"
 
 
 ## ======== SOURCE GLOBAL .BASHRC ========

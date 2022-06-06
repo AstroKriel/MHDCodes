@@ -4,7 +4,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import subprocess
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -177,20 +177,17 @@ class PlotSpectraFit():
   def plotSpectraEvolution(
       self,
       filepath_plot,
-      plot_index_start      = 0,
-      plot_index_step       = 1,
-      bool_delete_old_frams = False,
-      bool_hide_updates     = False
+      plot_index_start       = 0,
+      plot_index_step        = 1,
+      bool_delete_old_frames = False,
+      bool_hide_updates      = False
     ):
     ## remove old frames
-    if bool_delete_old_frams:
-      frame_names = WWFnF.createName([
-        self.spectra_obj.sim_suite,
-        self.spectra_obj.sim_label,
-        "spectra_fit=*"
-      ]) + ".png"
-      p = subprocess.Popen([ "rm", frame_names ], cwd=filepath_plot)
-      p.wait()
+    if bool_delete_old_frames:
+      os.system("rm {}/*{}*".format(
+        filepath_plot,
+        self.spectra_obj.sim_label
+      ))
     ## initialise spectra evolution figure
     fig, ax = plt.subplots()
     ## loop over each time slice
@@ -318,8 +315,16 @@ class PlotSpectraFit():
     PlotFuncs.aniEvolution(
       filepath_frames    = filepath_frames,
       filepath_ani_movie = filepath_ani_movie,
-      input_name  = WWFnF.createName([ self.spectra_obj.sim_suite, self.spectra_obj.sim_label, "spectra_fit=%*.png" ]),
-      output_name = WWFnF.createName([ self.spectra_obj.sim_suite, self.spectra_obj.sim_label, "ani_spectra_fit.mp4" ]),
+      input_name = WWFnF.createName([
+        self.spectra_obj.sim_suite,
+        self.spectra_obj.sim_label,
+        "spectra_fit=%*.png"
+      ]),
+      output_name = WWFnF.createName([
+        self.spectra_obj.sim_suite,
+        self.spectra_obj.sim_label,
+        "ani_spectra_fit.mp4"
+      ]),
       bool_hide_updates  = bool_hide_updates
     )
 
@@ -337,16 +342,16 @@ class PlotSpectra():
       sim_times,
       fig_name,
       filepath_frames,
-      filepath_ani
+      filepath_ani_movie
     ):
-    self.kin_k           = kin_k
-    self.mag_k           = mag_k
-    self.kin_power       = kin_power
-    self.mag_power       = mag_power
-    self.sim_times       = sim_times
-    self.fig_name        = fig_name
-    self.filepath_frames = filepath_frames
-    self.filepath_ani    = filepath_ani
+    self.kin_k              = kin_k
+    self.mag_k              = mag_k
+    self.kin_power          = kin_power
+    self.mag_power          = mag_power
+    self.sim_times          = sim_times
+    self.fig_name           = fig_name
+    self.filepath_frames    = filepath_frames
+    self.filepath_ani_movie = filepath_ani_movie
   def plotSpectra(self, bool_hide_updates=False):
     '''
     Plot the evolution of the spectra.

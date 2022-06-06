@@ -1,5 +1,5 @@
 ## ~/.bash_profile
-eval "echo 'Source: .bash_profile...'"
+# eval "echo 'Source: .bash_profile...'"
 
 
 ## ======== SOURCE ~/.BASHRC ========

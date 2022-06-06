@@ -28,7 +28,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 BASEPATH         = "/scratch/ek9/nk7952/"
-SONIC_REGIME     = "super_sonic"
+SONIC_REGIME     = "sub_sonic"
 FILENAME_TURB    = "Turb.dat"
 FILENAME_SPECTRA = "spectra_fits.json"
 ## ###############################################################
@@ -95,6 +95,10 @@ def funcPlotTurb(
       10**2
     )
     ## interpolate the non-uniform data
+    print(
+      len(data_x[index_start_fit : index_end_fit]),
+      len(data_y[index_start_fit : index_end_fit])
+    )
     interp_spline = make_interp_spline(
       data_x[index_start_fit : index_end_fit],
       data_y[index_start_fit : index_end_fit]
@@ -112,11 +116,13 @@ def funcPlotTurb(
       [data_y_mean] * len(data_x_sub),
       label=str_label, color=color_fits, ls=":", lw=2, zorder=5
     )
+    ## return mean value
+    return data_y_mean
   ## load mach data
   data_time, data_Mach = LoadFlashData.loadTurbData(
     filepath_data = filepath_data,
     var_y      = 13, # 13 (new), 8 (old)
-    t_eddy     = t_turb,
+    t_turb     = t_turb,
     time_start = 0.1,
     time_end   = np.inf
   )
@@ -124,7 +130,7 @@ def funcPlotTurb(
   data_time, data_E_B = LoadFlashData.loadTurbData(
     filepath_data = filepath_data,
     var_y      = 11, # 11 (new), 29 (old)
-    t_eddy     = t_turb,
+    t_turb     = t_turb,
     time_start = 0.1,
     time_end   = np.inf
   )
@@ -132,7 +138,7 @@ def funcPlotTurb(
   data_time, data_E_K = LoadFlashData.loadTurbData(
     filepath_data = filepath_data,
     var_y      = 9, # 9 (new), 6 (old)
-    t_eddy     = t_turb,
+    t_turb     = t_turb,
     time_start = 0.1,
     time_end   = np.inf
   )
@@ -155,14 +161,14 @@ def funcPlotTurb(
     data_time, data_E_ratio,
     color=color_data, ls="-", lw=1.5, zorder=3
   )
-
+  ## define y-axis range
   min_E_ratio         = min(data_E_ratio)
   log_min_E_ratio     = np.log10(min_E_ratio)
   new_log_min_E_ratio = np.floor(log_min_E_ratio)
   num_decades         = 1 + (-new_log_min_E_ratio)
   new_min_E_ratio     = 10**new_log_min_E_ratio
   num_y_major_ticks   = np.ceil(num_decades / 2)
-  
+  ## label figure
   axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
   axs[1].set_ylabel(r"$E_\mathrm{mag} / E_\mathrm{kin}$")
   axs[1].set_yscale("log")
@@ -175,9 +181,18 @@ def funcPlotTurb(
     bool_major_ticks    = True,
     max_num_major_ticks = num_y_major_ticks
   )
+  ## fit saturation
+  sat_ratio = fitConst(
+    axs[1],
+    data_x = data_time,
+    data_y = data_E_ratio,
+    label  = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ ",
+    index_start_fit = WWLists.getIndexClosestValue(data_time, 0.75 * data_time[-1]),
+    index_end_fit   = len(data_time)-1
+  )
   ## get index range corresponding with kinematic phase of the dynamo
-  index_exp_start = WWLists.getIndexClosestValue(data_E_ratio, 10**(-9))
-  index_exp_end   = WWLists.getIndexClosestValue(data_E_ratio, 10**(-3))
+  index_exp_start = WWLists.getIndexClosestValue(data_E_ratio, 10**(-6))
+  index_exp_end   = WWLists.getIndexClosestValue(data_E_ratio, 10**(-2)) # sat_ratio/100: 1-percent of sat-ratio
   ## fit mach number
   fitConst(
     axs[0],
@@ -194,15 +209,6 @@ def funcPlotTurb(
     data_y = data_E_ratio,
     index_start_fit = index_exp_start,
     index_end_fit   = index_exp_end
-  )
-  ## fit saturation
-  fitConst(
-    axs[1],
-    data_x = data_time,
-    data_y = data_E_ratio,
-    label  = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ ",
-    index_start_fit = WWLists.getIndexClosestValue(data_time, 0.75 * data_time[-1]),
-    index_end_fit   = len(data_time)-1
   )
   ## add legend
   legend_ax0 = axs[0].legend(frameon=False, loc="lower right", fontsize=14)
@@ -304,11 +310,10 @@ def funcPlotSpectra(
   ## #####################
   PlotSpectra.PlotAveSpectra(ax_spectra, spectra_fits_obj, time_range)
   ax_spectra.set_ylim([ 10**(-8), 3*10**(0) ])
-  ## ##########################
-  ## PLOT SPECTRA FIT PARMETERS
-  ## ##########################
   if bool_plot_fit_params:
-    ## number of points fitted to as a function of time realisation
+    ## ################################
+    ## PLOT NUMBER OF K-MODES FITTED TO
+    ## ################################
     if bool_kin_spectra_fitted:
       plotData(axs[0], kin_sim_times, kin_num_points_fitted, label=r"kin-spectra", color="blue")
       max_sim_time = max(kin_sim_times)
@@ -322,8 +327,20 @@ def funcPlotSpectra(
     axs[0].set_yscale("log")
     axs[0].set_xlim([0, max_sim_time])
     axs[0].set_ylim([1, max_k_mode])
-    ## fitted alpha exponents
-    range_alpha = [ -4, 4 ]
+    ## add log axis-ticks
+    PlotFuncs.addLogAxisTicks(
+      ax                  = axs[0],
+      bool_major_ticks    = True,
+      bool_minor_ticks    = True,
+      max_num_major_ticks = 5
+    )
+    ## ####################
+    ## PLOT ALPHA EXPONENTS
+    ## ####################
+    range_alpha = [
+      min([ -4, 1.1*min(kin_alpha), 1.1*min(mag_alpha) ]),
+      max([  4, 1.1*max(kin_alpha), 1.1*max(mag_alpha) ])
+    ]
     if bool_kin_spectra_fitted:
       plotData(axs[1], kin_sim_times, kin_alpha, label=r"$\alpha_{\rm kin} =$ ", color="blue")
     if bool_mag_spectra_fitted:
@@ -334,13 +351,24 @@ def funcPlotSpectra(
     axs[1].set_ylabel(r"$\alpha$")
     axs[1].set_xlim([0, max_sim_time])
     axs[1].set_ylim(range_alpha)
+    ## add log axis-ticks
+    PlotFuncs.addLinearAxisTicks(
+      ax               = axs[1],
+      bool_minor_ticks    = True,
+      bool_major_ticks    = True,
+      max_num_minor_ticks = 10,
+      max_num_major_ticks = 5
+    )
+    ## ####################
+    ## PLOT MEASURED SCALES
+    ## ####################
     ## fitted k modes
     if bool_kin_spectra_fitted:
-      min_k_nu  = plotData(axs[2], kin_sim_times, k_nu,  label=r"$k_\nu =$ ",     color="blue")
+      min_k_nu  = plotData(axs[2], kin_sim_times, k_nu,  color="blue",   label=r"$k_\nu =$ ")
     if bool_mag_spectra_fitted:
-      min_k_eta = plotData(axs[2], mag_sim_times, k_eta, label=r"$k_\eta =$ ",      color="red")
-      min_k_p   = plotData(axs[2], mag_sim_times, k_p,   label=r"$k_{\rm p} =$ ",   color="green", zorder=7)
-      min_k_max = plotData(axs[2], mag_sim_times, k_max, label=r"$k_{\rm max} =$ ", color="purple")
+      min_k_eta = plotData(axs[2], mag_sim_times, k_eta, color="red",    label=r"$k_\eta =$ ")
+      min_k_p   = plotData(axs[2], mag_sim_times, k_p,   color="green",  label=r"$k_{\rm p} =$ ", zorder=7)
+      min_k_max = plotData(axs[2], mag_sim_times, k_max, color="purple", label=r"$k_{\rm max} =$ ")
     ## define y-range
     if bool_kin_spectra_fitted and bool_mag_spectra_fitted:
       range_k = [ 
@@ -364,6 +392,13 @@ def funcPlotSpectra(
     axs[2].set_yscale("log")
     axs[2].set_xlim([0, max_sim_time])
     axs[2].set_ylim(range_k)
+    ## add log axis-ticks
+    PlotFuncs.addLogAxisTicks(
+      ax                  = axs[2],
+      bool_major_ticks    = True,
+      bool_minor_ticks    = True,
+      max_num_major_ticks = 5
+    )
   ## return simulation parameters
   return spectra_fits_obj.Re, spectra_fits_obj.Rm, spectra_fits_obj.Pm
 
@@ -477,7 +512,7 @@ def main():
       ## ####################
       ## loop over the simulation folders
       for sim_folder in [
-          "Pm5"
+          "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
         ## create filepath to the simulation folder

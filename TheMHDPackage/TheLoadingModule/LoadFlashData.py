@@ -199,7 +199,7 @@ def loadFLASHFieldDataList(
 def loadTurbData(
     filepath_data,
     var_y,
-    t_eddy, # ell_turb / (c_s Mach)
+    t_turb, # ell_turb / (c_s Mach)
     time_start = 1,
     time_end   = np.inf
   ):
@@ -221,7 +221,7 @@ def loadTurbData(
       ## don't look at the labels
       if not("#" in data_split[var_x][0]) and not("#" in data_split[var_y][0]):
         ## calculate the normalised time
-        cur_time = float(data_split[var_x]) / t_eddy # normalise by eddy turnover time
+        cur_time = float(data_split[var_x]) / t_turb # normalise by eddy turnover time
         ## if the simulation has been restarted, only read the progressed data
         if cur_time < prev_time: # walking backwards
           data_x.append(cur_time)
@@ -240,7 +240,7 @@ def loadSpectra(filepath_data, str_spectra_type):
   data_file = open(filepath_data).readlines() # load in data
   data      = np.array([x.strip().split() for x in data_file[6:]]) # store all data: [row, col]
   try:
-    data_x = np.array(list(map(float, data[:, 1]))) # variable: wave number (k)
+    data_x = np.array(list(map(float, data[:, 1])))  # variable: wave number (k)
     data_y = np.array(list(map(float, data[:, 15]))) # variable: power spectrum
     if "vel" in str_spectra_type:
       data_y = data_y / 2
@@ -254,6 +254,25 @@ def loadSpectra(filepath_data, str_spectra_type):
     data_y = []
   return data_x, data_y, bool_failed_to_read
 
+
+def getPlotsPerEddy(filepath, num_t_turb=100, bool_hide_updates=False):
+  def getValue(line):
+    return line.split("=")[1].split("[")[0]
+  def getName(line):
+    return line.split("=")[0].lower()
+  tmax = None
+  plot_file_interval = None
+  for line in open(filepath + "/Turb.log").readlines():
+    if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
+      tmax = float(getValue(line))
+    elif "plotfileintervaltime" in getName(line):
+      plot_file_interval = float(getValue(line))
+    if (tmax is not None) and (plot_file_interval is not None):
+      if bool_hide_updates:
+        print("Read 'tmax' = ", tmax)
+        print("Read: 'plotFileIntervalTime' = ", plot_file_interval)
+      return tmax / plot_file_interval / num_t_turb
+  return None
 
 def loadListSpectra(
     filepath_data,

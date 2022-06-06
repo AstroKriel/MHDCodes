@@ -14,9 +14,9 @@ from TheUsefulModule import WWFnF
 EMAIL_ADDRESS      = "neco.kriel@anu.edu.au"
 BOOL_PREP_SIM      = 0
 BOOL_CALC_SPECTRA  = 0
-BOOL_FIT_SPECTRA   = 0
+BOOL_FIT_SPECTRA   = 1
 BASEPATH           = "/scratch/ek9/nk7952/"
-SONIC_REGIME       = "super_sonic"
+SONIC_REGIME       = "sub_sonic"
 NUM_BLOCKS         = [ 36, 36, 48 ]
 ## ###############################################################
 ## FUNCTION: Create a job file that runs simulation
@@ -490,7 +490,7 @@ def main():
             sim_res       = sim_res,
             sonic_regime  = SONIC_REGIME,
             sim_folder    = sim_folder,
-            rms_Mach      = 5.0 # TODO: read from Turb.dat
+            rms_Mach      = 0.3 # TODO: read from Turb.dat
           )
 
         ## clear line if things have been printed

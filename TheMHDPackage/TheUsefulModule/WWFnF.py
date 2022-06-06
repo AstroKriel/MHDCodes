@@ -88,13 +88,17 @@ def getFilesFromFolder(
   return list(filter(myFilter, sorted(os.listdir(filepath))))
 
 
-def readLineFromFile(filepath, des_str):
+def readLineFromFile(filepath, des_str, bool_case_sensitive=True):
   ''' readLineFromFile
     PURPOSE: Return the first line from a file where an intance of a desired target string appears.
   '''
   for line in open(filepath).readlines():
-    if des_str in line:
-      return line
+    if bool_case_sensitive:
+      if des_str in line:
+        return line
+    else:
+      if des_str.lower() in line.lower():
+        return line
   return None
 
 

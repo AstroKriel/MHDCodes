@@ -130,7 +130,7 @@ class PlotEnergyRatio():
     data_time, data_E_B = LoadFlashData.loadTurbData(
       filepath_data = self.filepath_data,
       var_y      = 29,
-      t_eddy     = 4,
+      t_turb     = 4,
       time_start = self.time_start,
       time_end   = self.time_end
     )
@@ -138,7 +138,7 @@ class PlotEnergyRatio():
     data_time, data_E_K = LoadFlashData.loadTurbData(
       filepath_data = self.filepath_data,
       var_y      = 6,
-      t_eddy     = 4,
+      t_turb     = 4,
       time_start = self.time_start,
       time_end   = self.time_end
     )

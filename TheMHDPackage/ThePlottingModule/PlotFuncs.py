@@ -183,6 +183,23 @@ class FixLogAxis():
 ## ###############################################################
 ## ADD TO PLOTS
 ## ###############################################################
+def addLinearAxisTicks(
+    ax,
+    bool_minor_ticks    = False,
+    bool_major_ticks    = False,
+    max_num_minor_ticks = 10,
+    max_num_major_ticks = 10
+  ):
+  ## add minor axis ticks
+  if bool_minor_ticks:
+    y_minor = mpl.ticker.LinearLocator(numticks=max_num_minor_ticks)
+    ax.yaxis.set_minor_locator(y_minor)
+    ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+  ## add major axis ticks
+  if bool_major_ticks:
+    y_major = mpl.ticker.LinearLocator(numticks=max_num_major_ticks)
+    ax.yaxis.set_major_locator(y_major)
+
 def addLogAxisTicks(
     ax,
     bool_minor_ticks    = False,

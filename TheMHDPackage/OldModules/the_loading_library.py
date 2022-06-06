@@ -205,7 +205,7 @@ def loadTurbData(
     ## where data is
     filepath_data,
     ## data index and eddy turnover
-    var_y, t_eddy,
+    var_y, t_turb,
     ## time to subset data
     time_start = 1,
     time_end   = np.inf
@@ -231,7 +231,7 @@ def loadTurbData(
       ## don't look at the labels
       if not("#" in data_split[var_x][0]) and not("#" in data_split[var_y][0]):
         ## calculate the normalised time
-        cur_time = float(data_split[var_x]) / t_eddy # normalise by eddy turnover time
+        cur_time = float(data_split[var_x]) / t_turb # normalise by eddy turnover time
         ## if the simulation has been restarted, only read the progressed data
         if cur_time < prev_time: # walking backwards
           data_x.append(cur_time)

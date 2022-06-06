@@ -487,12 +487,12 @@ def main():
   args_req.add_argument("-base_path",   type=str,   required=True)
   args_req.add_argument("-sim_folders", type=str,   required=True, nargs="+")
   args_req.add_argument("-fig_name",    type=str,   required=True)
-  args_req.add_argument("-T_eddy",      type=float, required=True, nargs="+")
+  args_req.add_argument("-t_turb",      type=float, required=True, nargs="+")
   ## ---------------------------- OPEN ARGUMENTS
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
   ## simulation information
-  list_t_eddy = args["T_eddy"]
+  list_t_eddy = args["t_turb"]
   list_Re     = args["Re"]
   list_Rm     = args["Rm"]
   list_Pm     = args["Pm"]
@@ -564,7 +564,7 @@ def main():
     print("\t({:d})".format(sim_index), list_filepaths_data[sim_index])
   print(" ")
   ## print simulation information
-  printInfo("T_eddy:",     list_t_eddy)
+  printInfo("t_turb:",     list_t_eddy)
   printInfo("Sim labels:", list_sim_labels)
   ## print plot information
   printInfo("Plot domain:", [plot_start, plot_end])
@@ -594,7 +594,7 @@ def main():
     data_time, data_Mach = loadTurbData(
       filepath_data = list_filepaths_data[sim_index],
       var_y      = 13 if bool_new_data else 8, # 13 (new), 8 (old)
-      t_eddy     = list_t_eddy[sim_index],
+      t_turb     = list_t_eddy[sim_index],
       time_start = plot_start,
       time_end   = plot_end
     )
@@ -602,7 +602,7 @@ def main():
     data_time, data_E_B = loadTurbData(
       filepath_data = list_filepaths_data[sim_index],
       var_y      = 11 if bool_new_data else 29, # 11 (new), 29 (old)
-      t_eddy     = list_t_eddy[sim_index],
+      t_turb     = list_t_eddy[sim_index],
       time_start = plot_start,
       time_end   = plot_end
     )
@@ -610,7 +610,7 @@ def main():
     data_time, data_E_K = loadTurbData(
       filepath_data = list_filepaths_data[sim_index],
       var_y      = 9 if bool_new_data else 6, # 9 (new), 6 (old)
-      t_eddy     = list_t_eddy[sim_index],
+      t_turb     = list_t_eddy[sim_index],
       time_start = plot_start,
       time_end   = plot_end
     )

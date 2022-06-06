@@ -405,10 +405,7 @@ def cleanMeasuredScales(
   ## get indices of obvious outliers (measured scales that are unrealistic)
   list_index_realistic = getIndexListInBounds(
     list_scales,
-    bounds = bounds_scales # [ # 
-    #     min(getGaussianScales(list_scales)),
-    #     max(getGaussianScales(list_scales))
-    # ]
+    bounds = bounds_scales
   )
   ## remove outliers
   if bool_subset_time:

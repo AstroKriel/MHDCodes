@@ -1,5 +1,5 @@
 ## ~/.alias
-eval "echo 'Source: .alias...'"
+# eval "echo 'Source: .alias...'"
 
 
 ## ======== COMMAND SHORTCUTS ========

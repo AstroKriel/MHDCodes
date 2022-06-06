@@ -13,7 +13,7 @@ from TheUsefulModule import WWFnF
 
 
 BASEPATH       = "/scratch/ek9/nk7952/"
-SONIC_REGIME   = "super_sonic"
+SONIC_REGIME   = "sub_sonic"
 DATA_SUBFOLDER = "spect"
 JOB_NAME       = "job_fit_spect.sh"
 ## ###############################################################

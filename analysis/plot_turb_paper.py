@@ -62,7 +62,7 @@ def funcLoadData(
   data_time, data_Mach = loadTurbData(
     filepath_data = filepath_data,
     var_y      = 8,
-    t_eddy     = 4,
+    t_turb     = 4,
     time_start = time_start,
     time_end   = time_end
   )
@@ -70,7 +70,7 @@ def funcLoadData(
   data_time, data_E_B = loadTurbData(
     filepath_data = filepath_data,
     var_y      = 29,
-    t_eddy     = 4,
+    t_turb     = 4,
     time_start = time_start,
     time_end   = time_end
   )
@@ -78,7 +78,7 @@ def funcLoadData(
   data_time, data_E_K = loadTurbData(
     filepath_data = filepath_data,
     var_y      = 6,
-    t_eddy     = 4,
+    t_turb     = 4,
     time_start = time_start,
     time_end   = time_end
   )
@@ -268,7 +268,7 @@ def funcPlotMach(
       linewidth = 2,
       zorder    = 3
     )
-    ## get indices of end of tarnsient phase (t/t_eddy approx 5)
+    ## get indices of end of tarnsient phase (t/t_turb approx 5)
     index_start, index_end = funcFindDomain(list_time_group[sim_index], 0, 5)
     ## plot zoomed in data
     ax_inset.plot(
@@ -341,7 +341,7 @@ def funcPlotKinetic(
       linewidth = 2,
       zorder    = 3
     )
-    ## get indices of end of tarnsient phase (t/t_eddy approx 5)
+    ## get indices of end of tarnsient phase (t/t_turb approx 5)
     index_start, index_end = funcFindDomain(list_time_group[sim_index], 0, 5)
     ## plot zoomed in data
     ax_inset.plot(
