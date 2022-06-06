@@ -7,10 +7,6 @@ import os
 import sys
 import copy
 
-# ## load old user MHD analysis modules
-# from OldModules import the_fitting_library
-# sys.modules["the_fitting_library"] = the_fitting_library
-
 ## 'tmpfile' needs to be loaded before 'matplotlib'.
 ## This is so matplotlib stores its cache in a temporary directory.
 ## (Useful for plotting parallel)
@@ -38,33 +34,33 @@ plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
-FILENAME = "spectra_fits.json"
 ## ###############################################################
 ## CLASS TO MANAGE CALLS TO SPECTRA FITTING ROUTINES
 ## ###############################################################
 class SpectraObject():
   def __init__(
       self,
-      filepath_data,
+      filepath_data, filename_spectra_fits,
       sim_suite, sim_label, sim_res,
       Re, Rm, Pm,
       kin_fit_start_time, kin_fit_end_time,
       mag_fit_start_time, mag_fit_end_time
     ):
     ## where the simulation spectra data is stored
-    self.filepath_data      = filepath_data
+    self.filepath_data         = filepath_data
+    self.filename_spectra_fits = filename_spectra_fits
     ## simulation parameters
-    self.sim_suite          = sim_suite
-    self.sim_label          = sim_label
-    self.sim_res            = sim_res
-    self.Re                 = Re
-    self.Rm                 = Rm
-    self.Pm                 = Pm
+    self.sim_suite             = sim_suite
+    self.sim_label             = sim_label
+    self.sim_res               = sim_res
+    self.Re                    = Re
+    self.Rm                    = Rm
+    self.Pm                    = Pm
     ## fit domain
-    self.kin_fit_start_time = kin_fit_start_time
-    self.mag_fit_start_time = mag_fit_start_time
-    self.kin_fit_end_time   = kin_fit_end_time
-    self.mag_fit_end_time   = mag_fit_end_time
+    self.kin_fit_start_time    = kin_fit_start_time
+    self.mag_fit_start_time    = mag_fit_start_time
+    self.kin_fit_end_time      = kin_fit_end_time
+    self.mag_fit_end_time      = mag_fit_end_time
   def createSpectraFitsObj(
       self,
       bool_kin_fit_fixed       = False,
@@ -154,7 +150,7 @@ class SpectraObject():
     WWObjs.saveObj2Json(
       obj      = self.spectra_fits_obj,
       filepath = self.filepath_data,
-      filename = FILENAME
+      filename = self.filename_spectra_fits
     )
     print(" ")
   def loadSpectraFitsObj(
@@ -164,7 +160,7 @@ class SpectraObject():
     ## load spectra-fit data as a dictionary
     spectra_fits_dict = WWObjs.loadJson2Dict(
       filepath = self.filepath_data,
-      filename = FILENAME
+      filename = self.filename_spectra_fits
     )
     ## store dictionary data in spectra-fit object
     spectra_fits_obj = FitMHDScales.SpectraFit(**spectra_fits_dict)
@@ -197,7 +193,7 @@ class SpectraObject():
       WWObjs.saveObj2Json(
         obj      = spectra_fits_obj,
         filepath = self.filepath_data,
-        filename = FILENAME
+        filename = self.filename_spectra_fits
       )
       ## keep a list of updated attributes
       list_updated_attrs = []
@@ -380,6 +376,13 @@ def main():
       Rm = Re * Pm
     elif Pm == None:
       Pm = Rm / Re
+    ## define the file-name where spectra fit parameters are stored
+    filename_spectra_fits = "spectra_fits"
+    if bool_kin_fit_fixed:
+      filename_spectra_fits += "_vf"
+    if bool_mag_fit_fixed:
+      filename_spectra_fits += "_mf"
+    filename_spectra_fits += ".json"
 
   ## #####################
   ## PREPARING DIRECTORIES
@@ -389,7 +392,8 @@ def main():
   ## folder where visualisations will be saved
   filepath_vis = WWFnF.createFilepath([ filepath_suite, folder_vis ])
   ## folder where spectra plots will be saved
-  filepath_vis_frames = WWFnF.createFilepath([ filepath_vis, "plotSpectra" ])
+  sub_folder_vis      = "plotSpectraFits"
+  filepath_vis_frames = WWFnF.createFilepath([ filepath_vis, sub_folder_vis ])
 
   ## ##############
   ## CREATE FOLDERS
@@ -416,10 +420,10 @@ def main():
   else:
     try: WWObjs.loadJson2Dict(
       filepath = filepath_data,
-      filename = FILENAME,
+      filename = filename_spectra_fits,
       bool_hide_updates = True
     )
-    except: raise Exception("Error: '{}' does not exist.".format(FILENAME))
+    except: raise Exception("Error: '{}' does not exist.".format(filename_spectra_fits))
   print(" ")
 
   ## #########################

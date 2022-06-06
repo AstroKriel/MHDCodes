@@ -16,7 +16,7 @@ BOOL_PREP_SIM      = 0
 BOOL_CALC_SPECTRA  = 0
 BOOL_FIT_SPECTRA   = 1
 BASEPATH           = "/scratch/ek9/nk7952/"
-SONIC_REGIME       = "sub_sonic"
+SONIC_REGIME       = "super_sonic"
 NUM_BLOCKS         = [ 36, 36, 48 ]
 ## ###############################################################
 ## FUNCTION: Create a job file that runs simulation
@@ -260,7 +260,7 @@ def funcCreateCalcSpectraJob(
   job_tagname  = suite_folder + sim_folder + "spectra" + sim_res
   max_hours    = int(8)
   num_cpus     = int(6)
-  max_mem      = int(4*num_cpus)
+  max_mem      = int(4 * num_cpus)
   ## create/overwrite job file
   with open(filepath_job, "w") as job_file:
     ## write contents

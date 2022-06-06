@@ -5,6 +5,12 @@
 ## ###############################################################
 import os
 import matplotlib as mpl
+
+## 'tmpfile' needs to be loaded before 'matplotlib'.
+## This is so matplotlib stores its cache in a temporary directory.
+## (Useful for plotting parallel)
+import tempfile
+os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
 
 ## load user defined modules
@@ -63,8 +69,9 @@ def main():
   filepath_sim   = WWFnF.createFilepath([filepath_suite, folder_sim])
   filepath_spect = WWFnF.createFilepath([filepath_sim, folder_data])
   ## filepath to where visualisations will be saved
+  sub_folder_vis      = "plotSpectraData"
   filepath_vis        = WWFnF.createFilepath([filepath_suite, folder_vis])
-  filepath_vis_frames = WWFnF.createFilepath([filepath_vis, "plotSpectra"])
+  filepath_vis_frames = WWFnF.createFilepath([filepath_vis, sub_folder_vis])
   
   ## ##############
   ## CREATE FOLDERS

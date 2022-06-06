@@ -420,7 +420,7 @@ class PlotSpectra():
     '''
     PlotFuncs.aniEvolution(
       filepath_frames    = self.filepath_frames,
-      filepath_ani_movie = self.filepath_ani,
+      filepath_ani_movie = self.filepath_ani_movie,
       input_name         = WWFnF.createName([ self.fig_name, "spectra=%*.png" ]),
       output_name        = WWFnF.createName([ self.fig_name, "ani_spectra.mp4" ]),
       bool_hide_updates  = bool_hide_updates

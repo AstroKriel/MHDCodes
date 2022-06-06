@@ -236,6 +236,26 @@ def loadTurbData(
   return data_x[index_start : index_end], data_y[index_start : index_end]
 
 
+def getPlotsPerEddy(filepath, num_t_turb=100, bool_hide_updates=False):
+  def getName(line):
+    return line.split("=")[0].lower()
+  def getValue(line):
+    return line.split("=")[1].split("[")[0]
+  tmax = None
+  plot_file_interval = None
+  for line in open(filepath + "/Turb.log").readlines():
+    if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
+      tmax = float(getValue(line))
+    elif "plotfileintervaltime" in getName(line):
+      plot_file_interval = float(getValue(line))
+    if (tmax is not None) and (plot_file_interval is not None):
+      if bool_hide_updates:
+        print("Read 'tmax' = ", tmax)
+        print("Read: 'plotFileIntervalTime' = ", plot_file_interval)
+      return tmax / plot_file_interval / num_t_turb
+  return None
+
+
 def loadSpectra(filepath_data, str_spectra_type):
   data_file = open(filepath_data).readlines() # load in data
   data      = np.array([x.strip().split() for x in data_file[6:]]) # store all data: [row, col]
@@ -254,25 +274,6 @@ def loadSpectra(filepath_data, str_spectra_type):
     data_y = []
   return data_x, data_y, bool_failed_to_read
 
-
-def getPlotsPerEddy(filepath, num_t_turb=100, bool_hide_updates=False):
-  def getValue(line):
-    return line.split("=")[1].split("[")[0]
-  def getName(line):
-    return line.split("=")[0].lower()
-  tmax = None
-  plot_file_interval = None
-  for line in open(filepath + "/Turb.log").readlines():
-    if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
-      tmax = float(getValue(line))
-    elif "plotfileintervaltime" in getName(line):
-      plot_file_interval = float(getValue(line))
-    if (tmax is not None) and (plot_file_interval is not None):
-      if bool_hide_updates:
-        print("Read 'tmax' = ", tmax)
-        print("Read: 'plotFileIntervalTime' = ", plot_file_interval)
-      return tmax / plot_file_interval / num_t_turb
-  return None
 
 def loadListSpectra(
     filepath_data,
