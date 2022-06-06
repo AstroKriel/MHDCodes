@@ -93,8 +93,6 @@ def main():
   plots_per_eddy = LoadFlashData.getPlotsPerEddy(filepath_sim, bool_hide_updates=False)
   if plots_per_eddy is None:
     raise Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
-  print("From 'Turb.log': # plt-files / t_turb = {}".format( plots_per_eddy ))
-  print(" ")
   
   ## ##########################
   ## LOAD AND PLOT SPECTRA DATA

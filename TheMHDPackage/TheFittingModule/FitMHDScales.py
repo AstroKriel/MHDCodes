@@ -53,7 +53,7 @@ class SpectraFit():
         kin_sim_times,
         kin_list_k_group_t,
         kin_list_power_group_t,
-        bool_kin_fixed_model,
+        bool_kin_fit_fixed_model,
         ## fitted spectra
         kin_list_fit_k_group_t,
         kin_list_fit_power_group_t,
@@ -76,7 +76,7 @@ class SpectraFit():
         mag_sim_times,
         mag_list_k_group_t,
         mag_list_power_group_t,
-        bool_mag_fixed_model,
+        bool_mag_fit_fixed_model,
         ## fitted spectra
         mag_list_fit_k_group_t,
         mag_list_fit_power_group_t,
@@ -113,8 +113,8 @@ class SpectraFit():
     self.Re                           = Re
     self.Rm                           = Rm
     self.Pm                           = Pm
-    self.bool_kin_fixed_model         = bool_kin_fixed_model
-    self.bool_mag_fixed_model         = bool_mag_fixed_model
+    self.bool_kin_fit_fixed_model     = bool_kin_fit_fixed_model
+    self.bool_mag_fit_fixed_model     = bool_mag_fit_fixed_model
     ## spectra data
     self.kin_sim_times                = kin_sim_times
     self.mag_sim_times                = mag_sim_times
@@ -468,11 +468,12 @@ class FitKinSpectra(FitSpectra):
       num_decades_to_fit   = 6,
       bool_hide_updates    = False
     ):
-    self.bool_fit_fixed_model = bool_fit_fixed_model
     fit_bounds = (
       ( np.log(10**(-10)), -5.0, 1/30 ),
       ( np.log(10**(2)),    5.0, 1/0.01 )
     )
+    self.bool_fit_fixed_model = bool_fit_fixed_model
+    ## fitting parameters
     if self.bool_fit_fixed_model:
       ## fit spectra with a fixed power-law exponent
       self.func_fit = SpectraModels.kinetic_loge_fixed
@@ -535,7 +536,7 @@ class FitKinSpectra(FitSpectra):
       ## fitted scales
       "k_nu_group_t":self.k_scale_group_t,
       ## fit information
-      "bool_kin_fixed_model":self.bool_fit_fixed_model,
+      "bool_kin_fit_fixed_model":self.bool_fit_fixed_model,
       "kin_list_fit_params_group_t":self.list_best_fit_params_group_t,
       "kin_list_fit_std_group_t":self.list_best_fit_std_group_t,
       "kin_fit_k_index_group_t":self.best_fit_k_index_group_t,
@@ -554,13 +555,13 @@ class FitMagSpectra(FitSpectra):
       k_step_size          = 1,
       bool_hide_updates    = False
     ):
-    self.bool_fit_fixed_model = bool_fit_fixed_model
     self.k_p_group_t   = [] # fitted peak scale
     self.k_max_group_t = [] # measured peak scale
     fit_bounds = (
       ( np.log(10**(-10)), -3.0, 1/100 ),
       ( np.log(10**(2)),    3.0, 1/0.01 )
     )
+    self.bool_fit_fixed_model = bool_fit_fixed_model
     ## fitting parameters
     if self.bool_fit_fixed_model:
       ## fit spectra with a fixed power-law exponent
@@ -658,7 +659,7 @@ class FitMagSpectra(FitSpectra):
       "k_p_group_t":self.k_p_group_t,
       "k_max_group_t":self.k_max_group_t,
       ## fit information
-      "bool_mag_fixed_model":self.bool_fit_fixed_model,
+      "bool_mag_fit_fixed_model":self.bool_fit_fixed_model,
       "mag_list_fit_params_group_t":self.list_best_fit_params_group_t,
       "mag_list_fit_std_group_t":self.list_best_fit_std_group_t,
       "mag_fit_k_index_group_t":self.best_fit_k_index_group_t,

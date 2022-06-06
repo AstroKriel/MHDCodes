@@ -12,13 +12,14 @@ from os import path
 from TheUsefulModule import WWFnF
 
 
-BASEPATH       = "/scratch/ek9/nk7952/"
-SONIC_REGIME   = "sub_sonic"
-DATA_SUBFOLDER = "spect"
-JOB_NAME       = "job_fit_spect.sh"
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
+BASEPATH       = "/scratch/ek9/nk7952/"
+SONIC_REGIME   = "super_sonic"
+DATA_SUBFOLDER = "spect"
+JOB_NAME       = "job_fit_spect_fixed.sh"
+
 def main():
   ## ##############################
   ## LOOK AT EACH SIMULATION FOLDER
@@ -64,7 +65,7 @@ def main():
           continue
         ## indicate which folder is being worked on
         print("Looking at: {}".format(filepath_sim))
-        print("\t> Submitting the simulation job:")
+        print("\t> Submitting job:", JOB_NAME)
         p = subprocess.Popen([ "qsub", JOB_NAME ], cwd=filepath_sim)
         p.wait()
 

@@ -249,10 +249,15 @@ def getPlotsPerEddy(filepath, num_t_turb=100, bool_hide_updates=False):
     elif "plotfileintervaltime" in getName(line):
       plot_file_interval = float(getValue(line))
     if (tmax is not None) and (plot_file_interval is not None):
-      if bool_hide_updates:
-        print("Read 'tmax' = ", tmax)
-        print("Read: 'plotFileIntervalTime' = ", plot_file_interval)
-      return tmax / plot_file_interval / num_t_turb
+      plots_per_eddy = tmax / plot_file_interval / num_t_turb
+      if not(bool_hide_updates):
+        print("Read from 'Turb.log':")
+        print("\t> 'tmax'".ljust(25),                 "=", tmax)
+        print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
+        print("\t> # plt-files / t_turb".ljust(25),   "=", plots_per_eddy)
+        print("\tAssumed the simulation ran for {} t/t_turb".format(num_t_turb))
+        print(" ")
+      return plots_per_eddy
   return None
 
 

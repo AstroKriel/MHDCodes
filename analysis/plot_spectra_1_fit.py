@@ -63,32 +63,23 @@ class SpectraObject():
     self.mag_fit_end_time      = mag_fit_end_time
   def createSpectraFitsObj(
       self,
-      bool_kin_fit_fixed       = False,
-      bool_mag_fit_fixed       = False,
+      bool_kin_fit_fixed_model = False,
+      bool_mag_fit_fixed_model = False,
       bool_kin_fit_sub_y_range = False,
       kin_num_decades_to_fit   = 6,
       bool_hide_updates        = False
     ):
-    ## read in plots_per_eddy
-    flash_par_line = WWFnF.readLineFromFile(
-      filepath = self.filepath_data + "/../flash.par",
-      des_str  = "plotFileIntervalTime"
-    )
-    ## extract plots per eddy from flash.par
-    str_plot_per_eddy = flash_par_line.split("=")[1].split("#")[1].split("T")[0].replace("~", "")
-    if "/" in str_plot_per_eddy:
-      numer = str_plot_per_eddy.split("/")[0]
-      denom = str_plot_per_eddy.split("/")[1]
-      plots_per_eddy = float(denom) / float(numer)
-    else: plots_per_eddy = 1 / float(str_plot_per_eddy)
-    print("\t> Plots per eddy:", plots_per_eddy)
+    ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
+    plots_per_eddy = LoadFlashData.getPlotsPerEddy(self.filepath_data + "/../", bool_hide_updates=False)
+    if plots_per_eddy is None:
+      raise Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
     print("\t> Loading spectra data...")
     ## load kinetic energy spectra
     list_kin_k_group_t, list_kin_power_group_t, list_kin_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
       plots_per_eddy    = plots_per_eddy,
-      read_every        = 10,
+      read_every        = 20, # TODO: only for debugging
       bool_hide_updates = bool_hide_updates
     )
     ## load magnetic energy spectra
@@ -96,7 +87,7 @@ class SpectraObject():
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
       plots_per_eddy    = plots_per_eddy,
-      read_every        = 10,
+      read_every        = 20,
       bool_hide_updates = bool_hide_updates
     )
     print("\t> Fitting spectra data...")
@@ -105,7 +96,7 @@ class SpectraObject():
       list_sim_times       = list_kin_sim_times,
       list_k_group_t       = list_kin_k_group_t,
       list_power_group_t   = list_kin_power_group_t,
-      bool_fit_fixed_model = bool_kin_fit_fixed,
+      bool_fit_fixed_model = bool_kin_fit_fixed_model,
       k_start              = 3, # exclude driving modes
       k_fit_from           = 7,
       k_step_size          = 1,
@@ -118,7 +109,7 @@ class SpectraObject():
       list_sim_times       = list_mag_sim_times,
       list_k_group_t       = list_mag_k_group_t,
       list_power_group_t   = list_mag_power_group_t,
-      bool_fit_fixed_model = bool_mag_fit_fixed,
+      bool_fit_fixed_model = bool_mag_fit_fixed_model,
       k_start              = 1,
       k_fit_from           = 5,
       k_step_size          = 1,
@@ -225,9 +216,7 @@ class SpectraObject():
             ("\t\t> {}".format(attr_name)).ljust(35),
             "= {}".format(new_dict[attr_name])
           )
-    ## for aesthetics: if any information had been printed to the screen
-    if bool_obj_was_updated or bool_show_obj_attrs:
-      print(" ")
+    print(" ")
     ## store the updated spectra object
     self.spectra_fits_obj = spectra_fits_obj
   def plotSpectraFits(
@@ -240,20 +229,6 @@ class SpectraObject():
     ):
     ## create plotting object looking at simulation fit
     spectra_plot_obj = PlotSpectra.PlotSpectraFit(self.spectra_fits_obj)
-    ## create frames of spectra evolution
-    print("\t> Plotting spectra from simulation '{:}' in '{:}'...".format(
-        self.spectra_fits_obj.sim_label,
-        self.spectra_fits_obj.sim_suite
-    ))
-    print("\t(Total of '{:d}' spectra fits. Plotting every '{:d}' fit(s) from fit-index '{:d}')".format(
-        len(WWLists.getCommonElements(
-          self.spectra_fits_obj.kin_sim_times,
-          self.spectra_fits_obj.mag_sim_times
-        )),
-        plot_spectra_every,
-        plot_spectra_from
-      )
-    )
     ## plot spectra evolution
     spectra_plot_obj.plotSpectraEvolution(
       filepath_plot          = filepath_vis_frames,
@@ -262,6 +237,7 @@ class SpectraObject():
       bool_delete_old_frames = True,
       bool_hide_updates      = bool_hide_updates
     )
+    print(" ")
     ## animate spectra evolution
     spectra_plot_obj.aniSpectra(
       filepath_frames    = filepath_vis_frames,
@@ -333,8 +309,8 @@ def main():
   bool_fit_spectra         = args["fit_spectra"]
   bool_plot_spectra        = args["plot_spectra"]
   ## fit fixed spectra models
-  bool_kin_fit_fixed       = args["kin_fit_fixed"]
-  bool_mag_fit_fixed       = args["mag_fit_fixed"]
+  bool_kin_fit_fixed_model = args["kin_fit_fixed"]
+  bool_mag_fit_fixed_model = args["mag_fit_fixed"]
   ## energy range to fit kinetic energy spectra
   bool_kin_fit_sub_y_range = args["kin_fit_sub_y_range"]
   kin_num_decades_to_fit   = args["kin_num_decades_to_fit"]
@@ -361,8 +337,15 @@ def main():
   ## ######################
   ## INITIALISING VARIABLES
   ## ######################
+  ## define the file-name where spectra fit parameters are stored
+  filename_spectra_fits = "spectra_fits"
+  if bool_kin_fit_fixed_model:
+    filename_spectra_fits += "_fk"
+  if bool_mag_fit_fixed_model:
+    filename_spectra_fits += "_fm"
+  filename_spectra_fits += ".json"
+  ## check if any pair of plasma Reynolds numbers have not been defined
   if bool_fit_spectra:
-    ## check if any pair of plasma Reynolds numbers have not been defined
     bool_missing_plasma_numbers = (
       ( (Re == None) and (Pm == None) ) or
       ( (Rm == None) and (Pm == None) ) or
@@ -376,13 +359,6 @@ def main():
       Rm = Re * Pm
     elif Pm == None:
       Pm = Rm / Re
-    ## define the file-name where spectra fit parameters are stored
-    filename_spectra_fits = "spectra_fits"
-    if bool_kin_fit_fixed:
-      filename_spectra_fits += "_vf"
-    if bool_mag_fit_fixed:
-      filename_spectra_fits += "_mf"
-    filename_spectra_fits += ".json"
 
   ## #####################
   ## PREPARING DIRECTORIES
@@ -416,6 +392,12 @@ def main():
     print("\t> fit domain (kin): [{}, {}]".format(kin_fit_start_time, kin_fit_end_time))
     print("\t> fit domain (mag): [{}, {}]".format(mag_fit_start_time, mag_fit_end_time))
     print("\t> Re: {}, Rm: {}, Pm: {}".format(Re, Rm, Pm))
+    print("\t> Fitting with {} kinetic energy spectra model.".format(
+      "fixed" if bool_kin_fit_fixed_model else "complete"
+    ))
+    print("\t> Fitting with {} magnetic energy spectra model.".format(
+      "fixed" if bool_mag_fit_fixed_model else "complete"
+    ))
   ## check if the spectra-fit parameters have already been stored (in a json-file)
   else:
     try: WWObjs.loadJson2Dict(
@@ -430,23 +412,24 @@ def main():
   ## LOAD FITTED / FIT SPECTRA
   ## #########################
   spec_obj = SpectraObject(
-    filepath_data      = filepath_data,
-    sim_suite          = sim_suite,
-    sim_label          = sim_label,
-    sim_res            = sim_res,
-    Re                 = Re,
-    Rm                 = Rm,
-    Pm                 = Pm,
-    kin_fit_start_time = kin_fit_start_time,
-    mag_fit_start_time = mag_fit_start_time,
-    kin_fit_end_time   = kin_fit_end_time,
-    mag_fit_end_time   = mag_fit_end_time
+    filepath_data         = filepath_data,
+    filename_spectra_fits = filename_spectra_fits,
+    sim_suite             = sim_suite,
+    sim_label             = sim_label,
+    sim_res               = sim_res,
+    Re                    = Re,
+    Rm                    = Rm,
+    Pm                    = Pm,
+    kin_fit_start_time    = kin_fit_start_time,
+    mag_fit_start_time    = mag_fit_start_time,
+    kin_fit_end_time      = kin_fit_end_time,
+    mag_fit_end_time      = mag_fit_end_time
   )
   ## read and fit spectra data
   if bool_fit_spectra:
     spec_obj.createSpectraFitsObj(
-      bool_kin_fit_fixed       = bool_kin_fit_fixed,
-      bool_mag_fit_fixed       = bool_mag_fit_fixed,
+      bool_kin_fit_fixed_model = bool_kin_fit_fixed_model,
+      bool_mag_fit_fixed_model = bool_mag_fit_fixed_model,
       bool_kin_fit_sub_y_range = bool_kin_fit_sub_y_range,
       kin_num_decades_to_fit   = kin_num_decades_to_fit,
       bool_hide_updates        = bool_hide_updates

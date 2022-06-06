@@ -11,13 +11,6 @@ import shutil
 from TheUsefulModule import WWFnF
 
 
-EMAIL_ADDRESS      = "neco.kriel@anu.edu.au"
-BOOL_PREP_SIM      = 0
-BOOL_CALC_SPECTRA  = 0
-BOOL_FIT_SPECTRA   = 1
-BASEPATH           = "/scratch/ek9/nk7952/"
-SONIC_REGIME       = "super_sonic"
-NUM_BLOCKS         = [ 36, 36, 48 ]
 ## ###############################################################
 ## FUNCTION: Create a job file that runs simulation
 ## ###############################################################
@@ -292,10 +285,10 @@ def funcCreateCalcSpectraJob(
 ## ###############################################################
 ## CREATE JOB: FIT SPECTRA
 ## ###############################################################
-class PrepSpectraFit():
+class PrepFitSpectra():
   def __init__(
       self,
-      filepath_base,
+      filepath_scratch,
       filepath_sim,
       suite_folder,
       sim_res,
@@ -303,28 +296,30 @@ class PrepSpectraFit():
       sim_folder,
       rms_Mach
     ):
-    ## store provided information
-    self.filepath_base  = filepath_base
-    self.filepath_sim   = filepath_sim
-    self.suite_folder   = suite_folder
-    self.sim_res        = sim_res
-    self.sonic_regime   = sonic_regime
-    self.sim_folder     = sim_folder
-    self.rms_Mach       = rms_Mach # TODO: read from Turb.dat
-    self.filepath_suite = WWFnF.createFilepath([
-      self.filepath_base,
-      self.suite_folder,
-      self.sim_res,
-      self.sonic_regime
-    ])
-    self.filepath_plt   = self.filepath_sim + "/plt"
-    self.filepath_spect = self.filepath_sim + "/spect"
+    ## check simulation sub-folders exist
+    self.filepath_sim     = filepath_sim
+    self.filepath_plt     = self.filepath_sim + "/plt"
+    self.filepath_spect   = self.filepath_sim + "/spect"
     if not os.path.exists(self.filepath_plt):
       print(self.filepath_plt, "does not exist.")
       return
     if not os.path.exists(self.filepath_spect):
       print(self.filepath_spect, "does not exist.")
       return
+    ## store provided information
+    self.filepath_scratch = filepath_scratch
+    self.suite_folder     = suite_folder
+    self.sim_res          = sim_res
+    self.sonic_regime     = sonic_regime
+    self.sim_folder       = sim_folder
+    self.rms_Mach         = rms_Mach
+    self.filepath_suite   = WWFnF.createFilepath([
+      self.filepath_scratch,
+      self.suite_folder,
+      self.sim_res,
+      self.sonic_regime
+    ])
+    ## run member-methods
     self.getPlasmaNumbers()
     self.createJob()
   def getPlasmaNumbers(self):
@@ -363,12 +358,18 @@ class PrepSpectraFit():
     ))
   def createJob(self):
     ## job details
-    program_name = "plot_spectra_1_fit.py"
-    job_name     = "job_fit_spect.sh"
-    job_tagname  = self.suite_folder + self.sim_folder + "fit" + self.sim_res
-    max_hours    = int(8)
-    num_cpus     = int(2)
-    max_mem      = int(4 * num_cpus)
+    program_name   = "plot_spectra_1_fit.py"
+    if BOOL_FIT_FIXED:
+      job_name     = "job_fit_spect_fixed.sh"
+    else: job_name = "job_fit_spect.sh"
+    job_tagname    = self.sonic_regime.split("_")[0] + self.suite_folder + self.sim_folder + "fit" + self.sim_res
+    max_hours      = int(8)
+    num_cpus       = int(2)
+    max_mem        = int(4 * num_cpus)
+    str_fit_args   = "-f -p"
+    str_fit_args   += " -kin_fit_sub_y_range -kin_num_decades_to_fit 6"
+    if BOOL_FIT_FIXED:
+      str_fit_args += " -kin_fit_fixed -mag_fit_fixed"
     ## create/overwrite job file
     filepath_job = self.filepath_spect + "/" + job_name
     with open(filepath_job, "w") as job_file:
@@ -386,14 +387,89 @@ class PrepSpectraFit():
       job_file.write("#PBS -m bea\n")
       job_file.write("#PBS -M {}\n".format( EMAIL_ADDRESS ))
       job_file.write("\n")
-      job_file.write("{} -suite_path {} -sim_folder {} -sim_suite {}_{} -sim_res {} -Re {} -Rm {} -kin_fit_sub_y_range -kin_num_decades_to_fit 6 -f -p 1>shell_fit.out00 2>&1\n".format(
-        program_name,               # fitting program
-        self.filepath_suite,        # path to simulation suite
-        self.sim_folder,            # simulation name
-        SONIC_REGIME.split("_")[0], # sonic regime (sub / super)
-        self.suite_folder,          # suite name
-        self.sim_res,               # simulation linear resolution
-        self.Re, self.Rm            # plasma Reynolds numbers
+      job_file.write("{} -suite_path {} -sim_folder {} -sim_suite {}_{} -sim_res {} -Re {} -Rm {} {} 1>shell_fit.out00 2>&1\n".format(
+        program_name,                    # fitting program
+        self.filepath_suite,             # path to simulation suite
+        self.sim_folder,                 # simulation name
+        self.sonic_regime.split("_")[0], # sonic regime (sub / super)
+        self.suite_folder,               # suite name
+        self.sim_res,                    # simulation linear resolution
+        self.Re, self.Rm,                # plasma Reynolds numbers
+        str_fit_args                     # extra arguments
+      ))
+    ## print to terminal that job file has been created
+    print("\t> Created job '{}' to run '{}'".format(
+      job_name,
+      program_name
+    ))
+
+
+## ###############################################################
+## CREATE JOB: PLOT SPECTRA
+## ###############################################################
+class PrepPlotSpectra():
+  def __init__(
+      self,
+      filepath_scratch,
+      filepath_sim,
+      suite_folder,
+      sim_res,
+      sonic_regime,
+      sim_folder
+    ):
+    ## check simulation sub-folders exist
+    self.filepath_sim     = filepath_sim
+    self.filepath_plt     = self.filepath_sim + "/plt"
+    self.filepath_spect   = self.filepath_sim + "/spect"
+    if not os.path.exists(self.filepath_plt):
+      print(self.filepath_plt, "does not exist.")
+      return
+    if not os.path.exists(self.filepath_spect):
+      print(self.filepath_spect, "does not exist.")
+      return
+    ## store provided information
+    self.filepath_scratch = filepath_scratch
+    self.suite_folder     = suite_folder
+    self.sim_res          = sim_res
+    self.sonic_regime     = sonic_regime
+    self.sim_folder       = sim_folder
+    self.filepath_suite   = WWFnF.createFilepath([
+      self.filepath_scratch,
+      self.suite_folder,
+      self.sim_res,
+      self.sonic_regime
+    ])
+    ## run member-method
+    self.createJob()
+  def createJob(self):
+    ## job details
+    program_name   = "plot_spectra.py"
+    job_name       = "job_plot_spect.sh"
+    job_tagname    = self.sonic_regime.split("_")[0] + self.suite_folder + self.sim_folder + "plot" + self.sim_res
+    max_hours      = int(3)
+    num_cpus       = int(1)
+    max_mem        = int(4 * num_cpus)
+    ## create/overwrite job file
+    filepath_job = self.filepath_spect + "/" + job_name
+    with open(filepath_job, "w") as job_file:
+      ## write contents
+      job_file.write("#!/bin/bash\n")
+      job_file.write("#PBS -P ek9\n")
+      job_file.write("#PBS -q normal\n")
+      job_file.write("#PBS -l walltime={}:00:00\n".format( max_hours ))
+      job_file.write("#PBS -l ncpus={}\n".format( num_cpus ))
+      job_file.write("#PBS -l mem={}GB\n".format( max_mem ))
+      job_file.write("#PBS -l storage=scratch/ek9+gdata/ek9\n")
+      job_file.write("#PBS -l wd\n")
+      job_file.write("#PBS -N {}\n".format( job_tagname ))
+      job_file.write("#PBS -j oe\n")
+      job_file.write("#PBS -m bea\n")
+      job_file.write("#PBS -M {}\n".format( EMAIL_ADDRESS ))
+      job_file.write("\n")
+      job_file.write("{} -suite_path {} -sim_folder {} 1>shell_plot.out00 2>&1\n".format(
+        program_name,        # fitting program
+        self.filepath_suite, # path to simulation suite
+        self.sim_folder,     # simulation name
       ))
     ## print to terminal that job file has been created
     print("\t> Created job '{}' to run '{}'".format(
@@ -405,6 +481,16 @@ class PrepSpectraFit():
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
+EMAIL_ADDRESS      = "neco.kriel@anu.edu.au"
+BOOL_PREP_SIM      = 0
+BOOL_CALC_SPECTRA  = 0
+BOOL_PLOT_SPECTRA  = 0
+BOOL_FIT_SPECTRA   = 1
+BOOL_FIT_FIXED     = 1
+BASEPATH           = "/scratch/ek9/nk7952/"
+SONIC_REGIME       = "super_sonic"
+NUM_BLOCKS         = [ 36, 36, 48 ]
+
 def main():
   ## ##############################
   ## LOOK AT EACH SIMULATION FOLDER
@@ -479,18 +565,31 @@ def main():
             sim_folder   = sim_folder
           )
 
+        ## ###############################
+        ## CREATE JOB FILE TO PLOT SPECTRA
+        ## ###############################
+        if BOOL_PLOT_SPECTRA:
+          PrepPlotSpectra(
+            filepath_scratch = BASEPATH,
+            filepath_sim     = filepath_sim,
+            suite_folder     = suite_folder,
+            sim_res          = sim_res,
+            sonic_regime     = SONIC_REGIME,
+            sim_folder       = sim_folder
+          )
+
         ## ##############################
         ## CREATE JOB FILE TO FIT SPECTRA
         ## ##############################
         if BOOL_FIT_SPECTRA:
-          PrepSpectraFit(
-            filepath_base = BASEPATH,
-            filepath_sim  = filepath_sim,
-            suite_folder  = suite_folder,
-            sim_res       = sim_res,
-            sonic_regime  = SONIC_REGIME,
-            sim_folder    = sim_folder,
-            rms_Mach      = 0.3 # TODO: read from Turb.dat
+          PrepFitSpectra(
+            filepath_scratch = BASEPATH,
+            filepath_sim     = filepath_sim,
+            suite_folder     = suite_folder,
+            sim_res          = sim_res,
+            sonic_regime     = SONIC_REGIME,
+            sim_folder       = sim_folder,
+            rms_Mach         = 5.0
           )
 
         ## clear line if things have been printed
