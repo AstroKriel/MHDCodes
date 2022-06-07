@@ -12,15 +12,17 @@ from TheUsefulModule import WWFnF
 os.system("clear") # clear terminal window
 
 
-BASEPATH_MAC    = "/Users/necoturb/Documents/Studies/Dynamo"
-BASEPATH_GADI   = "/scratch/ek9/nk7952/"
-SONIC_REGIME    = "super_sonic"
-FILENAME_FIGS   = "*_check.png"
-BOOL_GET_PLOTS  = 0
-BOOL_GET_VIDEOS = 1
 ## ###############################################################
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
+BASEPATH_MAC    = "/Users/necoturb/Documents/Studies/Dynamo/MHD-scales"
+BASEPATH_GADI   = "/scratch/ek9/nk7952/"
+SONIC_REGIME    = "super_sonic"
+BOOL_GET_PLOTS  = 1
+FILENAME_FIGS   = "*_check.png"
+BOOL_GET_VIDEOS = 0
+FILENAME_VIDS   = "*_ani_spectra.png"
+
 def main():
   ## #################################
   ## LOOK AT EACH SUITE'S PLOTS FOLDER
@@ -59,7 +61,8 @@ def main():
         filepath_gadi_vis = WWFnF.createFilepath([
           "gadi:"+BASEPATH_GADI, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
         ])
-        print("Downloading from:", filepath_gadi_vis)
+        print("\t> From:", filepath_gadi_vis)
+        print("\t> To:", filepath_mac_vis)
         ## download plots checking fits
         os.system("scp {}/{} {}/.".format(
           filepath_gadi_vis, FILENAME_FIGS,
@@ -73,7 +76,8 @@ def main():
         filepath_gadi_videos = WWFnF.createFilepath([
             "gadi:"+BASEPATH_GADI, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
         ])
-        print("Downloading from:", filepath_gadi_videos)
+        print("\t> From:", filepath_gadi_videos)
+        print("\t> To:", filepath_mac_vis)
         ## download plots + animations
         os.system("scp {}/*.mp4 {}/.".format(
           filepath_gadi_videos,
