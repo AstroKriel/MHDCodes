@@ -484,11 +484,11 @@ class PrepPlotSpectra():
 EMAIL_ADDRESS      = "neco.kriel@anu.edu.au"
 BOOL_PREP_SIM      = 0
 BOOL_CALC_SPECTRA  = 0
-BOOL_PLOT_SPECTRA  = 0
-BOOL_FIT_SPECTRA   = 1
-BOOL_FIT_FIXED     = 1
+BOOL_PLOT_SPECTRA  = 1
+BOOL_FIT_SPECTRA   = 0
+BOOL_FIT_FIXED     = 0
 BASEPATH           = "/scratch/ek9/nk7952/"
-SONIC_REGIME       = "super_sonic"
+SONIC_REGIME       = "sub_sonic"
 NUM_BLOCKS         = [ 36, 36, 48 ]
 
 def main():

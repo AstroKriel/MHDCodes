@@ -27,10 +27,6 @@ plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
-BASEPATH         = "/scratch/ek9/nk7952/"
-SONIC_REGIME     = "sub_sonic"
-FILENAME_TURB    = "Turb.dat"
-FILENAME_SPECTRA = "spectra_fits.json"
 ## ###############################################################
 ## FUNCTIONS
 ## ###############################################################
@@ -479,6 +475,11 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
 ## ###############################################################
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
+BASEPATH         = "/scratch/ek9/nk7952/"
+SONIC_REGIME     = "super_sonic"
+FILENAME_TURB    = "Turb.dat"
+FILENAME_SPECTRA = "spectra_fits.json"
+
 def main():
   ## ##############################
   ## LOOK AT EACH SIMULATION FOLDER

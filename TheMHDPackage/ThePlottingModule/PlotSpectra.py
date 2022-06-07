@@ -318,7 +318,7 @@ class PlotSpectraFit():
         filepath_plot,
         fig_name
       ]),
-      dpi = 100
+      dpi = 150
     )
     ## clear figure and axis
     fig.artists.clear()
@@ -382,7 +382,7 @@ class PlotSpectra():
     x_min = 10**(-1)
     x_max = max(len(self.kin_k[0]), len(self.mag_k[0]))
     ## initialise spectra evolution figure
-    fig, ax = plt.subplots(constrained_layout=True)
+    fig, ax = plt.subplots()
     ## loop over each time slice
     for time_index in tqdm(
         range(len(self.sim_times)),
@@ -429,7 +429,8 @@ class PlotSpectra():
           "spectra={0:04}".format(int(time_index))
         ])+".png"
       ])
-      plt.savefig(tmp_name)
+      ## save the figure
+      plt.savefig(tmp_name, dpi=150)
       ## clear axis
       ax.clear()
     ## close figure once plotting has finished
