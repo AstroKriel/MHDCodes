@@ -6,21 +6,10 @@
 import os
 import sys
 import random
-import argparse
 import numpy as np
-import cmasher as cmr # https://cmasher.readthedocs.io/user/diverging.html
+import matplotlib.pyplot as plt
 
 from math import floor, ceil
-
-## load old user defined modules
-from OldModules import the_fitting_library
-sys.modules["the_fitting_library"] = the_fitting_library
-
-## load old user defined modules
-from OldModules.the_useful_library import *
-from OldModules.the_loading_library import *
-from OldModules.the_fitting_library import *
-from OldModules.the_plotting_library import *
 
 
 ## ###############################################################
@@ -214,39 +203,6 @@ SPECTRA_NAME = "spectra_obj_full.pkl"
 SCALE_NAME   = "_scale_converge_obj_full.pkl"
 SONIC_REGIME = "super_sonic"
 def main():
-  ## #############################
-  ## DEFINE COMMAND LINE ARGUMENTS
-  ## #############################
-  parser = MyParser()
-  ## ------------------- DEFINE OPTIONAL ARGUMENTS
-  args_opt = parser.add_argument_group(description="Optional processing arguments:")
-  optional_bool_args = {"required":False, "type":str2bool, "nargs":"?", "const":True}
-  args_opt.add_argument("-debug", default=False, **optional_bool_args)
-  args_opt.add_argument("-vis_folder",   type=str, default="vis_folder", required=False)
-  args_opt.add_argument("-sim_res",      type=int, default=[18, 36, 72, 144, 288, 576], required=False, nargs="+")
-  args_opt.add_argument("-sub_folder",   type=str, default="", required=False)
-  args_opt.add_argument("-list_abs_std", type=str2bool, default=[True, True, True], required=False, nargs="+")
-  ## ------------------- DEFINE REQUIRED ARGUMENTS
-  args_req = parser.add_argument_group(description="Required processing arguments:")
-  args_req.add_argument("-base_path",  type=str, required=True)
-  args_req.add_argument("-sim_folder", type=str, required=True)
-
-  ## #########################
-  ## INTERPRET INPUT ARGUMENTS
-  ## #########################
-  ## ---------------------------- OPEN ARGUMENTS
-  args = vars(parser.parse_args())
-  ## ---------------------------- SAVE PARAMETERS
-  ## program parameters
-  bool_debug        = args["debug"]
-  list_bool_abs_std = args["list_abs_std"]
-  ## directory parameters
-  filepath_base     = args["base_path"]
-  list_res          = args["sim_res"]
-  sim_folder        = args["sim_folder"]
-  sub_folder        = args["sub_folder"]
-  folder_vis        = args["vis_folder"]
-
   ## ##########################################
   ## PRINT CONFIGURATION INFORMATION TO CONSOLE
   ## ##########################################

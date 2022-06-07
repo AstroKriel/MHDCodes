@@ -36,17 +36,17 @@ def main():
   ## ###########################
   ## COMMAND LINE ARGUMENT INPUT
   ## ###########################
-  parser = WWArgparse.MyParser()
+  parser = WWArgparse.MyParser(description="Calculate kinetic and magnetic energy spectra.")
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
   args_opt = parser.add_argument_group(description="Optional processing arguments:")
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
-  args_opt.add_argument("-check_only", type=WWArgparse.str2bool, default=False, required=False, nargs="?", const=True)
-  args_opt.add_argument("-file_start", type=int, default=0,      required=False)
-  args_opt.add_argument("-file_end",   type=int, default=np.Inf, required=False)
-  args_opt.add_argument("-num_proc",   type=str, default="8",    required=False)
+  args_opt.add_argument("-check_only", **WWArgparse.opt_bool_arg)
+  args_opt.add_argument("-file_start", **WWArgparse.opt_arg, type=int, default=0)
+  args_opt.add_argument("-file_end",   **WWArgparse.opt_arg, type=int, default=np.inf)
+  args_opt.add_argument("-num_proc",   **WWArgparse.opt_arg, type=str, default="8")
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description="Required processing arguments:")
-  args_req.add_argument("-data_path",  type=str, required=True)
+  args_req.add_argument("-data_path",  type=str, required=True, help="type: %(type)s")
   ## ---------------------------- OPEN ARGUMENTS
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS

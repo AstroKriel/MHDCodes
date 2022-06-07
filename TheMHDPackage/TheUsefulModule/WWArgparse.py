@@ -8,7 +8,20 @@ import sys, argparse
 
 
 ## ###############################################################
-## WORKING WITH ARGUMENT INPUTS
+## USEFUL DICTIONARIES
+## ###############################################################
+opt_bool_arg = {
+  "required":False, "default":False, "action":"store_true",
+  "help":"type: bool, default: %(default)s"
+}
+opt_arg = {
+  "required":False, "metavar":"",
+  "help":"type: %(type)s, default: %(default)s",
+}
+
+
+## ###############################################################
+## FUNCTIONS: WORKING WITH ARGUMENT INPUTS
 ## ###############################################################
 def str2bool(v):
   """ str2bool

@@ -28,7 +28,108 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################
-## FUNCTIONS
+## HELPER FUNCTIONS: fit exponential and constant to data
+## ###############################################################
+def fitExp(
+    ax,
+    data_x, data_y,
+    index_start_fit, index_end_fit,
+    color = "black"
+  ):
+  ## define fit domain
+  data_fit_domain = np.linspace(
+    data_x[index_start_fit],
+    data_x[index_end_fit],
+    10**2
+  )
+  ## interpolate the non-uniform data
+  interp_spline = make_interp_spline(
+    data_x[index_start_fit : index_end_fit],
+    data_y[index_start_fit : index_end_fit]
+  )
+  ## save time range being fitted to
+  time_start = data_x[index_start_fit]
+  time_end   = data_x[index_end_fit]
+  ## uniformly sample interpolated data
+  data_y_sampled = interp_spline(data_fit_domain)
+  ## fit exponential function to sampled data (in log-linear domain)
+  fit_params_log, fit_params_cov = curve_fit(
+    UserModels.ListOfModels.exp_loge,
+    data_fit_domain,
+    np.log(data_y_sampled)
+  )
+  ## undo log transformation
+  fit_params_linear = [
+    np.exp(fit_params_log[0] + 2),
+    fit_params_log[1]
+  ]
+  ## initialise the plot domain
+  data_x_fit = np.linspace(0, 100, 10**3)
+  ## evaluate exponential
+  data_y_fit = UserModels.ListOfModels.exp_linear(
+    data_x_fit,
+    *fit_params_linear
+  )
+  ## find where exponential enters / exists fit range
+  index_E_start = WWLists.getIndexClosestValue(data_x_fit, time_start)
+  index_E_end   = WWLists.getIndexClosestValue(data_x_fit, time_end)
+  ## plot fit
+  gamma_val = -fit_params_log[1]
+  gamma_std = max(np.sqrt(np.diag(fit_params_cov))[1], 0.01)
+  str_label = r"$\Gamma =$ " + "{:.2f}".format(gamma_val) + r" $\pm$ " + "{:.2f}".format(gamma_std)
+  ax.plot(
+    data_x_fit[index_E_start : index_E_end],
+    data_y_fit[index_E_start : index_E_end],
+    label=str_label, color=color, ls="--", lw=2, zorder=5
+  )
+
+
+def fitConst(
+    ax,
+    data_x, data_y,
+    index_start_fit, index_end_fit,
+    label = "",
+    color = "black"
+  ):
+  # ## TODO: remove. for debug purposes only
+  # print(
+  #   len(data_x),
+  #   len(data_y),
+  #   index_start_fit,
+  #   index_end_fit,
+  #   len(data_x[index_start_fit : index_end_fit]),
+  #   len(data_y[index_start_fit : index_end_fit])
+  # )
+  ## define fit domain
+  data_fit_domain = np.linspace(
+    data_x[index_start_fit],
+    data_x[index_end_fit],
+    10**2
+  )
+  ## interpolate the non-uniform data
+  interp_spline = make_interp_spline(
+    data_x[index_start_fit : index_end_fit],
+    data_y[index_start_fit : index_end_fit]
+  )
+  ## uniformly sample interpolated data
+  data_y_sampled = interp_spline(data_fit_domain)
+  ## measure average saturation level
+  data_x_sub  = data_x[index_start_fit : index_end_fit]
+  data_y_mean = np.mean(data_y_sampled)
+  data_y_std  = max(np.std(data_y_sampled), 0.01)
+  ## plot fit
+  str_label = label + "{:.2f}".format(data_y_mean) + r" $\pm$ " + "{:.2f}".format(data_y_std)
+  ax.plot(
+    data_x_sub,
+    [data_y_mean] * len(data_x_sub),
+    label=str_label, color=color, ls=":", lw=2, zorder=5
+  )
+  ## return mean value
+  return data_y_mean
+
+
+## ###############################################################
+## FUNCTION: plot integrated quantities
 ## ###############################################################
 def funcPlotTurb(
     axs, filepath_data,
@@ -36,84 +137,6 @@ def funcPlotTurb(
   ):
   color_fits = "black"
   color_data = "orange"
-  def fitExp(ax, data_x, data_y, index_start_fit, index_end_fit):
-    ## define fit domain
-    data_fit_domain = np.linspace(
-      data_x[index_start_fit],
-      data_x[index_end_fit],
-      10**2
-    )
-    ## interpolate the non-uniform data
-    interp_spline = make_interp_spline(
-      data_x[index_start_fit : index_end_fit],
-      data_y[index_start_fit : index_end_fit]
-    )
-    ## save time range being fitted to
-    time_start = data_x[index_start_fit]
-    time_end   = data_x[index_end_fit]
-    ## uniformly sample interpolated data
-    data_y_sampled = interp_spline(data_fit_domain)
-    ## fit exponential function to sampled data (in log-linear domain)
-    fit_params_log, fit_params_cov = curve_fit(
-      UserModels.ListOfModels.exp_loge,
-      data_fit_domain,
-      np.log(data_y_sampled)
-    )
-    ## undo log transformation
-    fit_params_linear = [
-      np.exp(fit_params_log[0] + 2),
-      fit_params_log[1]
-    ]
-    ## initialise the plot domain
-    data_x_fit = np.linspace(0, 100, 10**3)
-    ## evaluate exponential
-    data_y_fit = UserModels.ListOfModels.exp_linear(
-      data_x_fit,
-      *fit_params_linear
-    )
-    ## find where exponential enters / exists fit range
-    index_E_start = WWLists.getIndexClosestValue(data_x_fit, time_start)
-    index_E_end   = WWLists.getIndexClosestValue(data_x_fit, time_end)
-    ## plot fit
-    gamma_val = -fit_params_log[1]
-    gamma_std = max(np.sqrt(np.diag(fit_params_cov))[1], 0.01)
-    str_label = r"$\Gamma =$ " + "{:.2f}".format(gamma_val) + r" $\pm$ " + "{:.2f}".format(gamma_std)
-    ax.plot(
-      data_x_fit[index_E_start : index_E_end],
-      data_y_fit[index_E_start : index_E_end],
-      label=str_label, color=color_fits, ls="--", lw=2, zorder=5
-    )
-  def fitConst(ax, data_x, data_y, index_start_fit, index_end_fit, label=""):
-    ## define fit domain
-    data_fit_domain = np.linspace(
-      data_x[index_start_fit],
-      data_x[index_end_fit],
-      10**2
-    )
-    ## interpolate the non-uniform data
-    print(
-      len(data_x[index_start_fit : index_end_fit]),
-      len(data_y[index_start_fit : index_end_fit])
-    )
-    interp_spline = make_interp_spline(
-      data_x[index_start_fit : index_end_fit],
-      data_y[index_start_fit : index_end_fit]
-    )
-    ## uniformly sample interpolated data
-    data_y_sampled = interp_spline(data_fit_domain)
-    ## measure average saturation level
-    data_x_sub  = data_x[index_start_fit : index_end_fit]
-    data_y_mean = np.mean(data_y_sampled)
-    data_y_std  = max(np.std(data_y_sampled), 0.01)
-    ## plot fit
-    str_label = label + "{:.2f}".format(data_y_mean) + r" $\pm$ " + "{:.2f}".format(data_y_std)
-    ax.plot(
-      data_x_sub,
-      [data_y_mean] * len(data_x_sub),
-      label=str_label, color=color_fits, ls=":", lw=2, zorder=5
-    )
-    ## return mean value
-    return data_y_mean
   ## load mach data
   data_time, data_Mach = LoadFlashData.loadTurbData(
     filepath_data = filepath_data,
@@ -182,18 +205,20 @@ def funcPlotTurb(
     axs[1],
     data_x = data_time,
     data_y = data_E_ratio,
+    color  = color_fits,
     label  = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ ",
     index_start_fit = WWLists.getIndexClosestValue(data_time, 0.75 * data_time[-1]),
-    index_end_fit   = len(data_time)-1
+    index_end_fit   = len(data_time)-1,
   )
   ## get index range corresponding with kinematic phase of the dynamo
-  index_exp_start = WWLists.getIndexClosestValue(data_E_ratio, 10**(-6))
-  index_exp_end   = WWLists.getIndexClosestValue(data_E_ratio, 10**(-2)) # sat_ratio/100: 1-percent of sat-ratio
+  index_exp_start = WWLists.getIndexClosestValue(data_E_ratio, 10**(-8))
+  index_exp_end   = WWLists.getIndexClosestValue(data_E_ratio, sat_ratio/100) # 1-percent of sat-ratio
   ## fit mach number
   fitConst(
     axs[0],
     data_x = data_time,
     data_y = data_Mach,
+    color  = color_fits,
     label  = r"$\mathcal{M} =$ ",
     index_start_fit = index_exp_start,
     index_end_fit   = index_exp_end
@@ -203,6 +228,7 @@ def funcPlotTurb(
     axs[1],
     data_x = data_time,
     data_y = data_E_ratio,
+    color  = color_fits,
     index_start_fit = index_exp_start,
     index_end_fit   = index_exp_end
   )
@@ -215,12 +241,14 @@ def funcPlotTurb(
   return data_time[index_exp_start], data_time[index_exp_end]
 
 
+## ###############################################################
+## FUNCTION: plot spectra data
+## ###############################################################
 def funcPlotSpectra(
     axs, ax_spectra, filepath_data,
     time_exp_start = None,
     time_exp_end   = None
   ):
-  time_range = [time_exp_start, time_exp_end]
   def plotData(
       ax, data_x, data_y,
       label  = None,
@@ -228,9 +256,9 @@ def funcPlotSpectra(
       zorder = 5
     ):
     ## if a fitting range is defined
-    if (time_range[0] is not None) and (time_range[1] is not None):
-      index_start = WWLists.getIndexClosestValue(data_x, time_range[0])
-      index_end   = WWLists.getIndexClosestValue(data_x, time_range[1])
+    if (time_exp_start is not None) and (time_exp_end is not None):
+      index_start = WWLists.getIndexClosestValue(data_x, time_exp_start)
+      index_end   = WWLists.getIndexClosestValue(data_x, time_exp_end)
       ## measure data statistics in the fitting range
       if "=" in label:
         data_x_sub  = data_x[index_start : index_end]
@@ -304,7 +332,7 @@ def funcPlotSpectra(
   ## #####################
   ## PLOT AVERAGED SPECTRA
   ## #####################
-  PlotSpectra.PlotAveSpectra(ax_spectra, spectra_fits_obj, time_range)
+  PlotSpectra.PlotAveSpectra(ax_spectra, spectra_fits_obj, [time_exp_start, time_exp_end])
   ax_spectra.set_ylim([ 10**(-8), 3*10**(0) ])
   if bool_plot_fit_params:
     ## ################################
@@ -395,10 +423,25 @@ def funcPlotSpectra(
       bool_minor_ticks    = True,
       max_num_major_ticks = 5
     )
+  if BOOL_UPDATE_FIT_RANGE:
+    ## update fit time-range
+    WWObjs.updateObjAttr(spectra_fits_obj, "kin_fit_start_t", time_exp_start)
+    WWObjs.updateObjAttr(spectra_fits_obj, "mag_fit_start_t", time_exp_start)
+    WWObjs.updateObjAttr(spectra_fits_obj, "kin_fit_end_t",   time_exp_end)
+    WWObjs.updateObjAttr(spectra_fits_obj, "mag_fit_end_t",   time_exp_end)
+    ## save the updated spectra object
+    WWObjs.saveObj2Json(
+      obj      = spectra_fits_obj,
+      filepath = filepath_data,
+      filename = FILENAME_SPECTRA
+    )
   ## return simulation parameters
   return spectra_fits_obj.Re, spectra_fits_obj.Rm, spectra_fits_obj.Pm
 
 
+## ###############################################################
+## FUNCTION: handling plot calls
+## ###############################################################
 def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
   ## initialise figure
   fig = plt.figure(constrained_layout=True, figsize=(12, 8))
@@ -413,16 +456,20 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
   ax_kmodes  = fig.add_subplot(gs[0, 0])
   ax_alpha   = fig.add_subplot(gs[1, 0])
   ax_num_k   = fig.add_subplot(gs[2, 0])
-  ## plot Turb.dat
+  ## #####################################
+  ## PLOT INTEGRATED QUANTITIES (Turb.dat)
+  ## #####################################
   filepath_data_turb = filepath_sim
+  bool_plot_energy = False
+  time_exp_start, time_exp_end = None, None
   if os.path.exists(WWFnF.createFilepath([filepath_data_turb, FILENAME_TURB])):
     bool_plot_energy = True
     time_exp_start, time_exp_end = funcPlotTurb([ax_mach, ax_energy], filepath_data_turb)
-  else:
-    bool_plot_energy = False
-    time_exp_start, time_exp_end = None, None
-  ## plot fitted spectra
+  ## ###################
+  ## PLOT FITTED SPECTRA
+  ## ###################
   filepath_data_spect = filepath_sim + "/spect/"
+  bool_plot_spectra = False
   if os.path.exists(WWFnF.createFilepath([filepath_data_spect, FILENAME_SPECTRA])):
     bool_plot_spectra = True
     Re, Rm, Pm = funcPlotSpectra(
@@ -451,7 +498,6 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
         cspacing = 0,
         fontsize = 14
       )
-  else: bool_plot_spectra = False
   ## check if the data was plotted
   if not(bool_plot_energy) and not(bool_plot_spectra):
     print("\t> ERROR: No data in:")
@@ -475,10 +521,14 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
 ## ###############################################################
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
-BASEPATH         = "/scratch/ek9/nk7952/"
-SONIC_REGIME     = "super_sonic"
-FILENAME_TURB    = "Turb.dat"
-FILENAME_SPECTRA = "spectra_fits.json"
+BASEPATH              = "/scratch/ek9/nk7952/"
+SONIC_REGIME          = "super_sonic"
+FILENAME_TURB         = "Turb.dat"
+# FILENAME_SPECTRA      = "spectra_fits.json"
+# FILENAME_PLOT_TAG     = ""
+FILENAME_SPECTRA      = "spectra_fits_fk_fm.json"
+FILENAME_PLOT_TAG     = "_fk_fm"
+BOOL_UPDATE_FIT_RANGE = 1
 
 def main():
   ## ##############################
@@ -486,12 +536,12 @@ def main():
   ## ##############################
   ## loop over the simulation suites
   for suite_folder in [
-      "Rm3000"
+      "Re10", "Re500", "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
     ## loop over the different resolution runs
     for sim_res in [
-        "144"
+        "72", "144", "288"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## ######################################
@@ -524,7 +574,7 @@ def main():
         if not os.path.exists(filepath_sim):
           continue
         ## plot simulation data
-        fig_name = suite_folder + "_" + sim_folder + "_" + "check.png"
+        fig_name = suite_folder + "_" + sim_folder + "_" + "check" + FILENAME_PLOT_TAG + ".png"
         funcPlotSimData(filepath_sim, filepath_figures, fig_name, sim_res)
     ## create an empty line after each suite
     print(" ")

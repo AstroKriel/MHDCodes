@@ -38,17 +38,9 @@ def main():
   parser = WWArgparse.MyParser(description="Plot kinetic and magnetic energy spectra.")
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
   args_opt = parser.add_argument_group(description="Optional processing arguments:")
-  opt_bool_arg = {
-    "required":False, "default":False, "action":"store_true",
-    "help":"type: bool, default: %(default)s"
-  }
-  opt_arg = {
-    "required":False, "metavar":"",
-    "help":"type: %(type)s, default: %(default)s",
-  }
-  args_opt.add_argument("-v", "--verbose", **opt_bool_arg)
-  args_opt.add_argument("-vis_folder",     **opt_arg, type=str, default="vis_folder")
-  args_opt.add_argument("-data_folder",    **opt_arg, type=str, default="spect")
+  args_opt.add_argument("-v", "--verbose", **WWArgparse.opt_bool_arg)
+  args_opt.add_argument("-vis_folder",     **WWArgparse.opt_arg, type=str, default="vis_folder")
+  args_opt.add_argument("-data_folder",    **WWArgparse.opt_arg, type=str, default="spect")
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description="Required processing arguments:")
   args_req.add_argument("-suite_path", type=str, required=True, help="type: %(type)s")

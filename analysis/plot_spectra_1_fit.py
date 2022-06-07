@@ -254,44 +254,36 @@ def main():
   ## DEFINE COMMAND LINE ARGUMENTS
   ## #############################
   parser = WWArgparse.MyParser(description="Fit kinetic and magnetic energy spectra.")
-  opt_bool_arg = {
-    "required":False, "default":False, "action":"store_true",
-    "help":"type: bool, default: %(default)s"
-  }
-  opt_arg = {
-    "required":False, "metavar":"",
-    "help":"type: %(type)s, default: %(default)s",
-  }
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
   args_opt = parser.add_argument_group(description="Optional processing arguments:")
   ## program workflow parameters
-  args_opt.add_argument("-v", "--verbose",        **opt_bool_arg)
-  args_opt.add_argument("-s", "--show_obj_attrs", **opt_bool_arg)
-  args_opt.add_argument("-f", "--fit_spectra",    **opt_bool_arg)
-  args_opt.add_argument("-p", "--plot_spectra",   **opt_bool_arg)
+  args_opt.add_argument("-v", "--verbose",        **WWArgparse.opt_bool_arg)
+  args_opt.add_argument("-s", "--show_obj_attrs", **WWArgparse.opt_bool_arg)
+  args_opt.add_argument("-f", "--fit_spectra",    **WWArgparse.opt_bool_arg)
+  args_opt.add_argument("-p", "--plot_spectra",   **WWArgparse.opt_bool_arg)
   ## directory information
-  args_opt.add_argument("-vis_folder",  type=str, default="vis_folder", **opt_arg)
-  args_opt.add_argument("-data_folder", type=str, default="spect",      **opt_arg)
+  args_opt.add_argument("-vis_folder",  type=str, default="vis_folder", **WWArgparse.opt_arg)
+  args_opt.add_argument("-data_folder", type=str, default="spect",      **WWArgparse.opt_arg)
   ## fit fixed spectra models
-  args_opt.add_argument("-kin_fit_fixed", **opt_bool_arg)
-  args_opt.add_argument("-mag_fit_fixed", **opt_bool_arg)
+  args_opt.add_argument("-kin_fit_fixed", **WWArgparse.opt_bool_arg)
+  args_opt.add_argument("-mag_fit_fixed", **WWArgparse.opt_bool_arg)
   ## energy range to fit kinetic energy spectra
-  args_opt.add_argument("-kin_fit_sub_y_range",    **opt_bool_arg)
-  args_opt.add_argument("-kin_num_decades_to_fit", type=float, default=6, **opt_arg)
+  args_opt.add_argument("-kin_fit_sub_y_range",    **WWArgparse.opt_bool_arg)
+  args_opt.add_argument("-kin_num_decades_to_fit", type=float, default=6, **WWArgparse.opt_arg)
   ## time range to fit spectra
-  args_opt.add_argument("-kin_start_fit", type=float, default=None, **opt_arg)
-  args_opt.add_argument("-mag_start_fit", type=float, default=None, **opt_arg)
-  args_opt.add_argument("-kin_end_fit",   type=float, default=None, **opt_arg)
-  args_opt.add_argument("-mag_end_fit",   type=float, default=None, **opt_arg)
+  args_opt.add_argument("-kin_start_fit", type=float, default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-mag_start_fit", type=float, default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-kin_end_fit",   type=float, default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-mag_end_fit",   type=float, default=None, **WWArgparse.opt_arg)
   ## plotting parameters
-  args_opt.add_argument("-plot_spectra_from",  type=int, default=0, **opt_arg)
-  args_opt.add_argument("-plot_spectra_every", type=int, default=1, **opt_arg)
+  args_opt.add_argument("-plot_spectra_from",  type=int, default=0, **WWArgparse.opt_arg)
+  args_opt.add_argument("-plot_spectra_every", type=int, default=1, **WWArgparse.opt_arg)
   ## simulation information
-  args_opt.add_argument("-sim_suite", type=str,   default=None, **opt_arg)
-  args_opt.add_argument("-sim_res",   type=int,   default=None, **opt_arg)
-  args_opt.add_argument("-Re",        type=float, default=None, **opt_arg)
-  args_opt.add_argument("-Rm",        type=float, default=None, **opt_arg)
-  args_opt.add_argument("-Pm",        type=float, default=None, **opt_arg)
+  args_opt.add_argument("-sim_suite", type=str,   default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-sim_res",   type=int,   default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-Re",        type=float, default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-Rm",        type=float, default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-Pm",        type=float, default=None, **WWArgparse.opt_arg)
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description="Required processing arguments:")
   args_req.add_argument("-suite_path", type=str, required=True, help="type: %(type)s")

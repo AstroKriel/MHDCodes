@@ -6,7 +6,7 @@
 import os
 import sys
 
-from TheUsefulModule import WWFnF, WWArgparse
+from TheUsefulModule import WWFnF
 
 
 ## ###############################################################
@@ -31,6 +31,7 @@ def funcRemoveFiles(filepath_sim, file_name_starts_with):
   else: print("\t> There are no '{}' files.".format(
     file_name_starts_with
   ))
+
 
 def funcCreateFolderNMoveFiles(
     filepath_sim,
@@ -87,31 +88,10 @@ def funcCreateFolderNMoveFiles(
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
+BASEPATH     = "/scratch/ek9/nk7952/"
+SONIC_REGIME = "super_sonic"
+
 def main():
-  ## #############################
-  ## DEFINE COMMAND LINE ARGUMENTS
-  ## #############################
-  parser = WWArgparse.MyParser()
-  ## ------------------- DEFINE INPUT ARGUMENTS
-  args_input = parser.add_argument_group(description="Processing arguments:")
-  args_input.add_argument("-base_path",    type=str, required=True)
-  args_input.add_argument("-sim_suites",   type=str, required=True, nargs="+")
-  args_input.add_argument("-sim_res",      type=str, required=True, nargs="+")
-  args_input.add_argument("-sonic_regime", type=str, required=False, default="super_sonic")
-  args_input.add_argument("-sim_folders",  type=str, required=True, nargs="+")
-
-  ## #########################
-  ## INTERPRET INPUT ARGUMENTS
-  ## #########################
-  ## ---------------------------- OPEN ARGUMENTS
-  args = vars(parser.parse_args())
-  ## ---------------------------- SAVE PARAMETERS
-  filepath_base      = args["base_path"]
-  list_suite_folders = args["sim_suites"]
-  list_sim_res       = args["sim_res"]
-  sonic_regime       = args["sonic_regime"]
-  list_sim_folders   = args["sim_folders"]
-
   ## ####################
   ## PROCESS MAIN PROGRAM
   ## ####################
@@ -137,7 +117,7 @@ def main():
         ## ##################################
         ## create filepath to simulation folder (on GADI)
         filepath_sim = WWFnF.createFilepath([
-          filepath_base, suite_folder, sim_res, sonic_regime, sim_folder
+          BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder
         ])
         ## check that the filepath exists
         if not os.path.exists(filepath_sim):
