@@ -200,7 +200,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 #   ## return converged scale
 #   return list_converged_scales
 
-class SpectraConvergence():
+class PlotSpectraConvergence():
   def __init__(
       self,
       sim_suite,
@@ -215,7 +215,6 @@ class SpectraConvergence():
     self.list_k_eta_group_res = []
     self.list_k_p_group_res   = []
     ## read in scales for each resolution run
-    print("Loading scales...")
     for sim_res in LIST_SIM_RES:
       try:
         ## load spectra-fit data as a dictionary
@@ -228,14 +227,13 @@ class SpectraConvergence():
         )
         ## store dictionary data in spectra-fit object
         spectra_fits_obj = FitMHDScales.SpectraFit(**spectra_fits_dict)
-        print("\t> Read in '{}' data.".format(sim_res))
       except: continue
-      ## check a fit range has been defined
+      ## check that a fit-range has been defined
       bool_kin_fit = (spectra_fits_obj.kin_fit_start_t is not None) and (spectra_fits_obj.kin_fit_end_t is not None)
       bool_mag_fit = (spectra_fits_obj.mag_fit_start_t is not None) and (spectra_fits_obj.mag_fit_end_t is not None)
       if not(bool_kin_fit) or not(bool_mag_fit):
         raise Exception("Fit range has not been defined.")
-      ## find indices of fitting time-range
+      ## find indices corresponding with the fit-range bounds
       kin_index_start = WWLists.getIndexClosestValue(spectra_fits_obj.kin_sim_times, spectra_fits_obj.kin_fit_start_t)
       mag_index_start = WWLists.getIndexClosestValue(spectra_fits_obj.mag_sim_times, spectra_fits_obj.mag_fit_start_t)
       kin_index_end   = WWLists.getIndexClosestValue(spectra_fits_obj.kin_sim_times, spectra_fits_obj.kin_fit_end_t)
@@ -251,18 +249,32 @@ class SpectraConvergence():
         spectra_fits_obj.k_p_group_t[mag_index_start : mag_index_end]
       )
   def plotScales(self):
-    ## ####################
-    ## PLOT MEASURED SCALES
-    ## ####################
     ## initialise figure
     fig, axs = plt.subplots(3, 1, figsize=(6, 3.5*3), sharex=True)
     fig.subplots_adjust(hspace=0.05)
     ## plot measured scales
     for res_index, sim_res in enumerate(LIST_SIM_RES):
-      print(len(self.list_k_nu_group_res[res_index]))
-      PlotFuncs.plotErrorBar(axs[0], sim_res, self.list_k_nu_group_res[res_index])
-      PlotFuncs.plotErrorBar(axs[1], sim_res, self.list_k_eta_group_res[res_index])
-      PlotFuncs.plotErrorBar(axs[2], sim_res, self.list_k_p_group_res[res_index])
+      PlotFuncs.plotErrorBar(axs[0], int(sim_res), self.list_k_nu_group_res[res_index],  color="black")
+      PlotFuncs.plotErrorBar(axs[1], int(sim_res), self.list_k_eta_group_res[res_index], color="black")
+      PlotFuncs.plotErrorBar(axs[2], int(sim_res), self.list_k_p_group_res[res_index],   color="black")
+    ## label figure
+    axs[0].set_ylabel(r"$k_\nu$")
+    axs[1].set_ylabel(r"$k_\eta$")
+    axs[2].set_ylabel(r"$k_{\rm p}$")
+    axs[2].set_xlabel(r"$k$")
+    axs[0].set_xscale("log")
+    axs[1].set_xscale("log")
+    axs[2].set_xscale("log")
+    axs[0].set_xlim([10, 1000])
+    axs[1].set_xlim([10, 1000])
+    axs[2].set_xlim([10, 1000])
+    axs[0].set_yscale("log")
+    axs[1].set_yscale("log")
+    axs[2].set_yscale("log")
+    axs[0].set_ylim([0.1, 50])
+    axs[1].set_ylim([0.1, 50])
+    axs[2].set_ylim([0.1, 50])
+    ## save figure
     fig_name = self.sim_folder + "_scales_res" + FILENAME_TAG + ".png"
     plt.savefig(
       WWFnF.createFilepath([
@@ -274,20 +286,58 @@ class SpectraConvergence():
     plt.close(fig)
 
 
-
-
 ## ###############################################################
 ## DEFINE MAIN PROGRAM
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
-FILENAME_SPECTRA  = "spectra_fits.json"
-FILENAME_TAG      = ""
+FILENAME_SPECTRA  = "spectra_fits_fk_fm.json"
+FILENAME_TAG      = "_fk_fm"
 LIST_SIM_RES      = [ "72", "144", "288" ]
-FILENAME_SCALES   = "_scale_converge_obj_full.pkl"
 
 def main():
-  SpectraConvergence(sim_suite="Rm3000", sim_folder="Pm5")
+  ## #############################################
+  ## LOOK AT EACH SIMULATION GROUPED BY RESOLUTION
+  ## #############################################
+  ## loop over the simulation suites
+  for suite_folder in [
+      "Re10", "Re500", "Rm3000"
+    ]: # "Re10", "Re500", "Rm3000", "keta"
+
+    ## ######################################
+    ## CHECK THE SUITE'S FIGURE FOLDER EXISTS
+    ## ######################################
+    filepath_figures = WWFnF.createFilepath([
+      BASEPATH, suite_folder, SONIC_REGIME
+    ])
+    if not os.path.exists(filepath_figures):
+      print("{} does not exist.".format(filepath_figures))
+      continue
+    str_message = "Looking at suite: {}".format(suite_folder)
+    print(str_message)
+    print("=" * len(str_message))
+    print("Saving figures in:", filepath_figures)
+
+    ## #####################
+    ## LOOP OVER SIMULATIONS
+    ## #####################
+    ## loop over the simulation folders
+    for sim_folder in [
+        "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
+      ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
+
+      ## create filepath to the spectra object for the simulation setup at Nres=288
+      filepath_file = WWFnF.createFilepath([
+        BASEPATH, suite_folder, "288", SONIC_REGIME, sim_folder, "spect", FILENAME_SPECTRA
+      ])
+      ## check that the simulation folder exists
+      if not os.path.isfile(filepath_file):
+        continue
+
+      ## measure converged scales
+      PlotSpectraConvergence(sim_suite=suite_folder, sim_folder=sim_folder)
+    ## create an empty line after each suite
+    print(" ")
   
 
   # ## ########################################

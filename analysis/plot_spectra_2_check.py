@@ -145,6 +145,8 @@ class PlotTurbData():
     self.time_exp_end   = None
     self.color_fits     = "black"
     self.color_data     = "orange"
+  def getExpTimeBounds(self):
+    return self.time_exp_start, self.time_exp_end
   def loadData(self):
     ## load mach data
     _, self.data_Mach = LoadFlashData.loadTurbData(
@@ -252,8 +254,6 @@ class PlotTurbData():
     ## store time range bounds corresponding with the exponential phase of the dynamo
     self.time_exp_start = self.data_time[index_exp_start]
     self.time_exp_end   = self.data_time[index_exp_end]
-  def getExpTimeBounds(self):
-    return self.time_exp_start, self.time_exp_end
 
 
 ## ###############################################################
@@ -274,6 +274,37 @@ class PlotSpectraFitParams():
     self.ax_label       = ax_label
     self.time_exp_start = time_exp_start
     self.time_exp_end   = time_exp_end
+  def labelSimParams(self):
+    PlotFuncs.addLegend(
+      ax = self.ax_label,
+      list_legend_labels = [
+        r"$N_{\rm res} =$ " + self.sim_res,
+        r"Re $=$ " + "{:.0f}".format(self.spectra_fits_obj.Re),
+        r"Pm $=$ " + "{:.0f}".format(self.spectra_fits_obj.Rm),
+        r"Rm $=$ " + "{:.0f}".format(self.spectra_fits_obj.Pm)
+      ],
+      list_marker_colors = [ "w" ],
+      list_artists       = [ "." ],
+      loc      = "lower left",
+      bbox     = (0.0, 0.0),
+      ncol     = 2,
+      bpad     = 0,
+      tpad     = -1,
+      cspacing = 0,
+      fontsize = 14
+    )
+  def updateFitRange(self):
+    ## update fit time-range
+    WWObjs.updateObjAttr(self.spectra_fits_obj, "kin_fit_start_t", self.time_exp_start)
+    WWObjs.updateObjAttr(self.spectra_fits_obj, "mag_fit_start_t", self.time_exp_start)
+    WWObjs.updateObjAttr(self.spectra_fits_obj, "kin_fit_end_t",   self.time_exp_end)
+    WWObjs.updateObjAttr(self.spectra_fits_obj, "mag_fit_end_t",   self.time_exp_end)
+    ## save the updated spectra object
+    WWObjs.saveObj2Json(
+      obj      = self.spectra_fits_obj,
+      filepath = self.filepath_data,
+      filename = FILENAME_SPECTRA
+    )
   def loadParams(self):
     ## load spectra-fit data as a dictionary
     spectra_fits_dict = WWObjs.loadJson2Dict(
@@ -313,37 +344,6 @@ class PlotSpectraFitParams():
         ]
       ## define the end of the k-domain
       self.max_k_mode = 1.2 * max(k_modes)
-  def labelSimParams(self):
-    PlotFuncs.addLegend(
-      ax = self.ax_label,
-      list_legend_labels = [
-        r"$N_{\rm res} =$ " + self.sim_res,
-        r"Re $=$ " + "{:.0f}".format(self.spectra_fits_obj.Re),
-        r"Pm $=$ " + "{:.0f}".format(self.spectra_fits_obj.Rm),
-        r"Rm $=$ " + "{:.0f}".format(self.spectra_fits_obj.Pm)
-      ],
-      list_marker_colors = [ "w" ],
-      list_artists       = [ "." ],
-      loc      = "lower left",
-      bbox     = (0.0, 0.0),
-      ncol     = 2,
-      bpad     = 0,
-      tpad     = -1,
-      cspacing = 0,
-      fontsize = 14
-    )
-  def updateFitRange(self):
-    ## update fit time-range
-    WWObjs.updateObjAttr(self.spectra_fits_obj, "kin_fit_start_t", self.time_exp_start)
-    WWObjs.updateObjAttr(self.spectra_fits_obj, "mag_fit_start_t", self.time_exp_start)
-    WWObjs.updateObjAttr(self.spectra_fits_obj, "kin_fit_end_t",   self.time_exp_end)
-    WWObjs.updateObjAttr(self.spectra_fits_obj, "mag_fit_end_t",   self.time_exp_end)
-    ## save the updated spectra object
-    WWObjs.saveObj2Json(
-      obj      = self.spectra_fits_obj,
-      filepath = self.filepath_data,
-      filename = FILENAME_SPECTRA
-    )
   def plotParams(self):
     ## plot normalised and time averaged energy spectra
     PlotSpectra.PlotAveSpectra(self.ax_spectra, self.spectra_fits_obj, [self.time_exp_start, self.time_exp_end])

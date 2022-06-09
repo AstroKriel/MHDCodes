@@ -608,35 +608,35 @@ def plotErrorBar(
     my_colormap = cmasher_colormap(np.linspace(0, 1, num_cols))
     color = my_colormap[col_index]
   ## calculate quantiles: x-data
-  bool_plot_x_error = False
   x_median = data_x
+  x_1sig   = None
   if isinstance(data_x, (list, np.ndarray)):
     if len(data_x) > 1:
-      bool_plot_x_error = True
       x_median = np.percentile(data_x, 50)
       x_p16    = np.percentile(data_x, 16)
       x_p84    = np.percentile(data_x, 84)
+      x_1sig   = np.vstack([
+        x_median - x_p16,
+        x_p84 - x_median
+      ])
   ## calculate quantiles: y-data
-  bool_plot_y_error = False
   y_median = data_y
+  y_1sig   = None
   if isinstance(data_y, (list, np.ndarray)):
     if len(data_y) > 1:
-      bool_plot_y_error = True
       y_median = np.percentile(data_y, 50)
       y_p16    = np.percentile(data_y, 16)
       y_p84    = np.percentile(data_y, 84)
+      y_1sig   = np.vstack([
+        y_median - y_p16,
+        y_p84 - y_median
+      ])
   ## plot errorbar
-  return ax.errorbar(
+  ax.errorbar(
     x_median,
     y_median,
-    xerr = np.vstack([
-      x_median - x_p16,
-      x_p84 - x_median
-    ]) if bool_plot_x_error else None,
-    yerr = np.vstack([
-      y_median - y_p16,
-      y_p84 - y_median
-    ]) if bool_plot_y_error else None,
+    xerr   = x_1sig,
+    yerr   = y_1sig,
     color  = color,
     alpha  = alpha,
     fmt    = marker,
@@ -925,7 +925,7 @@ def plotDistributionFit(
   ## #######
   if bool_show_label:
     ax.text(
-      **FitDistro.returnDicWithoutKeys(plot_args, ["ls", "bool_box"]),
+      **FitDistro.getDictWithoutKeys(plot_args, ["ls", "bool_box"]),
       s = pre_label + CreateFunctionLabel(
         list_params = list_fit_params,
         func_label  = func_label,

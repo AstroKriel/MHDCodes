@@ -363,7 +363,7 @@ def printObjAttrNames(obj):
 ## ###############################################################
 ## WORKING WITH DICTIONARIES
 ## ###############################################################
-def returnDicWithoutKeys(dic, keys):
+def getDictWithoutKeys(dic, keys):
   return {k: v for k, v in dic.items() if k not in keys}
 
 

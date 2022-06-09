@@ -79,7 +79,6 @@ class SpectraObject():
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
       plots_per_eddy    = plots_per_eddy,
-      read_every        = 20, # TODO: only for debugging
       bool_hide_updates = bool_hide_updates
     )
     ## load magnetic energy spectra
@@ -87,7 +86,6 @@ class SpectraObject():
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
       plots_per_eddy    = plots_per_eddy,
-      read_every        = 20,
       bool_hide_updates = bool_hide_updates
     )
     print("\t> Fitting spectra data...")

@@ -875,7 +875,7 @@ def plotDistributionFit(
   ## #######
   if bool_show_label:
     ax.text(
-      **returnDicWithoutKeys(plot_args, ["ls", "bool_box"]),
+      **getDictWithoutKeys(plot_args, ["ls", "bool_box"]),
       s = pre_label + CreateFunctionLabel(
         list_params = list_fit_params,
         func_label  = func_label,
