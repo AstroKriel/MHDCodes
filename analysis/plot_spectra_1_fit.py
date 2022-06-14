@@ -20,7 +20,7 @@ from scipy.optimize import OptimizeWarning
 warnings.simplefilter("ignore", OptimizeWarning)
 
 ## load user defined modules
-from TheUsefulModule import WWArgparse, WWObjs, WWLists, WWFnF, P2Term
+from TheUsefulModule import WWArgparse, WWObjs, WWFnF, P2Term
 from TheLoadingModule import LoadFlashData
 from TheFittingModule import FitMHDScales
 from ThePlottingModule import PlotSpectra
@@ -63,6 +63,7 @@ class SpectraObject():
     self.mag_fit_end_time      = mag_fit_end_time
   def createSpectraFitsObj(
       self,
+      k_turb_end,
       bool_kin_fit_fixed_model = False,
       bool_mag_fit_fixed_model = False,
       bool_kin_fit_sub_y_range = False,
@@ -95,8 +96,8 @@ class SpectraObject():
       list_k_group_t       = list_kin_k_group_t,
       list_power_group_t   = list_kin_power_group_t,
       bool_fit_fixed_model = bool_kin_fit_fixed_model,
-      k_start              = 3, # exclude driving modes
-      k_fit_from           = 7,
+      k_start              = k_turb_end, # exclude driving modes
+      k_break_from         = k_turb_end + 4, # provide enough degrees of freedom
       k_step_size          = 1,
       bool_fit_sub_y_range = bool_kin_fit_sub_y_range,
       num_decades_to_fit   = kin_num_decades_to_fit,
@@ -108,8 +109,8 @@ class SpectraObject():
       list_k_group_t       = list_mag_k_group_t,
       list_power_group_t   = list_mag_power_group_t,
       bool_fit_fixed_model = bool_mag_fit_fixed_model,
-      k_start              = 1,
-      k_fit_from           = 5,
+      k_start              = k_turb_end, # exclude driving modes
+      k_break_from         = k_turb_end + 4, # provide enough degrees of freedom
       k_step_size          = 1,
       bool_hide_updates    = bool_hide_updates
     )
@@ -245,7 +246,7 @@ class SpectraObject():
 
 
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   ## #############################
@@ -277,11 +278,12 @@ def main():
   args_opt.add_argument("-plot_spectra_from",  type=int, default=0, **WWArgparse.opt_arg)
   args_opt.add_argument("-plot_spectra_every", type=int, default=1, **WWArgparse.opt_arg)
   ## simulation information
-  args_opt.add_argument("-sim_suite", type=str,   default=None, **WWArgparse.opt_arg)
-  args_opt.add_argument("-sim_res",   type=int,   default=None, **WWArgparse.opt_arg)
-  args_opt.add_argument("-Re",        type=float, default=None, **WWArgparse.opt_arg)
-  args_opt.add_argument("-Rm",        type=float, default=None, **WWArgparse.opt_arg)
-  args_opt.add_argument("-Pm",        type=float, default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-sim_suite",  type=str,   default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-sim_res",    type=int,   default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-Re",         type=float, default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-Rm",         type=float, default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-Pm",         type=float, default=None, **WWArgparse.opt_arg)
+  args_opt.add_argument("-k_turb_end", type=int,   default=3,    **WWArgparse.opt_arg)
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description="Required processing arguments:")
   args_req.add_argument("-suite_path", type=str, required=True, help="type: %(type)s")
@@ -323,6 +325,7 @@ def main():
   Re                       = args["Re"]
   Rm                       = args["Rm"]
   Pm                       = args["Pm"]
+  k_turb_end               = args["k_turb_end"]
 
   ## ######################
   ## INITIALISING VARIABLES
@@ -376,12 +379,13 @@ def main():
   P2Term.printInfo("Vis. filepath:",  filepath_vis)
   ## print simulation parameters
   if bool_fit_spectra:
-    print("\t> sim suite: {}".format(sim_suite))
-    print("\t> sim label: {}".format(sim_label))
-    print("\t> sim resolution: {}".format(sim_res))
-    print("\t> fit domain (kin): [{}, {}]".format(kin_fit_start_time, kin_fit_end_time))
-    print("\t> fit domain (mag): [{}, {}]".format(mag_fit_start_time, mag_fit_end_time))
-    print("\t> Re: {}, Rm: {}, Pm: {}".format(Re, Rm, Pm))
+    print(f"\t> sim suite: {sim_suite}")
+    print(f"\t> sim label: {sim_label}")
+    print(f"\t> sim resolution: {sim_res}")
+    print(f"\t> fit domain (kin): [{kin_fit_start_time}, {kin_fit_end_time}]")
+    print(f"\t> fit domain (mag): [{mag_fit_start_time}, {mag_fit_end_time}]")
+    print(f"\t> Re: {Re}, Rm: {Rm}, Pm: {Pm}")
+    print(f"\t> k_turb_end: {k_turb_end}")
     print("\t> Fitting with {} kinetic energy spectra model.".format(
       "fixed" if bool_kin_fit_fixed_model else "complete"
     ))
@@ -418,6 +422,7 @@ def main():
   ## read and fit spectra data
   if bool_fit_spectra:
     spec_obj.createSpectraFitsObj(
+      k_turb_end               = k_turb_end,
       bool_kin_fit_fixed_model = bool_kin_fit_fixed_model,
       bool_mag_fit_fixed_model = bool_mag_fit_fixed_model,
       bool_kin_fit_sub_y_range = bool_kin_fit_sub_y_range,

@@ -608,7 +608,7 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
 
 
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 BASEPATH              = "/scratch/ek9/nk7952/"
 SONIC_REGIME          = "super_sonic"
@@ -664,7 +664,7 @@ def main():
         if not os.path.exists(filepath_sim):
           continue
         ## plot simulation data
-        fig_name = suite_folder + "_" + sim_folder + "_" + "check" + FILENAME_TAG + ".png"
+        fig_name = suite_folder + "_" + sim_folder + "_" + "check" + FILENAME_TAG + ".pdf"
         funcPlotSimData(filepath_sim, filepath_figures, fig_name, sim_res)
     ## create an empty line after each suite
     print(" ")

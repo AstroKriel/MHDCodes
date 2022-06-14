@@ -6,36 +6,52 @@
 import os
 import sys
 
-from os import path
+from TheUsefulModule import WWFnF
 
-## load old user defined modules
-from OldModules.the_useful_library import *
+
+## ###############################################################
+## MAIN PROGRAM
+## ###############################################################
+BASEPATH     = "/scratch/ek9/nk7952"
+SONIC_REGIME = "super_sonic"
 
 def main():
-  parser   = MyParser()
-  args_req = parser.add_argument_group(description="Required processing arguments:")
-  args_req.add_argument("-suite_folder", type=str, required=True, nargs="+")
-  args = vars(parser.parse_args())
-  list_suite_folder = args["suite_folder"]
+  ## ##############################
+  ## LOOK AT EACH SIMULATION FOLDER
+  ## ##############################
+  ## loop over the simulation suites
+  for suite_folder in [
+      "Re10", "Re500", "Rm3000"
+    ]: # "Re10", "Re500", "Rm3000", "keta"
 
-  list_sim_res = [
-    "288", "576"
-  ]
-  list_sim_folders = [
-    "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm25", "Pm50", "Pm125", "Pm250"
-  ]
+    ## loop over the different resolution runs
+    for sim_res in [
+        "72", "144", "288"
+      ]: # "18", "36", "72", "144", "288", "576"
 
-  for suite_folder in list_suite_folder:
-    for sim_res in list_sim_res:
-      for sim_folder in list_sim_folders:
-        ## create filepath to simulation folder (on GADI)
-        sim_filepath_data = createFilepath(["/scratch/ek9/nk7952", suite_folder, sim_res, "sub_sonic", sim_folder, "plt"])
+      ## print to the terminal what suite is being looked at
+      str_msg = "Looking at suite: {}, Nres = {}".format( suite_folder, sim_res )
+      print(str_msg)
+      print("=" * len(str_msg))
+
+      ## loop over the simulation folders
+      for sim_folder in [
+          "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
+        ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
+
+        ## ##################################
+        ## CHECK THE SIMULATION FOLDER EXISTS
+        ## ##################################
+        ## create filepath to simulation folder
+        sim_filepath_plt = WWFnF.createFilepath([
+          BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder, "plt"
+        ])
         ## check that the filepath exists
-        if not path.exists(sim_filepath_data):
-          print(sim_filepath_data, "does not exist.")
+        if not os.path.exists(sim_filepath_plt):
+          print(sim_filepath_plt, "does not exist.")
           continue
         ## archive data
-        os.chdir(sim_filepath_data) # change the directory
+        os.chdir(sim_filepath_plt) # change the directory
         os.system("pwd") # check the directory
         os.system("archive.py -i Turb_hdf5_plt_cnt_*") # archive data
       print(" ")

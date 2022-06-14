@@ -26,7 +26,7 @@ BASEPATH_MAC  = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/data/"
 BASEPATH_GADI = "/scratch/ek9/nk7952/"
 FILENAME = "Turb.dat"
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   my_filepath_base = BASEPATH_MAC + SONIC_REGIME

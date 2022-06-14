@@ -10,13 +10,6 @@ import cmasher as cmr # https://cmasher.readthedocs.io/user/introduction.html#co
 import matplotlib as mpl
 import matplotlib.cm as cm
 
-## load old user defined modules
-from the_matplotlib_styler import *
-from OldModules.the_useful_library import *
-from OldModules.the_loading_library import *
-from OldModules.the_fitting_library import *
-from OldModules.the_plotting_library import *
-
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -167,7 +160,7 @@ def funcPlotSlices(filepath_data, filepath_plot):
 
 
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   ## ####################

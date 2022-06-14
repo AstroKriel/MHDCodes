@@ -8,12 +8,6 @@ import argparse
 import numpy as np
 import cmasher as cmr # https://cmasher.readthedocs.io/user/diverging.html
 
-from tqdm import tqdm
-
-## load old user defined modules
-from OldModules.the_useful_library import *
-from OldModules.the_plotting_library import *
-
 
 #################################################################
 ## PREPARE TERMINAL/WORKSPACE/CODE

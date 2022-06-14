@@ -6,9 +6,6 @@
 import os
 import sys
 
-## load old user defined modules
-from OldModules.the_useful_library import *
-
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -154,7 +151,7 @@ def funcWriteForceGen(
 
 
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
     ## define file details

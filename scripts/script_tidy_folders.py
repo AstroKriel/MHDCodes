@@ -10,7 +10,7 @@ from TheUsefulModule import WWFnF
 
 
 ## ###############################################################
-## USER DEFINED FUNCTIONS
+## HELPER FUNCTIONS
 ## ###############################################################
 def funcRemoveFiles(filepath_sim, file_name_starts_with):
   ## get instances of file category
@@ -92,13 +92,15 @@ BASEPATH     = "/scratch/ek9/nk7952/"
 SONIC_REGIME = "super_sonic"
 
 def main():
-  ## ####################
-  ## PROCESS MAIN PROGRAM
-  ## ####################
+  ## ##############################
+  ## LOOK AT EACH SIMULATION FOLDER
+  ## ##############################
+  ## loop over the simulation suites
   for suite_folder in [
       "Re10", "Re500", "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
+    ## loop over the different resolution runs
     for sim_res in [
         "18", "36", "72", "144", "288", "576"
       ]: # "18", "36", "72", "144", "288", "576"
@@ -108,27 +110,26 @@ def main():
       print(str_msg)
       print("=" * len(str_msg))
 
+      ## loop over the simulation folders
       for sim_folder in [
           "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
-        ## ##################################
-        ## CHECK THE SIMULATION FOLDER EXISTS
-        ## ##################################
-        ## create filepath to simulation folder (on GADI)
+        ## #######################################
+        ## CHECK THAT THE SIMULATION FOLDER EXISTS
+        ## #######################################
+        ## check that the simulation filepath exists
         filepath_sim = WWFnF.createFilepath([
           BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder
         ])
-        ## check that the filepath exists
         if not os.path.exists(filepath_sim):
           print(filepath_sim, "does not exist.")
           continue
-        ## indicate which folder is being worked on
-        print("Looking at: " + filepath_sim)
+        print("Looking at:", filepath_sim)
 
-        ## ##################################
-        ## REMOVING UNUSED SIMULATION OUTPUTS
-        ## ##################################
+        ## ################################
+        ## REMOVE UNUSED SIMULATION OUTPUTS
+        ## ################################
         ## remove 'core.flash4_nxb...' files
         funcRemoveFiles(
           filepath_sim,
@@ -145,9 +146,9 @@ def main():
           file_name_starts_with = "Turb_slice"
         )
 
-        ## #############################################
-        ## CREATING NECESSARY SUB-FOLDERS + MOVING FILES
-        ## #############################################
+        ## #########################################
+        ## CREATE SUB-FOLDERS + MOVE FILES INTO THEM
+        ## #########################################
         ## create 'spect' folder if it does not exist
         funcCreateFolderNMoveFiles(
           filepath_sim,
@@ -178,9 +179,9 @@ def main():
             len(list_spect_files_in_plt_folder)
           ))
 
-        ## ##################################
-        ## REMOVE SIMULATION CHECKPOINT FILES
-        ## ##################################
+        ## ######################################
+        ## CULL EXTRA SIMULATION CHECKPOINT FILES
+        ## ######################################
         ## get number of 'chk' files
         list_chk_files = WWFnF.getFilesFromFolder(
           filepath       = filepath_sim,

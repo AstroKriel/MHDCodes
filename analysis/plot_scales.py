@@ -339,7 +339,7 @@ def funcPlotExponent(
 SPECTRA_NAME = "spectra_obj_full.pkl"
 SONIC_REGIME = "super_sonic"
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   ## ####################

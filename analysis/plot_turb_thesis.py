@@ -202,7 +202,7 @@ class PlotEnergyRatio():
 
 
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   PlotEnergyRatio(

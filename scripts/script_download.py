@@ -9,9 +9,6 @@ import matplotlib.pyplot as plt
 
 from os import path
 
-## load old user defined modules
-from OldModules.the_useful_library import *
-
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -44,7 +41,7 @@ def funcCheckSpectraObjNeedsUpdate(mac_filepath_data, spectra_name):
 
 SONIC_REGIME = "super_sonic"
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   my_filepath_base = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/data/" + SONIC_REGIME

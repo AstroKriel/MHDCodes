@@ -13,13 +13,6 @@ import matplotlib.cm as cm
 from matplotlib.collections import LineCollection
 from scipy.interpolate import make_interp_spline
 
-## load old user defined modules
-from the_matplotlib_styler import *
-from OldModules.the_useful_library import *
-from OldModules.the_loading_library import *
-from OldModules.the_fitting_library import *
-from OldModules.the_plotting_library import *
-
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -953,7 +946,7 @@ def funcPrintStats(filepath_data):
 
 
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   ## ####################

@@ -255,7 +255,7 @@ def getPlotsPerEddy(filepath, num_t_turb=100, bool_hide_updates=False):
         print("\t> 'tmax'".ljust(25),                 "=", tmax)
         print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
         print("\t> # plt-files / t_turb".ljust(25),   "=", plots_per_eddy)
-        print("\tAssumed the simulation ran for {} t/t_turb".format(num_t_turb))
+        print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb")
         print(" ")
       return plots_per_eddy
   return None

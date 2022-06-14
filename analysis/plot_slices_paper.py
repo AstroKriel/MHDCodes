@@ -10,12 +10,6 @@ import cmasher as cmr # https://cmasher.readthedocs.io/user/introduction.html#co
 import matplotlib as mpl
 import matplotlib.cm as cm
 
-## load old user defined modules
-from OldModules.the_useful_library import *
-from OldModules.the_loading_library import *
-from OldModules.the_fitting_library import *
-from OldModules.the_plotting_library import *
-
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -204,7 +198,7 @@ def funcAddColorbar(fig, axs, im, title, bool_top=True):
 
 
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   ## define working + plotting directories

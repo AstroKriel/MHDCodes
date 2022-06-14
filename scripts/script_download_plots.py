@@ -9,9 +9,6 @@ import matplotlib.pyplot as plt
 
 from os import path
 
-## load old user defined modules
-from OldModules.the_useful_library import *
-
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -26,7 +23,7 @@ BASEPATH_GADI = "/scratch/ek9/nk7952/"
 SONIC_REGIME  = "super_sonic"
 FILENAME      = "*_check.png"
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   for suite_folder in [

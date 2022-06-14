@@ -19,7 +19,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
     ## something

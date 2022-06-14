@@ -216,7 +216,7 @@ class SpectraModels():
     """
     return (a0_loge) + (3/2) * np.log(x) - a2 * np.array(x)
   def k_p_implicit(x, a1, a2):
-    ''' Implicit peak scale of the magnetic spectra model (Kulsrud and Anderson 1992)
+    ''' Implicit peak scale of the magnetic energy spectra model (Kulsrud and Anderson 1992)
       From: y'= 0
       ->  k_p = p  * k_scale  * K0( (1 / k_scale) * k_p ) / K1( (1 / k_scale) * k_p )
         x   = a1 * 1/a2     * K0(a2 * x)                / K1(a2 * x)
@@ -227,12 +227,12 @@ class SpectraModels():
   ## NUMERICAL DISSIPATION REGIME
   ## ############################
   def tail_linear(x, a0, a1):
-    ''' powerlaw (power spectra decay) in linear-domain
+    ''' powerlaw (energy spectra decay) in linear-domain
       y   = 10^a0 * k^a1
     '''
     return 10**(a0) * np.array(x)**(a1)
   def tail_log10(x_log10, a0, a1):
-    ''' powerlaw (power spectra decay) in log10-domain
+    ''' powerlaw (energy spectra decay) in log10-domain
       log10(y) = a0 + a1 * log10(k)
     '''
     return (a0) + (a1) * np.array(x_log10)
@@ -241,14 +241,15 @@ class SpectraModels():
 ## ###############################################################
 ## ROUTINES FOR FITTING SPECTRA
 ## ###############################################################
-class FitSpectra(metaclass=abc.ABCMeta): # Abstract base class (ABC)
+class FitSpectra(metaclass=abc.ABCMeta): # sbstract base class (ABC)
   def __init__(
       self,
       list_sim_times, list_k_group_t, list_power_group_t,
       func_plot,
       k_start              = 1,
-      k_fit_from           = 5,
+      k_break_from         = 5,
       k_step_size          = 1,
+      k_end                = None,
       bool_fit_sub_y_range = False,
       num_decades_to_fit   = 6,
       bool_hide_updates    = False
@@ -265,16 +266,17 @@ class FitSpectra(metaclass=abc.ABCMeta): # Abstract base class (ABC)
     self.num_decades_to_fit   = num_decades_to_fit
     self.func_plot            = func_plot
     self.k_start              = k_start
-    self.k_fit_from           = k_fit_from
+    self.k_break_from         = k_break_from
     self.k_step_size          = k_step_size
+    self.k_end                = k_end
     ## ############################
     ## INITIALISE OUTPUT PARAMETERS
     ## ############################
-    ## fitted spectra
+    ## initialise fitted spectra
     self.list_fit_k_group_t           = []
     self.list_fit_power_group_t       = []
     self.k_scale_group_t              = [] # fitted dissipation scale
-    ## fit information (for each fitted time realisation)
+    ## initialise fit information (for each fitted time realisation)
     self.list_best_fit_params_group_t = [] # fitted parameters
     self.list_best_fit_std_group_t    = [] # uncertainties in paramater fits
     self.best_fit_k_index_group_t     = [] # max k-mode fitted (break point) for best fits
@@ -297,20 +299,23 @@ class FitSpectra(metaclass=abc.ABCMeta): # Abstract base class (ABC)
     ## extract the spectra data at a particular time point
     data_k     = self.list_k_group_t[time_index]
     data_power = self.list_power_group_t[time_index]
-    ## define a final k-mode to fit to
+    ## define a cutoff k-mode
     if self.bool_fit_sub_y_range:
-      ## find the k-mode where the power spectra is the closest to cutoff y-range
+      ## find the k-mode where the energy spectra is closest to the cutoff energy
       k_end = int(WWLists.getIndexClosestValue(
         np.log10(np.array(data_power)),
         -(self.num_decades_to_fit)
       ))
-    ## fit up to the final k-mode
-    else: k_end = int(data_k[-1])
+    elif self.k_end is None:
+      ## fit up to the final k-mode
+      k_end = int(data_k[-1])
+    ## use the defined cut-off k-mode
+    else: k_end = self.k_end
     ## ###################################
     ## FIT TO AN INCREASING SUBSET OF DATA
     ## ###################################
     ## save the range of k explored when fitting at t/T
-    list_fit_k_range = list(range(self.k_fit_from, k_end, self.k_step_size))
+    list_fit_k_range = list(range(self.k_break_from, k_end, self.k_step_size))
     for k_break in list_fit_k_range:
       ## ###################
       ## SUBSET SPECTRA DATA
@@ -346,12 +351,12 @@ class FitSpectra(metaclass=abc.ABCMeta): # Abstract base class (ABC)
       ]
       ## evaluate fitted spectra (to all points)
       fitted_power = np.array(
-        ## spectra curve
+        ## model part of spectrum
         list(self.func_plot(
           data_k[self.k_start : k_break],
           *list_fit_params_curve
         )) + 
-        ## spectra tail
+        ## dissipation part of the spectrum
         list(SpectraModels.tail_linear(
           data_k[k_break : k_end],
           *list_fit_params_tail
@@ -462,8 +467,9 @@ class FitKinSpectra(FitSpectra):
       list_sim_times, list_k_group_t, list_power_group_t,
       bool_fit_fixed_model = False,
       k_start              = 1,
-      k_fit_from           = 5,
+      k_break_from         = 5,
       k_step_size          = 1,
+      k_end                = None,
       bool_fit_sub_y_range = False,
       num_decades_to_fit   = 6,
       bool_hide_updates    = False
@@ -495,8 +501,9 @@ class FitKinSpectra(FitSpectra):
       list_power_group_t   = list_power_group_t,
       func_plot            = SpectraModels.kinetic_linear, # complete kinetic spectra model
       k_start              = k_start,
-      k_fit_from           = k_fit_from,
+      k_break_from         = k_break_from,
       k_step_size          = k_step_size,
+      k_end                = k_end,
       bool_fit_sub_y_range = bool_fit_sub_y_range,
       num_decades_to_fit   = num_decades_to_fit,
       bool_hide_updates    = bool_hide_updates
@@ -551,8 +558,9 @@ class FitMagSpectra(FitSpectra):
       list_sim_times, list_k_group_t, list_power_group_t,
       bool_fit_fixed_model = False,
       k_start              = 1,
-      k_fit_from           = 5,
+      k_break_from         = 5,
       k_step_size          = 1,
+      k_end                = None,
       bool_hide_updates    = False
     ):
     self.k_p_group_t   = [] # fitted peak scale
@@ -585,8 +593,9 @@ class FitMagSpectra(FitSpectra):
       list_power_group_t   = list_power_group_t,
       func_plot            = SpectraModels.magnetic_linear,
       k_start              = k_start,
-      k_fit_from           = k_fit_from,
+      k_break_from         = k_break_from,
       k_step_size          = k_step_size,
+      k_end                = k_end,
       bool_hide_updates    = bool_hide_updates
     )
   def fitSubsettedSpectra(

@@ -12,12 +12,6 @@ from matplotlib.collections import LineCollection
 from scipy.interpolate import make_interp_spline
 from scipy.optimize import curve_fit
 
-## load new user defined modules
-from ThePlottingModule import TheMatplotlibStyler
-from OldModules.the_useful_library import *
-from OldModules.the_fitting_library import *
-from OldModules.the_plotting_library import *
-
 
 #################################################################
 ## PREPARE TERMINAL/WORKSPACE/CODE
@@ -450,7 +444,7 @@ def funcMeasureGrowth(
 
 
 ## ###############################################################
-## DEFINE MAIN PROGRAM
+## MAIN PROGRAM
 ## ###############################################################
 def main():
   ## ############################
