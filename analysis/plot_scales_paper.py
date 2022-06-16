@@ -45,7 +45,7 @@ def funcLoadData_sim(
     bool_hide_updates = True
   )
   ## check that a time range has been defined to collect statistics about
-  sim_times = getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+  sim_times = getCommonElements(spectra_obj.kin_list_sim_times, spectra_obj.mag_list_sim_times)
   bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
   bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
   if not(bool_kin_fit) or not(bool_mag_fit):
@@ -1228,7 +1228,7 @@ class PlotSpectraAndScales():
       axs, spectra_obj, list_colors
     ):
     ## check that a time range has been defined to collect statistics about
-    sim_times = getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+    sim_times = getCommonElements(spectra_obj.kin_list_sim_times, spectra_obj.mag_list_sim_times)
     bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
     bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
     if not(bool_kin_fit) or not(bool_mag_fit):
@@ -1489,7 +1489,7 @@ class PlotSpectraAndScalesResiduals():
       axs, spectra_obj, list_colors
     ):
     ## check that a time range has been defined to collect statistics about
-    sim_times = getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+    sim_times = getCommonElements(spectra_obj.kin_list_sim_times, spectra_obj.mag_list_sim_times)
     bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
     bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
     if not(bool_kin_fit) or not(bool_mag_fit):
@@ -1789,7 +1789,7 @@ class PlotScaleConvergence():
         SPECTRA_NAME
       )
       ## check that a time range has been defined to collect statistics about
-      sim_times = getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+      sim_times = getCommonElements(spectra_obj.kin_list_sim_times, spectra_obj.mag_list_sim_times)
       bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
       bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
       if not(bool_kin_fit) or not(bool_mag_fit):

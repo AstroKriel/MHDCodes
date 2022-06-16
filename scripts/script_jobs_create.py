@@ -17,7 +17,6 @@ from TheUsefulModule import WWFnF
 def funcPrepSimulation(
     filepath_home, filepath_sim,
     suite_folder, sim_res, sim_folder,
-    num_blocks,
     Re = None,
     Rm = None,
     Pm = None
@@ -48,11 +47,7 @@ def funcPrepSimulation(
   # ## COPY SETUP FILES TO SIMULATION FOLDER
   # ## #####################################
   ## copy flash4 executable from the home directory
-  filename_flash4 = "flash4_nxb{}_nyb{}_nzb{}_2.0".format(
-    num_blocks[0],
-    num_blocks[1],
-    num_blocks[2]
-  )
+  filename_flash4 = f"flash4_nxb{NUM_BLOCKS[0]}_nyb{NUM_BLOCKS[1]}_nzb{NUM_BLOCKS[2]}_2.0"
   funcCopy(
     directory_from = filepath_home,
     directory_to   = filepath_sim,
@@ -86,8 +81,7 @@ def funcPrepSimulation(
   max_hours, iprocs, jprocs, kprocs = funcCreateSimJob(
     filepath_sim,
     suite_folder, sim_res, sim_folder,
-    filename_flash4,
-    num_blocks
+    filename_flash4
   )
   ## #######################################
   ## WRITE FLASH.PAR WITH DESIRED PARAMETERS
@@ -103,15 +97,14 @@ def funcPrepSimulation(
 def funcCreateSimJob(
     filepath_sim,
     suite_folder, sim_res, sim_folder,
-    filename_flash4,
-    num_blocks
+    filename_flash4
   ):
   ## define job details
   job_name     = "job_run_sim.sh"
   filepath_job = filepath_sim + "/" + job_name
   job_tagname  = suite_folder + sim_folder + "sim" + sim_res
   ## number of processors required to run simulation with block setup [36, 36, 48] at a given linear resolution
-  nxb, nyb, nzb = num_blocks
+  nxb, nyb, nzb = NUM_BLOCKS
   iprocs   = int(sim_res) // nxb
   jprocs   = int(sim_res) // nyb
   kprocs   = int(sim_res) // nzb
@@ -233,9 +226,9 @@ def funcCopy(directory_from, directory_to, filename):
     directory_from + "/" + filename,
     directory_to   + "/" + filename
   )
-  print("\t> Successfully coppied: {}".format( filename ))
-  print("\t\t From: {}".format( directory_from ))
-  print("\t\t To: {}".format( directory_to ))
+  print(f"\t> Successfully coppied: {filename}")
+  print(f"\t\t From: {directory_from}")
+  print(f"\t\t To: {directory_to}")
 
 
 ## ###############################################################
@@ -278,10 +271,78 @@ def funcCreateCalcSpectraJob(
       num_cpus
     ))
   ## print to terminal that job file has been created
-  print("\t> Created job '{}' to run '{}'".format(
-    job_name,
-    program_name
-  ))
+  print(f"\t> Created job '{job_name}' to run '{program_name}'")
+
+
+## ###############################################################
+## CREATE JOB: PLOT SPECTRA DATA
+## ###############################################################
+class PrepPlotSpectra():
+  def __init__(
+      self,
+      filepath_scratch,
+      filepath_sim,
+      suite_folder,
+      sim_res,
+      sim_folder
+    ):
+    ## check simulation sub-folders exist
+    self.filepath_sim     = filepath_sim
+    self.filepath_plt     = self.filepath_sim + "/plt"
+    self.filepath_spect   = self.filepath_sim + "/spect"
+    if not os.path.exists(self.filepath_plt):
+      print(self.filepath_plt, "does not exist.")
+      return
+    if not os.path.exists(self.filepath_spect):
+      print(self.filepath_spect, "does not exist.")
+      return
+    ## store provided information
+    self.filepath_scratch = filepath_scratch
+    self.suite_folder     = suite_folder
+    self.sim_res          = sim_res
+    self.sim_folder       = sim_folder
+    self.filepath_suite   = WWFnF.createFilepath([
+      self.filepath_scratch,
+      self.suite_folder,
+      self.sim_res,
+      SONIC_REGIME
+    ])
+  def createJob(self):
+    program_name   = "plot_spectra.py"
+    job_name       = "job_plot_spect.sh"
+    job_tagname    = "{}{}{}plot{}".format(
+      SONIC_REGIME.split("_")[0],
+      self.suite_folder,
+      self.sim_folder,
+      self.sim_res
+    )
+    max_hours      = int(3)
+    num_cpus       = int(1)
+    max_mem        = int(4 * num_cpus)
+    ## create job file
+    filepath_job = self.filepath_spect + "/" + job_name
+    with open(filepath_job, "w") as job_file:
+      ## write contents
+      job_file.write("#!/bin/bash\n")
+      job_file.write("#PBS -P ek9\n")
+      job_file.write("#PBS -q normal\n")
+      job_file.write(f"#PBS -l walltime={max_hours}:00:00\n")
+      job_file.write(f"#PBS -l ncpus={num_cpus}\n")
+      job_file.write(f"#PBS -l mem={max_mem}GB\n")
+      job_file.write("#PBS -l storage=scratch/ek9+gdata/ek9\n")
+      job_file.write("#PBS -l wd\n")
+      job_file.write(f"#PBS -N {job_tagname}\n")
+      job_file.write("#PBS -j oe\n")
+      job_file.write("#PBS -m bea\n")
+      job_file.write(f"#PBS -M {EMAIL_ADDRESS}\n")
+      job_file.write("\n")
+      job_file.write("{} -suite_path {} -sim_folder {} 1>shell_plot.out00 2>&1\n".format(
+        program_name,        # fitting program
+        self.filepath_suite, # path to simulation suite
+        self.sim_folder,     # simulation name
+      ))
+    ## print to terminal that job file has been created
+    print(f"\t> Created job '{job_name}' to run '{program_name}'")
 
 
 ## ###############################################################
@@ -352,22 +413,26 @@ class PrepFitSpectra():
       "eta"  if (eta is None) else ""
     ))
   def createJob(self):
-    program_name   = "plot_spectra_1_fit.py"
+    program_name = "plot_spectra_1_fit.py"
     if BOOL_FIT_FIXED:
-      job_name     = "job_fit_spect_fixed.sh"
-    else: job_name = "job_fit_spect.sh"
-    job_tagname    = "{}{}{}fit{}".format(
+      job_name   = "job_fit_spect_fixed.sh"
+      str_tag    = "fitFixed"
+    else:
+      job_name   = "job_fit_spect_full.sh"
+      str_tag    = "fitFull"
+    job_tagname  = "{}{}{}{}{}".format(
       SONIC_REGIME.split("_")[0],
       self.suite_folder,
       self.sim_folder,
+      str_tag,
       self.sim_res
     )
     max_hours      = int(8)
     num_cpus       = int(2)
     max_mem        = int(4 * num_cpus)
-    str_fit_args   = "-f -p"
-    str_fit_args   += " -k_turb_end {}".format(K_TURB + K_TURB_WIDTH)
-    str_fit_args   += " -kin_fit_sub_y_range -kin_num_decades_to_fit {}".format(6)
+    str_fit_args   = f" -k_turb_end {K_TURB+K_TURB_WIDTH}"
+    str_fit_args   += " -kin_fit_sub_y_range -kin_num_decades_to_fit 6"
+    str_fit_args   += " -f -p"
     if BOOL_FIT_FIXED:
       str_fit_args += " -kin_fit_fixed -mag_fit_fixed"
     ## create job file
@@ -398,84 +463,7 @@ class PrepFitSpectra():
         str_fit_args                # extra arguments
       ))
     ## print to terminal that job file has been created
-    print("\t> Created job '{}' to run '{}'".format(
-      job_name,
-      program_name
-    ))
-
-
-## ###############################################################
-## CREATE JOB: PLOT SPECTRA
-## ###############################################################
-class PrepPlotSpectra():
-  def __init__(
-      self,
-      filepath_scratch,
-      filepath_sim,
-      suite_folder,
-      sim_res,
-      sim_folder
-    ):
-    ## check simulation sub-folders exist
-    self.filepath_sim     = filepath_sim
-    self.filepath_plt     = self.filepath_sim + "/plt"
-    self.filepath_spect   = self.filepath_sim + "/spect"
-    if not os.path.exists(self.filepath_plt):
-      print(self.filepath_plt, "does not exist.")
-      return
-    if not os.path.exists(self.filepath_spect):
-      print(self.filepath_spect, "does not exist.")
-      return
-    ## store provided information
-    self.filepath_scratch = filepath_scratch
-    self.suite_folder     = suite_folder
-    self.sim_res          = sim_res
-    self.sim_folder       = sim_folder
-    self.filepath_suite   = WWFnF.createFilepath([
-      self.filepath_scratch,
-      self.suite_folder,
-      self.sim_res,
-      SONIC_REGIME
-    ])
-  def createJob(self):
-    program_name   = "plot_spectra.py"
-    job_name       = "job_plot_spect.sh"
-    job_tagname    = "{}{}{}plot{}".format(
-      SONIC_REGIME.split("_")[0],
-      self.suite_folder,
-      self.sim_folder,
-      self.sim_res
-    )
-    max_hours      = int(3)
-    num_cpus       = int(1)
-    max_mem        = int(4 * num_cpus)
-    ## create job file
-    filepath_job = self.filepath_spect + "/" + job_name
-    with open(filepath_job, "w") as job_file:
-      ## write contents
-      job_file.write("#!/bin/bash\n")
-      job_file.write("#PBS -P ek9\n")
-      job_file.write("#PBS -q normal\n")
-      job_file.write(f"#PBS -l walltime={max_hours}:00:00\n")
-      job_file.write(f"#PBS -l ncpus={num_cpus}\n")
-      job_file.write(f"#PBS -l mem={max_mem}GB\n")
-      job_file.write("#PBS -l storage=scratch/ek9+gdata/ek9\n")
-      job_file.write("#PBS -l wd\n")
-      job_file.write(f"#PBS -N {job_tagname}\n")
-      job_file.write("#PBS -j oe\n")
-      job_file.write("#PBS -m bea\n")
-      job_file.write(f"#PBS -M {EMAIL_ADDRESS}\n")
-      job_file.write("\n")
-      job_file.write("{} -suite_path {} -sim_folder {} 1>shell_plot.out00 2>&1\n".format(
-        program_name,        # fitting program
-        self.filepath_suite, # path to simulation suite
-        self.sim_folder,     # simulation name
-      ))
-    ## print to terminal that job file has been created
-    print("\t> Created job '{}' to run '{}'".format(
-      job_name,
-      program_name
-    ))
+    print(f"\t> Created job '{job_name}' to run '{program_name}'")
 
 
 ## ###############################################################
@@ -488,7 +476,9 @@ BOOL_CALC_SPECTRA  = 0
 BOOL_PLOT_SPECTRA  = 0
 BOOL_FIT_SPECTRA   = 1
 BOOL_FIT_FIXED     = 0
-NUM_BLOCKS         = [ 36, 36, 48 ]
+NUM_BLOCKS         = [ 36, 36, 48 ] # Nres = 144, 288
+# NUM_BLOCKS         = [ 12, 12, 18 ] # Nres = 36, 72
+# NUM_BLOCKS         = [ 6,  6,  6  ] # Nres = 18
 SONIC_REGIME       = "super_sonic"
 MACH               = 5.0
 K_TURB             = 2
@@ -500,12 +490,12 @@ def main():
   ## ##############################
   ## loop over the simulation suites
   for suite_folder in [
-      "Rm3000"
+      "Re10", "Re500", "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
     ## loop over the different resolution runs
     for sim_res in [
-        "144"
+        "18", "36", "72", "144", "288"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## print to the terminal what suite is being looked at
@@ -542,7 +532,6 @@ def main():
             suite_folder  = suite_folder,
             sim_res       = sim_res,
             sim_folder    = sim_folder,
-            num_blocks    = NUM_BLOCKS,
             Re = float(
               suite_folder.replace("Re", "")
             ) if "Re" in suite_folder else None,

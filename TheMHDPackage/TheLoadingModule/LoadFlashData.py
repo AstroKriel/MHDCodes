@@ -51,10 +51,10 @@ def reformatFLASHField(field, num_blocks, num_procs):
 
 def loadFLASHFieldSlice(
     filepath_data,
-    num_blocks = [36, 36, 48],
-    num_procs  = [8, 8, 6],
-    str_field  = "mag",
-    bool_rms_norm = False,
+    num_blocks      = [ 36, 36, 48 ],
+    num_procs       = [ 8,  8,  6  ],
+    str_field       = "mag",
+    bool_rms_norm   = False,
     bool_print_info = False
   ):
   ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
@@ -79,12 +79,12 @@ def loadFLASHFieldSlice(
 
 def loadListFLASHFieldSlice(
     filepath_data,
-    file_start_index = 2,
-    file_end_index   = np.inf,
-    num_blocks = [36, 36, 48],
-    num_procs  = [8, 8, 6],
-    str_field  = "mag",
-    bool_rms_norm = False,
+    file_start_index  = 2,
+    file_end_index    = np.inf,
+    num_blocks        = [ 36, 36, 48 ],
+    num_procs         = [ 8,  8,  6  ],
+    str_field         = "mag",
+    bool_rms_norm     = False,
     bool_hide_updates = False
   ):
   ## initialise list of cube data
@@ -123,9 +123,9 @@ def loadListFLASHFieldSlice(
 
 def loadFLASH3DField(
     filepath_data,
-    num_blocks = [36, 36, 48],
-    num_procs  = [8, 8, 6],
-    str_field  = "mag",
+    num_blocks      = [ 36, 36, 48 ],
+    num_procs       = [ 8,  8,  6  ],
+    str_field       = "mag",
     bool_print_info = False
   ):
   flash_file = h5py.File(filepath_data, "r") # open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
@@ -199,7 +199,7 @@ def loadFLASHFieldDataList(
 def loadTurbData(
     filepath_data,
     var_y,
-    t_turb, # ell_turb / (c_s Mach)
+    t_turb, # ell_turb / (c_s * Mach)
     time_start = 1,
     time_end   = np.inf
   ):

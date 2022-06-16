@@ -21,8 +21,8 @@ DATA_SUBFOLDER = "spect"
 # JOB_NAME       = "job_run_sim.sh"
 # JOB_NAME       = "job_calc_spect.sh"
 # JOB_NAME       = "job_plot_spect.sh"
-JOB_NAME       = "job_fit_spect.sh"
-# JOB_NAME       = "job_fit_spect_fixed.sh"
+# JOB_NAME       = "job_fit_spect_full.sh"
+JOB_NAME       = "job_fit_spect_fixed.sh"
 
 def main():
   ## ##############################
@@ -35,7 +35,7 @@ def main():
 
     ## loop over the different resolution runs
     for sim_res in [
-        "72", "144", "288"
+        "18", "36", "72", "144", "288"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## print to the terminal what suite is being looked at

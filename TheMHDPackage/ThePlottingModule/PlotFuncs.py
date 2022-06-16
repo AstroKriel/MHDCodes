@@ -32,10 +32,9 @@ def aniEvolution(
     filepath_frames,
     filepath_ani_movie,
     input_name,
-    output_name,
-    bool_hide_updates = False
+    output_name
   ):
-  ''' Animate the plot frames.
+  ''' Animate plot frames into .mp4 video.
   '''
   ## create filepath to where plots are saved
   filepath_input = WWFnF.createFilepath([
@@ -48,15 +47,9 @@ def aniEvolution(
     output_name
   ])
   ## animate the plot-frames
-  os.system(
-    "ffmpeg -y -start_number 0 -i {} {} -vb 40M -framerate 40 -vf scale=1440:-1 -vcodec mpeg4 {}".format(
-      filepath_input,
-      "" if not(bool_hide_updates) else " -loglevel quiet",
-      filepath_output
-  ))
-  if not(bool_hide_updates):
-    print("Saved animation:", filepath_output)
-    print(" ")
+  os.system(f"ffmpeg -y -start_number 0 -i {filepath_input} -loglevel quiet -vb 40M -framerate 40 -vf scale=1440:-1 -vcodec mpeg4 {filepath_output}")
+  print("Saved animation:", filepath_output)
+  print(" ")
 
 
 ## ###############################################################

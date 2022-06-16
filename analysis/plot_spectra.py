@@ -58,8 +58,8 @@ def main():
   ## PREPARING DIRECTORIES
   ## #####################
   ## filepath to where spectra data is stored
-  filepath_sim   = WWFnF.createFilepath([filepath_suite, folder_sim])
-  filepath_spect = WWFnF.createFilepath([filepath_sim, folder_data])
+  filepath_sim        = WWFnF.createFilepath([filepath_suite, folder_sim])
+  filepath_spect      = WWFnF.createFilepath([filepath_sim, folder_data])
   ## filepath to where visualisations will be saved
   sub_folder_vis      = "plotSpectraData"
   filepath_vis        = WWFnF.createFilepath([filepath_suite, folder_vis])
@@ -90,22 +90,22 @@ def main():
   ## LOAD AND PLOT SPECTRA DATA
   ## ##########################
   print("Loading kinetic energy spectra...")
-  kin_k, kin_power, kin_sim_times = LoadFlashData.loadListSpectra(
+  kin_k, kin_power, kin_list_sim_times = LoadFlashData.loadListSpectra(
     filepath_data     = filepath_spect,
     str_spectra_type  = "vel",
     plots_per_eddy    = plots_per_eddy,
     bool_hide_updates = bool_hide_updates
   )
   print("Loading magnetic energy spectra...")
-  mag_k, mag_power, mag_sim_times = LoadFlashData.loadListSpectra(
+  mag_k, mag_power, mag_list_sim_times = LoadFlashData.loadListSpectra(
     filepath_data     = filepath_spect,
     str_spectra_type  = "mag",
     plots_per_eddy    = plots_per_eddy,
     bool_hide_updates = bool_hide_updates
   )
   sim_times = WWLists.getCommonElements(
-    kin_sim_times,
-    mag_sim_times
+    kin_list_sim_times,
+    mag_list_sim_times
   )
   ## initialise plot object
   plot_obj = PlotSpectra.PlotSpectra(
@@ -121,7 +121,7 @@ def main():
   ## plot spectra data
   print("Plotting energy spectra...")
   plot_obj.plotSpectra(bool_hide_updates)
-  plot_obj.aniSpectra(bool_hide_updates)
+  plot_obj.aniSpectra()
   print(" ")
 
 

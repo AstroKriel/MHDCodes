@@ -234,10 +234,10 @@ class PlotSpectraConvergence():
       if not(bool_kin_fit) or not(bool_mag_fit):
         raise Exception("Fit range has not been defined.")
       ## find indices corresponding with the fit-range bounds
-      kin_index_start = WWLists.getIndexClosestValue(spectra_fits_obj.kin_sim_times, spectra_fits_obj.kin_fit_start_t)
-      mag_index_start = WWLists.getIndexClosestValue(spectra_fits_obj.mag_sim_times, spectra_fits_obj.mag_fit_start_t)
-      kin_index_end   = WWLists.getIndexClosestValue(spectra_fits_obj.kin_sim_times, spectra_fits_obj.kin_fit_end_t)
-      mag_index_end   = WWLists.getIndexClosestValue(spectra_fits_obj.mag_sim_times, spectra_fits_obj.mag_fit_end_t)
+      kin_index_start = WWLists.getIndexClosestValue(spectra_fits_obj.kin_list_sim_times, spectra_fits_obj.kin_fit_start_t)
+      mag_index_start = WWLists.getIndexClosestValue(spectra_fits_obj.mag_list_sim_times, spectra_fits_obj.mag_fit_start_t)
+      kin_index_end   = WWLists.getIndexClosestValue(spectra_fits_obj.kin_list_sim_times, spectra_fits_obj.kin_fit_end_t)
+      mag_index_end   = WWLists.getIndexClosestValue(spectra_fits_obj.mag_list_sim_times, spectra_fits_obj.mag_fit_end_t)
       ## save measured scales in fit time-range
       self.list_k_nu_group_res.append(
         spectra_fits_obj.k_nu_group_t[kin_index_start  : kin_index_end]

@@ -44,7 +44,8 @@ class SpectraObject():
       sim_suite, sim_label, sim_res,
       Re, Rm, Pm,
       kin_fit_start_time, kin_fit_end_time,
-      mag_fit_start_time, mag_fit_end_time
+      mag_fit_start_time, mag_fit_end_time,
+      bool_debug
     ):
     ## where the simulation spectra data is stored
     self.filepath_data         = filepath_data
@@ -61,6 +62,8 @@ class SpectraObject():
     self.mag_fit_start_time    = mag_fit_start_time
     self.kin_fit_end_time      = kin_fit_end_time
     self.mag_fit_end_time      = mag_fit_end_time
+    ## debug status
+    self.bool_debug            = bool_debug
   def createSpectraFitsObj(
       self,
       k_turb_end,
@@ -74,29 +77,32 @@ class SpectraObject():
     plots_per_eddy = LoadFlashData.getPlotsPerEddy(self.filepath_data + "/../", bool_hide_updates=False)
     if plots_per_eddy is None:
       raise Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
-    print("\t> Loading spectra data...")
+    print("Loading spectra data...")
     ## load kinetic energy spectra
-    list_kin_k_group_t, list_kin_power_group_t, list_kin_sim_times = LoadFlashData.loadListSpectra(
+    list_kin_k_group_t, list_kin_power_group_t, list_kin_list_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
+      read_every        = 25 if self.bool_debug else 1,
       plots_per_eddy    = plots_per_eddy,
       bool_hide_updates = bool_hide_updates
     )
     ## load magnetic energy spectra
-    list_mag_k_group_t, list_mag_power_group_t, list_mag_sim_times = LoadFlashData.loadListSpectra(
+    list_mag_k_group_t, list_mag_power_group_t, list_mag_list_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
+      read_every        = 25 if self.bool_debug else 1,
       plots_per_eddy    = plots_per_eddy,
       bool_hide_updates = bool_hide_updates
     )
-    print("\t> Fitting spectra data...")
+    print(" ")
+    print("Fitting spectra data...")
     ## fit kinetic energy spectra
     kin_fit_obj = FitMHDScales.FitKinSpectra(
-      list_sim_times       = list_kin_sim_times,
+      list_sim_times       = list_kin_list_sim_times,
       list_k_group_t       = list_kin_k_group_t,
       list_power_group_t   = list_kin_power_group_t,
       bool_fit_fixed_model = bool_kin_fit_fixed_model,
-      k_start              = k_turb_end, # exclude driving modes
+      k_start              = k_turb_end,     # exclude driving modes
       k_break_from         = k_turb_end + 4, # provide enough degrees of freedom
       k_step_size          = 1,
       bool_fit_sub_y_range = bool_kin_fit_sub_y_range,
@@ -105,12 +111,12 @@ class SpectraObject():
     )
     ## fit magnetic energy spectra
     mag_fit_obj = FitMHDScales.FitMagSpectra(
-      list_sim_times       = list_mag_sim_times,
+      list_sim_times       = list_mag_list_sim_times,
       list_k_group_t       = list_mag_k_group_t,
       list_power_group_t   = list_mag_power_group_t,
       bool_fit_fixed_model = bool_mag_fit_fixed_model,
-      k_start              = k_turb_end, # exclude driving modes
-      k_break_from         = k_turb_end + 4, # provide enough degrees of freedom
+      k_start              = 1,
+      k_break_from         = 4,
       k_step_size          = 1,
       bool_hide_updates    = bool_hide_updates
     )
@@ -119,16 +125,16 @@ class SpectraObject():
     mag_fit_dict = mag_fit_obj.getFitDict()
     ## store siulation parameters in a dictionary
     sim_fit_dict = {
-      "sim_suite":self.sim_suite,
-      "sim_label":self.sim_label,
-      "sim_res":self.sim_res,
-      "Re":self.Re,
-      "Rm":self.Rm,
-      "Pm":self.Pm,
-      "kin_fit_start_t":self.kin_fit_start_time,
-      "mag_fit_start_t":self.mag_fit_start_time,
-      "kin_fit_end_t":self.kin_fit_end_time,
-      "mag_fit_end_t":self.mag_fit_end_time
+      "sim_suite":       self.sim_suite,
+      "sim_label":       self.sim_label,
+      "sim_res":         self.sim_res,
+      "Re":              self.Re,
+      "Rm":              self.Rm,
+      "Pm":              self.Pm,
+      "kin_fit_start_t": self.kin_fit_start_time,
+      "mag_fit_start_t": self.mag_fit_start_time,
+      "kin_fit_end_t":   self.kin_fit_end_time,
+      "mag_fit_end_t":   self.mag_fit_end_time
     }
     ## create spectra-object
     self.spectra_fits_obj = FitMHDScales.SpectraFit(
@@ -226,22 +232,49 @@ class SpectraObject():
       plot_spectra_every = 1,
       bool_hide_updates  = False
     ):
+    print("Plotting energy spectra...")
     ## create plotting object looking at simulation fit
     spectra_plot_obj = PlotSpectra.PlotSpectraFit(self.spectra_fits_obj)
-    ## plot spectra evolution
+    ## remove old frames
+    list_filenames_to_delete = WWFnF.getFilesFromFolder(
+      filepath     = filepath_vis_frames, 
+      str_contains = self.spectra_fits_obj.sim_label
+    )
+    if len(list_filenames_to_delete) > 0:
+      print("\t> Removing old spectra frames...")
+      for filename in list_filenames_to_delete:
+        os.system(f"rm {filepath_vis_frames}/{filename}")
+    ## plot both energy spectra
+    print("\t> Plotting kinetic and magnetic energy spectra...")
     spectra_plot_obj.plotSpectraEvolution(
       filepath_plot          = filepath_vis_frames,
       plot_index_start       = plot_spectra_from,
       plot_index_step        = plot_spectra_every,
-      bool_delete_old_frames = True,
+      bool_plot_kin          = True,
+      bool_plot_mag          = True,
+      bool_adjust_y_axis     = True,
       bool_hide_updates      = bool_hide_updates
     )
-    print(" ")
-    ## animate spectra evolution
+    ## animate energy spectra
     spectra_plot_obj.aniSpectra(
       filepath_frames    = filepath_vis_frames,
-      filepath_ani_movie = filepath_vis,
-      bool_hide_updates  = bool_hide_updates
+      filepath_ani_movie = filepath_vis
+    )
+    ## plot magnetic energy spectra only
+    print("\t> Plotting magnetic energy spectra only...")
+    spectra_plot_obj.plotSpectraEvolution(
+      filepath_plot          = filepath_vis_frames,
+      plot_index_start       = plot_spectra_from,
+      plot_index_step        = plot_spectra_every,
+      bool_plot_kin          = False,
+      bool_plot_mag          = True,
+      bool_adjust_y_axis     = False,
+      bool_hide_updates      = bool_hide_updates
+    )
+    ## animate magnetic energy spectra
+    spectra_plot_obj.aniSpectra(
+      filepath_frames    = filepath_vis_frames,
+      filepath_ani_movie = filepath_vis
     )
 
 
@@ -257,6 +290,7 @@ def main():
   args_opt = parser.add_argument_group(description="Optional processing arguments:")
   ## program workflow parameters
   args_opt.add_argument("-v", "--verbose",        **WWArgparse.opt_bool_arg)
+  args_opt.add_argument("-d", "--debug",          **WWArgparse.opt_bool_arg)
   args_opt.add_argument("-s", "--show_obj_attrs", **WWArgparse.opt_bool_arg)
   args_opt.add_argument("-f", "--fit_spectra",    **WWArgparse.opt_bool_arg)
   args_opt.add_argument("-p", "--plot_spectra",   **WWArgparse.opt_bool_arg)
@@ -297,6 +331,7 @@ def main():
   ## ---------------------------- SAVE PARAMETERS
   ## (boolean) workflow parameters
   bool_hide_updates        = not(args["verbose"])
+  bool_debug               = args["debug"]
   bool_show_obj_attrs      = args["show_obj_attrs"]
   bool_fit_spectra         = args["fit_spectra"]
   bool_plot_spectra        = args["plot_spectra"]
@@ -417,7 +452,8 @@ def main():
     kin_fit_start_time    = kin_fit_start_time,
     mag_fit_start_time    = mag_fit_start_time,
     kin_fit_end_time      = kin_fit_end_time,
-    mag_fit_end_time      = mag_fit_end_time
+    mag_fit_end_time      = mag_fit_end_time,
+    bool_debug            = bool_debug
   )
   ## read and fit spectra data
   if bool_fit_spectra:

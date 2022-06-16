@@ -315,13 +315,13 @@ class PlotSpectraFitParams():
     ## store dictionary data in spectra-fit object
     self.spectra_fits_obj = FitMHDScales.SpectraFit(**spectra_fits_dict)
     ## load fitted parameters
-    self.list_kin_sim_times    = self.spectra_fits_obj.kin_sim_times
-    self.list_mag_sim_times    = self.spectra_fits_obj.mag_sim_times
-    self.kin_num_points_fitted = self.spectra_fits_obj.kin_fit_k_index_group_t
-    self.mag_num_points_fitted = self.spectra_fits_obj.mag_fit_k_index_group_t
+    self.list_kin_list_sim_times = self.spectra_fits_obj.kin_list_sim_times
+    self.list_mag_list_sim_times = self.spectra_fits_obj.mag_list_sim_times
+    self.kin_max_k_mode_fitted   = self.spectra_fits_obj.kin_max_k_mode_fitted_group_t
+    self.mag_max_k_mode_fitted   = self.spectra_fits_obj.mag_max_k_mode_fitted_group_t
     ## check that there is sufficient time-realisations
-    self.bool_kin_spectra_fitted = len(self.list_kin_sim_times) > 0
-    self.bool_mag_spectra_fitted = len(self.list_mag_sim_times) > 0
+    self.bool_kin_spectra_fitted = len(self.list_kin_list_sim_times) > 0
+    self.bool_mag_spectra_fitted = len(self.list_mag_list_sim_times) > 0
     self.bool_plot_fit_params = self.bool_kin_spectra_fitted or self.bool_mag_spectra_fitted
     if self.bool_plot_fit_params:
       ## load kinetic energy spectra fit paramaters
@@ -346,29 +346,33 @@ class PlotSpectraFitParams():
       self.max_k_mode = 1.2 * max(k_modes)
   def plotParams(self):
     ## plot normalised and time averaged energy spectra
-    PlotSpectra.PlotAveSpectra(self.ax_spectra, self.spectra_fits_obj, [self.time_exp_start, self.time_exp_end])
+    PlotSpectra.PlotAveSpectra(
+      ax               = self.ax_spectra,
+      spectra_fits_obj = self.spectra_fits_obj,
+      time_range       = [ self.time_exp_start, self.time_exp_end ]
+    )
     self.ax_spectra.set_ylim([ 10**(-8), 3*10**(0) ])
     if self.bool_plot_fit_params:
       ## #############################
       ## PLOT NUMBER OF K-MODES FITTED
       ## #############################
       if self.bool_kin_spectra_fitted:
-        max_sim_time = max(self.list_kin_sim_times)
+        max_sim_time = max(self.list_kin_list_sim_times)
         ## plot number of k-modes the kinetic energy spectrum was fitted to
         self.__plotParam(
           ax     = self.axs_params[0],
-          data_x = self.list_kin_sim_times,
-          data_y = self.kin_num_points_fitted,
+          data_x = self.list_kin_list_sim_times,
+          data_y = self.kin_max_k_mode_fitted,
           label  = r"kin-spectra",
           color  = "blue"
         )
       if self.bool_mag_spectra_fitted:
-        max_sim_time = max(self.list_mag_sim_times)
+        max_sim_time = max(self.list_mag_list_sim_times)
         ## plot number of k-modes the magnetic energy spectrum was fitted to
         self.__plotParam(
           ax     = self.axs_params[0],
-          data_x = self.list_mag_sim_times,
-          data_y = self.mag_num_points_fitted,
+          data_x = self.list_mag_list_sim_times,
+          data_y = self.mag_max_k_mode_fitted,
           label  = r"mag-spectra",
           color  = "red"
         )
@@ -397,7 +401,7 @@ class PlotSpectraFitParams():
         ## plot alpha_kin
         self.__plotParam(
           ax     = self.axs_params[1],
-          data_x = self.list_kin_sim_times,
+          data_x = self.list_kin_list_sim_times,
           data_y = self.list_kin_alpha,
           label  = r"$\alpha_{\rm kin} =$ ",
           color  = "blue"
@@ -406,7 +410,7 @@ class PlotSpectraFitParams():
         ## plot alpha_mag
         self.__plotParam(
           ax     = self.axs_params[1],
-          data_x = self.list_mag_sim_times,
+          data_x = self.list_mag_list_sim_times,
           data_y = self.list_mag_alpha,
           label  = r"$\alpha_{\rm mag} =$ ",
           color  = "red"
@@ -433,7 +437,7 @@ class PlotSpectraFitParams():
         ## plot k_nu
         min_k_nu  = self.__plotParam(
           ax     = self.axs_params[2],
-          data_x = self.list_kin_sim_times,
+          data_x = self.list_kin_list_sim_times,
           data_y = self.list_k_nu,
           color  = "blue",
           label  = r"$k_\nu =$ "
@@ -442,7 +446,7 @@ class PlotSpectraFitParams():
         ## plot k_eta
         min_k_eta = self.__plotParam(
           ax     = self.axs_params[2],
-          data_x = self.list_mag_sim_times,
+          data_x = self.list_mag_list_sim_times,
           data_y = self.list_k_eta,
           color  = "red",
           label  = r"$k_\eta =$ "
@@ -450,7 +454,7 @@ class PlotSpectraFitParams():
         ## plot k_p: fitted peak scale
         min_k_p   = self.__plotParam(
           ax     = self.axs_params[2],
-          data_x = self.list_mag_sim_times,
+          data_x = self.list_mag_list_sim_times,
           data_y = self.list_k_p,
           color  = "green",
           label  = r"$k_{\rm p} =$ ", zorder=7
@@ -458,7 +462,7 @@ class PlotSpectraFitParams():
         ## plot k_max: raw peak scale
         min_k_max = self.__plotParam(
           ax     = self.axs_params[2],
-          data_x = self.list_mag_sim_times,
+          data_x = self.list_mag_list_sim_times,
           data_y = self.list_k_max,
           color  = "purple",
           label  = r"$k_{\rm max} =$ "
@@ -612,12 +616,12 @@ def funcPlotSimData(filepath_sim, filepath_plot, fig_name, sim_res):
 ## ###############################################################
 BASEPATH              = "/scratch/ek9/nk7952/"
 SONIC_REGIME          = "super_sonic"
-T_TURB                = 0.1 # ell_turb / (Mach * c_s)
+T_TURB                = 0.1 # ell_turb / (Mach * c_s) = (1/2) / (5 * 1) = 1/10
 FILENAME_TURB         = "Turb.dat"
-# FILENAME_SPECTRA      = "spectra_fits.json"
-# FILENAME_TAG          = ""
-FILENAME_SPECTRA      = "spectra_fits_fk_fm.json"
-FILENAME_TAG          = "_fk_fm"
+FILENAME_SPECTRA      = "spectra_fits.json"
+FILENAME_TAG          = ""
+# FILENAME_SPECTRA      = "spectra_fits_fk_fm.json"
+# FILENAME_TAG          = "_fk_fm"
 BOOL_UPDATE_FIT_RANGE = 1
 
 def main():
@@ -626,12 +630,12 @@ def main():
   ## ##############################
   ## loop over the simulation suites
   for suite_folder in [
-      "Rm3000"
+      "Re10", "Re500", "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
     ## loop over the different resolution runs
     for sim_res in [
-        "144"
+        "72", "144", "288"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## ######################################

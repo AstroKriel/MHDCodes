@@ -48,7 +48,7 @@ def funcLoadData_sim(
     bool_hide_updates = True
   )
   ## check that a time range has been defined to collect statistics about
-  sim_times = WWLists.getCommonElements(spectra_obj.kin_sim_times, spectra_obj.mag_sim_times)
+  sim_times = WWLists.getCommonElements(spectra_obj.kin_list_sim_times, spectra_obj.mag_list_sim_times)
   ## find indices of magnetic fit time range
   kin_index_start = WWLists.getIndexClosestValue(sim_times, 2)
   kin_index_end   = WWLists.getIndexClosestValue(sim_times, 10)
