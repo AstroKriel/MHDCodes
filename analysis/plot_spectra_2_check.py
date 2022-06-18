@@ -51,7 +51,7 @@ def funcFitExp(
   time_start = data_x[index_start_fit]
   time_end   = data_x[index_end_fit]
   ## uniformly sample interpolated data
-  data_y_sampled = interp_spline(data_fit_domain)
+  data_y_sampled = abs(interp_spline(data_fit_domain))
   ## fit exponential function to sampled data (in log-linear domain)
   fit_params_log, fit_params_cov = curve_fit(
     UserModels.ListOfModels.exp_loge,
@@ -225,7 +225,7 @@ class PlotTurbData():
       index_end_fit   = len(self.data_time)-1,
     )
     ## get index range corresponding with kinematic phase of the dynamo
-    index_exp_start = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-8))
+    index_exp_start = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-7))
     index_exp_end   = WWLists.getIndexClosestValue(self.data_E_ratio, sat_ratio/100) # 1-percent of sat-ratio
     ## fit mach number
     funcFitConst(
@@ -635,7 +635,7 @@ def main():
 
     ## loop over the different resolution runs
     for sim_res in [
-        "72", "144", "288"
+        "18"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## ######################################

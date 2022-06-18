@@ -21,8 +21,8 @@ DATA_SUBFOLDER = "spect"
 # JOB_NAME       = "job_run_sim.sh"
 # JOB_NAME       = "job_calc_spect.sh"
 # JOB_NAME       = "job_plot_spect.sh"
-# JOB_NAME       = "job_fit_spect_full.sh"
-JOB_NAME       = "job_fit_spect_fixed.sh"
+JOB_NAME       = "job_fit_spect_full.sh"
+# JOB_NAME       = "job_fit_spect_fixed.sh"
 
 def main():
   ## ##############################

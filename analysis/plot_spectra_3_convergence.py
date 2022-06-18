@@ -291,9 +291,11 @@ class PlotSpectraConvergence():
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
+# FILENAME_SPECTRA  = "spectra_fits.json"
+# FILENAME_TAG      = ""
 FILENAME_SPECTRA  = "spectra_fits_fk_fm.json"
 FILENAME_TAG      = "_fk_fm"
-LIST_SIM_RES      = [ "72", "144", "288" ]
+LIST_SIM_RES      = [ "36", "72", "144", "288" ]
 
 def main():
   ## #############################################

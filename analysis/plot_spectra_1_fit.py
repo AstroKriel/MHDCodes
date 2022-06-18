@@ -238,7 +238,7 @@ class SpectraObject():
     ## remove old frames
     list_filenames_to_delete = WWFnF.getFilesFromFolder(
       filepath     = filepath_vis_frames, 
-      str_contains = self.spectra_fits_obj.sim_label
+      str_contains = f"_{self.spectra_fits_obj.sim_label}_"
     )
     if len(list_filenames_to_delete) > 0:
       print("\t> Removing old spectra frames...")
