@@ -14,7 +14,7 @@ from matplotlib.collections import LineCollection
 
 ## ###############################################################
 ## PREPARE WORKSPACE
-##################################################################
+## ###############################################################
 os.system("clear") # clear terminal window
 plt.switch_backend("agg") # use a non-interactive plotting backend
 # plt.style.use('dark_background')

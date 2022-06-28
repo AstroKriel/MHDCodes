@@ -45,7 +45,7 @@ def loadPickle2Obj(
   ## read file if it exists
   if os.path.isfile(filepath_file):
     if not(bool_hide_updates):
-      print("\t> Reading in pickle-file:", filepath_file)
+      print("Reading in pickle-file:", filepath_file)
     with open(filepath_file, "rb") as input:
       return pickle.load(input)
   ## indicate the file was not found
@@ -104,7 +104,7 @@ def loadJson2Dict(
   ## read file if it exists
   if os.path.isfile(filepath_file):
     if not(bool_hide_updates):
-      print("\t> Reading in json-file:", filepath_file)
+      print("Reading in json-file:", filepath_file)
     with open(filepath_file, "r") as input:
       return json.load(input)
   ## indicate the file was not found

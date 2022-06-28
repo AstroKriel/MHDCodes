@@ -44,7 +44,9 @@ class FileRecovery():
     with open(self.filename_batch_recovery, "w") as file_batch:
       with open(self.filename_quarantined, "r") as file_full:
         list_files = file_full.readlines()
-        print(f"There are {len(list_files)} quarantined files.")
+        num_quarantined_files = len(list_files)
+        print(f"There are {num_quarantined_files} quarantined files.")
+        num_files_already_put_back = 1
         for line in tqdm(list_files):
           file_id = line.split(" ")[0]
           file_destination = line.split(" ")[-1].replace("\n", "")
@@ -52,13 +54,18 @@ class FileRecovery():
             ## if the file has not already been returned
             if not os.path.isfile(file_destination):
               file_batch.write(f"{file_id} {file_destination}\n")
+            else:
+              num_files_already_put_back += 1
+        print(f"There are {num_files_already_put_back} quarantined files that have already been put back.")
+    return (num_quarantined_files - num_files_already_put_back) > 0
 
   def requestBatchRecovery(self):
     ## create file for batch recovery
-    self.createBatchFile()
-    ## request batch file-recovery
-    print("Requesting batch file-recovery...")
-    os.system(f"nci-file-expiry batch-recover {self.filename_batch_recovery}")
+    if self.createBatchFile():
+      ## request batch file-recovery
+      print("Requesting batch file-recovery...")
+      os.system(f"nci-file-expiry batch-recover {self.filename_batch_recovery}")
+    else: print("All quarantined files have already been put back.")
 
 
 ## ###############################################################

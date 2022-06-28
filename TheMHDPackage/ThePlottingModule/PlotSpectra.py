@@ -17,28 +17,28 @@ from TheUsefulModule import WWLists, WWFnF
 ## ###############################################################
 ## PLOT TIME-AVERAGED SPECTRA
 ## ###############################################################
-class PlotAveSpectra():
+class PlotAveSpectraFit():
   def __init__(
       self,
-      ax, spectra_fits_obj, time_range
+      ax, fits_obj, time_range
     ):
     ## save figure axis
     self.ax = ax
     ## extract indices corresponding with the time range
-    kin_list_sim_times = spectra_fits_obj.kin_list_sim_times
-    mag_list_sim_times = spectra_fits_obj.mag_list_sim_times
+    kin_list_sim_times = fits_obj.kin_list_sim_times
+    mag_list_sim_times = fits_obj.mag_list_sim_times
     ## plot kinetic energy spectra
     if len(kin_list_sim_times) > 0:
       kin_time_index_start = WWLists.getIndexClosestValue(kin_list_sim_times, time_range[0])
       kin_time_index_end   = WWLists.getIndexClosestValue(kin_list_sim_times, time_range[1])
-      kin_min_fit_k        = spectra_fits_obj.kin_fit_k_start
+      kin_min_fit_k        = fits_obj.kin_fit_k_start
       kin_max_fit_k        = np.median(
-        spectra_fits_obj.kin_max_k_mode_fitted_group_t[kin_time_index_start : kin_time_index_end]
+        fits_obj.kin_max_k_mode_fitted_group_t[kin_time_index_start : kin_time_index_end]
       )
-      list_kin_k           = spectra_fits_obj.mag_list_k_group_t[0]
-      list_kin_fit_k       = spectra_fits_obj.mag_list_fit_k_group_t[0]
-      list_kin_power       = spectra_fits_obj.kin_list_power_group_t[kin_time_index_start : kin_time_index_end]
-      list_kin_fit_power   = spectra_fits_obj.kin_list_fit_power_group_t[kin_time_index_start : kin_time_index_end]
+      list_kin_k           = fits_obj.mag_list_k_group_t[0]
+      list_kin_fit_k       = fits_obj.mag_list_fit_k_group_t[0]
+      list_kin_power       = fits_obj.kin_list_power_group_t[kin_time_index_start : kin_time_index_end]
+      list_kin_fit_power   = fits_obj.kin_list_fit_power_group_t[kin_time_index_start : kin_time_index_end]
       ## normalise spectra
       list_kin_norm_power = [
         np.array(kin_power) / np.sum(kin_power)
@@ -66,14 +66,14 @@ class PlotAveSpectra():
     if len(mag_list_sim_times) > 0:
       mag_time_index_start = WWLists.getIndexClosestValue(mag_list_sim_times, time_range[0])
       mag_time_index_end   = WWLists.getIndexClosestValue(mag_list_sim_times, time_range[1])
-      mag_min_fit_k        = spectra_fits_obj.mag_fit_k_start
+      mag_min_fit_k        = fits_obj.mag_fit_k_start
       mag_max_fit_k        = np.median(
-        spectra_fits_obj.mag_max_k_mode_fitted_group_t[mag_time_index_start : mag_time_index_end]
+        fits_obj.mag_max_k_mode_fitted_group_t[mag_time_index_start : mag_time_index_end]
       )
-      list_mag_k           = spectra_fits_obj.mag_list_k_group_t[0]
-      list_mag_fit_k       = spectra_fits_obj.mag_list_fit_k_group_t[0]
-      list_mag_power       = spectra_fits_obj.mag_list_power_group_t[mag_time_index_start : mag_time_index_end]
-      list_mag_fit_power   = spectra_fits_obj.mag_list_fit_power_group_t[mag_time_index_start : mag_time_index_end]
+      list_mag_k           = fits_obj.mag_list_k_group_t[0]
+      list_mag_fit_k       = fits_obj.mag_list_fit_k_group_t[0]
+      list_mag_power       = fits_obj.mag_list_power_group_t[mag_time_index_start : mag_time_index_end]
+      list_mag_fit_power   = fits_obj.mag_list_fit_power_group_t[mag_time_index_start : mag_time_index_end]
       ## normalise spectra data
       list_mag_norm_power = [
         np.array(mag_power) / np.sum(mag_power)
@@ -107,6 +107,7 @@ class PlotAveSpectra():
     self.ax.set_yscale("log")
     ## add log axis-ticks
     PlotFuncs.addLogAxisTicks(ax, bool_major_ticks=True, max_num_major_ticks=5)
+
   def plotSpectra(
       self,
       list_k, list_power,
@@ -149,27 +150,29 @@ class PlotAveSpectra():
       color="black", marker="o", ms=5, zorder=7
     )
 
+
 ## ###############################################################
 ## SPECTRA STATISTICS OF SPECTRA FITS FOR A SINGLE SIMULATION
 ## ###############################################################
 class PlotSpectraFit():
   ''' Plotting fitted spectra.
   '''
-  def __init__(self, spectra_fits_obj):
+  def __init__(self, fits_obj):
     ## save spectra object
-    self.spectra_fits_obj = spectra_fits_obj
+    self.fits_obj = fits_obj
     ## check that the spectra object has been labelled
-    if (self.spectra_fits_obj.sim_suite is None) or (self.spectra_fits_obj.sim_label is None):
+    if (self.fits_obj.sim_suite is None) or (self.fits_obj.sim_label is None):
       raise Exception("Spectra object should have a suite ({:}) and label ({:}) defned.".format(
-        self.spectra_fits_obj.sim_suite,
-        self.spectra_fits_obj.sim_label
+        self.fits_obj.sim_suite,
+        self.fits_obj.sim_label
       ))
     ## save the times when both the kinetic energy and magnetic spectra were fitted
     self.sim_times = WWLists.getCommonElements(
-      self.spectra_fits_obj.kin_list_sim_times,
-      self.spectra_fits_obj.mag_list_sim_times
+      self.fits_obj.kin_list_sim_times,
+      self.fits_obj.mag_list_sim_times
     )
     self.fig_flags = ""
+
   def plotSpectra_TargetTime(
       self,
       filepath_plot, target_time
@@ -178,14 +181,14 @@ class PlotSpectraFit():
     fit_index = WWLists.getIndexClosestValue(self.sim_times, target_time)
     ## create figure name
     fig_name = WWFnF.createName([
-      self.spectra_fits_obj.sim_suite,
-      self.spectra_fits_obj.sim_label,
+      self.fits_obj.sim_suite,
+      self.fits_obj.sim_label,
       "check_SpectraFit={0:04}".format(int(fit_index))
     ]) + ".pdf"
     ## initialise spectra evolution figure
     fig, ax = plt.subplots(constrained_layout=True)
     ## plot spectra data
-    self.plotAnnotatedSpectra(
+    self.__plotAnnotatedSpectra(
       fig, ax,
       filepath_plot, fit_index, fig_name,
       y_min = 1e-18,
@@ -196,10 +199,11 @@ class PlotSpectraFit():
     ## close figure
     plt.close(fig)
     ## print information to the terminal
-    print("\t> Figure saved: " + fig_name)
+    print("\t> Figure saved:", fig_name)
+
   def plotSpectraEvolution(
       self,
-      filepath_plot,
+      filepath_frames, filepath_movie,
       plot_index_start       = 0,
       plot_index_step        = 1,
       bool_plot_kin          = True,
@@ -215,7 +219,7 @@ class PlotSpectraFit():
       if not(bool_plot_mag):
         self.fig_flags += "_only"
       ## fitted with fixed model
-      if self.spectra_fits_obj.bool_kin_fit_fixed_model:
+      if self.fits_obj.kin_bool_fit_fixed_model:
         self.fig_flags += "_fk"
     ## plot magnetic energy spectra
     if bool_plot_mag:
@@ -223,7 +227,7 @@ class PlotSpectraFit():
       if not(bool_plot_kin):
         self.fig_flags += "_only"
       ## fitted with fixed model
-      if self.spectra_fits_obj.bool_mag_fit_fixed_model:
+      if self.fits_obj.mag_bool_fit_fixed_model:
         self.fig_flags += "_fm"
     ## initialise spectra evolution figure
     fig, ax = plt.subplots()
@@ -234,18 +238,24 @@ class PlotSpectraFit():
         disable  = bool_hide_updates or (len(self.sim_times) < 3)
       ):
       ## plot annotated figure
-      self.plotAnnotatedSpectra(
+      self.__plotAnnotatedSpectra(
         fig                = fig,
         ax                 = ax,
-        filepath_plot      = filepath_plot,
+        filepath_plot      = filepath_frames,
         time_index         = time_index,
         bool_plot_kin      = bool_plot_kin,
         bool_plot_mag      = bool_plot_mag,
         bool_adjust_y_axis = bool_adjust_y_axis
       )
-    ## close figure
+    ## close figure object
     plt.close(fig)
-  def plotAnnotatedSpectra(
+    ## animate frames
+    self.__aniSpectra(
+      filepath_frames = filepath_frames,
+      filepath_movie  = filepath_movie
+    )
+
+  def __plotAnnotatedSpectra(
       self,
       fig, ax, filepath_plot, time_index,
       fig_name           = None,
@@ -262,14 +272,14 @@ class PlotSpectraFit():
     ## #################
     if bool_plot_kin:
       ax.plot(
-        self.spectra_fits_obj.kin_list_k_group_t[time_index],
-        self.spectra_fits_obj.kin_list_power_group_t[time_index],
+        self.fits_obj.kin_list_k_group_t[time_index],
+        self.fits_obj.kin_list_power_group_t[time_index],
         label=r"kin-spectra", color="blue", ls="", marker=".", markersize=8
       )
     if bool_plot_mag:
       ax.plot(
-        self.spectra_fits_obj.mag_list_k_group_t[time_index],
-        self.spectra_fits_obj.mag_list_power_group_t[time_index],
+        self.fits_obj.mag_list_k_group_t[time_index],
+        self.fits_obj.mag_list_power_group_t[time_index],
         label=r"mag-spectra", color="red", ls="", marker=".", markersize=8
       )
     ## ####################
@@ -278,22 +288,23 @@ class PlotSpectraFit():
     ## plot fitted spectra
     if bool_plot_kin:
       ax.plot(
-        self.spectra_fits_obj.kin_list_fit_k_group_t[time_index],
-        self.spectra_fits_obj.kin_list_fit_power_group_t[time_index],
+        self.fits_obj.kin_list_fit_k_group_t[time_index],
+        self.fits_obj.kin_list_fit_power_group_t[time_index],
         label=r"kin-spectra (fitted)", color="blue", linestyle="--", dashes=(5, 2.5), linewidth=2
       )
     if bool_plot_mag:
       ax.plot(
-        self.spectra_fits_obj.mag_list_fit_k_group_t[time_index],
-        self.spectra_fits_obj.mag_list_fit_power_group_t[time_index],
+        self.fits_obj.mag_list_fit_k_group_t[time_index],
+        self.fits_obj.mag_list_fit_power_group_t[time_index],
         label=r"mag-spectra (fitted)", color="red", linestyle="--", dashes=(5, 2.5), linewidth=2
       )
     ## plot measured scales
     if bool_plot_kin:
-      ax.axvline(x=self.spectra_fits_obj.k_nu_group_t[time_index],  ls="--", color="blue",  label=r"$k_\nu$")
+      ax.axvline(x=self.fits_obj.k_nu_group_t[time_index],  ls="--", color="blue",   label=r"$k_\nu$")
     if bool_plot_mag:
-      ax.axvline(x=self.spectra_fits_obj.k_eta_group_t[time_index], ls="--", color="red",   label=r"$k_\eta$")
-      ax.axvline(x=self.spectra_fits_obj.k_p_group_t[time_index],   ls="--", color="black", label=r"$k_p$")
+      ax.axvline(x=self.fits_obj.k_eta_group_t[time_index], ls="--", color="red",    label=r"$k_\eta$")
+      ax.axvline(x=self.fits_obj.k_p_group_t[time_index],   ls="--", color="green",  label=r"$k_{\rm p}$")
+      ax.axvline(x=self.fits_obj.k_max_group_t[time_index], ls="--", color="purple", label=r"$k_{\rm max}$")
     ## #################
     ## ADD FIGURE LABELS
     ## #################
@@ -301,23 +312,24 @@ class PlotSpectraFit():
     ## kinetic energy spectra labels
     if bool_plot_kin:
       str_kin_spectra  = r"$\mathcal{P}_{\rm kin}(k) = A_{\rm kin} k^{\alpha_{\rm kin}} \exp\left\{-\frac{k}{k_\nu}\right\}$"
-      str_A_kin        = r"$A_{\rm kin} = $ "+"{:.2e}".format(self.spectra_fits_obj.kin_list_fit_params_group_t[time_index][0])
-      str_alpha_kin    = r"$\alpha_\mathrm{kin} = $ "+"{:.2f}".format(self.spectra_fits_obj.kin_list_fit_params_group_t[time_index][1])
-      str_k_nu         = r"$k_\nu = $ "+"{:.2f}".format(1 / self.spectra_fits_obj.k_nu_group_t[time_index])
+      str_A_kin        = r"$A_{\rm kin} = $ "+"{:.2e}".format(self.fits_obj.kin_list_fit_params_group_t[time_index][0])
+      str_alpha_kin    = r"$\alpha_\mathrm{kin} = $ "+"{:.2f}".format(self.fits_obj.kin_list_fit_params_group_t[time_index][1])
+      str_k_nu         = r"$k_\nu = $ "+"{:.2f}".format(1 / self.fits_obj.k_nu_group_t[time_index])
       list_fig_labels += [
         str_kin_spectra,
-        str_A_kin + r", " + str_alpha_kin + r", " + str_k_nu
+        rf"{str_A_kin}, {str_alpha_kin}, {str_k_nu}"
       ]
     ## magnetic energy spectra labels
     if bool_plot_mag:
       str_mag_spectra  = r"$\mathcal{P}_{\rm mag}(k) = A_{\rm mag} k^{\alpha_{\rm mag}} K_0\left\{-\frac{k}{k_\eta}\right\}$"
-      str_A_mag        = r"$A_{\rm mag} = $ "+"{:.2e}".format(self.spectra_fits_obj.mag_list_fit_params_group_t[time_index][0])
-      str_alpha_mag    = r"$\alpha_\mathrm{mag} = $ "+"{:.2f}".format(self.spectra_fits_obj.mag_list_fit_params_group_t[time_index][1])
-      str_k_eta        = r"$k_\eta = $ "+"{:.2f}".format(1 / self.spectra_fits_obj.k_eta_group_t[time_index])
-      str_k_p          = r"$k_p = $ "+"{:.2f}".format(self.spectra_fits_obj.k_p_group_t[time_index])
+      str_A_mag        = r"$A_{\rm mag} = $ "+"{:.2e}".format(self.fits_obj.mag_list_fit_params_group_t[time_index][0])
+      str_alpha_mag    = r"$\alpha_\mathrm{mag} = $ "+"{:.2f}".format(self.fits_obj.mag_list_fit_params_group_t[time_index][1])
+      str_k_eta        = r"$k_\eta = $ "+"{:.2f}".format(1 / self.fits_obj.k_eta_group_t[time_index])
+      str_k_p          = r"$k_{\rm p} = $ "+"{:.2f}".format(self.fits_obj.k_p_group_t[time_index])
+      str_k_max        = r"$k_{\rm max} = $ "+"{:.2f}".format(self.fits_obj.k_max_group_t[time_index])
       list_fig_labels += [
         str_mag_spectra,
-        str_A_mag + r", " + str_alpha_mag + r", " + str_k_eta + r", " + str_k_p
+        rf"{str_A_mag}, {str_alpha_mag}, {str_k_eta}, {str_k_p}, {str_k_max}"
       ]
     PlotFuncs.plotLabelBox(
       fig, ax,
@@ -350,39 +362,37 @@ class PlotSpectraFit():
     ## make sure that a name for the figure has been defined
     if fig_name is None:
       fig_name = WWFnF.createName([
-        self.spectra_fits_obj.sim_suite,
-        self.spectra_fits_obj.sim_label,
+        self.fits_obj.sim_suite,
+        self.fits_obj.sim_label,
         "spectra_fit={0:04}".format(int(time_index)),
         self.fig_flags,
       ]) + ".png"
     ## save the figure
     plt.savefig(
-      WWFnF.createFilepath([
-        filepath_plot,
-        fig_name
-      ]),
+      WWFnF.createFilepath([ filepath_plot, fig_name ]),
       dpi = 150
     )
     ## clear figure and axis
     fig.artists.clear()
     ax.clear()
-  def aniSpectra(
+
+  def __aniSpectra(
       self,
       filepath_frames,
-      filepath_ani_movie
+      filepath_movie
     ):
     PlotFuncs.aniEvolution(
-      filepath_frames    = filepath_frames,
-      filepath_ani_movie = filepath_ani_movie,
+      filepath_frames = filepath_frames,
+      filepath_movie  = filepath_movie,
       input_name = WWFnF.createName([
-        self.spectra_fits_obj.sim_suite,
-        self.spectra_fits_obj.sim_label,
+        self.fits_obj.sim_suite,
+        self.fits_obj.sim_label,
         "spectra_fit=%*",
         self.fig_flags
       ]) + ".png",
       output_name = WWFnF.createName([
-        self.spectra_fits_obj.sim_suite,
-        self.spectra_fits_obj.sim_label,
+        self.fits_obj.sim_suite,
+        self.fits_obj.sim_label,
         "spectra_fit",
         self.fig_flags
       ]) + ".mp4"
@@ -402,7 +412,7 @@ class PlotSpectra():
       sim_times,
       fig_name,
       filepath_frames,
-      filepath_ani_movie
+      filepath_movie
     ):
     self.kin_k              = kin_k
     self.mag_k              = mag_k
@@ -411,7 +421,8 @@ class PlotSpectra():
     self.sim_times          = sim_times
     self.fig_name           = fig_name
     self.filepath_frames    = filepath_frames
-    self.filepath_ani_movie = filepath_ani_movie
+    self.filepath_movie     = filepath_movie
+
   def plotSpectra(self, bool_hide_updates=False):
     '''
     Plot the evolution of the spectra.
@@ -446,7 +457,7 @@ class PlotSpectra():
       ## ############
       ## add time stamp
       ax.text(0.975, 0.975, 
-        r"$t/t_{\rm turb} = $ "+"{:.1f}".format(self.sim_times[time_index]), 
+        r"$t / t_{\rm turb} = $ "+"{:.1f}".format(self.sim_times[time_index]), 
         va="top", ha="right", transform=ax.transAxes, fontsize=16
       )
       ## add legend
@@ -475,15 +486,18 @@ class PlotSpectra():
       ax.clear()
     ## close figure once plotting has finished
     plt.close()
-  def aniSpectra(self):
+    ## animate frames
+    self.__aniSpectra()
+
+  def __aniSpectra(self):
     '''
     Animate the spectra frames.
     '''
     PlotFuncs.aniEvolution(
-      filepath_frames    = self.filepath_frames,
-      filepath_ani_movie = self.filepath_ani_movie,
-      input_name         = WWFnF.createName([ self.fig_name, "spectra=%*.png" ]),
-      output_name        = WWFnF.createName([ self.fig_name, "spectra.mp4" ])
+      filepath_frames = self.filepath_frames,
+      filepath_movie  = self.filepath_movie,
+      input_name      = WWFnF.createName([ self.fig_name, "spectra=%*.png" ]),
+      output_name     = WWFnF.createName([ self.fig_name, "spectra.mp4" ])
     )
 
 

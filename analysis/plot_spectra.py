@@ -7,8 +7,8 @@ import os
 import matplotlib as mpl
 
 ## 'tmpfile' needs to be loaded before 'matplotlib'.
-## This is so matplotlib stores its cache in a temporary directory.
-## (Useful for plotting parallel)
+## This is so matplotlib stores cache in a temporary directory.
+## (Useful for plotting in parallel)
 import tempfile
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
@@ -23,9 +23,7 @@ from ThePlottingModule import PlotSpectra
 ## PREPARE WORKSPACE
 ## ##############################################################
 os.system("clear") # clear terminal window
-## work in a non-interactive environment
-plt.ioff()
-mpl.use("Agg")
+mpl.use("Agg") # work in a non-interactive environment
 
 
 ## ##############################################################
@@ -58,12 +56,12 @@ def main():
   ## PREPARING DIRECTORIES
   ## #####################
   ## filepath to where spectra data is stored
-  filepath_sim        = WWFnF.createFilepath([filepath_suite, folder_sim])
-  filepath_spect      = WWFnF.createFilepath([filepath_sim, folder_data])
+  filepath_sim        = WWFnF.createFilepath([ filepath_suite, folder_sim ])
+  filepath_spect      = WWFnF.createFilepath([ filepath_sim,   folder_data ])
   ## filepath to where visualisations will be saved
   sub_folder_vis      = "plotSpectraData"
-  filepath_vis        = WWFnF.createFilepath([filepath_suite, folder_vis])
-  filepath_vis_frames = WWFnF.createFilepath([filepath_vis, sub_folder_vis])
+  filepath_vis        = WWFnF.createFilepath([ filepath_suite, folder_vis ])
+  filepath_vis_frames = WWFnF.createFilepath([ filepath_vis,   sub_folder_vis ])
   
   ## ##############
   ## CREATE FOLDERS
@@ -103,25 +101,21 @@ def main():
     plots_per_eddy    = plots_per_eddy,
     bool_hide_updates = bool_hide_updates
   )
-  sim_times = WWLists.getCommonElements(
-    kin_list_sim_times,
-    mag_list_sim_times
-  )
+  sim_times = WWLists.getCommonElements(kin_list_sim_times, mag_list_sim_times)
   ## initialise plot object
   plot_obj = PlotSpectra.PlotSpectra(
-    kin_k              = kin_k,
-    kin_power          = kin_power,
-    mag_k              = mag_k,
-    mag_power          = mag_power,
-    sim_times          = sim_times,
-    fig_name           = folder_sim,
-    filepath_frames    = filepath_vis_frames,
-    filepath_ani_movie = filepath_vis
+    kin_k           = kin_k,
+    kin_power       = kin_power,
+    mag_k           = mag_k,
+    mag_power       = mag_power,
+    sim_times       = sim_times,
+    fig_name        = folder_sim,
+    filepath_frames = filepath_vis_frames,
+    filepath_movie  = filepath_vis
   )
   ## plot spectra data
   print("Plotting energy spectra...")
   plot_obj.plotSpectra(bool_hide_updates)
-  plot_obj.aniSpectra()
   print(" ")
 
 

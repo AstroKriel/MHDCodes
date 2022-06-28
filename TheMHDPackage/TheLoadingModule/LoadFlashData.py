@@ -11,9 +11,9 @@ import numpy as np
 from TheUsefulModule import WWFnF, WWLists
 
 
-##################################################################
+## ###############################################################
 ## FUNCTIONS FOR LOADING FLASH DATA
-##################################################################
+## ###############################################################
 def reformatFLASHField(field, num_blocks, num_procs):
   """ reformatField
   PURPOSE:

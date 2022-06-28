@@ -10,16 +10,16 @@ import numpy as np
 from TheUsefulModule import WWArgparse, WWFnF
 
 
-#################################################################
+## ###############################################################
 ## PREPARE TERMINAL/WORKSPACE/CODE
-#################################################################
+## ###############################################################
 os.system("clear")  # clear terminal window
 
 
 ## ###############################################################
 ## PROCESSING FUNCTION
 ## ###############################################################
-def funcProcessPltFile(filenames, num_proc):
+def processPltFile(filenames, num_proc):
   for file_name in filenames:
     print("--------- Looking at: " + file_name + " -----------------------------------")
     os.system("mpirun -np {} spectra_mpi {} -vels_spect -mags_spect".format(
@@ -81,7 +81,7 @@ def main():
       print("\t> " + "\n\t> ".join(list_filenames))
       print(" ")
     ## loop over and process file names
-      funcProcessPltFile(list_filenames, num_proc)
+      processPltFile(list_filenames, num_proc)
 
   ## ########################################
   ## CHECK WHICH PLT FILES WERE NOT PROCESSED
@@ -126,7 +126,7 @@ def main():
     print(" ")
     ## loop over plt file names and processes them
     print("Processing these plt files again...")
-    funcProcessPltFile(list_filenames_redo, num_proc)
+    processPltFile(list_filenames_redo, num_proc)
   else: print("There are no more plt files to process.")
   print(" ")
   print("Finished running the spectra code.")

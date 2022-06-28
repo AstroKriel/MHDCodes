@@ -22,7 +22,6 @@ DATA_SUBFOLDER = "spect"
 # JOB_NAME       = "job_calc_spect.sh"
 # JOB_NAME       = "job_plot_spect.sh"
 JOB_NAME       = "job_fit_spect_full.sh"
-# JOB_NAME       = "job_fit_spect_fixed.sh"
 
 def main():
   ## ##############################
@@ -73,7 +72,7 @@ def main():
         p = subprocess.Popen([ "qsub", JOB_NAME ], cwd=filepath_sim)
         p.wait()
 
-        ## clear line if things have been printed
+        ## create an empty line after each suite
         print(" ")
       print(" ")
     print(" ")

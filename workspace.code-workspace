@@ -4,20 +4,19 @@
       "path": "."
     },
     {
-      "path": "../nk-tools"
+      "path": "../flash4"
     },
     {
-      "path": "../nk-python"
+      "path": "../cf-tools"
     },
     {
-      "path": "../nk-flash"
+      "path": "../cf-python"
     },
     {
       "path": "../scratch"
     }
   ],
   "settings": {
-    "editor.fontSize": 10.5,
-    "makefile.extensionOutputFolder": "./.vscode"
+    "editor.fontSize": 10.5
   }
 }

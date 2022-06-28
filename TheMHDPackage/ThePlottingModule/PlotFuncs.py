@@ -29,10 +29,8 @@ from ThePlottingModule import TheMatplotlibStyler
 ## ANIMATIONS
 ## ###############################################################
 def aniEvolution(
-    filepath_frames,
-    filepath_ani_movie,
-    input_name,
-    output_name
+    filepath_frames, filepath_movie,
+    input_name, output_name
   ):
   ''' Animate plot frames into .mp4 video.
   '''
@@ -43,7 +41,7 @@ def aniEvolution(
   ])
   ## create filepath to where animation should be saved
   filepath_output = WWFnF.createFilepath([
-    filepath_ani_movie,
+    filepath_movie,
     output_name
   ])
   ## animate the plot-frames

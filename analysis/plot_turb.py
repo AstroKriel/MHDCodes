@@ -13,9 +13,9 @@ from scipy.interpolate import make_interp_spline
 from scipy.optimize import curve_fit
 
 
-#################################################################
+## ###############################################################
 ## PREPARE TERMINAL/WORKSPACE/CODE
-#################################################################
+## ###############################################################
 os.system("clear") # clear terminal window
 plt.switch_backend('agg') # use a non-interactive plotting backend
 

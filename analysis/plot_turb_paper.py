@@ -16,7 +16,7 @@ from scipy.interpolate import make_interp_spline
 
 ## ###############################################################
 ## PREPARE WORKSPACE
-##################################################################
+## ###############################################################
 os.system("clear") # clear terminal window
 plt.switch_backend("agg") # use a non-interactive plotting backend
 # plt.style.use('dark_background')

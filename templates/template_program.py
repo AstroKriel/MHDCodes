@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 ## ###############################################################
 ## PREPARE WORKSPACE
-##################################################################
+## ###############################################################
 os.system("clear") # clear terminal window
 plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
@@ -30,8 +30,8 @@ def main():
 ## RUN PROGRAM
 ## ###############################################################
 if __name__ == "__main__":
-    main()
-    sys.exit()
+  main()
+  sys.exit()
 
 
 ## END OF PROGRAM

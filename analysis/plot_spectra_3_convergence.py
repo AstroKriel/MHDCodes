@@ -3,203 +3,30 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import sys
-import random
+import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-from math import floor, ceil
+from matplotlib.gridspec import GridSpec
+from scipy.optimize import curve_fit
 
 from TheUsefulModule import WWFnF, WWObjs, WWLists
-from TheFittingModule import FitMHDScales
+from TheFittingModule import FitMHDScales, UserModels
 from ThePlottingModule import PlotFuncs
 
 
 ## ###############################################################
 ## PREPARE WORKSPACE
-#################################################################
+## ###############################################################
 os.system("clear") # clear terminal window
+## use a non-interactive plotting backend
 plt.ioff()
-plt.switch_backend("agg") # use a non-interactive plotting backend
+plt.switch_backend("agg")
 
 
-# ## ###############################################################
-# ## FUNCTIONS
-# ## ###############################################################
-# def funcPlotConvergedScale(ax, label_scale, list_scales, converged_scale):
-#   ## get panel dimensions
-#   y_min, y_max = ax.get_ylim()
-#   ## find what coordinate of label as a percentage of panel dimensions
-#   scale_height_ax_percent = (
-#     np.log10(converged_scale) - np.log10(y_min)
-#   ) / (
-#     np.log10(y_max) - np.log10(y_min)
-#   )
-#   ## create label
-#   scale_label = label_scale+r"$(\infty) = {}_{}^{}$".format(
-#     "{:0.2f}".format(
-#       np.nanpercentile(list_scales, 50)
-#     ),
-#     "{" + "{:0.2f}".format(
-#       np.nanpercentile(list_scales, 16)
-#     ) + "}",
-#     "{" + "{:0.2f}".format(
-#       np.nanpercentile(list_scales, 84)
-#     ) + "}"
-#   )
-#   ## annotate the converged scale
-#   ax.text(
-#     0.025, scale_height_ax_percent - 0.025,
-#     scale_label,
-#     ha="left", va="top", transform=ax.transAxes, fontsize=16, zorder=7
-#   )
-
-# def funcPrintForm(
-#     val_median, val_error,
-#     num_digits = 2
-#   ):
-#   str_median = ("{0:.2g}").format(val_median)
-#   num_decimals = 1
-#   ## if integer
-#   if ("." not in str_median) and (len(str_median.replace("-", "")) < 2):
-#     str_median = ("{0:.1f}").format(val_median)
-#   ## if a float
-#   if "." in str_median:
-#     ## if integer component is 0
-#     if ("0" in str_median.split(".")[0]) and (len(str_median.split(".")[1]) < 2):
-#       str_median = ("{0:.2f}").format(val_median)
-#     num_decimals = len(str_median.split(".")[1])
-#   ## if integer > 9
-#   elif len(str_median.split(".")[0].replace("-", "")) > 1:
-#     num_decimals = 0
-#   str_error = ("{0:."+str(num_decimals)+"f}").format(val_error)
-#   return r"${} \pm {}$".format(
-#     str_median,
-#     str_error
-#   )
-
-# def funcFitScales(
-#     ax, list_x, list_y_group, func,
-#     p0          = None,
-#     bounds      = None,
-#     label_scale = None,
-#     bool_debug  = False,
-#     absolute_sigma = True
-#   ):
-#   ## #######################
-#   ## FIT: GET COVERGED SCALE
-#   ## #######################
-#   ## fit data
-#   fit_params, fit_cov = curve_fit(
-#     func,
-#     list_x,
-#     [
-#       np.median(list_y)
-#       for list_y in list_y_group
-#     ],
-#     bounds = bounds,
-#     sigma  = [
-#       np.std(list_y)
-#       for list_y in list_y_group
-#     ],
-#     absolute_sigma = absolute_sigma
-#   )
-#   ## get errors
-#   fit_std = np.sqrt(np.diag(fit_cov))[0] # confidence in fit to medians
-#   data_std = np.std(list_y_group[-1]) # fit inherets error in last data point
-#   if fit_params[0] < 0.8:
-#     rand_std = abs(fit_params[0] - random.uniform(
-#       10**( np.log10(fit_params[0]) + 0.01 ),
-#       10**( np.log10(fit_params[0]) + 0.045 )
-#     ))
-#   else:
-#     rand_std = abs(fit_params[0] - random.uniform(
-#       10**( np.log10(fit_params[0]) + 0.015 ),
-#       10**( np.log10(fit_params[0]) + 0.085 )
-#     ))
-#   # print(
-#   #     "& {} & {}".format(
-#   #         funcPrintForm(fit_params[1], np.sqrt(np.diag(fit_cov))[1]),
-#   #         funcPrintForm(fit_params[2], np.sqrt(np.diag(fit_cov))[2])
-#   #     )
-#   # )
-#   ## ####################
-#   ## PLOT CONVERGENCE FIT
-#   ## ####################
-#   ## create plot domain
-#   domain_array = np.logspace(1, np.log10(1900), 300)
-#   ## plot converging fit
-#   ax.plot(
-#     domain_array,
-#     func(domain_array, *fit_params),
-#     color="k", linestyle="-.", linewidth=2
-#   )
-#   # ## plot fit error
-#   # ax.fill_between(
-#   #     domain_array,
-#   #     func(domain_array, *fit_params) - fit_std,
-#   #     func(domain_array, *fit_params) + fit_std,
-#   #     color="black", alpha=0.2
-#   # )
-#   ## plot converged scale
-#   ax.axhline(y=fit_params[0], color="black", dashes=(7.5, 3.5), linewidth=2)
-#   ## #####################################
-#   ## PLOT DISTRIBUTION OF CONVERGED SCALES
-#   ## #####################################
-#   ## create distribution of scales
-#   list_converged_scales = np.random.normal(
-#     fit_params[0], # measured convergence scale
-#     # min([fit_std, data_std], key=lambda x:abs(x-1)),
-#     # fit_std + data_std,
-#     data_std + rand_std,
-#     # fit_std,
-#     # fit_std if absolute_sigma else data_std if data_std > 0.05 else rand_std
-#     # max([fit_std, rand_std], key=lambda x:abs(x-1)),
-#     10**3 # number of samples
-#   )
-#   print(
-#     "{:.3f}   {:.3f}   {:.3f}   {:.3f}".format(
-#       fit_params[0],
-#       fit_std,
-#       data_std,
-#       rand_std
-#     )
-#   )
-#   print(
-#     "{:0.3f}, {:0.3f}, {:0.3f}".format(
-#       np.percentile(list_converged_scales, 16),
-#       np.percentile(list_converged_scales, 50),
-#       np.percentile(list_converged_scales, 84)
-#     )
-#   )
-#   if np.percentile(list_converged_scales, 16) < 0:
-#     print("FUCK..!")
-#   print(" ")
-#   ## ##############
-#   ## LABEL THE PLOT
-#   ## ##############
-#   ## fix axis limits
-#   ax.set_xlim([domain_array[0], domain_array[-1]])
-#   ## fix axis scale
-#   ax.set_xscale("log")
-#   ax.set_yscale("log")
-#   ## adjust axis tick labels
-#   ax.xaxis.set_major_formatter(ScalarFormatter())
-#   bool_small_domain_cross = ceil(np.log10(ax.get_ylim()[0])) == floor(np.log10(ax.get_ylim()[1]))
-#   bool_large_domain = (np.log10(ax.get_ylim()[1]) - np.log10(ax.get_ylim()[0])) > 1
-#   if bool_small_domain_cross or bool_large_domain:
-#     ax.yaxis.set_major_formatter(ScalarFormatter())
-#     ax.yaxis.set_minor_formatter(NullFormatter())
-#   else:
-#     ax.yaxis.set_minor_formatter(ScalarFormatter())
-#   ## plot converged scale
-#   funcPlotConvergedScale(ax, label_scale, list_converged_scales, fit_params[0])
-#   ## label axis
-#   ax.set_ylabel(label_scale, fontsize=22)
-#   ## return converged scale
-#   return list_converged_scales
-
+## ###############################################################
+## MEASURE, PLOT + SAVE CONVEREGED SCALES
+## ###############################################################
 class PlotSpectraConvergence():
   def __init__(
       self,
@@ -208,94 +35,222 @@ class PlotSpectraConvergence():
     ):
     self.sim_suite  = sim_suite
     self.sim_folder = sim_folder
+    ## initialise figure
+    fig = plt.figure(figsize=(12, 8), constrained_layout=True)
+    ## create figure sub-axis
+    gs = GridSpec(3, 2, figure=fig)
+    ## 'Turb.dat' data
+    self.ax_k_nu      = fig.add_subplot(gs[0, 0])
+    self.ax_k_eta     = fig.add_subplot(gs[1, 0])
+    self.ax_k_p       = fig.add_subplot(gs[2, 0])
+    self.ax_alpha_kin = fig.add_subplot(gs[0, 1])
+    self.ax_alpha_mag = fig.add_subplot(gs[1, 1])
+    ## plot, fit and save data
     self.readScales()
     self.plotScales()
+    self.fitScales()
+    self.saveFig()
+    self.saveConvergedScales()
+    ## close plot
+    plt.close(fig)
+
   def readScales(self):
-    self.list_k_nu_group_res  = []
-    self.list_k_eta_group_res = []
-    self.list_k_p_group_res   = []
+    self.list_k_nu_group_res      = []
+    self.list_k_eta_group_res     = []
+    self.list_k_p_group_res       = []
+    self.list_alpha_kin_group_res = []
+    self.list_alpha_mag_group_res = []
     ## read in scales for each resolution run
     for sim_res in LIST_SIM_RES:
       try:
         ## load spectra-fit data as a dictionary
-        spectra_fits_dict = WWObjs.loadJson2Dict(
-          filepath = WWFnF.createFilepath([
-            BASEPATH, self.sim_suite, sim_res, SONIC_REGIME, self.sim_folder, "spect"
-          ]),
+        fits_dict = WWObjs.loadJson2Dict(
+          filepath = WWFnF.createFilepath([ BASEPATH, self.sim_suite, sim_res, SONIC_REGIME, self.sim_folder, "spect" ]),
           filename = FILENAME_SPECTRA,
           bool_hide_updates = True
         )
         ## store dictionary data in spectra-fit object
-        spectra_fits_obj = FitMHDScales.SpectraFit(**spectra_fits_dict)
+        fits_obj = FitMHDScales.SpectraFit(**fits_dict)
       except: continue
       ## check that a fit-range has been defined
-      bool_kin_fit = (spectra_fits_obj.kin_fit_start_t is not None) and (spectra_fits_obj.kin_fit_end_t is not None)
-      bool_mag_fit = (spectra_fits_obj.mag_fit_start_t is not None) and (spectra_fits_obj.mag_fit_end_t is not None)
+      bool_kin_fit = (fits_obj.kin_fit_time_start is not None) and (fits_obj.kin_fit_time_end is not None)
+      bool_mag_fit = (fits_obj.mag_fit_time_start is not None) and (fits_obj.mag_fit_time_end is not None)
       if not(bool_kin_fit) or not(bool_mag_fit):
-        raise Exception("Fit range has not been defined.")
+        raise Exception("Fit range has not been defined for: {}{}{} energy spectra.".format(
+          "kinetic"  if not(bool_kin_fit) else "",
+          " and " if (not(bool_kin_fit) and not(bool_mag_fit)) else "",
+          "magnetic" if not(bool_mag_fit) else ""
+        ))
       ## find indices corresponding with the fit-range bounds
-      kin_index_start = WWLists.getIndexClosestValue(spectra_fits_obj.kin_list_sim_times, spectra_fits_obj.kin_fit_start_t)
-      mag_index_start = WWLists.getIndexClosestValue(spectra_fits_obj.mag_list_sim_times, spectra_fits_obj.mag_fit_start_t)
-      kin_index_end   = WWLists.getIndexClosestValue(spectra_fits_obj.kin_list_sim_times, spectra_fits_obj.kin_fit_end_t)
-      mag_index_end   = WWLists.getIndexClosestValue(spectra_fits_obj.mag_list_sim_times, spectra_fits_obj.mag_fit_end_t)
+      kin_index_start = WWLists.getIndexClosestValue(fits_obj.kin_list_sim_times, fits_obj.kin_fit_time_start)
+      mag_index_start = WWLists.getIndexClosestValue(fits_obj.mag_list_sim_times, fits_obj.mag_fit_time_start)
+      kin_index_end   = WWLists.getIndexClosestValue(fits_obj.kin_list_sim_times, fits_obj.kin_fit_time_end)
+      mag_index_end   = WWLists.getIndexClosestValue(fits_obj.mag_list_sim_times, fits_obj.mag_fit_time_end)
       ## save measured scales in fit time-range
       self.list_k_nu_group_res.append(
-        spectra_fits_obj.k_nu_group_t[kin_index_start  : kin_index_end]
+        fits_obj.k_nu_group_t[kin_index_start : kin_index_end]
       )
       self.list_k_eta_group_res.append(
-        spectra_fits_obj.k_eta_group_t[mag_index_start : mag_index_end]
+        fits_obj.k_eta_group_t[mag_index_start : mag_index_end]
       )
       self.list_k_p_group_res.append(
-        spectra_fits_obj.k_p_group_t[mag_index_start : mag_index_end]
+        fits_obj.k_p_group_t[mag_index_start : mag_index_end]
       )
-  def plotScales(self):
-    ## initialise figure
-    fig, axs = plt.subplots(3, 1, figsize=(6, 3.5*3), sharex=True)
-    fig.subplots_adjust(hspace=0.05)
-    ## plot measured scales
-    for res_index, sim_res in enumerate(LIST_SIM_RES):
-      PlotFuncs.plotErrorBar(axs[0], int(sim_res), self.list_k_nu_group_res[res_index],  color="black")
-      PlotFuncs.plotErrorBar(axs[1], int(sim_res), self.list_k_eta_group_res[res_index], color="black")
-      PlotFuncs.plotErrorBar(axs[2], int(sim_res), self.list_k_p_group_res[res_index],   color="black")
-    ## label figure
-    axs[0].set_ylabel(r"$k_\nu$")
-    axs[1].set_ylabel(r"$k_\eta$")
-    axs[2].set_ylabel(r"$k_{\rm p}$")
-    axs[2].set_xlabel(r"$k$")
-    axs[0].set_xscale("log")
-    axs[1].set_xscale("log")
-    axs[2].set_xscale("log")
-    axs[0].set_xlim([10, 1000])
-    axs[1].set_xlim([10, 1000])
-    axs[2].set_xlim([10, 1000])
-    axs[0].set_yscale("log")
-    axs[1].set_yscale("log")
-    axs[2].set_yscale("log")
-    axs[0].set_ylim([0.1, 50])
-    axs[1].set_ylim([0.1, 50])
-    axs[2].set_ylim([0.1, 50])
-    ## save figure
-    fig_name = self.sim_folder + "_scales_res" + FILENAME_TAG + ".png"
-    plt.savefig(
-      WWFnF.createFilepath([
-        BASEPATH, self.sim_suite, SONIC_REGIME, fig_name
+      self.list_alpha_kin_group_res.append([ 
+        param[1]
+        for index, param in enumerate(fits_obj.kin_list_fit_params_group_t)
+        if (kin_index_start <= index) and (index <= kin_index_end)
       ])
+      self.list_alpha_mag_group_res.append([ 
+        param[1]
+        for index, param in enumerate(fits_obj.mag_list_fit_params_group_t)
+        if (mag_index_start <= index) and (index <= mag_index_end)
+      ])
+
+  def plotScales(self):
+    for res_index, sim_res in enumerate(LIST_SIM_RES):
+      ## plot measured scales 
+      PlotFuncs.plotErrorBar(
+        ax     = self.ax_k_nu,
+        data_x = int(sim_res),
+        data_y = self.list_k_nu_group_res[res_index],
+        color  = "black"
+      )
+      PlotFuncs.plotErrorBar(
+        ax     = self.ax_k_eta,
+        data_x = int(sim_res),
+        data_y = self.list_k_eta_group_res[res_index],
+        color  = "black"
+      )
+      PlotFuncs.plotErrorBar(
+        ax     = self.ax_k_p,
+        data_x = int(sim_res),
+        data_y = self.list_k_p_group_res[res_index],
+        color  = "black"
+      )
+      ## plot measured alpha exponents
+      PlotFuncs.plotErrorBar(
+        ax     = self.ax_alpha_kin,
+        data_x = int(sim_res),
+        data_y = self.list_alpha_kin_group_res[res_index],
+        color  = "black"
+      )
+      PlotFuncs.plotErrorBar(
+        ax     = self.ax_alpha_mag,
+        data_x = int(sim_res),
+        data_y = self.list_alpha_mag_group_res[res_index],
+        color  = "black"
+      )
+
+  def fitScales(self):
+    ## remove Nres=72 simulation data for k_nu
+    list_res_excl_Nres72 = [ int(res) for res in LIST_SIM_RES if not(int(res) == 72) ]
+    list_knu_group_excl_Nres72 = [
+      list_scales
+      for res, list_scales in zip(LIST_SIM_RES, self.list_k_nu_group_res)
+      if not(int(res) == 72)
+    ]
+    ## fit scales
+    self.k_nu_converged, self.k_nu_std   = self.__fitScales(self.ax_k_nu,  list_res_excl_Nres72, list_knu_group_excl_Nres72)
+    self.k_eta_converged, self.k_eta_std = self.__fitScales(self.ax_k_eta, LIST_SIM_RES, self.list_k_eta_group_res)
+    self.k_p_converged, self.k_p_std     = self.__fitScales(self.ax_k_p,   LIST_SIM_RES, self.list_k_p_group_res)
+
+  def __fitScales(
+      self,
+      ax, list_res, list_scales_group_res,
+      bounds = ( (0.01, 1, 0), (50, 1000, 3) )
+    ):
+    ## check if scales increase or decrease with resolution
+    if np.mean(list_scales_group_res[0 ]) < np.mean(list_scales_group_res[-1 ]):
+      func = UserModels.ListOfModels.logistic_growth_increasing
+    else:
+      func = UserModels.ListOfModels.logistic_growth_decreasing
+    ## fit scales
+    fit_params, fit_cov = curve_fit(
+      f     = func,
+      xdata = list_res,
+      ydata = [ np.median(list_scales) for list_scales in list_scales_group_res ],
+      sigma = [ np.std(list_scales)    for list_scales in list_scales_group_res ],
+      bounds=bounds, absolute_sigma=True, maxfev=10**5
     )
-    print("\t> Figure saved:", fig_name)
-    ## close plot
-    plt.close(fig)
+    fit_std = np.sqrt(np.diag(fit_cov))[0] # confidence in fit
+    ## plot fitted model
+    domain_array = np.logspace(np.log10(MIN_AX_NRES), np.log10(MAX_AX_NRES), 100)
+    list_scales_model = func(domain_array, *fit_params)
+    # ax.plot(
+    #   domain_array,
+    #   list_scales_model,
+    #   color="k", linestyle="-.", linewidth=2
+    # )
+    ## plot fit uncertainty
+    # ax.fill_between(
+    #   domain_array,
+    #   func(domain_array, *fit_params) - fit_std,
+    #   func(domain_array, *fit_params) + fit_std,
+    #   color="black", alpha=0.2
+    # )
+    return list_scales_model[-1], fit_std
+
+  def saveFig(self):
+    ## label k_nu
+    self.ax_k_nu.set_ylabel(r"$k_\nu$")
+    self.ax_k_nu.set_xscale("log")
+    self.ax_k_nu.set_yscale("log")
+    self.ax_k_nu.set_xlim([ MIN_AX_NRES, MAX_AX_NRES ])
+    ## label k_eta
+    self.ax_k_eta.set_ylabel(r"$k_\eta$")
+    self.ax_k_eta.set_xscale("log")
+    self.ax_k_eta.set_yscale("log")
+    self.ax_k_eta.set_xlim([ MIN_AX_NRES, MAX_AX_NRES ])
+    ## label k_p
+    self.ax_k_p.set_ylabel(r"$k_{\rm p}$")
+    self.ax_k_p.set_xlabel(r"Linear Resolution $N_{\rm res}$")
+    self.ax_k_p.set_xscale("log")
+    self.ax_k_p.set_yscale("log")
+    self.ax_k_p.set_xlim([ MIN_AX_NRES, MAX_AX_NRES ])
+    ## label alpha_kin
+    self.ax_alpha_kin.set_ylabel(r"$\alpha_{\rm kin}$")
+    self.ax_alpha_kin.set_xscale("log")
+    self.ax_alpha_kin.set_xlim([ MIN_AX_NRES, MAX_AX_NRES ])
+    ## label alpha_mag
+    self.ax_alpha_mag.set_ylabel(r"$\alpha_{\rm mag}$")
+    self.ax_alpha_mag.set_xlabel(r"Linear Resolution $N_{\rm res}$")
+    self.ax_alpha_mag.set_xscale("log")
+    self.ax_alpha_mag.set_xlim([ MIN_AX_NRES, MAX_AX_NRES ])
+    ## save figure
+    fig_name = f"{self.sim_folder}_scale_convergence{FILENAME_TAG}.pdf"
+    plt.savefig(
+      WWFnF.createFilepath([ BASEPATH, self.sim_suite, SONIC_REGIME, fig_name ])
+    )
+    print("Figure saved:", fig_name)
+
+  def saveConvergedScales(self):
+    spectra_converged_obj = FitMHDScales.SpectraConvergedScales(
+      k_nu_converged  = self.k_nu_converged,
+      k_eta_converged = self.k_eta_converged,
+      k_p_converged   = self.k_p_converged,
+      k_nu_std        = self.k_nu_std,
+      k_eta_std       = self.k_eta_std,
+      k_p_std         = self.k_p_std
+    )
+    WWObjs.saveObj2Json(
+      obj      = spectra_converged_obj,
+      filepath = WWFnF.createFilepath([ BASEPATH, self.sim_suite, SONIC_REGIME ]),
+      filename = f"{self.sim_folder}_{FILENAME_CONVERGED}"
+    )
 
 
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
-BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "super_sonic"
-# FILENAME_SPECTRA  = "spectra_fits.json"
-# FILENAME_TAG      = ""
-FILENAME_SPECTRA  = "spectra_fits_fk_fm.json"
-FILENAME_TAG      = "_fk_fm"
-LIST_SIM_RES      = [ "36", "72", "144", "288" ]
+BASEPATH           = "/scratch/ek9/nk7952/"
+SONIC_REGIME       = "super_sonic"
+FILENAME_SPECTRA   = "spectra_fits.json"
+FILENAME_CONVERGED = "spectra_converged.json"
+FILENAME_TAG       = ""
+LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
+MIN_AX_NRES        = 10
+MAX_AX_NRES        = 3000
 
 def main():
   ## #############################################
@@ -309,16 +264,16 @@ def main():
     ## ######################################
     ## CHECK THE SUITE'S FIGURE FOLDER EXISTS
     ## ######################################
-    filepath_figures = WWFnF.createFilepath([
+    filepath_suite_output = WWFnF.createFilepath([ 
       BASEPATH, suite_folder, SONIC_REGIME
     ])
-    if not os.path.exists(filepath_figures):
-      print("{} does not exist.".format(filepath_figures))
+    if not os.path.exists(filepath_suite_output):
+      print("{} does not exist.".format(filepath_suite_output))
       continue
     str_message = "Looking at suite: {}".format(suite_folder)
     print(str_message)
     print("=" * len(str_message))
-    print("Saving figures in:", filepath_figures)
+    print("Saving figures in:", filepath_suite_output)
 
     ## #####################
     ## LOOP OVER SIMULATIONS
@@ -328,91 +283,17 @@ def main():
         "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
       ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
-      ## create filepath to the spectra object for the simulation setup at Nres=288
-      filepath_file = WWFnF.createFilepath([
-        BASEPATH, suite_folder, "288", SONIC_REGIME, sim_folder, "spect", FILENAME_SPECTRA
-      ])
-      ## check that the simulation folder exists
-      if not os.path.isfile(filepath_file):
-        continue
+      ## check that the simulation folder exists at Nres=288
+      if not os.path.isfile(WWFnF.createFilepath([ 
+          BASEPATH, suite_folder, "288", SONIC_REGIME, sim_folder, "spect", FILENAME_SPECTRA
+        ])): continue
 
       ## measure converged scales
       PlotSpectraConvergence(sim_suite=suite_folder, sim_folder=sim_folder)
-    ## create an empty line after each suite
+
+      ## create empty space
+      print(" ")
     print(" ")
-  
-
-  # ## ########################################
-  # ## FITTING SCALES AS FUNCTION OF RESOLUTION
-  # ## ########################################
-  # ## initialise fitting bounds
-  # bounds = ((0.01, 1, 0.5), (15, 1000, 3))
-  # print("Fitting curves...")
-  # ## fit to k_nu vs N_res
-  # if np.mean(list_k_nu_group_res[0]) < np.mean(list_k_nu_group_res[-1]):
-  #     ## measured k_nu scale increased with resolution
-  #     list_k_nu_converged = funcFitScales(
-  #         ax           = axs[0],
-  #         list_x       = list_res,
-  #         list_y_group = list_k_nu_group_res,
-  #         func         = ListOfModels.logistic_growth_increasing,
-  #         bounds       = bounds,
-  #         label_scale  = r"$k_\nu$",
-  #         bool_debug   = bool_debug,
-  #         absolute_sigma = list_bool_abs_std[0]
-  #     )
-  # else:
-  #     ## measured k_nu scale decreased with resolution
-  #     list_k_nu_converged = funcFitScales(
-  #         ax           = axs[0],
-  #         list_x       = list_res,
-  #         list_y_group = list_k_nu_group_res,
-  #         func         = ListOfModels.logistic_growth_decreasing,
-  #         bounds       = bounds,
-  #         label_scale  = r"$k_\nu$",
-  #         bool_debug   = bool_debug,
-  #         absolute_sigma = list_bool_abs_std[0]
-  #     )
-  # ## fit to k_eta vs N_res
-  # list_k_eta_converged = funcFitScales(
-  #     ax           = axs[1],
-  #     list_x       = list_res,
-  #     list_y_group = list_k_eta_group_res,
-  #     func         = ListOfModels.logistic_growth_increasing,
-  #     bounds       = bounds,
-  #     label_scale  = r"$k_\eta$",
-  #     bool_debug   = bool_debug,
-  #     absolute_sigma = list_bool_abs_std[1]
-  # )
-  # ## fit to k_p vs N_res
-  # list_k_p_converged = funcFitScales(
-  #     ax           = axs[2],
-  #     list_x       = list_res,
-  #     list_y_group = list_k_p_group_res,
-  #     func         = ListOfModels.logistic_growth_increasing,
-  #     bounds       = bounds,
-  #     label_scale  = r"$k_p$",
-  #     bool_debug   = bool_debug,
-  #     absolute_sigma = list_bool_abs_std[2]
-  # )
-
-  # ## ####################
-  # ## SAVING SCALES OBJECT
-  # ## ####################
-  # print("Saving spectra scales object...")
-  # spectra_scale_obj = SpectraScales(
-  #     ## simulation setup information
-  #     Pm = Re / Rm,
-  #     ## converged scales
-  #     list_k_nu_converged  = list_k_nu_converged,
-  #     list_k_eta_converged = list_k_eta_converged,
-  #     list_k_p_converged = list_k_p_converged
-  # )
-  # savePickle(
-  #     spectra_scale_obj,
-  #     filepath_base,
-  #     sim_folder+SCALE_NAME
-  # )
 
 
 ## ###############################################################

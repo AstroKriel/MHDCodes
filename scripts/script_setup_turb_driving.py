@@ -3,19 +3,29 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import sys
+import os, sys
 import subprocess
-import shutil
 
-from os import path
 from datetime import datetime
+
+from TheUsefulModule import WWFnF
+
+
+
+class TuneForceGenInput():
+  def __init__(self):
+    a = 10
+  def checkDrivingConvergence(self):
+    a = 10
+  def editForceGen(self):
+    a = 10
+
 
 
 ## ###############################################################
 ## FUNCTION: writing 'forcing_generator.inp'
 ## ###############################################################
-def funcWriteForceGenInput(
+def writeForceGenInput(
     filepath_ref_file, filepath_new_file,
     des_velocity         = 5.0,
     des_k_driv           = 2.0,
@@ -152,10 +162,10 @@ def funcWriteForceGenInput(
 ## ###############################################################
 ## FUNCTION: read 'energy prefactor' in 'forcing_generator.inp'
 ## ###############################################################
-def funcReadEnergyPrefactor(filepath_file):
+def readEnergyPrefactor(filepath_file):
   ## check the file exists
-  if not path.isfile(filepath_file):
-    raise Exception("\t> ERROR: the input force generator '{}' does not exist.".format( FILENAME_GEN_INPUT ))
+  if not os.path.isfile(filepath_file):
+    raise Exception(f"ERROR: the input force generator '{FILENAME_DRIVING_INPUT}' does not exist.")
   ## open file
   with open(filepath_file) as file_lines:
     ## loop over file lines
@@ -169,75 +179,59 @@ def funcReadEnergyPrefactor(filepath_file):
       if list_line_elems[0] == "st_energy_coeff":
         return float(list_line_elems[2])
   ## if the prefactor wasn't found
-  raise Exception("\t> ERROR: The energy prefactory 'st_energy_coeff' was not found in '{}'".format( FILENAME_GEN_INPUT ))
+  raise Exception(f"ERROR: Could not read the energy prefactory 'st_energy_coeff' in '{FILENAME_DRIVING_INPUT}'")
 
 
-FILENAME_GEN_INPUT        = "forcing_generator.inp"
-FILENAME_GEN_INTERMEDIATE = "turb_v5.00E+00_zeta1.0_seed140281.dat"
-FILENAME_GEN_OUTPUT       = "turb_driving.dat"
-FILENAME_SIM_OUTPUT       = "Turb.dat"
-FILENAME_DRIVING_HISTORY  = "driving_history.txt"
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
+## driving files
+FILENAME_DRIVING_INPUT   = "turbulence_generator.inp"
+FILENAME_DRIVING_HISTORY = "driving_history.txt"
+FILENAME_SIM_OUTPUT      = "Turb.dat"
+## directory information
+FILEPATH_BASE            = "/scratch/ek9/nk7952/"
+SONIC_REGIME             = "super_sonic"
+## driving parameters
+DES_MACH                 = 5.0
+DES_K_DRIV               = 2.0
+DES_K_MIN                = 1.0
+DES_K_MAX                = 3.0
+
 def main():
-  ## #############################
-  ## DEFINE COMMAND LINE ARGUMENTS
-  ## #############################
-  parser = MyParser()
-  ## ------------------- DEFINE INPUT ARGUMENTS
-  args_input = parser.add_argument_group(description="Processing arguments:")
-  args_input.add_argument("-base_path",    type=str,   required=True) # home directory
-  args_input.add_argument("-sim_suites",   type=str,   required=True, nargs="+") # list of simulation suites
-  args_input.add_argument("-sim_res",      type=str,   required=True, nargs="+") # list of simulation resolutions
-  args_input.add_argument("-sonic_regime", type=str,   required=True) # sub folder
-  args_input.add_argument("-sim_folders",  type=str,   required=True, nargs="+") # list of simulation folders
-  args_input.add_argument("-des_Mach",     type=float, required=True) # desired Mach number
-  args_input.add_argument("-des_k_driv",   type=float, required=True) # driving scale
-  args_input.add_argument("-des_k_min",    type=float, required=True) # min driving scale
-  args_input.add_argument("-des_k_max",    type=float, required=True) # max driving scale
-
-  ## #########################
-  ## INTERPRET INPUT ARGUMENTS
-  ## #########################
-  ## ---------------------------- OPEN ARGUMENTS
-  args = vars(parser.parse_args())
-  ## ---------------------------- SAVE PARAMETERS
-  ## directory information
-  filepath_base      = args["base_path"]
-  list_suite_folders = args["sim_suites"]
-  list_sim_res       = args["sim_res"]
-  sonic_regime       = args["sonic_regime"]
-  list_sim_folders   = args["sim_folders"]
-  ## driving parameters
-  des_Mach           = args["des_Mach"]
-  des_k_driv         = args["des_k_driv"]
-  des_k_min          = args["des_k_min"]
-  des_k_max          = args["des_k_max"]
-
-  ## ####################
-  ## PROCESS MAIN PROGRAM
-  ## ####################
+  ## ##############################
+  ## LOOK AT EACH SIMULATION FOLDER
+  ## ##############################
   ## loop over the simulation suites
-  for suite_folder in list_suite_folders:
+  for suite_folder in [
+      "test_sim"
+    ]: # "Re10", "Re500", "Rm3000", "keta"
+
     ## loop over the different resolution runs
-    for sim_res in list_sim_res:
+    for sim_res in [
+        ""
+      ]: # "18", "36", "72", "144", "288", "576"
+
       ## print to the terminal what suite is being looked at
       str_msg = "Looking at suite: {}, Nres = {}".format( suite_folder, sim_res )
       print(str_msg)
       print("=" * len(str_msg))
+
       ## loop over the simulation folders
-      for sim_folder in list_sim_folders:
+      for sim_folder in [
+          ""
+        ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
         ## #######################################
         ## CHECK THAT THE SIMULATION FOLDER EXISTS
         ## #######################################
-        ## create filepath to simulation folder (on GADI)
-        filepath_sim  = createFilepath([
-          filepath_base, suite_folder, sim_res, sonic_regime, sim_folder
+        ## create filepath to simulation folder
+        filepath_sim  = WWFnF.createFilepath([
+          FILEPATH_BASE, suite_folder
+          # FILEPATH_BASE, suite_folder, sim_res, SONIC_REGIME, sim_folder
         ])
         ## check that the simulation filepath exists
-        if not path.exists(filepath_sim):
+        if not os.path.exists(filepath_sim):
           print(filepath_sim, "does not exist.")
           continue
         ## indicate which folder is being worked on
@@ -251,7 +245,7 @@ def main():
         bool_done           = False
         list_prev_Mach  = []
         list_prev_coeff = []
-        if path.isfile(filepath_sim + "/" + FILENAME_DRIVING_HISTORY):
+        if os.path.isfile(filepath_sim + "/" + FILENAME_DRIVING_HISTORY):
           ## look for the term "done" in the file
           with open(filepath_sim + "/" + FILENAME_DRIVING_HISTORY, "r") as history_file_lines:
             for line in history_file_lines:
@@ -315,7 +309,7 @@ def main():
             ## read previous energy prefactor
             if (len(list_prev_coeff) > 0) and (list_prev_coeff[-1] is not None):
               prev_energy_coeff = float(list_prev_coeff[-1])
-            else: prev_energy_coeff = funcReadEnergyPrefactor(
+            else: prev_energy_coeff = readEnergyPrefactor(
               filepath_sim  + "/" + FILENAME_GEN_INPUT
             )
             ## load 'Mach' data
@@ -386,7 +380,7 @@ def main():
           os.system("rm {}/*.o*".format( filepath_sim ))
           os.system("rm {}/stir.dat".format( filepath_sim ))
           ## update the energy prefactor in the forcing generator
-          funcWriteForceGenInput(
+          writeForceGenInput(
             filepath_ref_file = filepath_base + "/" + FILENAME_GEN_INPUT, # refernce (home) folder
             filepath_new_file = filepath_sim  + "/" + FILENAME_GEN_INPUT, # simulation folder
             des_velocity      = des_Mach,
@@ -418,7 +412,7 @@ def main():
           p = subprocess.Popen([ "qsub", "job_run_sim.sh" ], cwd=filepath_sim)
           p.wait()
 
-        ## clear line if things have been printed
+        ## create an empty line after each suite
         print(" ")
       print(" ")
     print(" ")

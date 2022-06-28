@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
-##################################################################
+## ###############################################################
 ## MODULES
-##################################################################
+## ###############################################################
 import os
 import argparse
 import numpy as np
 import cmasher as cmr # https://cmasher.readthedocs.io/user/diverging.html
 
 
-#################################################################
+## ###############################################################
 ## PREPARE TERMINAL/WORKSPACE/CODE
-#################################################################
+## ###############################################################
 os.system("clear")  # clear terminal window
 plt.close("all")    # close all pre-existing plots
 ## work in a non-interactive mode
@@ -19,9 +19,9 @@ mpl.use("Agg")
 plt.ioff()
 
 
-##################################################################
+## ###############################################################
 ## COMMAND LINE ARGUMENT INPUT
-##################################################################
+## ###############################################################
 ap = argparse.ArgumentParser(description="A bunch of input arguments")
 ## ------------------- DEFINE OPTIONAL ARGUMENTS
 ap.add_argument("-vis_folder",     type=str,   default="vis_folder", required=False)
@@ -53,9 +53,9 @@ folder_vis    = args["vis_folder"]  # subfolder where animation and plots will b
 sim_names     = args["sim_names"]   # name of figures
 
 
-##################################################################
+## ###############################################################
 ## INITIALISING VARIABLES
-##################################################################
+## ###############################################################
 ## ---------------------------- START CODE
 if len(sim_names) < len(folders_sims):
   raise Exception("You need to give a label to every simulation.")
@@ -83,9 +83,9 @@ for sim_index in range(len(filepaths_data)):
   print(" ")
 
 
-##################################################################
+## ###############################################################
 ## RUNNING CODE
-##################################################################
+## ###############################################################
 for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
   ## find min and max colorbar limits, save field slices and simulation times
   print("Loading data...")

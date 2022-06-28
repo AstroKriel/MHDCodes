@@ -12,7 +12,7 @@ from TheUsefulModule import WWFnF
 ## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
-def funcRemoveFiles(filepath_sim, file_name_starts_with):
+def removeFiles(filepath_sim, file_name_starts_with):
   ## get instances of file category
   list_files = WWFnF.getFilesFromFolder(
     folder_directory = filepath_sim,
@@ -33,7 +33,7 @@ def funcRemoveFiles(filepath_sim, file_name_starts_with):
   ))
 
 
-def funcCreateFolderNMoveFiles(
+def createFolderNMoveFiles(
     filepath_sim,
     file_n_folder_name,
     file_name_not_conatins = None
@@ -131,17 +131,17 @@ def main():
         ## REMOVE UNUSED SIMULATION OUTPUTS
         ## ################################
         ## remove 'core.flash4_nxb...' files
-        funcRemoveFiles(
+        removeFiles(
           filepath_sim,
           file_name_starts_with = "core.flash4_nxb"
         )
         ## remove 'proj' files
-        funcRemoveFiles(
+        removeFiles(
           filepath_sim,
           file_name_starts_with = "Turb_proj"
         )
         ## remove 'slice' files
-        funcRemoveFiles(
+        removeFiles(
           filepath_sim,
           file_name_starts_with = "Turb_slice"
         )
@@ -150,12 +150,12 @@ def main():
         ## CREATE SUB-FOLDERS + MOVE FILES INTO THEM
         ## #########################################
         ## create 'spect' folder if it does not exist
-        funcCreateFolderNMoveFiles(
+        createFolderNMoveFiles(
           filepath_sim,
           file_n_folder_name = "spect"
         )
         ## create 'plt' folder if it does not exist
-        funcCreateFolderNMoveFiles(
+        createFolderNMoveFiles(
           filepath_sim,
           file_n_folder_name     = "plt",
           file_name_not_conatins = "spect"
@@ -207,7 +207,7 @@ def main():
             "chk"
           ))
 
-        ## clear line if things have been printed
+        ## create an empty line after each suite
         print(" ")
       print(" ")
     print(" ")

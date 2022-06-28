@@ -8,8 +8,8 @@ import sys
 import copy
 
 ## 'tmpfile' needs to be loaded before 'matplotlib'.
-## This is so matplotlib stores its cache in a temporary directory.
-## (Useful for plotting parallel)
+## This is so matplotlib stores cache in a temporary directory.
+## (Useful for plotting in parallel)
 import tempfile
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
@@ -30,7 +30,6 @@ from ThePlottingModule import PlotSpectra
 ## PREPARE WORKSPACE
 ## ###############################################################
 os.system("clear") # clear terminal window
-plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
@@ -43,8 +42,8 @@ class SpectraObject():
       filepath_data, filename_spectra_fits,
       sim_suite, sim_label, sim_res,
       Re, Rm, Pm,
-      kin_fit_start_time, kin_fit_end_time,
-      mag_fit_start_time, mag_fit_end_time,
+      kin_fit_time_start, kin_fit_time_end,
+      mag_fit_time_start, mag_fit_time_end,
       bool_debug
     ):
     ## where the simulation spectra data is stored
@@ -58,17 +57,18 @@ class SpectraObject():
     self.Rm                    = Rm
     self.Pm                    = Pm
     ## fit domain
-    self.kin_fit_start_time    = kin_fit_start_time
-    self.mag_fit_start_time    = mag_fit_start_time
-    self.kin_fit_end_time      = kin_fit_end_time
-    self.mag_fit_end_time      = mag_fit_end_time
+    self.kin_fit_time_start    = kin_fit_time_start
+    self.mag_fit_time_start    = mag_fit_time_start
+    self.kin_fit_time_end      = kin_fit_time_end
+    self.mag_fit_time_end      = mag_fit_time_end
     ## debug status
     self.bool_debug            = bool_debug
+
   def createSpectraFitsObj(
       self,
       k_turb_end,
-      bool_kin_fit_fixed_model = False,
-      bool_mag_fit_fixed_model = False,
+      kin_bool_fit_fixed_model = False,
+      mag_bool_fit_fixed_model = False,
       bool_kin_fit_sub_y_range = False,
       kin_num_decades_to_fit   = 6,
       bool_hide_updates        = False
@@ -101,7 +101,7 @@ class SpectraObject():
       list_sim_times       = list_kin_list_sim_times,
       list_k_group_t       = list_kin_k_group_t,
       list_power_group_t   = list_kin_power_group_t,
-      bool_fit_fixed_model = bool_kin_fit_fixed_model,
+      bool_fit_fixed_model = kin_bool_fit_fixed_model,
       k_start              = k_turb_end,     # exclude driving modes
       k_break_from         = k_turb_end + 4, # provide enough degrees of freedom
       k_step_size          = 1,
@@ -114,7 +114,7 @@ class SpectraObject():
       list_sim_times       = list_mag_list_sim_times,
       list_k_group_t       = list_mag_k_group_t,
       list_power_group_t   = list_mag_power_group_t,
-      bool_fit_fixed_model = bool_mag_fit_fixed_model,
+      bool_fit_fixed_model = mag_bool_fit_fixed_model,
       k_start              = 1,
       k_break_from         = 4,
       k_step_size          = 1,
@@ -125,61 +125,65 @@ class SpectraObject():
     mag_fit_dict = mag_fit_obj.getFitDict()
     ## store siulation parameters in a dictionary
     sim_fit_dict = {
-      "sim_suite":       self.sim_suite,
-      "sim_label":       self.sim_label,
-      "sim_res":         self.sim_res,
-      "Re":              self.Re,
-      "Rm":              self.Rm,
-      "Pm":              self.Pm,
-      "kin_fit_start_t": self.kin_fit_start_time,
-      "mag_fit_start_t": self.mag_fit_start_time,
-      "kin_fit_end_t":   self.kin_fit_end_time,
-      "mag_fit_end_t":   self.mag_fit_end_time
+      "sim_suite":          self.sim_suite,
+      "sim_label":          self.sim_label,
+      "sim_res":            self.sim_res,
+      "Re":                 self.Re,
+      "Rm":                 self.Rm,
+      "Pm":                 self.Pm,
+      "kin_fit_time_start": self.kin_fit_time_start,
+      "mag_fit_time_start": self.mag_fit_time_start,
+      "kin_fit_time_end":   self.kin_fit_time_end,
+      "mag_fit_time_end":   self.mag_fit_time_end
     }
     ## create spectra-object
-    self.spectra_fits_obj = FitMHDScales.SpectraFit(
+    self.fits_obj = FitMHDScales.SpectraFit(
       **sim_fit_dict,
       **kin_fit_dict,
       **mag_fit_dict
     )
     ## save spectra-fit data in a json-file
     WWObjs.saveObj2Json(
-      obj      = self.spectra_fits_obj,
+      obj      = self.fits_obj,
       filepath = self.filepath_data,
       filename = self.filename_spectra_fits
     )
     print(" ")
+
   def loadSpectraFitsObj(
       self,
       bool_show_obj_attrs = False
     ):
     ## load spectra-fit data as a dictionary
-    spectra_fits_dict = WWObjs.loadJson2Dict(
-      filepath = self.filepath_data,
-      filename = self.filename_spectra_fits
-    )
+    try:
+      fits_dict = WWObjs.loadJson2Dict(
+        filepath = self.filepath_data,
+        filename = self.filename_spectra_fits
+      )
+    except:
+      raise Exception(f"Error: '{self.filename_spectra_fits}' does not exist.")
     ## store dictionary data in spectra-fit object
-    spectra_fits_obj = FitMHDScales.SpectraFit(**spectra_fits_dict)
-    ## check if any simulation paarmeters need to be updated:
-    ## assumed attribute should be updated if it is not 'None'
+    fits_obj = FitMHDScales.SpectraFit(**fits_dict)
+    ## check whether any simulation parameters need to be updated:
+    ## it is assumed that an attribute should be updated if its value is not 'None'
     bool_obj_was_updated  = False
-    spectra_fits_obj_copy = copy.deepcopy(spectra_fits_obj)
-    prev_dict = vars(spectra_fits_obj_copy) # copy of old attributes
+    fits_obj_copy = copy.deepcopy(fits_obj)
+    old_dict = vars(fits_obj_copy) # create a copy of the old attribute values
     ## #########################################################
     ## UPDATE SIMULATION ATTRIBUTES STORED IN SPECTRA-FIT OBJECT
     ## #########################################################
     ## list of simulation attributes that can be updated
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "sim_suite",       self.sim_suite)
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "sim_label",       self.sim_label)
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "sim_res",         self.sim_res)
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "Re",              self.Re)
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "Rm",              self.Rm)
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "Pm",              self.Rm)
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "kin_fit_start_t", self.kin_fit_start_time)
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "mag_fit_start_t", self.mag_fit_start_time)
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "kin_fit_end_t",   self.kin_fit_end_time)
-    bool_obj_was_updated |= WWObjs.updateObjAttr(spectra_fits_obj, "mag_fit_end_t",   self.mag_fit_end_time)
-    new_dict = vars(spectra_fits_obj) # updated attributes
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "sim_suite",          self.sim_suite)
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "sim_label",          self.sim_label)
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "sim_res",            self.sim_res)
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "Re",                 self.Re)
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "Rm",                 self.Rm)
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "Pm",                 self.Pm)
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "kin_fit_time_start", self.kin_fit_time_start)
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "mag_fit_time_start", self.mag_fit_time_start)
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "kin_fit_time_end",   self.kin_fit_time_end)
+    bool_obj_was_updated |= WWObjs.updateObjAttr(fits_obj, "mag_fit_time_end",   self.mag_fit_time_end)
+    new_dict = vars(fits_obj) # updated attributes
     ## ########################################
     ## CHECK WHICH ATTRIBUTES HAVE BEEN UPDATED
     ## ########################################
@@ -187,18 +191,18 @@ class SpectraObject():
     if bool_obj_was_updated:
       ## save the updated spectra object
       WWObjs.saveObj2Json(
-        obj      = spectra_fits_obj,
+        obj      = fits_obj,
         filepath = self.filepath_data,
         filename = self.filename_spectra_fits
       )
       ## keep a list of updated attributes
       list_updated_attrs = []
-      for prev_attr_name, new_attr_name in zip(prev_dict, new_dict):
+      for old_attr_name, new_attr_name in zip(old_dict, new_dict):
         ## don't compare list entries
-        if not isinstance(prev_dict[prev_attr_name], list):
+        if not isinstance(old_dict[old_attr_name], list):
           ## note attribute name if it has been updated
-          if not(prev_dict[prev_attr_name] == new_dict[new_attr_name]):
-            list_updated_attrs.append(prev_attr_name)
+          if not(old_dict[old_attr_name] == new_dict[new_attr_name]):
+            list_updated_attrs.append(old_attr_name)
       ## print updated attributes
       print("\t> Updated attributes:", ", ".join(list_updated_attrs))
     ## ###################################
@@ -223,7 +227,8 @@ class SpectraObject():
           )
     print(" ")
     ## store the updated spectra object
-    self.spectra_fits_obj = spectra_fits_obj
+    self.fits_obj = fits_obj
+
   def plotSpectraFits(
       self,
       filepath_vis,
@@ -234,11 +239,11 @@ class SpectraObject():
     ):
     print("Plotting energy spectra...")
     ## create plotting object looking at simulation fit
-    spectra_plot_obj = PlotSpectra.PlotSpectraFit(self.spectra_fits_obj)
+    spectra_plot_obj = PlotSpectra.PlotSpectraFit(self.fits_obj)
     ## remove old frames
     list_filenames_to_delete = WWFnF.getFilesFromFolder(
       filepath     = filepath_vis_frames, 
-      str_contains = f"_{self.spectra_fits_obj.sim_label}_"
+      str_contains = f"_{self.fits_obj.sim_label}_"
     )
     if len(list_filenames_to_delete) > 0:
       print("\t> Removing old spectra frames...")
@@ -247,7 +252,8 @@ class SpectraObject():
     ## plot both energy spectra
     print("\t> Plotting kinetic and magnetic energy spectra...")
     spectra_plot_obj.plotSpectraEvolution(
-      filepath_plot          = filepath_vis_frames,
+      filepath_frames        = filepath_vis_frames,
+      filepath_movie         = filepath_vis,
       plot_index_start       = plot_spectra_from,
       plot_index_step        = plot_spectra_every,
       bool_plot_kin          = True,
@@ -255,15 +261,11 @@ class SpectraObject():
       bool_adjust_y_axis     = True,
       bool_hide_updates      = bool_hide_updates
     )
-    ## animate energy spectra
-    spectra_plot_obj.aniSpectra(
-      filepath_frames    = filepath_vis_frames,
-      filepath_ani_movie = filepath_vis
-    )
     ## plot magnetic energy spectra only
     print("\t> Plotting magnetic energy spectra only...")
     spectra_plot_obj.plotSpectraEvolution(
-      filepath_plot          = filepath_vis_frames,
+      filepath_frames        = filepath_vis_frames,
+      filepath_movie         = filepath_vis,
       plot_index_start       = plot_spectra_from,
       plot_index_step        = plot_spectra_every,
       bool_plot_kin          = False,
@@ -271,10 +273,17 @@ class SpectraObject():
       bool_adjust_y_axis     = False,
       bool_hide_updates      = bool_hide_updates
     )
-    ## animate magnetic energy spectra
-    spectra_plot_obj.aniSpectra(
-      filepath_frames    = filepath_vis_frames,
-      filepath_ani_movie = filepath_vis
+    ## plot magnetic energy spectra only
+    print("\t> Plotting kinetic energy spectra only...")
+    spectra_plot_obj.plotSpectraEvolution(
+      filepath_frames        = filepath_vis_frames,
+      filepath_movie         = filepath_vis,
+      plot_index_start       = plot_spectra_from,
+      plot_index_step        = plot_spectra_every,
+      bool_plot_kin          = True,
+      bool_plot_mag          = False,
+      bool_adjust_y_axis     = False,
+      bool_hide_updates      = bool_hide_updates
     )
 
 
@@ -336,16 +345,16 @@ def main():
   bool_fit_spectra         = args["fit_spectra"]
   bool_plot_spectra        = args["plot_spectra"]
   ## fit fixed spectra models
-  bool_kin_fit_fixed_model = args["kin_fit_fixed"]
-  bool_mag_fit_fixed_model = args["mag_fit_fixed"]
+  kin_bool_fit_fixed_model = args["kin_fit_fixed"]
+  mag_bool_fit_fixed_model = args["mag_fit_fixed"]
   ## energy range to fit kinetic energy spectra
   bool_kin_fit_sub_y_range = args["kin_fit_sub_y_range"]
   kin_num_decades_to_fit   = args["kin_num_decades_to_fit"]
   ## time range to fit spectra
-  kin_fit_start_time       = args["kin_start_fit"]
-  mag_fit_start_time       = args["mag_start_fit"]
-  kin_fit_end_time         = args["kin_end_fit"]
-  mag_fit_end_time         = args["mag_end_fit"]
+  kin_fit_time_start       = args["kin_start_fit"]
+  mag_fit_time_start       = args["mag_start_fit"]
+  kin_fit_time_end         = args["kin_end_fit"]
+  mag_fit_time_end         = args["mag_end_fit"]
   ## plotting parameters
   plot_spectra_from        = args["plot_spectra_from"]
   plot_spectra_every       = args["plot_spectra_every"]
@@ -366,21 +375,19 @@ def main():
   ## INITIALISING VARIABLES
   ## ######################
   ## define the file-name where spectra fit parameters are stored
-  filename_spectra_fits = "spectra_fits"
-  if bool_kin_fit_fixed_model:
-    filename_spectra_fits += "_fk"
-  if bool_mag_fit_fixed_model:
-    filename_spectra_fits += "_fm"
-  filename_spectra_fits += ".json"
+  filename_spectra_fits = "spectra_fits{}{}.json".format(
+    "_fk" if kin_bool_fit_fixed_model else "",
+    "_fm" if mag_bool_fit_fixed_model else ""
+  )
   ## check if any pair of plasma Reynolds numbers have not been defined
-  if bool_fit_spectra:
-    bool_missing_plasma_numbers = (
-      ( (Re == None) and (Pm == None) ) or
-      ( (Rm == None) and (Pm == None) ) or
-      ( (Re == None) and (Rm == None) )
-    )
+  bool_missing_plasma_numbers = (
+    ( (Re == None) and (Pm == None) ) or
+    ( (Rm == None) and (Pm == None) ) or
+    ( (Re == None) and (Rm == None) )
+  )
+  if bool_fit_spectra or not(bool_missing_plasma_numbers):
     if bool_missing_plasma_numbers:
-      raise Exception("Error: Undefined plasma-Reynolds numbers. You need to define 2 of 'Re', 'Rm' and 'Pm'.")
+      raise Exception("Error: Undefined plasma-Reynolds numbers. Need to define two of the following: 'Re', 'Rm', and 'Pm'.")
     elif Re == None:
       Re = Rm / Pm
     elif Rm == None:
@@ -396,8 +403,7 @@ def main():
   ## folder where visualisations will be saved
   filepath_vis = WWFnF.createFilepath([ filepath_suite, folder_vis ])
   ## folder where spectra plots will be saved
-  sub_folder_vis      = "plotSpectraFits"
-  filepath_vis_frames = WWFnF.createFilepath([ filepath_vis, sub_folder_vis ])
+  filepath_vis_frames = WWFnF.createFilepath([ filepath_vis, "plotSpectraFits" ])
 
   ## ##############
   ## CREATE FOLDERS
@@ -417,24 +423,16 @@ def main():
     print(f"\t> sim suite: {sim_suite}")
     print(f"\t> sim label: {sim_label}")
     print(f"\t> sim resolution: {sim_res}")
-    print(f"\t> fit domain (kin): [{kin_fit_start_time}, {kin_fit_end_time}]")
-    print(f"\t> fit domain (mag): [{mag_fit_start_time}, {mag_fit_end_time}]")
+    print(f"\t> fit domain (kin): [{kin_fit_time_start}, {kin_fit_time_end}]")
+    print(f"\t> fit domain (mag): [{mag_fit_time_start}, {mag_fit_time_end}]")
     print(f"\t> Re: {Re}, Rm: {Rm}, Pm: {Pm}")
     print(f"\t> k_turb_end: {k_turb_end}")
     print("\t> Fitting with {} kinetic energy spectra model.".format(
-      "fixed" if bool_kin_fit_fixed_model else "complete"
+      "fixed" if kin_bool_fit_fixed_model else "full"
     ))
     print("\t> Fitting with {} magnetic energy spectra model.".format(
-      "fixed" if bool_mag_fit_fixed_model else "complete"
+      "fixed" if mag_bool_fit_fixed_model else "full"
     ))
-  ## check if the spectra-fit parameters have already been stored (in a json-file)
-  else:
-    try: WWObjs.loadJson2Dict(
-      filepath = filepath_data,
-      filename = filename_spectra_fits,
-      bool_hide_updates = True
-    )
-    except: raise Exception("Error: '{}' does not exist.".format(filename_spectra_fits))
   print(" ")
 
   ## #########################
@@ -449,18 +447,18 @@ def main():
     Re                    = Re,
     Rm                    = Rm,
     Pm                    = Pm,
-    kin_fit_start_time    = kin_fit_start_time,
-    mag_fit_start_time    = mag_fit_start_time,
-    kin_fit_end_time      = kin_fit_end_time,
-    mag_fit_end_time      = mag_fit_end_time,
+    kin_fit_time_start    = kin_fit_time_start,
+    mag_fit_time_start    = mag_fit_time_start,
+    kin_fit_time_end      = kin_fit_time_end,
+    mag_fit_time_end      = mag_fit_time_end,
     bool_debug            = bool_debug
   )
   ## read and fit spectra data
   if bool_fit_spectra:
     spec_obj.createSpectraFitsObj(
       k_turb_end               = k_turb_end,
-      bool_kin_fit_fixed_model = bool_kin_fit_fixed_model,
-      bool_mag_fit_fixed_model = bool_mag_fit_fixed_model,
+      kin_bool_fit_fixed_model = kin_bool_fit_fixed_model,
+      mag_bool_fit_fixed_model = mag_bool_fit_fixed_model,
       bool_kin_fit_sub_y_range = bool_kin_fit_sub_y_range,
       kin_num_decades_to_fit   = kin_num_decades_to_fit,
       bool_hide_updates        = bool_hide_updates
