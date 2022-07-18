@@ -367,7 +367,8 @@ def addLegend(
     else: raise Exception("Artist '{}' is not valid.".format(artist))
   ## draw the legend
   legend = ax.legend(
-    list_legend_artists, list_legend_labels,
+    list_legend_artists,
+    list_legend_labels,
     frameon=False, facecolor=None,
     title          = title,
     loc            = loc,

@@ -290,8 +290,8 @@ def loadListSpectra(
     bool_hide_updates = False
   ):
   ## initialise list of spectra data
-  k_group_times       = []
-  power_group_times   = []
+  k_group_t       = []
+  power_group_t   = []
   list_sim_times      = []
   list_failed_to_load = []
   ## filter for spectra data-files
@@ -315,8 +315,8 @@ def loadListSpectra(
       list_failed_to_load.append(filename)
       continue
     ## store data
-    k_group_times.append(spectra_k)
-    power_group_times.append(spectra_power)
+    k_group_t.append(spectra_k)
+    power_group_t.append(spectra_power)
     list_sim_times.append(
       float(filename.split("_")[-3]) / plots_per_eddy
     )
@@ -326,7 +326,7 @@ def loadListSpectra(
       [" "] + list_failed_to_load
     ))
   ## return spectra data
-  return k_group_times, power_group_times, list_sim_times
+  return k_group_t, power_group_t, list_sim_times
 
 
 ## END OF MODULE

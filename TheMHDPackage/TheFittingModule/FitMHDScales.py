@@ -168,75 +168,73 @@ class SpectraModels():
   ## ######################
   ## KINETIC SPECTRA MODELS
   ## ######################
-  def kinetic_linear(x, a0, a1, a2):
-    """ Exponential + powerlaw in linear-domain
-        y = A  * k^p  * exp(- (1 / k_scale) * k)
-          = a0 * x^a1 * exp(- a2 * x)
-        where x = k, a0 = A, a1 = p, a2 = 1/k_scale
-    """
-    return (a0) * np.array(x)**(a1) * np.exp(-a2 * np.array(x))
+  def kinetic_linear(k, A, alpha, ell_nu):
+    ''' Exponential + powerlaw in linear-domain
+      Model:
+        y = A  * k^alpha * exp(- k / k_nu)
+      where ell_nu = 1/k_nu.
+    '''
+    return A * np.array(k)**(alpha) * np.exp(-(ell_nu * np.array(k)))
 
-  def kinetic_loge(x, a0_loge, a1, a2):
-    """ Exponential + powerlaw in log(e)-domain
-      ln(y) = ln(A)   + p  * ln(k) - (1 / k_scale) * k
-            = a0_loge + a1 * ln(x) - a2 * x
-      where x = k, a0_loge = ln(A), a1 = p, a2 = 1/k_scale
-    """
-    return (a0_loge) + (a1) * np.log(x) - a2 * np.array(x)
+  def kinetic_loge(k, A_loge, alpha, ell_nu):
+    return A_loge + alpha * np.log(k) - (ell_nu * np.array(k))
+    # return np.log(SpectraModels.kinetic_linear(k, np.exp(A_loge), alpha, ell_nu))
 
   ## #######################
   ## MAGNETIC SPECTRA MODELS
   ## #######################
-  def magnetic_linear(x, a0, a1, a2):
-    ''' Kulsrud and Anderson 1992
-      y = A  * k^p  * K0( (1 / k_scale) * k )
-        = a0 * x^a1 * k0(a2 * x)
-      where x = k, a0 = A, a1 = p, a2 = 1/k_scale
+  def magnetic_linear(k, A, alpha_1, alpha_2, ell_eta):
+    ''' Kulsrud and Anderson 1992 in linear-domain
+      Model:
+        y = A * k^alpha_1 * K0( (k / k_eta)^alpha_2 )
+      where ell_eta = 1/k_eta.
     '''
-    return (a0) * np.array(x)**(a1) * k0(a2 * np.array(x))
+    return A * np.array(k)**(alpha_1) * k0( (ell_eta * np.array(k))**(alpha_2) )
 
-  def magnetic_loge(x, a0_loge, a1, a2):
-    ''' Kulsrud and Anderson 1992
-      ln(y) = ln(A)   + p  * ln(k) + ln(K0( (1 / k_scale) * k ))
-            = a0_loge + a1 * ln(x) + ln(k0(a2 * x))
-      where x = k, a0_loge = ln(A), a1 = p, a2 = 1/k_scale
+  def magnetic_loge(k, A_loge, alpha_1, alpha_2, ell_eta):
+    return A_loge + alpha_1 * np.log(k) + np.log(k0( (ell_eta * np.array(k))**(alpha_2) ))
+    # return np.log(SpectraModels.magnetic_linear(k, np.exp(A_loge), alpha, ell_eta))
+
+  def k_p_implicit(k, alpha_1, alpha_2, ell_eta):
+    ''' Peak scale of the magnetic energy spectra model (Kulsrud and Anderson 1992)
+      Model from y'= 0:
+        k_p :=  k = alpha * [K0(k / k_eta) / K1(k / k_eta)] * k_eta
+      where ell_eta = 1/k_eta.
     '''
-    return a0_loge + (a1) * np.log(x) + np.log(k0(a2 * np.array(x)))
-
-  def magnetic_simple_loge(x, a0_loge, a1, a2):
-    """ Exponential + powerlaw in linear-domain
-        y = A  * k^p  * exp(- (1 / k_scale) * k)
-          = a0 * x^a1 * exp(- a2 * x)
-        where x = k, a0 = A, a1 = p, a2 = 1/k_scale
-      Note:
-        y' = 0 when k_p := k = p * k_scale = a1 / a2
-    """
-    return (a0_loge) + (a1) * np.log(x) - a2 * np.array(x)
-
-  def k_p_implicit(x, a1, a2):
-    ''' Implicit peak scale of the magnetic energy spectra model (Kulsrud and Anderson 1992)
-      From: y'= 0
-      ->  k_p = p  * k_scale  * K0( (1 / k_scale) * k_p ) / K1( (1 / k_scale) * k_p )
-          x   = a1 * 1/a2     * K0(a2 * x) / K1(a2 * x)
-      ->  0   = x - a1 * 1/a2 * K0(a2 * x) / K1(a2 * x)
-          where x = k, a1 = p, a2 = 1/k_scale
+    return np.array(k) - (
+      alpha_1 / alpha_2 * (
+        k0( (ell_eta * np.array(k))**(alpha_2) ) / k1( (ell_eta * np.array(k))**(alpha_2) )
+    ))**(1/alpha_2) * 1/ell_eta
+  
+  def magnetic_simple_linear(k, A, alpha_1, alpha_2, ell_eta):
+    ''' Simple model: exponential + powerlaw in linear-domain
+      Model:
+        y = A * k^alpha * exp(- k / k_eta)
+      where ell_eta = 1/k_eta.
     '''
-    return np.array(x) - (a1 / a2) * k0(a2 * np.array(x)) / k1(a2 * np.array(x))
+    return A * np.array(k)**(alpha_1) * np.exp( -(ell_eta * np.array(k))**(alpha_2) )
+
+  def magnetic_simple_loge(k, A_loge, alpha_1, alpha_2, ell_eta):
+    return A_loge + alpha_1 * np.log(k) - (ell_eta * np.array(k))**(alpha_2)
+    # return np.log(SpectraModels.magnetic_simple_linear(k, np.exp(A_loge), alpha, ell_eta))
+  
+  def k_p_simple(alpha_1, alpha_2, ell_eta):
+    return (alpha_1 / alpha_2)**(1/alpha_2) * 1/ell_eta
 
   ## ############################
   ## NUMERICAL DISSIPATION REGIME
   ## ############################
-  def tail_linear(x, a0, a1):
+  def tail_linear(x, alpha_1, alpha_2):
     ''' powerlaw in linear-domain
-      y   = 10^a0 * k^a1
+      y = 10^alpha_1 * k^alpha_2
     '''
-    return 10**(a0) * np.array(x)**(a1)
+    return 10**(alpha_1) * np.array(x)**(alpha_2)
 
-  def tail_log10(x_log10, a0, a1):
+  def tail_log10(x_log10, alpha_1, alpha_2):
     ''' powerlaw in log10-domain
-      log10(y) = a0 + a1 * log10(k)
+      log10(y) = alpha_1 + alpha_2 * log10(k)
     '''
-    return (a0) + (a1) * np.array(x_log10)
+    return alpha_1 + alpha_2 * np.array(x_log10)
 
 
 ## ###############################################################
@@ -285,6 +283,7 @@ class FitSpectra(metaclass=abc.ABCMeta): # abstract base class
     list_fit_k_range        = list(range(self.k_break_from, k_end, self.k_step_size))
     ## fit to an increasing subset of the data
     for k_break in list_fit_k_range:
+      ## fit spectra on a subset of the domain (acts as a guess, if a simpler model is fitted in this step)
       list_fit_params, list_fit_params_std, fit_2norm = self.__fitSpectra(data_k, data_power, k_break, k_end)
       ## store fit information
       list_fit_params_group_k.append(list_fit_params)     # fitted parameters
@@ -296,20 +295,33 @@ class FitSpectra(metaclass=abc.ABCMeta): # abstract base class
     self.list_fit_k_range_group_t.append(list_fit_k_range)
     ## find the best fit
     best_fit_index = self.__findBestFit(fit_2norm_group_k, list_fit_params_group_k)
-    ## extract best fit information
-    bf_max_k_mode_fitted = list_fit_k_range[best_fit_index]        # maximum k-mode fitted
-    bf_list_fit_params   = list_fit_params_group_k[best_fit_index] # fit params
-    bf_list_fit_std      = list_params_std_group_k[best_fit_index] # uncertainty in fit params
+    ## extract best guess-fit information (e.g., number of fitted modes, what the fitted params were for that fit, etc.)
+    bf_max_k_mode_fitted = list_fit_k_range[best_fit_index] # maximum k-mode fitted
+    ## double check the fitted parameters are good
+    bf_list_fit_params, bf_list_fit_std, _ = self.__fitSpectra(
+      data_k            = data_k,
+      data_power        = data_power,
+      k_break           = bf_max_k_mode_fitted,
+      k_end             = k_end,
+      list_guess_params = list_fit_params_group_k[best_fit_index] # best previously measured params
+    )
     ## store best fit information
     self.max_k_mode_fitted_group_t.append(bf_max_k_mode_fitted)
     self.list_fit_params_group_t.append(bf_list_fit_params)
     self.list_fit_std_group_t.append(bf_list_fit_std)
-    ## save scales measured from best fit
-    self.__saveBestFit(data_k, data_power, list_fit_params=bf_list_fit_params)
+    ## store scales measured from the best fit
+    self.auxSaveScales(bf_list_fit_params, data_power=data_power)
+    ## store the best fitted spectra
+    list_fit_k     = list(np.linspace(data_k[0], data_k[-1], 10**3))
+    list_fit_power = list(self.func_plot(list_fit_k, *bf_list_fit_params))
+    self.list_fit_k_group_t.append(list_fit_k)
+    self.list_fit_power_group_t.append(list_fit_power)
 
   def __fitSpectra(
       self,
-      data_k, data_power, k_break, k_end
+      data_k, data_power,
+      k_break, k_end,
+      list_guess_params = None
     ):
     ## fit spectra model to the first part of the spectra
     data_x_curve_linear = np.array(data_k[   self.k_start : k_break ])
@@ -320,23 +332,29 @@ class FitSpectra(metaclass=abc.ABCMeta): # abstract base class
     ## weight k-modes
     list_k_weight = [ x**(0.5) for x in data_x_curve_linear ]
     ## fit spectra model
-    list_fit_params_curve_loge, fit_params_cov = self.auxFitSpectra(
-      data_k       = data_x_curve_linear,
-      data_power   = data_y_curve_loge,
-      list_weights = list_k_weight
-    )
-    ## undo log(e) transformation of fitted parameters
-    a0, a1, a2 = self.auxGetFitParams(list_fit_params_curve_loge)
-    ## save fitted (linear) spectra model parameter values
+    if list_guess_params is None:
+      list_fit_params_curve_loge, fit_params_cov = self.auxFitSpectraGuess(
+        data_k          = data_x_curve_linear,
+        data_power_loge = data_y_curve_loge,
+        list_weights    = list_k_weight
+      )
+    else:
+      list_fit_params_curve_loge, fit_params_cov = self.auxFitSpectraFinal(
+        data_k            = data_x_curve_linear,
+        data_power_loge   = data_y_curve_loge,
+        list_weights      = list_k_weight,
+        list_guess_params = list_guess_params # pass guess
+      )
+    ## undo log(e) transformation of fitted model parameters
     list_fit_params_curve = [
-      np.exp(a0), # undo log(e) transform
-      a1, a2
+      np.exp(list_fit_params_curve_loge[0]), # undo log(e) transform
+      *list_fit_params_curve_loge[1:]
     ]
     ## measure parameter uncertainty (std) from fit covariance matrix
     list_fit_params_std = np.sqrt(np.diag(fit_params_cov))
     ## fit numerical dissipation regime in log10-linear
     list_fit_params_tail, _ = curve_fit(
-      f      = SpectraModels.tail_log10,
+      SpectraModels.tail_log10,
       xdata  = data_x_tail_log10,
       ydata  = data_y_tail_log10,
       bounds = ( (-np.inf, -10), (0, 0) ),
@@ -344,12 +362,12 @@ class FitSpectra(metaclass=abc.ABCMeta): # abstract base class
     )
     ## generate full fitted spectra (model + numerical dissipation)
     fitted_power = np.array(
-      ## model part of spectrum
+      ## model part of the spectrum
       list(self.func_plot(
         data_k[self.k_start : k_break],
         *list_fit_params_curve
       )) + 
-      ## dissipation part of the spectrum
+      ## numerical dissipation part of the spectrum
       list(SpectraModels.tail_linear(
         data_k[k_break : k_end],
         *list_fit_params_tail
@@ -398,54 +416,30 @@ class FitSpectra(metaclass=abc.ABCMeta): # abstract base class
     else: best_fit_index = WWLists.getIndexListMin(fit_2norm_group_k)
     ## return best fit index
     return best_fit_index
-
-  def __saveBestFit(
-      self,
-      data_k, data_power,
-      list_fit_params
-    ):
-    ## extract best fitted parameters
-    _, a1_b, a2_b  = list_fit_params
-    powerlaw_slope = a1_b     # power-law exponent
-    k_scale        = 1 / a2_b # dissipation scale
-    ## measure peak of spectra if a method has been implemented
-    self.auxGetPeakScales(
-      a1         = a1_b,
-      a2         = a2_b,
-      k_p_guess  = powerlaw_slope * k_scale,
-      data_power = data_power
-    )
-    ## store measured dissipation scale
-    self.k_scale_group_t.append(k_scale)
-    ## store fitted spectra
-    list_fit_k     = list(np.linspace(data_k[0], data_k[-1], 10**3))
-    list_fit_power = list(self.func_plot(list_fit_k, *list_fit_params))
-    self.list_fit_k_group_t.append(list_fit_k)
-    self.list_fit_power_group_t.append(list_fit_power)
-
-  ## ############################
-  ## EMPTY METHOD IMPLEMENTATIONS
-  ## ############################
-  def auxGetPeakScales(
-      self,
-      a1, a2, k_p_guess, data_power
-    ):
-    return
-
+  
   ## ################
   ## ABSTRACT METHODS
   ## ################
-  ## the following methods all need to be implemented by any child-classes
+  ## the following methods need to be implemented by every child-class instance
   @abc.abstractmethod
-  def auxFitSpectra(
+  def auxFitSpectraGuess(
       self,
-      data_k, data_power, list_weights
+      data_k, data_power_loge, list_weights
     ):
     pass
 
-  @abc.abstractmethod
-  def auxGetFitParams(self):
-    pass
+  ## ############################
+  ## EMPTY METHOD EMPLIMENTATIONS
+  ## ############################
+  ## by default the final spectra fit routine is the same as the guess-implimentation
+  def auxFitSpectraFinal(
+      self,
+      data_k, data_power_loge, list_weights, list_guess_params
+    ):
+    return self.auxFitSpectraGuess(data_k, data_power_loge, list_weights)
+
+  def auxSaveScales(self, **kwargs):
+    return
 
 
 ## ###############################################################
@@ -471,12 +465,7 @@ class FitKinSpectra(FitSpectra):
     self.list_k_group_t       = list_k_group_t
     self.list_power_group_t   = list_power_group_t
     ## store fit parameters
-    self.fit_bounds           = (
-      ( np.log(10**(-10)), -5.0, 1/30   ),
-      ( np.log(10**(2)),    5.0, 1/0.01 )
-    )
-    self.bool_fit_fixed_model = bool_fit_fixed_model
-    self.func_fit             = SpectraModels.kinetic_loge
+    self.bool_fit_fixed_model = bool_fit_fixed_model # TODO: implement this functionality
     self.func_plot            = SpectraModels.kinetic_linear
     self.k_start              = k_start
     self.k_break_from         = k_break_from
@@ -487,29 +476,31 @@ class FitKinSpectra(FitSpectra):
     ## call parent class and pass fitting instructions
     FitSpectra.__init__(self, bool_hide_updates)
 
-  def auxFitSpectra(
+  def auxFitSpectraGuess(
       self,
-      data_k, data_power, list_weights
+      data_k, data_power_loge, list_weights
     ):
-    ## fit kinetic energy spectra with simple model
     list_fit_params_curve_loge, fit_params_cov = curve_fit(
-      f      = self.func_fit,
+      SpectraModels.kinetic_loge,
       xdata  = data_k,
-      ydata  = data_power,
-      bounds = self.fit_bounds,
+      ydata  = data_power_loge,
+      bounds = (
+        # log(A), alpha, 1/k_nu
+        ( -15,    -5.0,  1/100   ),
+        (   2,     5.0,  1/0.001 )
+      ),
       sigma  = list_weights,
       maxfev = 10**3
     )
     ## return fit parameters
     return list_fit_params_curve_loge, fit_params_cov
 
-  def auxGetFitParams(self, list_fit_params_curve_loge):
-    if self.bool_fit_fixed_model:
-      # a1 = -5/3 # kolmogorov exponent
-      a1 = -2 # burgulence exponent
-      a0, a2 = list_fit_params_curve_loge
-    else: a0, a1, a2 = list_fit_params_curve_loge
-    return a0, a1, a2
+  def auxSaveScales(self, list_fit_params, **kwargs):
+    ## extract best fit parameters
+    _, _, ell_nu = list_fit_params
+    k_nu = 1 / ell_nu
+    ## store measured dissipation scale
+    self.k_scale_group_t.append(k_nu)
 
   def getFitDict(self):
     ## save fit output
@@ -556,14 +547,8 @@ class FitMagSpectra(FitSpectra):
     self.list_k_group_t       = list_k_group_t
     self.list_power_group_t   = list_power_group_t
     ## store fit parameters
-    self.fit_bounds           = (
-      ( np.log(10**(-10)), -3.0, 1/100  ),
-      ( np.log(10**(2)),    3.0, 1/0.01 )
-    )
-    self.bool_fit_fixed_model = bool_fit_fixed_model
-    self.func_fit_simple      = SpectraModels.magnetic_simple_loge
-    self.func_fit             = SpectraModels.magnetic_loge
-    self.func_plot            = SpectraModels.magnetic_linear
+    self.bool_fit_fixed_model = bool_fit_fixed_model # TODO: implement this functionality
+    self.func_plot            = SpectraModels.magnetic_simple_linear
     self.k_start              = k_start
     self.k_break_from         = k_break_from
     self.k_step_size          = k_step_size
@@ -574,60 +559,74 @@ class FitMagSpectra(FitSpectra):
     ## call parent class and pass fitting instructions
     FitSpectra.__init__(self, bool_hide_updates)
 
-  def auxFitSpectra(
+  def auxFitSpectraGuess(
       self,
-      data_k, data_power, list_weights
+      data_k, data_power_loge, list_weights
     ):
     ## beat the Kulsrud and Anderson 1992 model into fitting the magnetic spectra
-    ## first fit with a simple model (spectra motivated)
-    list_fit_params_guess, _ = curve_fit(
-      f      = self.func_fit_simple,
-      xdata  = data_k,
-      ydata  = data_power,
-      bounds = self.fit_bounds,
-      sigma  = list_weights,
-      maxfev = 10**3
-    )
-    ## then fit the Kulsrud and Anderson 1992 model + pass the parameter guess from the simple model
+    ## (Step 1) fit with a simple model (spectra motivated)
     list_fit_params_curve_loge, fit_params_cov = curve_fit(
-      f      = self.func_fit,
+      SpectraModels.magnetic_simple_loge,
       xdata  = data_k,
-      ydata  = data_power,
-      bounds = self.fit_bounds,
-      p0     = list_fit_params_guess,
+      ydata  = data_power_loge,
+      bounds = (
+        # log(A), alpha_1, alpha_2, 1/k_eta
+        ( -15,    1.0,     0.1,     1/100   ),
+        (   2,    5.0,     2.0,     1/0.001 )
+      ),
       sigma  = list_weights,
       maxfev = 10**4
     )
     ## return fit parameters
     return list_fit_params_curve_loge, fit_params_cov
 
-  def auxGetFitParams(self, list_fit_params_curve_loge):
-    if self.bool_fit_fixed_model:
-      a1 = 3/2 # kazantsev exponent
-      a0, a2 = list_fit_params_curve_loge
-    else: a0, a1, a2 = list_fit_params_curve_loge
-    return a0, a1, a2
+  # def auxFitSpectraFinal(
+  #     self,
+  #     data_k, data_power_loge, list_weights, list_guess_params
+  #   ):
+  #   ## beat the Kulsrud and Anderson 1992 model into fitting the magnetic spectra
+  #   ## (Step 2) fit the Kulsrud and Anderson 1992 model + pass the parameter guess from the simple model
+  #   print(list_guess_params)
+  #   list_fit_params_curve_loge, fit_params_cov = curve_fit(
+  #     SpectraModels.magnetic_loge,
+  #     xdata  = data_k,
+  #     ydata  = data_power_loge,
+  #     bounds = (
+  #       # log(A), alpha_1, alpha_2, 1/k_eta
+  #       ( -15,    1.0,     0.1,     1/100   ),
+  #       (   2,    5.0,     2.0,     1/0.001 )
+  #     ),
+  #     p0     = list_guess_params,
+  #     sigma  = list_weights,
+  #     maxfev = 10**5
+  #   )
+  #   ## return fit parameters
+  #   return list_fit_params_curve_loge, fit_params_cov
 
-  def auxGetPeakScales(
-      self,
-      a1, a2, k_p_guess, data_power
-    ):
+  def auxSaveScales(self, list_fit_params, **kwargs):
+    ## extract best fit parameters
+    _, alpha_1, alpha_2, ell_eta = list_fit_params
+    ## evaluate scales
+    k_eta     = 1 / ell_eta
+    k_p_guess = SpectraModels.k_p_simple(alpha_1, alpha_2, ell_eta)
+    ## fit peak scale from the modified Kulsrud and Anderson 1992 model
     try:
-      ## fit peak scale from the Kulsrud and Anderson 1992 model
       k_p = fsolve(
         functools.partial(
           SpectraModels.k_p_implicit,
-          a1 = a1,
-          a2 = a2
+          alpha_1 = alpha_1,
+          alpha_2 = alpha_2,
+          ell_eta = ell_eta
         ),
         x0 = k_p_guess # give a guess
       )[0]
+    ## if the solver fails, then use the initial guess
     except (RuntimeError, ValueError):
-      ## use the guess
       k_p = k_p_guess
     ## measured true peak scale (for reference)
-    k_max = np.argmax(data_power) + 1
-    ## save scales
+    k_max = np.argmax(kwargs["data_power"]) + 1
+    ## store measured scales
+    self.k_scale_group_t.append(k_eta)
     self.k_p_group_t.append(k_p)
     self.k_max_group_t.append(k_max)
 

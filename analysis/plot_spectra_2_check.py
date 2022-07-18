@@ -442,7 +442,7 @@ class PlotSpectraFitParams():
           ax     = self.axs_params[1],
           data_x = self.list_kin_list_sim_times,
           data_y = self.list_kin_alpha,
-          label  = r"$\alpha_{\rm kin} =$ ",
+          label  = r"$\alpha_{{\rm kin}, 1} =$ ",
           color  = "blue"
         )
       if self.bool_mag_spectra_fitted:
@@ -451,7 +451,7 @@ class PlotSpectraFitParams():
           ax     = self.axs_params[1],
           data_x = self.list_mag_list_sim_times,
           data_y = self.list_mag_alpha,
-          label  = r"$\alpha_{\rm mag} =$ ",
+          label  = r"$\alpha_{{\rm mag}, 1} =$ ",
           color  = "red"
         )
       ## label and tune figure
@@ -668,12 +668,12 @@ def main():
   ## ##############################
   ## loop over the simulation suites
   for suite_folder in [
-      "Re10", "Re500", "Rm3000"
+      "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
     ## loop over the different resolution runs
     for sim_res in [
-        "18", "36", "72", "144", "288"
+        "144"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## ######################################
@@ -695,7 +695,7 @@ def main():
       ## ####################
       ## loop over the simulation folders
       for sim_folder in [
-          "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
+          "Pm5"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
         ## create filepath to the simulation folder
@@ -706,7 +706,7 @@ def main():
         if not os.path.exists(filepath_sim):
           continue
         ## plot simulation data
-        fig_name = suite_folder + "_" + sim_folder + "_" + "check" + FILENAME_TAG + ".pdf"
+        fig_name = suite_folder + "_" + sim_folder + "_" + "check" + FILENAME_TAG + ".png"
         plotSimData(filepath_sim, filepath_figures, fig_name, sim_res)
 
         ## create empty space

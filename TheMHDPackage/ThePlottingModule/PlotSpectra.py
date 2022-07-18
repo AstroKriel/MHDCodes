@@ -313,23 +313,26 @@ class PlotSpectraFit():
     if bool_plot_kin:
       str_kin_spectra  = r"$\mathcal{P}_{\rm kin}(k) = A_{\rm kin} k^{\alpha_{\rm kin}} \exp\left\{-\frac{k}{k_\nu}\right\}$"
       str_A_kin        = r"$A_{\rm kin} = $ "+"{:.2e}".format(self.fits_obj.kin_list_fit_params_group_t[time_index][0])
-      str_alpha_kin    = r"$\alpha_\mathrm{kin} = $ "+"{:.2f}".format(self.fits_obj.kin_list_fit_params_group_t[time_index][1])
-      str_k_nu         = r"$k_\nu = $ "+"{:.2f}".format(1 / self.fits_obj.k_nu_group_t[time_index])
+      str_alpha_kin    = r"$\alpha_{\rm kin} = $ "+"{:.2f}".format(self.fits_obj.kin_list_fit_params_group_t[time_index][1])
+      str_k_nu         = r"$k_\nu = $ "+"{:.2f}".format(self.fits_obj.k_nu_group_t[time_index])
       list_fig_labels += [
         str_kin_spectra,
         rf"{str_A_kin}, {str_alpha_kin}, {str_k_nu}"
       ]
     ## magnetic energy spectra labels
     if bool_plot_mag:
-      str_mag_spectra  = r"$\mathcal{P}_{\rm mag}(k) = A_{\rm mag} k^{\alpha_{\rm mag}} K_0\left\{-\frac{k}{k_\eta}\right\}$"
-      str_A_mag        = r"$A_{\rm mag} = $ "+"{:.2e}".format(self.fits_obj.mag_list_fit_params_group_t[time_index][0])
-      str_alpha_mag    = r"$\alpha_\mathrm{mag} = $ "+"{:.2f}".format(self.fits_obj.mag_list_fit_params_group_t[time_index][1])
-      str_k_eta        = r"$k_\eta = $ "+"{:.2f}".format(1 / self.fits_obj.k_eta_group_t[time_index])
+      # str_mag_spectra  = r"$\mathcal{P}_{\rm mag}(k) = A_{\rm mag} k^{\alpha_{\rm mag}} \exp\left\{-\frac{k}{k_\eta}\right\}$"
+      str_mag_spectra  = r"$\mathcal{P}_{\rm mag}(k) = A_{\rm mag} k^{\alpha_{{\rm mag}, 1}} \exp\left\{ -\left(\frac{k}{k_\eta}\right)^{\alpha_{{\rm mag}, 2}} \right\}$"
+      # str_mag_spectra  = r"$\mathcal{P}_{\rm mag}(k) = A_{\rm mag} k^{\alpha_{{\rm mag}, 1}} {\rm K}_0\left\{ -\left(\frac{k}{k_\eta}\right)^{\alpha_{{\rm mag}, 2}} \right\}$"
+      # str_A_mag        = r"$A_{\rm mag} = $ "+"{:.2e}".format(self.fits_obj.mag_list_fit_params_group_t[time_index][0])
+      str_alpha_mag_1  = r"$\alpha_{{\rm mag}, 1} = $ "+"{:.2f}".format(self.fits_obj.mag_list_fit_params_group_t[time_index][1])
+      str_alpha_mag_2  = r"$\alpha_{{\rm mag}, 2} = $ "+"{:.2f}".format(self.fits_obj.mag_list_fit_params_group_t[time_index][2])
+      str_k_eta        = r"$k_\eta = $ "+"{:.2f}".format(self.fits_obj.k_eta_group_t[time_index])
       str_k_p          = r"$k_{\rm p} = $ "+"{:.2f}".format(self.fits_obj.k_p_group_t[time_index])
       str_k_max        = r"$k_{\rm max} = $ "+"{:.2f}".format(self.fits_obj.k_max_group_t[time_index])
       list_fig_labels += [
         str_mag_spectra,
-        rf"{str_A_mag}, {str_alpha_mag}, {str_k_eta}, {str_k_p}, {str_k_max}"
+        rf"{str_alpha_mag_1}, {str_alpha_mag_2}, {str_k_eta}, {str_k_p}, {str_k_max}"
       ]
     PlotFuncs.plotLabelBox(
       fig, ax,
@@ -368,7 +371,7 @@ class PlotSpectraFit():
         self.fig_flags,
       ]) + ".png"
     ## save the figure
-    plt.savefig(
+    fig.savefig(
       WWFnF.createFilepath([ filepath_plot, fig_name ]),
       dpi = 150
     )

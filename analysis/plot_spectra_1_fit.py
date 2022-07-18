@@ -3,9 +3,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import sys
-import copy
+import os, sys, copy
 
 ## 'tmpfile' needs to be loaded before 'matplotlib'.
 ## This is so matplotlib stores cache in a temporary directory.
@@ -82,6 +80,7 @@ class SpectraObject():
     list_kin_k_group_t, list_kin_power_group_t, list_kin_list_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
+      file_start_time   = 5,
       read_every        = 25 if self.bool_debug else 1,
       plots_per_eddy    = plots_per_eddy,
       bool_hide_updates = bool_hide_updates
@@ -90,34 +89,35 @@ class SpectraObject():
     list_mag_k_group_t, list_mag_power_group_t, list_mag_list_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
+      file_start_time   = 5,
       read_every        = 25 if self.bool_debug else 1,
       plots_per_eddy    = plots_per_eddy,
       bool_hide_updates = bool_hide_updates
     )
     print(" ")
     print("Fitting spectra data...")
-    ## fit kinetic energy spectra
-    kin_fit_obj = FitMHDScales.FitKinSpectra(
-      list_sim_times       = list_kin_list_sim_times,
-      list_k_group_t       = list_kin_k_group_t,
-      list_power_group_t   = list_kin_power_group_t,
-      bool_fit_fixed_model = kin_bool_fit_fixed_model,
-      k_start              = k_turb_end,     # exclude driving modes
-      k_break_from         = k_turb_end + 4, # provide enough degrees of freedom
-      k_step_size          = 1,
-      bool_fit_sub_y_range = bool_kin_fit_sub_y_range,
-      num_decades_to_fit   = kin_num_decades_to_fit,
-      bool_hide_updates    = bool_hide_updates
-    )
     ## fit magnetic energy spectra
     mag_fit_obj = FitMHDScales.FitMagSpectra(
       list_sim_times       = list_mag_list_sim_times,
       list_k_group_t       = list_mag_k_group_t,
       list_power_group_t   = list_mag_power_group_t,
       bool_fit_fixed_model = mag_bool_fit_fixed_model,
-      k_start              = 1,
-      k_break_from         = 4,
+      k_start              = 0,
+      k_break_from         = 12,
       k_step_size          = 1,
+      bool_hide_updates    = bool_hide_updates
+    )
+    ## fit kinetic energy spectra
+    kin_fit_obj = FitMHDScales.FitKinSpectra(
+      list_sim_times       = list_kin_list_sim_times,
+      list_k_group_t       = list_kin_k_group_t,
+      list_power_group_t   = list_kin_power_group_t,
+      bool_fit_fixed_model = kin_bool_fit_fixed_model,
+      k_start              = 1, # exclude driving modes
+      k_break_from         = 5, # provide enough degrees of freedom
+      k_step_size          = 1,
+      bool_fit_sub_y_range = bool_kin_fit_sub_y_range,
+      num_decades_to_fit   = kin_num_decades_to_fit,
       bool_hide_updates    = bool_hide_updates
     )
     ## extract spectra fit parameters
