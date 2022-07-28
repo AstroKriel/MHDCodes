@@ -34,7 +34,7 @@ def main():
 
     ## loop over the different resolution runs
     for sim_res in [
-        "18", "36", "72", "144", "288"
+        "18", "36", "72"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## print to the terminal what suite is being looked at

@@ -628,12 +628,12 @@ class PrepFitSpectra():
       str_tag,
       self.sim_res
     )
-    max_hours      = int(8)
-    num_cpus       = int(2)
-    max_mem        = int(4 * num_cpus)
-    str_fit_args   = f" -k_turb_end {K_TURB}"
-    str_fit_args   += " -kin_fit_sub_y_range -kin_num_decades_to_fit 6"
-    str_fit_args   += " -f -p"
+    max_hours    = int(8)
+    num_cpus     = int(2)
+    max_mem      = int(4 * num_cpus)
+    str_fit_args = ""
+    # str_fit_args += " -kin_fit_sub_y_range -kin_num_decades_to_fit 8"
+    str_fit_args += " -f -p"
     if BOOL_FIT_FIXED:
       str_fit_args += " -kin_fit_fixed -mag_fit_fixed"
     ## create job file
@@ -675,9 +675,8 @@ BASEPATH           = "/scratch/ek9/nk7952/"
 SONIC_REGIME       = "super_sonic"
 MACH               = 5.0
 K_TURB             = 2
-K_TURB_WIDTH       = 1
 ## run simulation
-BOOL_PREP_SIM      = 1
+BOOL_PREP_SIM      = 0
 NUM_BLOCKS         = [
   36, 36, 48  # Nres = 144, 288, 576
   # 12, 12, 18  # Nres = 36, 72
@@ -688,7 +687,7 @@ BOOL_CALC_SPECTRA  = 0
 ## plot spectra data
 BOOL_PLOT_SPECTRA  = 0
 ## fit spectra
-BOOL_FIT_SPECTRA   = 0
+BOOL_FIT_SPECTRA   = 1
 BOOL_FIT_FIXED     = False
 
 def main():
@@ -697,12 +696,12 @@ def main():
   ## ##############################
   ## loop over the simulation suites
   for suite_folder in [
-      "Rm3000"
+      "Re10", "Re500", "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
     ## loop over the different resolution runs
     for sim_res in [
-        "576"
+        "18", "36", "72", "144", "288"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## print to the terminal what suite is being looked at
@@ -712,7 +711,7 @@ def main():
 
       ## loop over the simulation folders
       for sim_folder in [
-          "Pm1", "Pm10", "Pm125", "Pm250"
+          "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
         ## ##################################

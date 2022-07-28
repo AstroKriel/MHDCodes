@@ -45,13 +45,29 @@ def getIndexClosestValue(input_vals, target_value):
   ## otherwise throw an error
   else: raise Exception("Values stored as '{:s}' instead of 'numpy array'.".format( type(input_vals) ))
 
+def getListMin(list_elems):
+  return min(elem for elem in list_elems if not any([
+    (elem is None),
+    np.isnan(elem)
+  ]))
+
+def getListMax(list_elems):
+  return max(elem for elem in list_elems if not any([
+    (elem is None),
+    np.isnan(elem)
+  ]))
+
 def getIndexListMin(list_elems):
-  ## returns: min_value, min_index
-  return min((val, idx) for (idx, val) in enumerate(list_elems))[1]
+  return min(elem_index for elem_index, elem in enumerate(list_elems) if not any([
+    (elem is None),
+    np.isnan(elem)
+  ]))
 
 def getIndexListMax(list_elems):
-  ## returns: max_value, max_index
-  return max((val, idx) for (idx, val) in enumerate(list_elems))[1]
+  return max(elem_index for elem_index, elem in enumerate(list_elems) if not any([
+    (elem is None),
+    np.isnan(elem)
+  ]))
 
 def flattenList(list_elems):
   return list(np.concatenate(list_elems).flat)

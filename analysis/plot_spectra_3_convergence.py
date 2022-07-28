@@ -40,11 +40,12 @@ class PlotSpectraConvergence():
     ## create figure sub-axis
     gs = GridSpec(3, 2, figure=fig)
     ## 'Turb.dat' data
-    self.ax_k_nu      = fig.add_subplot(gs[0, 0])
-    self.ax_k_eta     = fig.add_subplot(gs[1, 0])
-    self.ax_k_p       = fig.add_subplot(gs[2, 0])
-    self.ax_alpha_kin = fig.add_subplot(gs[0, 1])
-    self.ax_alpha_mag = fig.add_subplot(gs[1, 1])
+    self.ax_k_nu        = fig.add_subplot(gs[0, 0])
+    self.ax_k_eta       = fig.add_subplot(gs[1, 0])
+    self.ax_k_p         = fig.add_subplot(gs[2, 0])
+    self.ax_alpha_kin   = fig.add_subplot(gs[0, 1])
+    self.ax_alpha_mag_1 = fig.add_subplot(gs[1, 1])
+    self.ax_alpha_mag_2 = fig.add_subplot(gs[2, 1])
     ## plot, fit and save data
     self.readScales()
     self.plotScales()
@@ -55,11 +56,12 @@ class PlotSpectraConvergence():
     plt.close(fig)
 
   def readScales(self):
-    self.list_k_nu_group_res      = []
-    self.list_k_eta_group_res     = []
-    self.list_k_p_group_res       = []
-    self.list_alpha_kin_group_res = []
-    self.list_alpha_mag_group_res = []
+    self.list_k_nu_group_res        = []
+    self.list_k_eta_group_res       = []
+    self.list_k_p_group_res         = []
+    self.list_alpha_kin_group_res   = []
+    self.list_alpha_mag_1_group_res = []
+    self.list_alpha_mag_2_group_res = []
     ## read in scales for each resolution run
     for sim_res in LIST_SIM_RES:
       try:
@@ -101,8 +103,13 @@ class PlotSpectraConvergence():
         for index, param in enumerate(fits_obj.kin_list_fit_params_group_t)
         if (kin_index_start <= index) and (index <= kin_index_end)
       ])
-      self.list_alpha_mag_group_res.append([ 
+      self.list_alpha_mag_1_group_res.append([ 
         param[1]
+        for index, param in enumerate(fits_obj.mag_list_fit_params_group_t)
+        if (mag_index_start <= index) and (index <= mag_index_end)
+      ])
+      self.list_alpha_mag_2_group_res.append([ 
+        param[2]
         for index, param in enumerate(fits_obj.mag_list_fit_params_group_t)
         if (mag_index_start <= index) and (index <= mag_index_end)
       ])
@@ -136,9 +143,15 @@ class PlotSpectraConvergence():
         color  = "black"
       )
       PlotFuncs.plotErrorBar(
-        ax     = self.ax_alpha_mag,
+        ax     = self.ax_alpha_mag_1,
         data_x = int(sim_res),
-        data_y = self.list_alpha_mag_group_res[res_index],
+        data_y = self.list_alpha_mag_1_group_res[res_index],
+        color  = "black"
+      )
+      PlotFuncs.plotErrorBar(
+        ax     = self.ax_alpha_mag_2,
+        data_x = int(sim_res),
+        data_y = self.list_alpha_mag_2_group_res[res_index],
         color  = "black"
       )
 
@@ -274,6 +287,7 @@ def main():
     print(str_message)
     print("=" * len(str_message))
     print("Saving figures in:", filepath_suite_output)
+    print(" ")
 
     ## #####################
     ## LOOP OVER SIMULATIONS

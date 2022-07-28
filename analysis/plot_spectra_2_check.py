@@ -282,7 +282,7 @@ class PlotTurbData():
         index_end_fit   = index_end_fit
       )
     ## add legend
-    legend_ax0 = self.axs[0].legend(frameon=False, loc="lower right", fontsize=14)
+    legend_ax0 = self.axs[0].legend(frameon=False, loc="lower left", fontsize=14)
     legend_ax1 = self.axs[1].legend(frameon=False, loc="lower right", fontsize=14)
     self.axs[0].add_artist(legend_ax0)
     self.axs[1].add_artist(legend_ax1)
@@ -321,8 +321,8 @@ class PlotSpectraFitParams():
       ],
       list_marker_colors = [ "w" ],
       list_artists       = [ "." ],
-      loc      = "lower left",
-      bbox     = (0.0, 0.0),
+      loc      = "center left",
+      bbox     = (0.0, 0.4),
       ncol     = 2,
       bpad     = 0,
       tpad     = -1,
@@ -372,23 +372,30 @@ class PlotSpectraFitParams():
         ]
       ## load magnetic energy spectra fit paramaters
       if self.bool_mag_spectra_fitted:
-        k_modes             = self.fits_obj.mag_list_k_group_t[0]
-        self.list_k_eta     = self.fits_obj.k_eta_group_t
-        self.list_k_p       = self.fits_obj.k_p_group_t
-        self.list_k_max     = self.fits_obj.k_max_group_t
-        self.list_mag_alpha = [
+        k_modes               = self.fits_obj.mag_list_k_group_t[0]
+        self.list_k_eta       = self.fits_obj.k_eta_group_t
+        self.list_k_p         = self.fits_obj.k_p_group_t
+        self.list_k_max       = self.fits_obj.k_max_group_t
+        self.list_mag_alpha_1 = [
           list_fit_params[1] for list_fit_params
+          in self.fits_obj.mag_list_fit_params_group_t
+        ]
+        self.list_mag_alpha_2 = [
+          list_fit_params[2] for list_fit_params
           in self.fits_obj.mag_list_fit_params_group_t
         ]
       ## define the end of the k-domain
       self.max_k_mode = 1.2 * max(k_modes)
 
   def plotParams(self):
+    ## #####################
+    ## PLOT AVERAGED SPECTRA
+    ## #####################
     ## plot normalised and time averaged energy spectra
     PlotSpectra.PlotAveSpectraFit(
-      ax               = self.ax_spectra,
-      fits_obj = self.fits_obj,
-      time_range       = [ self.time_exp_start, self.time_exp_end ]
+      ax         = self.ax_spectra,
+      fits_obj   = self.fits_obj,
+      time_range = [ self.time_exp_start, self.time_exp_end ]
     )
     self.ax_spectra.set_ylim([ 10**(-8), 3*10**(0) ])
     if self.bool_plot_fit_params:
@@ -433,8 +440,8 @@ class PlotSpectraFitParams():
       ## PLOT MEASURED ALPHA EXPONENTS
       ## #############################
       range_alpha = [
-        min([ -4, 1.1*min(self.list_kin_alpha), 1.1*min(self.list_mag_alpha) ]),
-        max([  4, 1.1*max(self.list_kin_alpha), 1.1*max(self.list_mag_alpha) ])
+        min([ -4, 1.1*min(self.list_kin_alpha), 1.1*min(self.list_mag_alpha_1) ]),
+        max([  4, 1.1*max(self.list_kin_alpha), 1.1*max(self.list_mag_alpha_1) ])
       ]
       if self.bool_kin_spectra_fitted:
         ## plot alpha_kin
@@ -442,7 +449,7 @@ class PlotSpectraFitParams():
           ax     = self.axs_params[1],
           data_x = self.list_kin_list_sim_times,
           data_y = self.list_kin_alpha,
-          label  = r"$\alpha_{{\rm kin}, 1} =$ ",
+          label  = r"$\alpha_{\rm kin} =$ ",
           color  = "blue"
         )
       if self.bool_mag_spectra_fitted:
@@ -450,9 +457,16 @@ class PlotSpectraFitParams():
         self.__plotParam(
           ax     = self.axs_params[1],
           data_x = self.list_mag_list_sim_times,
-          data_y = self.list_mag_alpha,
+          data_y = self.list_mag_alpha_1,
           label  = r"$\alpha_{{\rm mag}, 1} =$ ",
           color  = "red"
+        )
+        self.__plotParam(
+          ax     = self.axs_params[1],
+          data_x = self.list_mag_list_sim_times,
+          data_y = self.list_mag_alpha_2,
+          label  = r"$\alpha_{{\rm mag}, 2} =$ ",
+          color  = "green"
         )
       ## label and tune figure
       self.axs_params[1].legend(frameon=False, loc="right", fontsize=14)
@@ -668,12 +682,14 @@ def main():
   ## ##############################
   ## loop over the simulation suites
   for suite_folder in [
+      # "Rm3000"
       "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
     ## loop over the different resolution runs
     for sim_res in [
-        "144"
+        # "144"
+        "72", "144", "288"
       ]: # "18", "36", "72", "144", "288", "576"
 
       ## ######################################
@@ -689,13 +705,15 @@ def main():
       print(str_message)
       print("=" * len(str_message))
       print("Saving figures in:", filepath_figures)
+      print(" ")
 
       ## ####################
       ## PLOT SIMULATION DATA
       ## ####################
       ## loop over the simulation folders
       for sim_folder in [
-          "Pm5"
+          # "Pm5"
+          "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
         ## create filepath to the simulation folder
@@ -706,7 +724,7 @@ def main():
         if not os.path.exists(filepath_sim):
           continue
         ## plot simulation data
-        fig_name = suite_folder + "_" + sim_folder + "_" + "check" + FILENAME_TAG + ".png"
+        fig_name = suite_folder + "_" + sim_folder + "_" + "check" + FILENAME_TAG + ".pdf"
         plotSimData(filepath_sim, filepath_figures, fig_name, sim_res)
 
         ## create empty space

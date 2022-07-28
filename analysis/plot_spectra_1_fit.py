@@ -64,7 +64,6 @@ class SpectraObject():
 
   def createSpectraFitsObj(
       self,
-      k_turb_end,
       kin_bool_fit_fixed_model = False,
       mag_bool_fit_fixed_model = False,
       bool_kin_fit_sub_y_range = False,
@@ -102,9 +101,9 @@ class SpectraObject():
       list_k_group_t       = list_mag_k_group_t,
       list_power_group_t   = list_mag_power_group_t,
       bool_fit_fixed_model = mag_bool_fit_fixed_model,
-      k_start              = 0,
-      k_break_from         = 12,
-      k_step_size          = 1,
+      k_index_fit_from     = 0,
+      k_index_break_from   = 5,
+      k_index_break_step   = 1,
       bool_hide_updates    = bool_hide_updates
     )
     ## fit kinetic energy spectra
@@ -113,9 +112,9 @@ class SpectraObject():
       list_k_group_t       = list_kin_k_group_t,
       list_power_group_t   = list_kin_power_group_t,
       bool_fit_fixed_model = kin_bool_fit_fixed_model,
-      k_start              = 1, # exclude driving modes
-      k_break_from         = 5, # provide enough degrees of freedom
-      k_step_size          = 1,
+      k_index_fit_from     = 3, # exclude driving modes: k > 4
+      k_index_break_from   = 5, # provide enough degrees of freedom
+      k_index_break_step   = 1,
       bool_fit_sub_y_range = bool_kin_fit_sub_y_range,
       num_decades_to_fit   = kin_num_decades_to_fit,
       bool_hide_updates    = bool_hide_updates
@@ -326,7 +325,6 @@ def main():
   args_opt.add_argument("-Re",         type=float, default=None, **WWArgparse.opt_arg)
   args_opt.add_argument("-Rm",         type=float, default=None, **WWArgparse.opt_arg)
   args_opt.add_argument("-Pm",         type=float, default=None, **WWArgparse.opt_arg)
-  args_opt.add_argument("-k_turb_end", type=int,   default=3,    **WWArgparse.opt_arg)
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description="Required processing arguments:")
   args_req.add_argument("-suite_path", type=str, required=True, help="type: %(type)s")
@@ -369,7 +367,6 @@ def main():
   Re                       = args["Re"]
   Rm                       = args["Rm"]
   Pm                       = args["Pm"]
-  k_turb_end               = args["k_turb_end"]
 
   ## ######################
   ## INITIALISING VARIABLES
@@ -426,11 +423,10 @@ def main():
     print(f"\t> fit domain (kin): [{kin_fit_time_start}, {kin_fit_time_end}]")
     print(f"\t> fit domain (mag): [{mag_fit_time_start}, {mag_fit_time_end}]")
     print(f"\t> Re: {Re}, Rm: {Rm}, Pm: {Pm}")
-    print(f"\t> k_turb_end: {k_turb_end}")
-    print("\t> Fitting with {} kinetic energy spectra model.".format(
+    print("\t> Fitting with the {} kinetic energy spectra model.".format(
       "fixed" if kin_bool_fit_fixed_model else "full"
     ))
-    print("\t> Fitting with {} magnetic energy spectra model.".format(
+    print("\t> Fitting with the {} magnetic energy spectra model.".format(
       "fixed" if mag_bool_fit_fixed_model else "full"
     ))
   print(" ")
@@ -456,7 +452,6 @@ def main():
   ## read and fit spectra data
   if bool_fit_spectra:
     spec_obj.createSpectraFitsObj(
-      k_turb_end               = k_turb_end,
       kin_bool_fit_fixed_model = kin_bool_fit_fixed_model,
       mag_bool_fit_fixed_model = mag_bool_fit_fixed_model,
       bool_kin_fit_sub_y_range = bool_kin_fit_sub_y_range,
