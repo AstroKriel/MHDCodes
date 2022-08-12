@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -111,7 +111,7 @@ def loadListFLASHFieldSlice(
       )
     )
   if not len(list_data_mag_sorted) > 0:
-    raise Exception("Could not load any data in:", filepath_data)
+    Exception("Could not load any data in:", filepath_data)
   ## get colorbar limits
   list_col_range = [
     np.min(list_data_mag_sorted),
@@ -251,11 +251,11 @@ def getPlotsPerEddy(filepath, num_t_turb=100, bool_hide_updates=False):
     if (tmax is not None) and (plot_file_interval is not None):
       plots_per_eddy = tmax / plot_file_interval / num_t_turb
       if not(bool_hide_updates):
-        print("Read from 'Turb.log':")
+        print("The following has been read from 'Turb.log':")
         print("\t> 'tmax'".ljust(25),                 "=", tmax)
         print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
         print("\t> # plt-files / t_turb".ljust(25),   "=", plots_per_eddy)
-        print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb")
+        print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb.")
         print(" ")
       return plots_per_eddy
   return None
@@ -271,7 +271,7 @@ def loadSpectra(filepath_data, str_spectra_type):
       data_y = data_y / 2
     elif "mag" in str_spectra_type:
       data_y = data_y / (8 * np.pi)
-    else: raise Exception("You have passed an invalid spectra type to 'loadSpectra()'.")
+    else: Exception("You have passed an invalid spectra type to 'loadSpectra()'.")
     bool_failed_to_read = False
   except:
     bool_failed_to_read = True
@@ -329,4 +329,4 @@ def loadListSpectra(
   return k_group_t, power_group_t, list_sim_times
 
 
-## END OF MODULE
+## END OF LIBRARY

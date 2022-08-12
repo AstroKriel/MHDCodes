@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -132,4 +132,4 @@ def createName(list_name_elems):
   ]) )
 
 
-## END OF MODULE
+## END OF LIBRARY

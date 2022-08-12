@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -52,7 +52,7 @@ def loadPickle2Obj(
   else:
     ## raise exception
     if bool_raise_error:
-      raise Exception("No pickle-file '{:s}' found in '{:s}'.".format(
+      Exception("No pickle-file '{:s}' found in '{:s}'.".format(
         filename, filepath
       ))
     ## return flag
@@ -111,7 +111,7 @@ def loadJson2Dict(
   else:
     ## raise exception
     if bool_raise_error:
-      raise Exception("No json-file '{:s}' found in '{:s}'.".format(
+      Exception("No json-file '{:s}' found in '{:s}'.".format(
         filename, filepath
       ))
     ## return flag
@@ -138,4 +138,4 @@ def printObjAttrNames(obj):
     print(attr)
 
 
-## END OF MODULE
+## END OF LIBRARY

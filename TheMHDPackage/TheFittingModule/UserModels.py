@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -89,4 +89,4 @@ class ListOfModels():
     return a0 / (1 - np.exp( -(np.array(x) / a1)**a2 ))
 
 
-## END OF MODULE
+## END OF LIBRARY

@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -8,4 +8,4 @@ def getDictWithoutKeys(dic, keys):
   return {k: v for k, v in dic.items() if k not in keys}
 
 
-## END OF MODULE
+## END OF LIBRARY

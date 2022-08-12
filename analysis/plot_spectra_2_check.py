@@ -3,8 +3,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import sys
+import os, sys
 import numpy as np
 
 ## 'tmpfile' needs to be loaded before 'matplotlib'.
@@ -29,8 +28,9 @@ from TheFittingModule import FitMHDScales, UserModels
 ## PREPARE WORKSPACE
 ## ###############################################################
 os.system("clear") # clear terminal window
+## use a non-interactive plotting backend
 plt.ioff()
-plt.switch_backend("agg") # use a non-interactive plotting backend
+plt.switch_backend("agg")
 
 
 ## ###############################################################

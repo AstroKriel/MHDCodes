@@ -527,9 +527,9 @@ def main():
   ## check that a valid list of Pm values have been defined
   if bool_plot_E_grow:
     if None in list_Pm:
-      raise Exception("'Pm' values have not been defined.")
+      Exception("'Pm' values have not been defined.")
     elif len(list_Pm) < len(list_sim_folders):
-      raise Exception("Only '{:d}' Pm values have been defined, but there are '{:d}' simulations.".format(
+      Exception("Only '{:d}' Pm values have been defined, but there are '{:d}' simulations.".format(
         len(list_Pm),
         len(list_sim_folders)
       ))

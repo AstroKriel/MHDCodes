@@ -73,9 +73,9 @@ class SpectraObject():
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
     plots_per_eddy = LoadFlashData.getPlotsPerEddy(self.filepath_data + "/../", bool_hide_updates=False)
     if plots_per_eddy is None:
-      raise Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
-    print("Loading spectra data...")
+      Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
     ## load kinetic energy spectra
+    print("Loading kinetic energy spectra...")
     list_kin_k_group_t, list_kin_power_group_t, list_kin_list_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
@@ -85,6 +85,7 @@ class SpectraObject():
       bool_hide_updates = bool_hide_updates
     )
     ## load magnetic energy spectra
+    print("Loading magnetic energy spectra...")
     list_mag_k_group_t, list_mag_power_group_t, list_mag_list_sim_times = LoadFlashData.loadListSpectra(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
@@ -94,19 +95,18 @@ class SpectraObject():
       bool_hide_updates = bool_hide_updates
     )
     print(" ")
-    print("Fitting spectra data...")
     ## fit magnetic energy spectra
+    print("Fitting magnetic energy spectra...")
     mag_fit_obj = FitMHDScales.FitMagSpectra(
       list_sim_times       = list_mag_list_sim_times,
       list_k_group_t       = list_mag_k_group_t,
       list_power_group_t   = list_mag_power_group_t,
       bool_fit_fixed_model = mag_bool_fit_fixed_model,
       k_index_fit_from     = 0,
-      k_index_break_from   = 5,
-      k_index_break_step   = 1,
       bool_hide_updates    = bool_hide_updates
     )
     ## fit kinetic energy spectra
+    print("Fitting kinetic energy spectra...")
     kin_fit_obj = FitMHDScales.FitKinSpectra(
       list_sim_times       = list_kin_list_sim_times,
       list_k_group_t       = list_kin_k_group_t,
@@ -114,7 +114,6 @@ class SpectraObject():
       bool_fit_fixed_model = kin_bool_fit_fixed_model,
       k_index_fit_from     = 3, # exclude driving modes: k > 4
       k_index_break_from   = 5, # provide enough degrees of freedom
-      k_index_break_step   = 1,
       bool_fit_sub_y_range = bool_kin_fit_sub_y_range,
       num_decades_to_fit   = kin_num_decades_to_fit,
       bool_hide_updates    = bool_hide_updates
@@ -160,7 +159,7 @@ class SpectraObject():
         filename = self.filename_spectra_fits
       )
     except:
-      raise Exception(f"Error: '{self.filename_spectra_fits}' does not exist.")
+      Exception(f"Error: '{self.filename_spectra_fits}' does not exist.")
     ## store dictionary data in spectra-fit object
     fits_obj = FitMHDScales.SpectraFit(**fits_dict)
     ## check whether any simulation parameters need to be updated:
@@ -384,7 +383,7 @@ def main():
   )
   if bool_fit_spectra or not(bool_missing_plasma_numbers):
     if bool_missing_plasma_numbers:
-      raise Exception("Error: Undefined plasma-Reynolds numbers. Need to define two of the following: 'Re', 'Rm', and 'Pm'.")
+      Exception("Error: Undefined plasma-Reynolds numbers. Need to define two of the following: 'Re', 'Rm', and 'Pm'.")
     elif Re == None:
       Re = Rm / Pm
     elif Rm == None:

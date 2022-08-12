@@ -3,9 +3,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import sys
-import shutil
+import os, sys, shutil
 
 ## load old user defined modules
 from TheUsefulModule import WWFnF

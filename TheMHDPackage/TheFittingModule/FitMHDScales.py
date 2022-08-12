@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -191,7 +191,7 @@ class SpectraModels():
 
   def magnetic_loge(k, A_loge, alpha_1, alpha_2, ell_eta):
     arg = (ell_eta * np.array(k))**(alpha_2)
-    log_mod_bessel = np.where(
+    log_bessel = np.where(
       arg > 10,
       ## approximate ln(K0(...)) with the first two terms from the series expansion of K0(...)
       -arg + np.log( np.sqrt(np.pi/2) * (
@@ -200,8 +200,7 @@ class SpectraModels():
       ## evaluate ln(K0(...))
       np.log(k0(arg))
     )
-    return A_loge + alpha_1 * np.log(k) + log_mod_bessel
-    # return np.log(SpectraModels.magnetic_linear(k, np.exp(A_loge), alpha, ell_eta))
+    return A_loge + alpha_1 * np.log(k) + log_bessel
 
   def k_p_implicit(k, alpha_1, alpha_2, ell_eta):
     ''' peak scale of the magnetic energy spectra model (modified Kulsrud and Anderson 1992).
@@ -223,7 +222,6 @@ class SpectraModels():
 
   def magnetic_simple_loge(k, A_loge, alpha_1, alpha_2, ell_eta):
     return A_loge + alpha_1 * np.log(k) - (ell_eta * np.array(k))**(alpha_2)
-    # return np.log(SpectraModels.magnetic_simple_linear(k, np.exp(A_loge), alpha, ell_eta))
   
   def k_p_simple(alpha_1, alpha_2, ell_eta):
     return (alpha_1 / alpha_2)**(1/alpha_2) * 1/ell_eta
@@ -279,10 +277,10 @@ class FitSpectra(metaclass=abc.ABCMeta): # abstract base class
     list_fit_params_group_k = []
     list_params_std_group_k = []
     ## find the first k-mode such that a certain number of decades will be fitted
-    k_index_break_Estart = int(WWLists.getIndexClosestValue(
-      np.log10(np.array(data_power) / np.sum(data_power)),
-      -3
-    ))
+    coef = 2 # ratio between kmax and kend that k-break should start
+    k_index_break_start = int(
+      ( np.argmax(data_power) * len(data_k)**(coef) )**( 1/(coef+1) )
+    )
     ## define a k-mode to stop fitting
     if self.bool_fit_sub_y_range:
       ## find the k-mode where the energy spectra is closest to the cut-off energy
@@ -294,23 +292,15 @@ class FitSpectra(metaclass=abc.ABCMeta): # abstract base class
     else: k_index_break_end = len(data_k) - 5
     ## create the range of k-modes to break at (i.e., switch from fitting curve to tail)
     list_fit_k_index_range  = list(range(
-      max(
-        self.k_index_break_from,
-        k_index_break_Estart
-      ),                       # start index
-      k_index_break_end,       # end index
-      self.k_index_break_step  # index increment
+      k_index_break_start if self.k_index_break_from is None else self.k_index_break_from,
+      k_index_break_end,
+      self.k_index_break_step
     ))
-    # ## check that there are enough k-modes to fit to beyond the peak-scale
-    # k_max_index_plus_decade = int(10**(np.log10(np.argmax(data_power)+1) + 0.5))
+    if len(list_fit_k_index_range) == 0:
+      list_fit_k_index_range = len(data_k) - 2
     ## fit to an increasing subset of the data
     for k_index_break_fit in list_fit_k_index_range:
-      # if (k_index_break_fit < k_max_index_plus_decade) and (len(self.list_k_group_t[0]) > (100 // 2)):
-      #   list_fit_params_group_k.append([ ])
-      #   list_params_std_group_k.append([ ])
-      #   fit_2norm_group_k.append(np.nan)
-      #   continue
-      ## fit model to a subset of the data (acts as a guess if a simpler model is fitted to the data in this step)
+      ## fit model to a subset of the data (acts as a guess if a simpler model is fitted here)
       list_fit_params, list_fit_params_std, fit_2norm = self.__fitSpectra(
         data_k            = data_k,
         data_power        = data_power,
@@ -519,7 +509,7 @@ class FitKinSpectra(FitSpectra):
         (   2,    -0.1,   1/0.001 )
       ),
       sigma  = list_weights,
-      maxfev = 10**4
+      maxfev = 10**5
     )
     ## return fit parameters
     return list_fit_params_curve_loge, fit_params_cov
@@ -566,7 +556,7 @@ class FitMagSpectra(FitSpectra):
       list_power_group_t,
       bool_fit_fixed_model = False,
       k_index_fit_from     = 1,
-      k_index_break_from   = 5,
+      k_index_break_from   = None,
       k_index_break_step   = 1,
       bool_hide_updates    = False
     ):
@@ -576,11 +566,11 @@ class FitMagSpectra(FitSpectra):
     self.list_power_group_t   = list_power_group_t
     ## store fit parameters
     self.bool_fit_fixed_model = bool_fit_fixed_model # TODO: implement this functionality
-    self.func_plot            = SpectraModels.magnetic_linear
+    self.func_plot            = SpectraModels.magnetic_simple_linear
     self.log_bounds           = (
       # log(A), alpha_1,  alpha_2, 1/k_eta
-      ( -15,    0.01,     0.01,    0.001 ),
-      (   2,    10.0,     2.0,     100   )
+      ( -15,    0.01,     0.01,    1/100   ),
+      (   2,    10.0,     2.0,     1/0.001 )
     )
     self.k_index_fit_from     = k_index_fit_from
     self.k_index_break_from   = k_index_break_from
@@ -603,30 +593,30 @@ class FitMagSpectra(FitSpectra):
       ydata  = data_power_loge,
       bounds = self.log_bounds,
       sigma  = list_weights,
-      maxfev = 10**4
-    )
-    ## return fit parameters
-    return list_fit_params_curve_loge, fit_params_cov
-
-  def auxFitSpectraFinal(
-      self,
-      data_k, data_power_loge, list_weights, list_guess_params
-    ):
-    ## log-transform guess paramaters
-    list_guess_params_loge = [ np.log(list_guess_params[0]), *list_guess_params[1:] ]
-    ## beat the Kulsrud and Anderson 1992 model into fitting the magnetic spectra
-    ## (Step 2) fit the Kulsrud and Anderson 1992 model + pass the parameter guess from the simple model
-    list_fit_params_curve_loge, fit_params_cov = curve_fit(
-      SpectraModels.magnetic_loge,
-      xdata  = data_k,
-      ydata  = data_power_loge,
-      bounds = self.log_bounds,
-      p0     = list_guess_params_loge,
-      sigma  = list_weights,
       maxfev = 10**5
     )
     ## return fit parameters
     return list_fit_params_curve_loge, fit_params_cov
+
+  # def auxFitSpectraFinal(
+  #     self,
+  #     data_k, data_power_loge, list_weights, list_guess_params
+  #   ):
+  #   ## log-transform guess paramaters
+  #   list_guess_params_loge = [ np.log(list_guess_params[0]), *list_guess_params[1:] ]
+  #   ## beat the Kulsrud and Anderson 1992 model into fitting the magnetic spectra
+  #   ## (Step 2) fit the Kulsrud and Anderson 1992 model + pass the parameter guess from the simple model
+  #   list_fit_params_curve_loge, fit_params_cov = curve_fit(
+  #     SpectraModels.magnetic_loge,
+  #     xdata  = data_k,
+  #     ydata  = data_power_loge,
+  #     bounds = self.log_bounds,
+  #     p0     = list_guess_params_loge,
+  #     sigma  = list_weights,
+  #     maxfev = 10**5
+  #   )
+  #   ## return fit parameters
+  #   return list_fit_params_curve_loge, fit_params_cov
 
   def auxSaveScales(self, list_fit_params, **kwargs):
     ## extract best fit parameters
@@ -681,4 +671,4 @@ class FitMagSpectra(FitSpectra):
     }
 
 
-## END OF MODULE
+## END OF LIBRARY

@@ -8,15 +8,16 @@ import numpy as np
 
 
 ## ###############################################################
-## WORKING WITH NUMBERS
+## FUNCTIONS
 ## ###############################################################
-def roundDecimalsDown(number:float, decimals:int=1):
-  factor = 10 ** decimals
-  return np.floor(number * factor) / factor
-
-def roundDecimalsUp(number:float, decimals:int=1):
-  factor = 10 ** decimals
-  return np.ceil(number * factor) / factor
+def AveNormSpectraData(list_power_group_t):
+  ## normalise spectra data
+  list_power_norm_group_t = [
+    np.array(list_power) / np.sum(list_power)
+    for list_power in list_power_group_t
+  ]
+  ## return average spectra
+  return np.median(list_power_norm_group_t, axis=0)
 
 
 ## END OF LIBRARY

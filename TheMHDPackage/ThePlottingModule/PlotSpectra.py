@@ -1,10 +1,9 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -138,7 +137,7 @@ class PlotSpectraFit():
     self.fits_obj = fits_obj
     ## check that the spectra object has been labelled
     if (self.fits_obj.sim_suite is None) or (self.fits_obj.sim_label is None):
-      raise Exception("Spectra object should have a suite ({:}) and label ({:}) defned.".format(
+      Exception("Spectra object should have a suite ({:}) and label ({:}) defned.".format(
         self.fits_obj.sim_suite,
         self.fits_obj.sim_label
       ))
@@ -310,7 +309,7 @@ class PlotSpectraFit():
       ax.axvline(x=self.fits_obj.k_nu_group_t[time_index], ls="--", color="blue", label=r"$k_\nu$")
     if bool_plot_mag:
       k_eta         = self.fits_obj.k_eta_group_t[time_index]
-      k_eta_alpha_2 = k_eta**( self.fits_obj.mag_list_fit_params_group_t[time_index][2] )
+      k_eta_alpha_2 = k_eta**( 1 / self.fits_obj.mag_list_fit_params_group_t[time_index][2] )
       k_p           = self.fits_obj.k_p_group_t[time_index]
       k_max         = self.fits_obj.k_max_group_t[time_index]
       ax.axvline(x=k_eta,         ls="--", color="red",    label=r"$k_\eta$")
@@ -336,19 +335,19 @@ class PlotSpectraFit():
       ]
     ## magnetic energy spectra labels
     if bool_plot_mag:
-      str_mag_spectra   = r"$\mathcal{P}_{\rm mag}(k) = A_{\rm mag} k^{\alpha_{{\rm mag}, 1}} K_0\left\{ -\left(\frac{k}{k_\eta}\right)^{\alpha_{{\rm mag}, 2}} \right\}$"
+      str_mag_spectra   = r"$\mathcal{P}_{\rm mag}(k) = A_{\rm mag} k^{\alpha_{{\rm mag}, 1}} \exp\left\{ -\left(\frac{k}{k_\eta}\right)^{\alpha_{{\rm mag}, 2}} \right\}$"
       val_A_mag         = self.fits_obj.mag_list_fit_params_group_t[time_index][0]
       val_alpha_mag_1   = self.fits_obj.mag_list_fit_params_group_t[time_index][1]
       val_alpha_mag_2   = self.fits_obj.mag_list_fit_params_group_t[time_index][2]
       val_k_eta         = self.fits_obj.k_eta_group_t[time_index]
-      val_k_eta_alpha_2 = val_k_eta**(val_alpha_mag_2)
+      val_k_eta_alpha_2 = val_k_eta**(1/val_alpha_mag_2)
       val_k_p           = self.fits_obj.k_p_group_t[time_index]
       val_k_max         = self.fits_obj.k_max_group_t[time_index]
       str_A_mag         = r"$A_{\rm mag} = $ "+"{:.2e}".format(val_A_mag)
       str_alpha_mag_1   = r"$\alpha_{{\rm mag}, 1} = $ "+"{:.1f}".format(val_alpha_mag_1)
       str_alpha_mag_2   = r"$\alpha_{{\rm mag}, 2} = $ "+"{:.1f}".format(val_alpha_mag_2)
       str_k_eta         = r"$k_\eta = $ "+"{:.2f}".format(val_k_eta)
-      str_k_eta_alpha_2 = r"$k_\eta^{\alpha_{{\rm mag}, 2}} = $ "+"{:.2f}".format(val_k_eta_alpha_2)
+      str_k_eta_alpha_2 = r"$k_\eta^{1/\alpha_{{\rm mag}, 2}} = $ "+"{:.2f}".format(val_k_eta_alpha_2)
       str_k_p           = r"$k_{\rm p} = $ "+"{:.1f}".format(val_k_p)
       str_k_max         = r"$k_{\rm max} = $ "+"{:.1f}".format(val_k_max)
       list_fig_labels  += [
@@ -525,4 +524,4 @@ class PlotSpectra():
     )
 
 
-## END OF MODULE
+## END OF LIBRARY

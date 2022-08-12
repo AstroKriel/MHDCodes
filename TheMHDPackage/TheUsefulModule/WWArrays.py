@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -24,4 +24,4 @@ def normaliseData(vals):
   return vals / vals.max()
 
 
-## END OF MODULE
+## END OF LIBRARY

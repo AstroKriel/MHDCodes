@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -240,7 +240,7 @@ def plotLabelBox(
     xy            = (xpos, ypos),
     xycoords      = ax.transAxes,
     box_alignment = box_alignment,
-    bboxprops     = dict(color="grey", facecolor="white", boxstyle="round", alpha=alpha)
+    bboxprops     = dict(color="grey", facecolor="white", boxstyle="round", alpha=alpha, zorder=10)
   )
   ann.set_figure(fig)
   fig.artists.append(ann)
@@ -364,7 +364,7 @@ def addLegend(
         )
       )
     ## otherwise throw an error
-    else: raise Exception("Artist '{}' is not valid.".format(artist))
+    else: Exception("Artist '{}' is not valid.".format(artist))
   ## draw the legend
   legend = ax.legend(
     list_legend_artists,
@@ -722,7 +722,7 @@ class CreateFunctionLabel():
     elif "PowerLaw".lower() in func_label.lower(): self.labelPowerLaw()
     elif "LinearOffset".lower() in func_label.lower(): self.labelLinearOffset()
     elif "Linear".lower() in func_label.lower(): self.labelLinear()
-    else: raise Exception("Undefined KDE function: can't create label for '{}'".format(func_label))
+    else: Exception("Undefined KDE function: can't create label for '{}'".format(func_label))
   def labelPowerLawOffset(self):
     str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)
     str_exp  = CreateDistributionStatsLabel.exp(self.list_params[1], self.num_digits)
@@ -937,4 +937,4 @@ def plotDistributionFit(
   return list_fit_params
 
 
-## END OF MODULE
+## END OF LIBRARY

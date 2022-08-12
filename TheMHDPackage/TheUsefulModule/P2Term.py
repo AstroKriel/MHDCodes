@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -27,9 +27,9 @@ def printInfo(str_justified, input_info, num_char_spacing=15):
       print(str_justified.ljust(num_char_spacing), input_info)
     ## otherwise assume its a list of numbers (i.e. int, float)
     else: print(str_justified.ljust(num_char_spacing), [ str(elem) for elem in input_info ])
-  else: raise Exception("ERROR: Handling of variable type '{}' has not been implemented yet.".format(
+  else: Exception("ERROR: Handling of variable type '{}' has not been implemented yet.".format(
     type(input_info)
   ))
 
 
-## END OF MODULE
+## END OF LIBRARY

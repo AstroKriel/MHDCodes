@@ -49,7 +49,7 @@ def funcLoadData_sim(
   bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
   bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
   if not(bool_kin_fit) or not(bool_mag_fit):
-    raise Exception("Fit range has not been defined.")
+    Exception("Fit range has not been defined.")
   ## find indices of magnetic fit time range
   kin_index_start = getIndexClosestValue(sim_times, spectra_obj.kin_fit_start_t)
   kin_index_end   = getIndexClosestValue(sim_times, spectra_obj.kin_fit_end_t)
@@ -1232,7 +1232,7 @@ class PlotSpectraAndScales():
     bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
     bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
     if not(bool_kin_fit) or not(bool_mag_fit):
-      raise Exception("Fit range has not been defined.")
+      Exception("Fit range has not been defined.")
     ## find indices of kinetic energy fit time range
     kin_index_start = getIndexClosestValue(sim_times, spectra_obj.kin_fit_start_t)
     kin_index_end   = getIndexClosestValue(sim_times, spectra_obj.kin_fit_end_t)
@@ -1493,7 +1493,7 @@ class PlotSpectraAndScalesResiduals():
     bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
     bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
     if not(bool_kin_fit) or not(bool_mag_fit):
-      raise Exception("Fit range has not been defined.")
+      Exception("Fit range has not been defined.")
     ## find indices of kinetic energy fit time range
     kin_index_start = getIndexClosestValue(sim_times, spectra_obj.kin_fit_start_t)
     kin_index_end   = getIndexClosestValue(sim_times, spectra_obj.kin_fit_end_t)
@@ -1793,7 +1793,7 @@ class PlotScaleConvergence():
       bool_kin_fit = (spectra_obj.kin_fit_start_t is not None) and (spectra_obj.kin_fit_end_t is not None)
       bool_mag_fit = (spectra_obj.mag_fit_start_t is not None) and (spectra_obj.mag_fit_end_t is not None)
       if not(bool_kin_fit) or not(bool_mag_fit):
-        raise Exception("Fit range has not been defined.")
+        Exception("Fit range has not been defined.")
       ## find indices of kinetic energy fit time range
       kin_index_start = getIndexClosestValue(sim_times, spectra_obj.kin_fit_start_t)
       kin_index_end   = getIndexClosestValue(sim_times, spectra_obj.kin_fit_end_t)

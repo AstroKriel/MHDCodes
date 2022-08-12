@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -22,28 +22,28 @@ def getIndexValueExceeded(input_vals, target_value):
   input_vals = np.asarray(input_vals)
   ## check there are sufficient points in the array
   if input_vals.shape[0] < 3:
-    raise Exception("Insuffient points. Array has shape '{}'.".format( input_vals.shape ))
+    Exception("Insuffient points. Array has shape '{}'.".format( input_vals.shape ))
   ## check that the conversion worked
   if isinstance(input_vals, np.ndarray):
     if target_value < min(input_vals): return np.argmin(input_vals)
     if target_value > max(input_vals): return np.argmax(input_vals)
     return np.argmax(input_vals > target_value) # gets first instance of where target_value is exceeded
   ## otherwise throw an error
-  else: raise Exception("Values stored as '{:s}' instead of 'numpy array'.".format( type(input_vals) ))
+  else: Exception("Values stored as '{:s}' instead of 'numpy array'.".format( type(input_vals) ))
 
 def getIndexClosestValue(input_vals, target_value):
   ## work with arrays
   input_vals = np.asarray(input_vals)
   ## check there are sufficient points in the array
   if input_vals.shape[0] < 3:
-    raise Exception("Insuffient points. Array has shape '{}'.".format( input_vals.shape ))
+    Exception("Insuffient points. Array has shape '{}'.".format( input_vals.shape ))
   ## check that the conversion worked
   if isinstance(input_vals, np.ndarray):
     if target_value < min(input_vals): return np.argmin(input_vals)
     if target_value > max(input_vals): return np.argmax(input_vals)
     return np.argmin(np.abs(input_vals - target_value)) # gets the index of the value closest to target_index
   ## otherwise throw an error
-  else: raise Exception("Values stored as '{:s}' instead of 'numpy array'.".format( type(input_vals) ))
+  else: Exception("Values stored as '{:s}' instead of 'numpy array'.".format( type(input_vals) ))
 
 def getListMin(list_elems):
   return min(elem for elem in list_elems if not any([
@@ -138,4 +138,4 @@ def removeRedudantOuterList(list_elems):
   return next(iter(list_elems))
 
 
-## END OF MODULE
+## END OF LIBRARY

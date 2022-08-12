@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -51,4 +51,4 @@ class MyParser(argparse.ArgumentParser):
     sys.exit(2)
 
 
-## END OF MODULE
+## END OF LIBRARY

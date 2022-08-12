@@ -165,7 +165,7 @@ def writeForceGenInput(
 def readEnergyPrefactor(filepath_file):
   ## check the file exists
   if not os.path.isfile(filepath_file):
-    raise Exception(f"ERROR: the input force generator '{FILENAME_DRIVING_INPUT}' does not exist.")
+    Exception(f"ERROR: the input force generator '{FILENAME_DRIVING_INPUT}' does not exist.")
   ## open file
   with open(filepath_file) as file_lines:
     ## loop over file lines
@@ -179,7 +179,7 @@ def readEnergyPrefactor(filepath_file):
       if list_line_elems[0] == "st_energy_coeff":
         return float(list_line_elems[2])
   ## if the prefactor wasn't found
-  raise Exception(f"ERROR: Could not read the energy prefactory 'st_energy_coeff' in '{FILENAME_DRIVING_INPUT}'")
+  Exception(f"ERROR: Could not read the energy prefactory 'st_energy_coeff' in '{FILENAME_DRIVING_INPUT}'")
 
 
 ## ###############################################################

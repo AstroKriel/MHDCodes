@@ -78,7 +78,7 @@ class PlotSpectraConvergence():
       bool_kin_fit = (fits_obj.kin_fit_time_start is not None) and (fits_obj.kin_fit_time_end is not None)
       bool_mag_fit = (fits_obj.mag_fit_time_start is not None) and (fits_obj.mag_fit_time_end is not None)
       if not(bool_kin_fit) or not(bool_mag_fit):
-        raise Exception("Fit range has not been defined for: {}{}{} energy spectra.".format(
+        Exception("Fit range has not been defined for: {}{}{} energy spectra.".format(
           "kinetic"  if not(bool_kin_fit) else "",
           " and " if (not(bool_kin_fit) and not(bool_mag_fit)) else "",
           "magnetic" if not(bool_mag_fit) else ""

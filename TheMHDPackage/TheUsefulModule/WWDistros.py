@@ -1,4 +1,4 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
@@ -31,4 +31,4 @@ def sampleGaussFromQuantiles(
   return norm(loc=norm_mean, scale=norm_std).rvs(size=num_samples)
 
 
-## END OF MODULE
+## END OF LIBRARY
