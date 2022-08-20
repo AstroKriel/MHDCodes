@@ -168,63 +168,55 @@ class SpectraModels():
   ## ######################
   ## KINETIC SPECTRA MODELS
   ## ######################
-  def kinetic_linear(k, A, alpha, ell_nu):
+  def kinetic_linear(k, A, alpha, k_nu):
     ''' exponential + powerlaw in linear-domain:
-        y = A  * k^alpha * exp(- k / k_nu)
-      where ell_nu = 1/k_nu.
+        y = A * k^alpha * exp(- k / k_nu)
     '''
-    return A * np.array(k)**(alpha) * np.exp(-(ell_nu * np.array(k)))
+    return A * np.array(k)**(alpha) * np.exp(-(np.array(k) / k_nu))
 
-  def kinetic_loge(k, A_loge, alpha, ell_nu):
-    return A_loge + alpha * np.log(k) - (ell_nu * np.array(k))
-    # return np.log(SpectraModels.kinetic_linear(k, np.exp(A_loge), alpha, ell_nu))
+  def kinetic_loge(k, A, alpha, k_nu):
+    return np.log(A) + alpha * np.log(k) - (np.array(k) / k_nu)
 
   ## #######################
   ## MAGNETIC SPECTRA MODELS
   ## #######################
-  def magnetic_linear(k, A, alpha_1, alpha_2, ell_eta):
+  def magnetic_linear(k, A, alpha_1, alpha_2, k_eta):
     ''' modified Kulsrud and Anderson 1992 in linear-domain:
         y = A * k^alpha_1 * K0( (k / k_eta)^alpha_2 )
-      where ell_eta = 1/k_eta.
     '''
-    return A * np.array(k)**(alpha_1) * k0( (ell_eta * np.array(k))**(alpha_2) )
+    return A * np.array(k)**(alpha_1) * k0( (np.array(k) / k_eta)**(alpha_2) )
 
-  def magnetic_loge(k, A_loge, alpha_1, alpha_2, ell_eta):
-    arg = (ell_eta * np.array(k))**(alpha_2)
-    log_bessel = np.where(
-      arg > 10,
-      ## approximate ln(K0(...)) with the first two terms from the series expansion of K0(...)
-      -arg + np.log( np.sqrt(np.pi/2) * (
-        np.sqrt(1/arg) - 1/8 * (1/arg)**(3/2)
-      )),
-      ## evaluate ln(K0(...))
-      np.log(k0(arg))
-    )
-    return A_loge + alpha_1 * np.log(k) + log_bessel
+  def magnetic_loge(k, A, alpha_1, alpha_2, k_eta):
+    # arg = (np.array(k) / k_eta)**(alpha_2)
+    # log_bessel = np.where(
+    #   arg > 10,
+    #   ## approximate ln(K0(...)) with the first two terms from the series expansion of K0(...)
+    #   -arg + np.log(np.sqrt(np.pi/2) * ( np.sqrt(1/arg) - 1/8 * (1/arg)**(3/2) )),
+    #   ## evaluate ln(K0(...))
+    #   np.log(k0(arg))
+    # )
+    # return np.log(A) + alpha_1 * np.log(k) + log_bessel
+    return np.log(A) + alpha_1 * np.log(k) + np.log(k0( (np.array(k) / k_eta)**(alpha_2) ))
 
-  def k_p_implicit(k, alpha_1, alpha_2, ell_eta):
+  def k_p_implicit(k, alpha_1, alpha_2, k_eta):
     ''' peak scale of the magnetic energy spectra model (modified Kulsrud and Anderson 1992).
       when y'= 0:
-        k_p :=  k = alpha * [K0(k / k_eta) / K1(k / k_eta)] * k_eta
-      where ell_eta = 1/k_eta.
+        k_p :=  k = ( alpha_1 / alpha_2 * K0(...) / K1(...) )^(1/alpha_2) * k_eta
     '''
-    return np.array(k) - (
-      alpha_1 / alpha_2 * (
-        k0( (ell_eta * np.array(k))**(alpha_2) ) / k1( (ell_eta * np.array(k))**(alpha_2) )
-    ))**(1/alpha_2) * 1/ell_eta
+    arg = (np.array(k) / k_eta)**(alpha_2)
+    return np.array(k) - ( alpha_1 / alpha_2 * k0(arg) / k1(arg) )**(1/alpha_2) * k_eta
   
-  def magnetic_simple_linear(k, A, alpha_1, alpha_2, ell_eta):
+  def magnetic_simple_linear(k, A, alpha_1, alpha_2, k_eta):
     ''' simple model: exponential + powerlaw in linear-domain:
         y = A * k^alpha * exp(- k / k_eta)
-      where ell_eta = 1/k_eta.
     '''
-    return A * np.array(k)**(alpha_1) * np.exp( -(ell_eta * np.array(k))**(alpha_2) )
+    return A * np.array(k)**(alpha_1) * np.exp( -(np.array(k) / k_eta)**(alpha_2) )
 
-  def magnetic_simple_loge(k, A_loge, alpha_1, alpha_2, ell_eta):
-    return A_loge + alpha_1 * np.log(k) - (ell_eta * np.array(k))**(alpha_2)
+  def magnetic_simple_loge(k, A, alpha_1, alpha_2, k_eta):
+    return np.log(A) + alpha_1 * np.log(k) - (np.array(k) / k_eta)**(alpha_2)
   
-  def k_p_simple(alpha_1, alpha_2, ell_eta):
-    return (alpha_1 / alpha_2)**(1/alpha_2) * 1/ell_eta
+  def k_p_simple(alpha_1, alpha_2, k_eta):
+    return (alpha_1 / alpha_2)**(1/alpha_2) * k_eta
 
   ## ############################
   ## NUMERICAL DISSIPATION REGIME
