@@ -1,28 +1,28 @@
-#!/usr/bin/env python3
+#!/bin/env python3
 
-## TODO: https://lmfit.github.io/lmfit-py/model.html
+
 ## ###############################################################
 ## MODULES
 ## ###############################################################
 import os, sys, functools
 import numpy as np
 
-## 'tmpfile' needs to be loaded before 'matplotlib'.
-## This is so matplotlib stores cache in a temporary directory.
-## (Useful for plotting in parallel)
-import tempfile
-os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
+# ## 'tmpfile' needs to be loaded before 'matplotlib'.
+# ## This is so matplotlib stores cache in a temporary directory.
+# ## (Useful for plotting in parallel)
+# import tempfile
+# os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
+
 import matplotlib.pyplot as plt
 
 from matplotlib.gridspec import GridSpec
-from scipy.interpolate import make_interp_spline
 from scipy.optimize import curve_fit, fsolve
 from scipy import interpolate
 from lmfit import Model
 
 ## load user defined modules
-from ThePlottingModule import TheMatplotlibStyler, PlotSpectra, PlotFuncs
-from TheUsefulModule import WWLists, WWFnF
+from ThePlottingModule import PlotFuncs
+from TheUsefulModule import WWLists, WWFnF, WWObjs
 from TheLoadingModule import LoadFlashData
 from TheFittingModule import FitMHDScales, UserModels
 from TheAnalysisModule import WWSpectra
@@ -37,6 +37,28 @@ plt.switch_backend("agg")
 
 
 ## ###############################################################
+## STORING DATASET
+## ###############################################################
+class DataSet():
+  def __init__(
+      self,
+      Nres,
+      Pm, Re, Rm,
+      Mach, Gamma, E_sat_ratio,
+      dict_params_kin, dict_params_mag
+    ):
+    self.Nres            = Nres
+    self.Pm              = Pm
+    self.Re              = Re
+    self.Rm              = Rm
+    self.Mach            = Mach
+    self.Gamma           = Gamma
+    self.E_sat_ratio     = E_sat_ratio
+    self.dict_params_kin = dict_params_kin
+    self.dict_params_mag = dict_params_mag
+
+
+## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
 def fitExpFunc(
@@ -44,15 +66,12 @@ def fitExpFunc(
     linestyle  = "-"
   ):
   ## define fit domain
-  data_fit_domain = np.linspace(
-    data_x[index_start_fit],
-    data_x[index_end_fit],
-    10**2
-  )
+  data_fit_domain = np.linspace(data_x[index_start_fit], data_x[index_end_fit], 10**2)[1:-1]
   ## interpolate the non-uniform data
-  interp_spline = make_interp_spline(
+  interp_spline = interpolate.interp1d(
     data_x[index_start_fit : index_end_fit],
-    data_y[index_start_fit : index_end_fit]
+    data_y[index_start_fit : index_end_fit],
+    kind = "cubic"
   )
   ## save time range being fitted to
   time_start = data_x[index_start_fit]
@@ -67,16 +86,13 @@ def fitExpFunc(
   )
   ## undo log transformation
   fit_params_linear = [
-    np.exp(fit_params_log[0] + 2),
+    np.exp(fit_params_log[0]),
     fit_params_log[1]
   ]
   ## initialise the plot domain
   data_x_fit = np.linspace(0, 100, 10**3)
   ## evaluate exponential
-  data_y_fit = UserModels.ListOfModels.exp_linear(
-    data_x_fit,
-    *fit_params_linear
-  )
+  data_y_fit = UserModels.ListOfModels.exp_linear(data_x_fit, *fit_params_linear)
   ## find where exponential enters / exists fit range
   index_E_start = WWLists.getIndexClosestValue(data_x_fit, time_start)
   index_E_end   = WWLists.getIndexClosestValue(data_x_fit, time_end)
@@ -89,6 +105,7 @@ def fitExpFunc(
     data_y_fit[index_E_start : index_E_end],
     label=str_label, color="black", ls=linestyle, lw=2, zorder=5
   )
+  return fit_params_linear[1]
 
 def fitConstFunc(
     ax, data_x, data_y, index_start_fit, index_end_fit,
@@ -96,15 +113,12 @@ def fitConstFunc(
     linestyle = "-"
   ):
   ## define fit domain
-  data_fit_domain = np.linspace(
-    data_x[index_start_fit],
-    data_x[index_end_fit],
-    10**2
-  )
+  data_fit_domain = np.linspace(data_x[index_start_fit], data_x[index_end_fit], 10**2)[1:-1]
   ## interpolate the non-uniform data
-  interp_spline = make_interp_spline(
+  interp_spline = interpolate.interp1d(
     data_x[index_start_fit : index_end_fit],
-    data_y[index_start_fit : index_end_fit]
+    data_y[index_start_fit : index_end_fit],
+    kind = "cubic"
   )
   ## uniformly sample interpolated data
   data_y_sampled = interp_spline(data_fit_domain)
@@ -122,52 +136,83 @@ def fitConstFunc(
   ## return mean value
   return data_y_mean
 
+def interpLogLogData(x, y, x_interp):
+  interpolator_linear = interpolate.interp1d(np.log10(x), np.log10(y), kind="linear")
+  return np.power(10.0, interpolator_linear(np.log10(x_interp)))
+
 def fitKinSpectra(ax, list_k, list_power):
-  label_kin = r"$A k^{\alpha} \exp\left\{-\frac{k}{k_\nu}\right\}$"
+  label_data = r"interp. $\widehat{\mathcal{P}}_{\rm kin}(k)$ data"
+  label_fit  = r"$A k^{\alpha} \exp\left\{-\frac{k}{k_\nu}\right\}$"
+  array_k_interp     = np.logspace(np.log10(min(list_k)), np.log10(max(list_k)), 2*len(list_power))[1:-1]
+  array_power_interp = interpLogLogData(list_k, list_power, array_k_interp)
   my_model = Model(FitMHDScales.SpectraModels.kinetic_loge)
-  my_model.set_param_hint("A",     min = 10**(-10.0),  value = 10**(-5.0),  max = 10**(5.0))
-  my_model.set_param_hint("alpha", min = -10.0,        value = -2.0,        max = -1.0)
-  my_model.set_param_hint("k_nu",  min = 0.1,          value = 5.0,         max = 50.0)
+  my_model.set_param_hint("A",     min = 10**(-3.0),  value = 10**(-1.0),  max = 10**(3.0))
+  my_model.set_param_hint("alpha", min = -10.0,       value = -2.0,        max = -1.0)
+  my_model.set_param_hint("k_nu",  min = 0.1,         value = 5.0,         max = 50.0)
   input_params = my_model.make_params()
-  fit_results = my_model.fit(np.log(list_power), input_params, k=list_k)
+  fit_results = my_model.fit(
+    k      = array_k_interp,
+    data   = np.log(array_power_interp),
+    params = input_params
+  )
   fit_params = [
     fit_results.params["A"].value,
     fit_results.params["alpha"].value,
     fit_results.params["k_nu"].value
   ]
-  list_power_fit = FitMHDScales.SpectraModels.kinetic_linear(list_k, *fit_params)
-  ax.plot(list_k, list_power_fit, color="black", ls="-", lw=3, label=label_kin, zorder=5)
+  array_power_fit = FitMHDScales.SpectraModels.kinetic_linear(array_k_interp, *fit_params)
+  ax.plot(array_k_interp, array_power_interp, label=label_data, color="limegreen", ls="", marker="o", ms=4, zorder=5)
+  ax.plot(array_k_interp, array_power_fit, label=label_fit, color="black", ls="-", lw=3, zorder=7)
   return fit_params
 
-def findSpectraTail(ax, x, y):
+def findSpectraCutOff(ax, x, y):
   y_grad     = 0.05 + np.diff(y)
-  tail_index = np.argmin(abs(y_grad))
+  tail_index = [ index for index, val in enumerate(y_grad) if abs(val) < 0.01 ][-1]
+  # tail_index = np.argmin(abs(y_grad))
   ax.plot(x[1:], y_grad, color="k", marker="o", ms=5)
   ax.axhline(y=0,             ls="--", lw=2, color="black")
-  ax.axvline(x=x[tail_index], ls="--", lw=2, color="orange")
+  ax.axvline(x=x[tail_index], ls=":",  lw=2, color="black")
+  ## label axis
+  ax.set_xlabel(r"$k$")
+  ax.set_ylabel(r"${\rm d}\left(\log_{10}\widehat{\mathcal{P}}_{\rm mag}\right) / {\rm d}k$")
+  ax.set_xscale("log")
   return x[tail_index]
 
+# def extrapolatePowerLaw(list_k_old, list_power_old, list_k_new):
+#   fit_params, _ = curve_fit(
+#     UserModels.ListOfModels.powerlaw_linear,
+#     list_k_old, list_power_old
+#   )
+#   list_power_new = UserModels.ListOfModels.powerlaw_linear(list_k_new, *[fit_params[0], 1.5])
+#   return list(list_power_new)
+
 def fitMagSpectra(ax, list_k, list_power):
-  label_mag = r"$A k^{\alpha_1} {\rm K}_0\left\{ -\left(\frac{k}{k_\eta}\right)^{\alpha_2} \right\}$"
-  list_k_interp   = np.logspace(np.log10(min(list_k)), np.log10(max(list_k)), 2*len(list_power))[1:-1]
-  f = interpolate.interp1d(list_k, np.log(list_power))
-  list_power_loge_interp = f(list_k_interp)
-  my_model = Model(FitMHDScales.SpectraModels.magnetic_loge)
-  my_model.set_param_hint("A",       min = 10**(-10.0), value = 10**(-1.0), max = 10**(5.0))
-  my_model.set_param_hint("alpha_1", min = 0.5,         value = 1.5,        max = 6.0)
-  my_model.set_param_hint("alpha_2", min = 0.1,         value = 1.0,        max = 1.0)
-  my_model.set_param_hint("k_eta",   min = 0.1,         value = 1.0,        max = 10.0)
+  label_data = r"interp. $\widehat{\mathcal{P}}_{\rm mag}(k)$ data"
+  label_fit  = r"$A k^{\alpha_1} {\rm K}_0\left\{ \left(\frac{k}{k_\eta}\right)^{\alpha_2} \right\}$"
+  # array_k_interp     = np.logspace(np.log10(min(list_k)), np.log10(max(list_k)), 2*len(list_power))[1:-1]
+  array_k_interp     = list(np.linspace(1, 5, 10)) + list(list_k[5:])
+  array_power_interp = interpLogLogData(list_k, list_power, array_k_interp)
+  my_model = Model(FitMHDScales.SpectraModels.magnetic_loge_simple)
+  my_model.set_param_hint("A",       min = 1e-3, value = 1e-1, max = 1e3)
+  my_model.set_param_hint("alpha_1", min = 0.1,  value = 1.5,  max = 6.0)
+  my_model.set_param_hint("alpha_2", min = 0.1,  value = 1.0,  max = 1.5)
+  my_model.set_param_hint("k_eta",   min = 1e-3, value = 5.0,  max = 10.0)
   input_params = my_model.make_params()
-  fit_results  = my_model.fit(list_power_loge_interp, input_params, k=list_k_interp)
-  fit_params   = [
+  fit_results = my_model.fit(
+    k      = array_k_interp,
+    data   = np.log(array_power_interp),
+    params = input_params
+  )
+  fit_params = [
     fit_results.params["A"].value,
     fit_results.params["alpha_1"].value,
     fit_results.params["alpha_2"].value,
     fit_results.params["k_eta"].value
   ]
-  # ax.plot(list_k_interp, np.exp(list_power_loge_interp), color="orange", ls="-", lw=2, marker="o", ms=5, zorder=12)
-  list_power_fit = FitMHDScales.SpectraModels.magnetic_linear(list_k_interp, *fit_params)
-  ax.plot(list_k_interp, list_power_fit, color="black", ls="-", lw=3, label=label_mag, zorder=5)
+  ax.plot(array_k_interp, array_power_interp, label=label_data, color="orange", ls="", marker="o", ms=4, zorder=5)
+  array_k_plot = np.logspace(0, 2, 1000)
+  array_power_plot = FitMHDScales.SpectraModels.magnetic_linear_simple(array_k_plot, *fit_params)
+  ax.plot(array_k_plot, array_power_plot, label=label_fit, color="black", ls="-.", lw=3, zorder=7)
   return fit_params
 
 
@@ -189,6 +234,15 @@ class PlotTurbData():
 
   def getExpTimeBounds(self):
     return self.time_exp_start, self.time_exp_end
+
+  def getMach(self):
+    return self.Mach
+  
+  def getGamma(self):
+    return self.Gamma
+  
+  def getEsatRatio(self):
+    return self.E_sat_ratio
 
   def __loadData(self):
     ## load mach data
@@ -215,9 +269,9 @@ class PlotTurbData():
       time_start    = 0.1,
       time_end      = np.inf
     )
-    ## calculate plot domain range
+    ## define plot domain
     self.max_time = max([ 100, max(self.data_time) ])
-    ## calculate energy ratio: 'E_B / E_K'
+    ## compute energy ratio: 'E_B / E_K'
     self.data_E_ratio = [
       (E_B / E_K) for E_B, E_K in zip(data_E_B, data_E_K)
     ]
@@ -225,17 +279,11 @@ class PlotTurbData():
   def __plotData(self):
     print("Plotting energy integrated quantities...")
     ## plot mach
-    self.axs[0].plot(
-      self.data_time, self.data_Mach,
-      color="orange", ls="-", lw=1.5, zorder=3
-    )
+    self.axs[0].plot(self.data_time, self.data_Mach, color="orange", ls="-", lw=1.5, zorder=3)
     self.axs[0].set_ylabel(r"$\mathcal{M}$")
     self.axs[0].set_xlim([ 0, self.max_time ])
     ## plot energy ratio
-    self.axs[1].plot(
-      self.data_time, self.data_E_ratio,
-      color="orange", ls="-", lw=1.5, zorder=3
-    )
+    self.axs[1].plot(self.data_time, self.data_E_ratio, color="orange", ls="-", lw=1.5, zorder=3)
     ## define y-axis range for the energy ratio plot
     min_E_ratio         = min(self.data_E_ratio)
     log_min_E_ratio     = np.log10(min_E_ratio)
@@ -257,19 +305,18 @@ class PlotTurbData():
     )
 
   def __fitData(self):
+    ls_kin         = "--"
+    ls_sat         = ":"
     str_label_Esat = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ "
     str_label_Mach = r"$\mathcal{M} =$ "
-    ls_kin = "--"
-    ls_sat = ":"
-    ## fit saturation
     growth_percent = self.data_E_ratio[-1] / self.data_E_ratio[
-      WWLists.getIndexClosestValue(self.data_time, 5)
+      WWLists.getIndexClosestValue(self.data_time, 5.0)
     ]
     ## if dynamo growth occurs
     if growth_percent > 100:
       ## find saturated energy ratio
-      sat_ratio = fitConstFunc(
-        self.axs[1],
+      self.E_sat_ratio = fitConstFunc(
+        ax              = self.axs[1],
         data_x          = self.data_time,
         data_y          = self.data_E_ratio,
         str_label       = str_label_Esat,
@@ -281,12 +328,12 @@ class PlotTurbData():
       )
       ## get index range corresponding with kinematic phase of the dynamo
       index_exp_start = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-8))
-      index_exp_end   = WWLists.getIndexClosestValue(self.data_E_ratio, sat_ratio/100)
+      index_exp_end   = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_sat_ratio/100)
       index_start_fit = min([ index_exp_start, index_exp_end ])
       index_end_fit   = max([ index_exp_start, index_exp_end ])
       ## find growth rate of exponential
-      fitExpFunc(
-        self.axs[1],
+      self.Gamma = fitExpFunc(
+        ax              = self.axs[1],
         data_x          = self.data_time,
         data_y          = self.data_E_ratio,
         index_start_fit = index_start_fit,
@@ -298,8 +345,8 @@ class PlotTurbData():
       index_start_fit = WWLists.getIndexClosestValue(self.data_time, (0.75 * self.data_time[-1]))
       index_end_fit   = len(self.data_time)-1
       ## find average energy ratio
-      sat_ratio = fitConstFunc(
-        self.axs[1],
+      self.E_sat_ratio = fitConstFunc(
+        ax              = self.axs[1],
         data_x          = self.data_time,
         data_y          = self.data_E_ratio,
         str_label       = str_label_Esat,
@@ -308,8 +355,8 @@ class PlotTurbData():
         linestyle       = ls_sat
       )
     ## find average mach number
-    fitConstFunc(
-      self.axs[0],
+    self.Mach = fitConstFunc(
+      ax              = self.axs[0],
       data_x          = self.data_time,
       data_y          = self.data_Mach,
       str_label       = str_label_Mach,
@@ -330,7 +377,7 @@ class PlotTurbData():
 ## ###############################################################
 ## PLOT NORMALISED AND TIME-AVERAGED ENERGY SPECTRA
 ## ###############################################################
-class PlotSpectra():
+class PlotEnergySpectra():
   def __init__(
       self,
       fig, ax_mag_grad, axs_spect, filepath_data, time_exp_start, time_exp_end
@@ -346,6 +393,21 @@ class PlotSpectra():
     self.__fitData()
     self.__labelPlot()
   
+  def getKinParamsDict(self):
+    return {
+      "alpha_kin":self.alpha_kin,
+      "k_nu":self.k_nu
+    }
+  
+  def getMagParamsDict(self):
+    return {
+      "alpha_mag_1":self.alpha_mag_1,
+      "alpha_mag_2":self.alpha_mag_2,
+      "k_eta":self.k_eta,
+      "k_p":self.k_p,
+      "k_max":self.k_max
+    }
+
   def __loadData(self):
     print("Loading energy spectra...")
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
@@ -378,25 +440,30 @@ class PlotSpectra():
   
   def __plotData(self):
     plot_args = { "marker":"o", "ms":7, "ls":"", "alpha":1.0, "zorder":3 }
-    self.axs_spect[0].plot(self.list_kin_k, self.list_kin_power_ave, color="green", **plot_args)
-    self.axs_spect[1].plot(self.list_mag_k, self.list_mag_power_ave, color="red",   **plot_args)
+    label_kin = r"$\widehat{\mathcal{P}}_{\rm kin}(k)$ data"
+    label_mag = r"$\widehat{\mathcal{P}}_{\rm mag}(k)$ data"
+    self.axs_spect[0].plot(self.list_kin_k, self.list_kin_power_ave, label=label_kin, color="green", **plot_args)
+    self.axs_spect[1].plot(self.list_mag_k, self.list_mag_power_ave, label=label_mag, color="red",   **plot_args)
 
   def __fitData(self):
     print("Fitting normalised and time-avergaed energy spectra...")
     ## fit kinetic energy spectrum
-    fit_params_kin     = fitKinSpectra(self.axs_spect[0], self.list_kin_k[3:80], self.list_kin_power_ave[3:80])
-    self.alpha_kin     = fit_params_kin[1]
-    self.k_nu          = fit_params_kin[2]
+    end_index_kin      = WWLists.getIndexClosestValue(self.list_kin_power_ave, 10**(-7))
+    self.params_kin    = fitKinSpectra(self.axs_spect[0], self.list_kin_k[2:end_index_kin], self.list_kin_power_ave[2:end_index_kin])
+    self.A_kin         = self.params_kin[0]
+    self.alpha_kin     = self.params_kin[1]
+    self.k_nu          = self.params_kin[2]
     ## fit magnetic energy spectrum
     self.k_max         = np.argmax(self.list_mag_power_ave) + 1
     if np.min(np.log10(self.list_mag_power_ave[self.k_max-1:])) < -6.0:
-      k_tail = findSpectraTail(self.ax_mag_grad, self.list_mag_k[self.k_max-1:], np.log10(self.list_mag_power_ave[self.k_max-1:]))
+      k_tail = findSpectraCutOff(self.ax_mag_grad, self.list_mag_k[self.k_max-1:], np.log10(self.list_mag_power_ave[self.k_max-1:]))
       tail_index = int(k_tail - 1)
     else: tail_index = len(self.list_mag_power_ave)
-    fit_params_mag     = fitMagSpectra(self.axs_spect[1], self.list_mag_k[:tail_index], self.list_mag_power_ave[:tail_index])
-    self.alpha_mag_1   = fit_params_mag[1]
-    self.alpha_mag_2   = fit_params_mag[2]
-    self.k_eta         = fit_params_mag[3]
+    self.params_mag    = fitMagSpectra(self.axs_spect[1], self.list_mag_k[:tail_index], self.list_mag_power_ave[:tail_index])
+    self.A_mag         = self.params_mag[0]
+    self.alpha_mag_1   = self.params_mag[1]
+    self.alpha_mag_2   = self.params_mag[2]
+    self.k_eta         = self.params_mag[3]
     self.k_eta_alpha_2 = self.k_eta**(1 / self.alpha_mag_2)
     k_p_guess          = FitMHDScales.SpectraModels.k_p_simple(self.alpha_mag_1, self.alpha_mag_2, self.k_eta)
     ## fit peak scale from the modified Kulsrud and Anderson 1992 model
@@ -413,41 +480,38 @@ class PlotSpectra():
     except (RuntimeError, ValueError): self.k_p = k_p_guess
 
   def __labelPlot(self):
-    ## measuring magnetic energy gradient
-    self.ax_mag_grad.set_xlabel(r"$k$")
-    self.ax_mag_grad.set_ylabel(r"${\rm d}\widehat{\mathcal{P}}_{\rm mag} / {\rm d}k$")
-    self.ax_mag_grad.set_xscale("log")
     ## annotate measured scales
-    self.axs_spect[0].axvline(x=self.k_nu,  ls="--", lw=2, color="green", zorder=5, label=r"$k_\nu$")
-    self.axs_spect[0].axvline(x=self.k_eta, ls="--", lw=2, color="red",   zorder=5, label=r"$k_\eta$")
-    self.axs_spect[0].axvline(x=self.k_p,   ls="--", lw=2, color="black", zorder=5, label=r"$k_{\rm p}$")
+    plot_args = { "ls":"--", "lw":2, "zorder":1 }
+    self.axs_spect[0].axvline(x=self.k_nu,  **plot_args, color="green", label=r"$k_\nu$")
+    self.axs_spect[1].axvline(x=self.k_eta, **plot_args, color="red",   label=r"$k_\eta$")
+    self.axs_spect[1].axvline(x=self.k_p,   **plot_args, color="black", label=r"$k_{\rm p}$")
     self.axs_spect[1].plot(
       self.k_max, max(self.list_mag_power_ave),
       label=r"$k_{\rm max}$", color="black", marker="o", ms=10, ls="", zorder=7
     )
-    ## kinetic energy labels
+    ## create kinetic energy labels
+    label_A_kin         = r"$A_{\rm kin} = $ "+"{:.1e}".format(self.A_kin)
     label_alpha_kin     = r"$\alpha = $ "+"{:.1f}".format(self.alpha_kin)
     label_k_nu          = r"$k_\nu = $ "+"{:.1e}".format(self.k_nu)
-    ## magnetic energy labels
+    ## create magnetic energy labels
+    label_A_mag         = r"$A_{\rm mag} = $ "+"{:.1e}".format(self.A_mag)
     label_alpha_mag_1   = r"$\alpha_1 = $ "+"{:.1f}".format(self.alpha_mag_1)
     label_alpha_mag_2   = r"$\alpha_2 = $ "+"{:.1f}".format(self.alpha_mag_2)
     label_k_eta         = r"$k_\eta = $ "+"{:.1e}".format(self.k_eta)
     label_k_eta_alpha_2 = r"$k_\eta^{1 / \alpha_2} = $ "+"{:.1e}".format(self.k_eta_alpha_2)
     label_k_p           = r"$k_{\rm p} = $ "+"{:.1f}".format(self.k_p)
     label_k_max         = r"$k_{\rm max} = $ "+"{:.1f}".format(self.k_max)
-    ## label energy spectra axis
-    self.axs_spect[0].legend(
-      frameon        = True,
-      loc            = (0.015, 0.25),
-      bbox_transform = self.axs_spect[0].transAxes,
-      facecolor="white", edgecolor="grey", framealpha=1.0, fontsize=18
-    ).set_zorder(15)
+    ## add legends
+    legend_args = { "frameon":True, "facecolor":"white", "edgecolor":"grey", "framealpha":1.0, "fontsize":18 }
+    list_lines_ax0, list_labels_ax0 = self.axs_spect[0].get_legend_handles_labels()
+    list_lines_ax1, list_labels_ax1 = self.axs_spect[1].get_legend_handles_labels()
+    list_lines   = list_lines_ax0  + list_lines_ax1
+    llist_labels = list_labels_ax0 + list_labels_ax1
     self.axs_spect[1].legend(
-      frameon        = True,
-      loc            = (0.015, 0.15),
-      bbox_transform = self.axs_spect[1].transAxes,
-      facecolor="white", edgecolor="grey", framealpha=1.0, fontsize=18
-    ).set_zorder(15)
+      list_lines,
+      llist_labels,
+      loc=(0.015, 0.16), bbox_transform=self.axs_spect[1].transAxes, **legend_args
+    ).set_zorder(10)
     PlotFuncs.plotLabelBox(
       self.fig, self.axs_spect[0],
       box_alignment   = (0.0, 0.0),
@@ -456,24 +520,25 @@ class PlotSpectra():
       alpha           = 1.0,
       fontsize        = 18,
       list_fig_labels = [
-        rf"{label_alpha_kin}, {label_k_nu}",
-        rf"{label_alpha_mag_1}, {label_alpha_mag_2}, {label_k_eta}",
+        rf"{label_A_kin}, {label_alpha_kin}, {label_k_nu}",
+        rf"{label_A_mag}, {label_alpha_mag_1}, {label_alpha_mag_2}, {label_k_eta}",
         rf"{label_k_eta_alpha_2}, {label_k_p}, {label_k_max}"
       ]
     )
-    ## kinetic energy axis
+    ## adjust kinetic energy axis
     self.axs_spect[0].set_xlim([ 0.9, max(self.list_mag_k) ])
     self.axs_spect[0].set_xlabel(r"$k$")
     self.axs_spect[0].set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$", color="green")
     self.axs_spect[0].tick_params(axis="y", colors="green")
     self.axs_spect[0].set_xscale("log")
     self.axs_spect[0].set_yscale("log")
-    ## magnetic energy axis
+    ## adjust magnetic energy axis
     self.axs_spect[1].set_xlim([ 0.9, max(self.list_mag_k) ])
+    self.axs_spect[1].set_ylim([ 10**(-4), 1 ])
     self.axs_spect[1].set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k)$", color="red")
     self.axs_spect[1].tick_params(axis="y", colors="red")
-    self.axs_spect[1].spines["right"].set_edgecolor("red")
     self.axs_spect[1].spines["left"].set_edgecolor("green")
+    self.axs_spect[1].spines["right"].set_edgecolor("red")
     self.axs_spect[1].set_xscale("log")
     self.axs_spect[1].set_yscale("log")
 
@@ -482,7 +547,7 @@ class PlotSpectra():
 ## HANDLING PLOT CALLS
 ## ###############################################################
 def plotSimData(
-    filepath_sim, filepath_plot, fig_name, Nres,
+    filepath_sim, filepath_plot, sim_name, Nres,
     Re=None, Rm=None, Pm=None
   ):
   print("Initialising figure...")
@@ -497,14 +562,14 @@ def plotSimData(
   ## label simuluation
   if (Re is not None) and (Pm is not None):
     ## Re and Pm have been defined
-    nu  = round(float(MACH) / (K_TURB * float(Re)), 5)
-    eta = round(nu / float(Pm), 5)
-    Rm  = round(float(MACH) / (K_TURB * eta))
+    nu  = float(MACH) / (K_TURB * float(Re))
+    eta = nu / float(Pm)
+    Rm  = float(MACH) / (K_TURB * eta)
   elif (Rm is not None) and (Pm is not None):
     ## Rm and Pm have been defined
-    eta = round(float(MACH) / (K_TURB * float(Rm)), 5)
-    nu  = round(eta * float(Pm), 5)
-    Re  = round(float(MACH) / (K_TURB * nu))
+    eta = float(MACH) / (K_TURB * float(Rm))
+    nu  = eta * float(Pm)
+    Re  = float(MACH) / (K_TURB * nu)
   PlotFuncs.plotLabelBox(
     fig, ax_mach,
     box_alignment   = (1.0, 0.0),
@@ -513,15 +578,14 @@ def plotSimData(
     alpha           = 0.5,
     fontsize        = 18,
     list_fig_labels = [
-      r"${\rm N}_{\rm res} = $ " + f"{Nres}",
-      r"${\rm Re} = $ " + f"{Re}",
-      r"${\rm Rm} = $ " + f"{Rm}",
-      r"${\rm Pm} = $ " + f"{Pm}",
+      r"${\rm N}_{\rm res} = $ " + f"{int(Nres)}",
+      r"${\rm Re} = $ " + f"{int(Re)}",
+      r"${\rm Rm} = $ " + f"{int(Rm)}",
+      r"${\rm Pm} = $ " + f"{int(Pm)}",
     ]
   )
-  ## #####################################
   ## PLOT INTEGRATED QUANTITIES (Turb.dat)
-  ## #####################################
+  ## -------------------------------------
   filepath_data_turb = WWFnF.createFilepath([ filepath_sim, FILENAME_TURB ])
   bool_plot_energy   = os.path.exists(filepath_data_turb)
   time_exp_start     = None
@@ -532,13 +596,15 @@ def plotSimData(
       filepath_data = filepath_sim
     )
     time_exp_start, time_exp_end = plot_turb_obj.getExpTimeBounds()
-  ## ###################
+    Mach        = plot_turb_obj.getMach()
+    Gamma       = plot_turb_obj.getGamma()
+    E_sat_ratio = plot_turb_obj.getEsatRatio()
   ## PLOT FITTED SPECTRA
-  ## ###################
+  ## -------------------
   filepath_data_spect = WWFnF.createFilepath([ filepath_sim, "spect" ])
   bool_plot_spectra   = os.path.exists(filepath_data_spect)
   if bool_plot_spectra:
-    PlotSpectra(
+    plot_spectra_obj = PlotEnergySpectra(
       fig            = fig,
       ax_mag_grad    = ax_mag_grad,
       axs_spect      = [ ax_spect_kin, ax_spect_mag ],
@@ -546,9 +612,10 @@ def plotSimData(
       time_exp_start = time_exp_start,
       time_exp_end   = time_exp_end
     )
-  ## ###########
+    dict_params_kin = plot_spectra_obj.getKinParamsDict()
+    dict_params_mag = plot_spectra_obj.getMagParamsDict()
   ## SAVE FIGURE
-  ## ###########
+  ## -----------
   ## check if the data was plotted
   if not(bool_plot_energy) and not(bool_plot_spectra):
     print("ERROR: No data in:")
@@ -564,10 +631,25 @@ def plotSimData(
       print("\t", filepath_data_spect)
     ## save the figure
     print("Saving figure...")
+    fig_name = f"{sim_name}_check.pdf"
     fig_filepath = WWFnF.createFilepath([ filepath_plot, fig_name ])
     plt.savefig(fig_filepath)
     plt.close()
     print("Figure saved:", fig_name)
+  ## SAVE DATASET
+  ## ------------
+  dataset_name = f"{sim_name}_dataset.json"
+  dataset_obj  = DataSet(
+    Nres,
+    Pm, Re, Rm,
+    Mach, Gamma, E_sat_ratio,
+    dict_params_kin, dict_params_mag
+  )
+  WWObjs.saveObj2Json(
+    obj      = dataset_obj,
+    filepath = filepath_sim,
+    filename = dataset_name
+  )
 
 
 ## ###############################################################
@@ -581,22 +663,23 @@ MACH          = 5.0
 T_TURB        = 1 / (K_TURB * MACH) # ell_turb / (Mach * c_s)
 
 def main():
-  ## ##############################
   ## LOOK AT EACH SIMULATION FOLDER
-  ## ##############################
+  ## ------------------------------
   ## loop over the simulation suites
   for suite_folder in [
-      "Re10", "Re500", "Rm3000"
+      # "Re10",
+      "Re500",
+      # "Rm3000"
     ]: # "Re10", "Re500", "Rm3000", "keta"
 
     ## loop over the different resolution runs
     for sim_res in [
+        # "72", "144",
         "288"
       ]: # "18", "36", "72", "144", "288", "576"
 
-      ## ######################################
       ## CHECK THE SUITE'S FIGURE FOLDER EXISTS
-      ## ######################################
+      ## --------------------------------------
       filepath_plot = WWFnF.createFilepath([
         BASEPATH, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
       ])
@@ -609,12 +692,13 @@ def main():
       print("Saving figures in:", filepath_plot)
       print(" ")
 
-      ## ####################
       ## PLOT SIMULATION DATA
-      ## ####################
+      ## --------------------
       ## loop over the simulation folders
       for sim_folder in [
-          "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
+          "Pm1", "Pm2", "Pm4",
+          # "Pm5",
+          # "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
         ## create filepath to the simulation folder
@@ -624,15 +708,15 @@ def main():
         ## check that the filepath exists
         if not os.path.exists(filepath_sim): continue
         ## plot simulation data
-        fig_name = f"{suite_folder}_{sim_folder}_check.png"
+        sim_name = f"{suite_folder}_{sim_folder}"
         plotSimData(
-          filepath_sim, filepath_plot, fig_name, sim_res,
+          filepath_sim, filepath_plot, sim_name, sim_res,
           Re = float(suite_folder.replace("Re", "")) if "Re" in suite_folder else None,
           Rm = float(suite_folder.replace("Rm", "")) if "Rm" in suite_folder else None,
           Pm = float(sim_folder.replace("Pm", ""))   if "Pm" in sim_folder   else None
         )
 
-        return
+        # return
 
         ## create empty space
         print(" ")

@@ -58,23 +58,23 @@ def loadFLASHFieldSlice(
     bool_print_info = False
   ):
   ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
-  flash_file = h5py.File(filepath_data, "r")
-  ## collect all variables to combine
-  names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
-  ## calculate the magnitude of the field
-  data = np.sqrt(sum(np.array(flash_file[i])**2 for i in names))
-  if bool_print_info: 
-    print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys())))
-    print("--------- All the keys that were used: " + str(names))
-  flash_file.close() # close the file stream
-  ## reformat data
-  data_sorted = reformatFLASHField(data, num_blocks, num_procs)
-  data_slice = data_sorted[ :, :, len(data_sorted[0,0,:])//2 ]
-  ## normalise data by rms
-  if bool_rms_norm:
-    return data_slice**2 / np.sqrt(np.mean(data_slice**2))**2
-  ## return data
-  else: return data_slice
+  with h5py.File(filepath_data, "r") as flash_file:
+    ## collect all variables to combine
+    names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
+    ## calculate the magnitude of the field
+    data = np.sqrt(sum(np.array(flash_file[i])**2 for i in names))
+    if bool_print_info: 
+      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys())))
+      print("--------- All the keys that were used: " + str(names))
+    flash_file.close() # close the file stream
+    ## reformat data
+    data_sorted = reformatFLASHField(data, num_blocks, num_procs)
+    data_slice = data_sorted[ :, :, len(data_sorted[0,0,:])//2 ]
+    ## normalise data by rms
+    if bool_rms_norm:
+      return data_slice**2 / np.sqrt(np.mean(data_slice**2))**2
+    ## return data
+    else: return data_slice
 
 
 def loadListFLASHFieldSlice(
@@ -128,18 +128,19 @@ def loadFLASH3DField(
     str_field       = "mag",
     bool_print_info = False
   ):
-  flash_file = h5py.File(filepath_data, "r") # open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
-  names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
-  data_x, data_y, data_z = np.array([flash_file[i] for i in names])
-  if bool_print_info: 
-    print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys()))) # print keys
-    print("--------- All the keys that were used: " + str(names))
-  flash_file.close() # close the file stream
-  ## reformat data
-  data_sorted_x = reformatFLASHField(data_x, num_blocks, num_procs)
-  data_sorted_y = reformatFLASHField(data_y, num_blocks, num_procs)
-  data_sorted_z = reformatFLASHField(data_z, num_blocks, num_procs)
-  return data_sorted_x, data_sorted_y, data_sorted_z
+  ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
+  with h5py.File(filepath_data, "r") as flash_file:
+    names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
+    data_x, data_y, data_z = np.array([flash_file[i] for i in names])
+    if bool_print_info: 
+      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys()))) # print keys
+      print("--------- All the keys that were used: " + str(names))
+    flash_file.close() # close the file stream
+    ## reformat data
+    data_sorted_x = reformatFLASHField(data_x, num_blocks, num_procs)
+    data_sorted_y = reformatFLASHField(data_y, num_blocks, num_procs)
+    data_sorted_z = reformatFLASHField(data_z, num_blocks, num_procs)
+    return data_sorted_x, data_sorted_y, data_sorted_z
 
 
 def loadFLASHFieldDataList(
@@ -203,10 +204,6 @@ def loadTurbData(
     time_start = 1,
     time_end   = np.inf
   ):
-  ## load data
-  filepath_turb    = WWFnF.createFilepath([ filepath_data, "Turb.dat" ])
-  first_line       = open(filepath_turb).readline().split()
-  num_data_columns = len(first_line)
   ## initialise x and y data
   var_x  = 0 # time
   data_x = []
@@ -214,19 +211,22 @@ def loadTurbData(
   ## initialise data-traversal variable
   prev_time = np.inf
   ## read data backwards
-  for line in reversed( open(filepath_turb).readlines() ):
-    data_split = line.split()
-    ## only look at lines where there is data for each tracked quantity
-    if len(data_split) == num_data_columns:
-      ## don't look at the labels
-      if not("#" in data_split[var_x][0]) and not("#" in data_split[var_y][0]):
-        ## calculate the normalised time
-        cur_time = float(data_split[var_x]) / t_turb # normalise by eddy turnover time
-        ## if the simulation has been restarted, only read the progressed data
-        if cur_time < prev_time: # walking backwards
-          data_x.append(cur_time)
-          data_y.append(float(data_split[var_y]))
-          prev_time = cur_time
+  filepath_file = WWFnF.createFilepath([ filepath_data, "Turb.dat" ])
+  with open(filepath_file, "r") as fp:
+    num_data_columns = len(fp.readline().split())
+    for line in reversed(fp.readlines()):
+      data_split = line.split()
+      ## only look at lines where there is data for each tracked quantity
+      if len(data_split) == num_data_columns:
+        ## don't look at the labels
+        if not("#" in data_split[var_x][0]) and not("#" in data_split[var_y][0]):
+          ## calculate the normalised time
+          cur_time = float(data_split[var_x]) / t_turb # normalise by eddy turnover time
+          ## if the simulation has been restarted, only read the progressed data
+          if cur_time < prev_time: # walking backwards
+            data_x.append(cur_time)
+            data_y.append(float(data_split[var_y]))
+            prev_time = cur_time
   ## reverse the reversed lists
   data_x = data_x[::-1]
   data_y = data_y[::-1]
@@ -236,48 +236,51 @@ def loadTurbData(
   return data_x[index_start : index_end], data_y[index_start : index_end]
 
 
-def getPlotsPerEddy(filepath, num_t_turb=100, bool_hide_updates=False):
+def getPlotsPerEddy(filepath_data, num_t_turb=100, bool_hide_updates=False):
   def getName(line):
     return line.split("=")[0].lower()
   def getValue(line):
     return line.split("=")[1].split("[")[0]
   tmax = None
   plot_file_interval = None
-  for line in open(filepath + "/Turb.log").readlines():
-    if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
-      tmax = float(getValue(line))
-    elif "plotfileintervaltime" in getName(line):
-      plot_file_interval = float(getValue(line))
-    if (tmax is not None) and (plot_file_interval is not None):
-      plots_per_eddy = tmax / plot_file_interval / num_t_turb
-      if not(bool_hide_updates):
-        print("The following has been read from 'Turb.log':")
-        print("\t> 'tmax'".ljust(25),                 "=", tmax)
-        print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
-        print("\t> # plt-files / t_turb".ljust(25),   "=", plots_per_eddy)
-        print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb.")
-        print(" ")
-      return plots_per_eddy
+  filepath_file = WWFnF.createFilepath([ filepath_data, "Turb.log" ])
+  with open(filepath_file, "r") as fp:
+    for line in fp.readlines():
+      if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
+        tmax = float(getValue(line))
+      elif "plotfileintervaltime" in getName(line):
+        plot_file_interval = float(getValue(line))
+      if (tmax is not None) and (plot_file_interval is not None):
+        plots_per_eddy = tmax / plot_file_interval / num_t_turb
+        if not(bool_hide_updates):
+          print("The following has been read from 'Turb.log':")
+          print("\t> 'tmax'".ljust(25),                 "=", tmax)
+          print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
+          print("\t> # plt-files / t_turb".ljust(25),   "=", plots_per_eddy)
+          print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb.")
+          print(" ")
+        return plots_per_eddy
   return None
 
 
 def loadSpectra(filepath_data, str_spectra_type):
-  data_file = open(filepath_data).readlines() # load in data
-  data      = np.array([x.strip().split() for x in data_file[6:]]) # store all data: [row, col]
-  try:
-    data_x = np.array(list(map(float, data[:, 1])))  # variable: wave number (k)
-    data_y = np.array(list(map(float, data[:, 15]))) # variable: power spectrum
-    if "vel" in str_spectra_type:
-      data_y = data_y / 2
-    elif "mag" in str_spectra_type:
-      data_y = data_y / (8 * np.pi)
-    else: Exception("You have passed an invalid spectra type to 'loadSpectra()'.")
-    bool_failed_to_read = False
-  except:
-    bool_failed_to_read = True
-    data_x = []
-    data_y = []
-  return data_x, data_y, bool_failed_to_read
+  with open(filepath_data, "r") as fp:
+    data_file = fp.readlines() # load in data
+    data      = np.array([x.strip().split() for x in data_file[6:]]) # store all data: [row, col]
+    try:
+      data_x = np.array(list(map(float, data[:, 1])))  # variable: wave number (k)
+      data_y = np.array(list(map(float, data[:, 15]))) # variable: power spectrum
+      if "vel" in str_spectra_type:
+        data_y = data_y / 2
+      elif "mag" in str_spectra_type:
+        data_y = data_y / (8 * np.pi)
+      else: Exception("You have passed an invalid spectra type to 'loadSpectra()'.")
+      bool_failed_to_read = False
+    except:
+      bool_failed_to_read = True
+      data_x = []
+      data_y = []
+    return data_x, data_y, bool_failed_to_read
 
 
 def loadListSpectra(

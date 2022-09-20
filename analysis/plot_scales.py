@@ -22,141 +22,123 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 ## LOAD + PLOT CONVERGED SCALES
 ## ###############################################################
-class SimScales():
+class PlotSimScales():
   def __init__(self, filepath_plots):
     self.filepath_plots = filepath_plots
-    ## ##############################
+    print("Saving figures in:", self.filepath_plots)
+    print(" ")
     ## INITIALISE CONTAINERS FOR DATA
-    ## ##############################
+    ## ------------------------------
     ## simulation parameters
-    self.Re_group                  = []
-    self.Rm_group                  = []
-    self.Pm_group                  = []
-    self.color_group               = []
-    self.marker_group              = []
+    self.Re_group             = []
+    self.Rm_group             = []
+    self.Pm_group             = []
+    self.color_group          = []
+    self.marker_group         = []
     ## predicted scales
-    self.k_nu_relation_group       = []
-    self.k_eta_relation_group      = []
+    self.k_nu_relation_group  = []
+    self.k_eta_relation_group = []
     ## measured (converged) scales
-    self.k_nu_converged_group      = []
-    self.k_eta_converged_group     = []
-    self.k_p_converged_group       = []
-    self.k_nu_std_group            = []
-    self.k_eta_std_group           = []
-    self.k_p_std_group             = []
-    self.alpha_kin_converged_group = []
-    self.alpha_mag_converged_group = []
+    self.k_nu_group           = []
+    self.k_eta_group          = []
+    self.k_p_group            = []
+    self.k_max_group          = []
+    self.alpha_kin_group      = []
+    self.alpha_mag_1_group    = []
+    self.alpha_mag_2_group    = []
 
-    ## #############################################
     ## LOOK AT EACH SIMULATION GROUPED BY RESOLUTION
-    ## #############################################
+    ## ---------------------------------------------
     ## loop over the simulation suites
     for suite_folder in [
         "Re10", "Re500", "Rm3000"
       ]: # "Re10", "Re500", "Rm3000", "keta"
 
-      ## ######################################
       ## CHECK THE SUITE'S FIGURE FOLDER EXISTS
-      ## ######################################
-      filepath_suite_output = WWFnF.createFilepath([ 
-        BASEPATH, suite_folder, SONIC_REGIME
-      ])
+      ## --------------------------------------
+      filepath_suite_output = WWFnF.createFilepath([ BASEPATH, suite_folder, SONIC_REGIME ])
       if not os.path.exists(filepath_suite_output):
         print("{} does not exist.".format(filepath_suite_output))
         continue
-      str_message = "Loading data from suite: {}".format(suite_folder)
+      str_message = "Loading datasets from suite: {}".format(suite_folder)
       print(str_message)
       print("=" * len(str_message))
 
-      ## #####################
       ## LOOP OVER SIMULATIONS
-      ## #####################
+      ## ---------------------
       ## loop over the simulation folders
       for sim_folder in [
           "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
         ## check that the fitted spectra data exists for the Nres=288 simulation setup
-        filepath_spect = WWFnF.createFilepath([ BASEPATH, suite_folder, "288", SONIC_REGIME, sim_folder, "spect" ])
-        if not os.path.isfile(f"{filepath_spect}/{FILENAME_SPECTRA}"): continue
+        filepath_sim = WWFnF.createFilepath([ BASEPATH, suite_folder, "288", SONIC_REGIME, sim_folder ])
+        dataset_name = f"{suite_folder}_{sim_folder}_dataset.json"
+        filepath_dataset = f"{filepath_sim}/{dataset_name}"
+        if not os.path.isfile(filepath_dataset): continue
 
         ## load scales
-        print(f"\t> Loading '{sim_folder}' simulation data.")
+        print(f"\t> Loading '{sim_folder}' dataset.")
         if suite_folder == "Re10": self.marker_group.append("s")
         elif suite_folder == "Re500": self.marker_group.append("D")
         elif suite_folder == "Rm3000": self.marker_group.append("o")
-        self.getSimParams(filepath_spect)
-        self.getConvergedScales(filepath_suite_output, f"{sim_folder}_{FILENAME_CONVERGED}")
+        self.getParams(filepath_sim, dataset_name)
 
       ## create empty space
       print(" ")
 
-  def getSimParams(self, filepath_sim):
+  def getParams(self, filepath_data, dataset_name):
     ## load spectra-fit data as a dictionary
     dict = WWObjs.loadJson2Dict(
-      filepath          = filepath_sim,
-      filename          = FILENAME_SPECTRA,
+      filepath          = filepath_data,
+      filename          = dataset_name,
       bool_hide_updates = True
     )
-    ## store dictionary data in spectra-fit object
-    obj = FitMHDScales.SpectraFit(**dict)
-    ## load plasma Reynolds numbers
-    Re = int(obj.Re)
-    Rm = int(obj.Rm)
-    Pm = int(obj.Pm)
+    ## extract plasma Reynolds numbers
+    Re = int(dict["Re"])
+    Rm = int(dict["Rm"])
+    Pm = int(dict["Pm"])
     self.Re_group.append(Re)
     self.Rm_group.append(Rm)
     self.Pm_group.append(Pm)
     self.color_group.append( "cornflowerblue" if Re < 100 else "orangered" )
+    ## extract measured scales
+    dict_params_kin  = dict["dict_params_kin"]
+    self.alpha_kin_group.append(dict_params_kin["alpha_kin"])
+    self.k_nu_group.append(dict_params_kin["k_nu"])
+    dict_params_mag  = dict["dict_params_mag"]
+    self.alpha_mag_1_group.append(dict_params_mag["alpha_mag_1"])
+    self.alpha_mag_2_group.append(dict_params_mag["alpha_mag_2"])
+    self.k_eta_group.append(dict_params_mag["k_eta"])
+    self.k_p_group.append(dict_params_mag["k_p"])
+    self.k_max_group.append(dict_params_mag["k_max"])
     ## calculate predicted dissipatin scales
     k_nu_relation  = 2 * (Re)**(2/3) # super-sonic
     k_eta_relation = k_nu_relation * (Pm)**(1/2)
     self.k_nu_relation_group.append(k_nu_relation)
     self.k_eta_relation_group.append(k_eta_relation)
 
-  def getConvergedScales(
-      self,
-      filepath_suite_output,
-      filename
-    ):
-    ## load converged spectra-fit data as a dictionary
-    dict = WWObjs.loadJson2Dict(
-      filepath          = filepath_suite_output,
-      filename          = filename,
-      bool_hide_updates = True
-    )
-    ## store dictionary data in spectra-fit object
-    obj = FitMHDScales.SpectraConvergedScales(**dict)    
-    self.k_nu_converged_group.append(obj.k_nu_converged)
-    self.k_eta_converged_group.append(obj.k_eta_converged)
-    self.k_p_converged_group.append(obj.k_p_converged)
-    self.k_nu_std_group.append(obj.k_nu_std)
-    self.k_eta_std_group.append(obj.k_eta_std)
-    self.k_p_std_group.append(obj.k_p_std)
-
   def plotScaleRelations(self):
     ## initialise figure
     fig, axs = plt.subplots(1, 2, figsize=(7*2/1.1, 4/1.1))
     fig.subplots_adjust(wspace=0.225)
-    ## plot scale distributions
+    ## plot scales
     for sim_index in range(len(self.Pm_group)):
       ## k_nu
-      axs[0].errorbar(
+      axs[0].plot(
         self.k_nu_relation_group[sim_index],
-        self.k_nu_converged_group[sim_index],
-        yerr   = self.k_nu_std_group[sim_index],
+        self.k_nu_group[sim_index],
         color  = self.color_group[sim_index],
-        fmt    = self.marker_group[sim_index],
-        markersize=8, markeredgecolor="black", capsize=7.5, elinewidth=2, linestyle="None", zorder=10
+        marker = self.marker_group[sim_index],
+        markersize=8, markeredgecolor="black", linestyle="", zorder=10
       )
       ## k_eta
-      axs[1].errorbar(
+      axs[1].plot(
         self.k_eta_relation_group[sim_index],
-        self.k_eta_converged_group[sim_index],
-        yerr   = self.k_eta_std_group[sim_index],
+        self.k_eta_group[sim_index],
         color  = self.color_group[sim_index],
-        fmt    = self.marker_group[sim_index],
-        markersize=8, markeredgecolor="black", capsize=7.5, elinewidth=2, linestyle="None", zorder=10
+        marker = self.marker_group[sim_index],
+        markersize=8, markeredgecolor="black", linestyle="", zorder=10
       )
     ## plot reference lines
     x = np.linspace(10, 1000, 100)
@@ -172,12 +154,8 @@ class SimScales():
     axs[1].set_xscale("log")
     axs[0].set_yscale("log")
     axs[1].set_yscale("log")
-    # axs[1].set_xlim([ 10, 1000 ])
-    # axs[1].set_xlim([ 10, 1000 ])
-    # axs[0].set_ylim([ 10**0, 10**2 ])
-    # axs[1].set_ylim([ 10**0, 10**2 ])
     ## save plot
-    fig_name = "fig_scale_relation.pdf"
+    fig_name = "fig_scale_relation.png"
     fig_filepath = WWFnF.createFilepath([ self.filepath_plots, fig_name ])
     plt.savefig(fig_filepath)
     print("Figure saved:", fig_name)
@@ -186,27 +164,23 @@ class SimScales():
     ## initialise figure
     fig, axs = plt.subplots(1, 2, figsize=(14/1.1, 4/1.1))
     fig.subplots_adjust(wspace=0.225)
-    ## plot scale distributions
+    ## plot scales
     for sim_index in range(len(self.Pm_group)):
       ## k_p vs k_nu
-      axs[0].errorbar(
-        self.k_nu_converged_group[sim_index],
-        self.k_p_converged_group[sim_index],
-        xerr   = self.k_nu_std_group[sim_index],
-        yerr   = self.k_p_std_group[sim_index],
+      axs[0].plot(
+        self.k_nu_group[sim_index],
+        self.k_p_group[sim_index],
         color  = self.color_group[sim_index],
-        fmt    = self.marker_group[sim_index],
-        markersize=8, markeredgecolor="black", capsize=7.5, elinewidth=2, linestyle="None", zorder=10
+        marker = self.marker_group[sim_index],
+        markersize=8, markeredgecolor="black", linestyle="", zorder=10
       )
       ## k_p vs k_eta
-      axs[1].errorbar(
-        self.k_eta_converged_group[sim_index],
-        self.k_p_converged_group[sim_index],
-        xerr   = self.k_eta_std_group[sim_index],
-        yerr   = self.k_p_std_group[sim_index],
+      axs[1].plot(
+        self.k_eta_group[sim_index],
+        self.k_p_group[sim_index],
         color  = self.color_group[sim_index],
-        fmt    = self.marker_group[sim_index],
-        markersize=8, markeredgecolor="black", capsize=7.5, elinewidth=2, linestyle="None", zorder=10
+        marker = self.marker_group[sim_index],
+        markersize=8, markeredgecolor="black", linestyle="", zorder=10
       )
     ## plot reference lines
     x = np.linspace(1, 100, 100)
@@ -222,41 +196,35 @@ class SimScales():
     axs[1].set_xscale("log")
     axs[0].set_yscale("log")
     axs[1].set_yscale("log")
-    # axs[0].set_xlim([ 1, 40 ])
-    # axs[0].set_ylim([ 1, 40 ])
-    # axs[1].set_xlim([ 1, 20 ])
-    # axs[1].set_ylim([ 1, 20 ])
     ## save plot
-    fig_name = "fig_scale_dependance.pdf"
+    fig_name = "fig_scale_dependance.png"
     fig_filepath = WWFnF.createFilepath([ self.filepath_plots, fig_name ])
     plt.savefig(fig_filepath)
     print("Figure saved:", fig_name)
 
-  def plotAlphaExponent(self, str_var):
+  def plotPmDependance(self):
     ## initialise figure
-    fig_scaling = 1.45
-    _, ax = plt.subplots(figsize=(8/fig_scaling, 5/fig_scaling))
-    ## plot points
+    fig, ax = plt.subplots(1, 1, figsize=(7/1.1, 4/1.1))
+    ## plot scales
     for sim_index in range(len(self.Pm_group)):
-        
-      PlotFuncs.plotErrorBar(
-        ax,
-        data_x = self.Re_group[sim_index],
-        data_y = (
-          self.alpha_kin_converged_group[sim_index] if str_var == "kin" else
-          self.alpha_mag_converged_group[sim_index]
-        ),
+      ax.plot(
+        self.Pm_group[sim_index],
+        self.k_max_group[sim_index],
         color  = self.color_group[sim_index],
         marker = self.marker_group[sim_index],
-        ms = 9
+        markersize=8, markeredgecolor="black", linestyle="", zorder=10
       )
+    ## plot reference lines
+    # x = np.linspace(10, 1000, 100)
+    # ax.plot(x, x/10, "k:")
     ## label axis
-    ax.set_xlabel(r"Re", fontsize=22)
-    ax.set_ylabel(r"$\alpha_{\mathrm{"+str_var+"}}$", fontsize=22)
+    ax.set_xlabel(r"$\mathrm{Pm}$", fontsize=20)
+    ax.set_ylabel(r"$k_{\rm p}$",   fontsize=20)
     ## adjust axis
     ax.set_xscale("log")
+    ax.set_yscale("log")
     ## save plot
-    fig_name = f"fig_exponent_{str_var}.pdf"
+    fig_name = "fig_Pm_dependance.png"
     fig_filepath = WWFnF.createFilepath([ self.filepath_plots, fig_name ])
     plt.savefig(fig_filepath)
     print("Figure saved:", fig_name)
@@ -267,14 +235,12 @@ class SimScales():
 ## ###############################################################
 BASEPATH           = "/scratch/ek9/nk7952/"
 SONIC_REGIME       = "super_sonic"
-FILENAME_SPECTRA   = "spectra_fits.json"
-FILENAME_CONVERGED = "spectra_converged.json"
-FILENAME_TAG       = ""
 
 def main():
-  sim_data_obj = SimScales(BASEPATH)
-  sim_data_obj.plotScaleRelations()
-  sim_data_obj.plotScaleDependance()
+  plot_obj = PlotSimScales(BASEPATH)
+  # plot_obj.plotScaleRelations()
+  # plot_obj.plotScaleDependance()
+  plot_obj.plotPmDependance()
 
 
 ## ###############################################################

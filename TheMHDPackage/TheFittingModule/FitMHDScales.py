@@ -164,6 +164,8 @@ class SpectraFit():
 ## ###############################################################
 ## CLASS OF USEFUL SPECTRA MODELS
 ## ###############################################################
+import warnings
+warnings.filterwarnings('error')
 class SpectraModels():
   ## ######################
   ## KINETIC SPECTRA MODELS
@@ -187,16 +189,20 @@ class SpectraModels():
     return A * np.array(k)**(alpha_1) * k0( (np.array(k) / k_eta)**(alpha_2) )
 
   def magnetic_loge(k, A, alpha_1, alpha_2, k_eta):
-    # arg = (np.array(k) / k_eta)**(alpha_2)
-    # log_bessel = np.where(
-    #   arg > 10,
-    #   ## approximate ln(K0(...)) with the first two terms from the series expansion of K0(...)
-    #   -arg + np.log(np.sqrt(np.pi/2) * ( np.sqrt(1/arg) - 1/8 * (1/arg)**(3/2) )),
-    #   ## evaluate ln(K0(...))
-    #   np.log(k0(arg))
-    # )
-    # return np.log(A) + alpha_1 * np.log(k) + log_bessel
-    return np.log(A) + alpha_1 * np.log(k) + np.log(k0( (np.array(k) / k_eta)**(alpha_2) ))
+    arg = (np.array(k) / k_eta)**(alpha_2)
+    try:
+      log_bessel = np.where(
+        arg > 50,
+        ## approximate ln(K0(...)) with the first two terms from the series expansion of K0(...)
+        -arg + np.log(np.sqrt(np.pi/2) * ( np.sqrt(1/arg) - 1/8 * (1/arg)**(3/2) )),
+        ## evaluate ln(K0(...))
+        np.log(k0(arg))
+      )
+    except Warning:
+      print("Bounds of input arguments:", np.min(arg), np.max(arg))
+      Exception("Error: failed to fit modified bessel function.")
+    return np.log(A) + alpha_1 * np.log(k) + log_bessel
+    # return np.log(A) + alpha_1 * np.log(k) + np.log(k0( (np.array(k) / k_eta)**(alpha_2) ))
 
   def k_p_implicit(k, alpha_1, alpha_2, k_eta):
     ''' peak scale of the magnetic energy spectra model (modified Kulsrud and Anderson 1992).
@@ -206,32 +212,34 @@ class SpectraModels():
     arg = (np.array(k) / k_eta)**(alpha_2)
     return np.array(k) - ( alpha_1 / alpha_2 * k0(arg) / k1(arg) )**(1/alpha_2) * k_eta
   
-  def magnetic_simple_linear(k, A, alpha_1, alpha_2, k_eta):
+
+  def magnetic_linear_simple(k, A, alpha_1, alpha_2, k_eta):
     ''' simple model: exponential + powerlaw in linear-domain:
         y = A * k^alpha * exp(- k / k_eta)
     '''
     return A * np.array(k)**(alpha_1) * np.exp( -(np.array(k) / k_eta)**(alpha_2) )
 
-  def magnetic_simple_loge(k, A, alpha_1, alpha_2, k_eta):
+  def magnetic_loge_simple(k, A, alpha_1, alpha_2, k_eta):
     return np.log(A) + alpha_1 * np.log(k) - (np.array(k) / k_eta)**(alpha_2)
-  
+    # return np.log(SpectraModels.magnetic_linear_simple(k, A, alpha_1, alpha_2, k_eta))
+
   def k_p_simple(alpha_1, alpha_2, k_eta):
     return (alpha_1 / alpha_2)**(1/alpha_2) * k_eta
 
   ## ############################
   ## NUMERICAL DISSIPATION REGIME
   ## ############################
-  def tail_linear(x, alpha_1, alpha_2):
+  def tail_linear(k, alpha_1, alpha_2):
     ''' powerlaw in linear-domain
       y = 10^alpha_1 * k^alpha_2
     '''
-    return 10**(alpha_1) * np.array(x)**(alpha_2)
+    return 10**(alpha_1) * np.array(k)**(alpha_2)
 
-  def tail_log10(x_log10, alpha_1, alpha_2):
+  def tail_log10(k_log10, alpha_1, alpha_2):
     ''' powerlaw in log10-domain
       log10(y) = alpha_1 + alpha_2 * log10(k)
     '''
-    return alpha_1 + alpha_2 * np.array(x_log10)
+    return alpha_1 + alpha_2 * np.array(k_log10)
 
 
 ## ###############################################################
@@ -558,7 +566,7 @@ class FitMagSpectra(FitSpectra):
     self.list_power_group_t   = list_power_group_t
     ## store fit parameters
     self.bool_fit_fixed_model = bool_fit_fixed_model # TODO: implement this functionality
-    self.func_plot            = SpectraModels.magnetic_simple_linear
+    self.func_plot            = SpectraModels.magnetic_linear_simple
     self.log_bounds           = (
       # log(A), alpha_1,  alpha_2, 1/k_eta
       ( -15,    0.01,     0.01,    1/100   ),
@@ -580,7 +588,7 @@ class FitMagSpectra(FitSpectra):
     ## beat the Kulsrud and Anderson 1992 model into fitting the magnetic spectra
     ## (Step 1) fit with a simple model (spectra motivated)
     list_fit_params_curve_loge, fit_params_cov = curve_fit(
-      SpectraModels.magnetic_simple_loge,
+      SpectraModels.magnetic_loge_simple,
       xdata  = data_k,
       ydata  = data_power_loge,
       bounds = self.log_bounds,

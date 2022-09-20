@@ -20,9 +20,7 @@ except ModuleNotFoundError: import pickle
 ## WORKING WITH PICKLE-FILES
 ## ###############################################################
 def saveObj2Pickle(
-    obj,
-    filepath,
-    filename,
+    obj, filepath, filename,
     bool_hide_updates = False
   ):
   ## create filepath where object is to be saved
@@ -31,12 +29,10 @@ def saveObj2Pickle(
   with open(filepath_file, "wb") as output:
     pickle.dump(obj, output, -1) # -1 specifies highest binary protocol
   ## indicate success
-  if not(bool_hide_updates):
-    print("Saved pickle-file:", filepath_file)
+  if not(bool_hide_updates): print("Saved pickle-file:", filepath_file)
 
 def loadPickle2Obj(
-    filepath,
-    filename,
+    filepath, filename,
     bool_raise_error  = False,
     bool_hide_updates = False
   ):
@@ -51,10 +47,7 @@ def loadPickle2Obj(
   ## indicate the file was not found
   else:
     ## raise exception
-    if bool_raise_error:
-      Exception("No pickle-file '{:s}' found in '{:s}'.".format(
-        filename, filepath
-      ))
+    if bool_raise_error: Exception(f"No pickle-file '{filename}' found in '{filepath}'.")
     ## return flag
     return -1
 
@@ -73,9 +66,7 @@ class NumpyEncoder(json.JSONEncoder):
     return json.JSONEncoder.default(self, obj)
 
 def saveObj2Json(
-    obj,
-    filepath,
-    filename,
+    obj, filepath, filename,
     bool_hide_updates = False
   ):
   ## create filepath where object is to be saved
@@ -90,12 +81,10 @@ def saveObj2Json(
       indent    = 2
     )
   ## indicate success
-  if not(bool_hide_updates):
-    print("Saved json-file:", filepath_file)
+  if not(bool_hide_updates): print("Saved json-file:", filepath_file)
 
 def loadJson2Dict(
-    filepath,
-    filename,
+    filepath, filename,
     bool_raise_error  = False,
     bool_hide_updates = False
   ):
@@ -110,10 +99,7 @@ def loadJson2Dict(
   ## indicate the file was not found
   else:
     ## raise exception
-    if bool_raise_error:
-      Exception("No json-file '{:s}' found in '{:s}'.".format(
-        filename, filepath
-      ))
+    if bool_raise_error: Exception(f"No json-file '{filename}' found in '{filepath}'.")
     ## return flag
     return -1
 

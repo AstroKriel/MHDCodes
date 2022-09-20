@@ -8,7 +8,7 @@ from TheFittingModule import FitMHDScales
 def main():
   ## generate data
   func_full = FitMHDScales.SpectraModels.kinetic_linear
-  func_simple = FitMHDScales.SpectraModels.magnetic_simple_linear
+  func_simple = FitMHDScales.SpectraModels.magnetic_linear_simple
   data_x = np.linspace(1, 500, 100)
   params = [ 10**(-6), -5, 1/5 ]
   data_y_full   = func_full(data_x, *params)
