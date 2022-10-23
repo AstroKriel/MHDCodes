@@ -19,12 +19,12 @@ def reformatFLASHField(field, num_blocks, num_procs):
   PURPOSE:
     This code reformats FLASH (HDF5) simulation data from:
       [iprocs*jprocs*kprocs, nzb, nxb, nyb] -> [simulation sub-domain number, sub-domain z-data, sub-domain x-data, sub-domain y-data]
-    format to:
-      [kprocs*nzb, iprocs*nxb, jprocs*nyb] -> full domain [z-data, x-data, y-data]
+    to:
+      [kprocs*nzb, iprocs*nxb, jprocs*nyb] -> 3D domain [z-data, x-data, y-data]
     for processing / visualization.
   INPUTS:
     > field      : the FLASH field.
-    > num_blocks : number of pixels in each spatial direction [i, j, k] of the simulation sub-domain being simulated by each processor.
+    > num_blocks : number of pixels in each spatial direction (i, j, k) of the simulation sub-domain that is being simulated by each processor.
     > num_procs  : number of processors between which each spatial direction [i, j, k] of the total-simulation domain is divided.
   """
   ## extract number of blocks the simulation was divided into in each [i, j, k] direction
@@ -42,10 +42,10 @@ def reformatFLASHField(field, num_blocks, num_procs):
     for j in range(jprocs):
       for i in range(iprocs):
         field_sorted[
-          k*nzb:(k+1)*nzb,
-          i*nxb:(i+1)*nxb,
-          j*nyb:(j+1)*nyb
-        ] = field[j + i*iprocs + k*jprocs*jprocs]
+          k * nzb : (k+1) * nzb,
+          i * nxb : (i+1) * nxb,
+          j * nyb : (j+1) * nyb
+        ] = field[j + (i * iprocs) + (k * jprocs * jprocs)]
   return field_sorted
 
 
@@ -70,7 +70,7 @@ def loadFLASHFieldSlice(
     ## reformat data
     data_sorted = reformatFLASHField(data, num_blocks, num_procs)
     data_slice = data_sorted[ :, :, len(data_sorted[0,0,:])//2 ]
-    ## normalise data by rms
+    ## return data normalised by rms value
     if bool_rms_norm:
       return data_slice**2 / np.sqrt(np.mean(data_slice**2))**2
     ## return data
@@ -112,7 +112,7 @@ def loadListFLASHFieldSlice(
     )
   if not len(list_data_mag_sorted) > 0:
     Exception("Could not load any data in:", filepath_data)
-  ## get colorbar limits
+  ## get bounds of data for colorbar limits
   list_col_range = [
     np.min(list_data_mag_sorted),
     np.max(list_data_mag_sorted)
@@ -151,7 +151,8 @@ def loadFLASHFieldDataList(
     num_blocks = [36, 36, 48],
     num_procs  = [8, 8, 6],
     plots_per_eddy   = 10,
-    plot_every_index = 1
+    plot_every_index = 1,
+    bool_debug       = False
   ):
   ## get all plt files in the directory
   filenames = WWFnF.getFilesFromFolder(
@@ -168,7 +169,7 @@ def loadFLASHFieldDataList(
   ## save field slices and simulation times
   list_field_mags = []
   list_sim_times  = []
-  plot_file_indices = range(len(filenames))[::plot_every_index]
+  # plot_file_indices = range(len(filenames))[::plot_every_index]
   for filename, file_index in WWLists.loopListWithUpdates(filenames):
     ## load dataset
     field_mag = loadFLASHFieldSlice(
@@ -177,9 +178,10 @@ def loadFLASHFieldDataList(
       num_procs,
       str_field
     )
-    # ## check the dimensions of the 2D slice
-    # print( len(field_mag) )
-    # print( len(field_mag[0]) )
+    ## check the dimensions of the 2D slice
+    if bool_debug:
+      print( len(field_mag) )
+      print( len(field_mag[0]) )
     ## append slice of field magnitude
     list_field_mags.append( field_mag[:,:] )
     ## append the simulation timepoint
@@ -198,17 +200,16 @@ def loadFLASHFieldDataList(
 
 
 def loadTurbData(
-    filepath_data,
-    var_y,
-    t_turb, # ell_turb / (c_s * Mach)
+    filepath_data, var_y, t_turb,
     time_start = 1,
-    time_end   = np.inf
+    time_end   = np.inf,
+    bool_debug = False
   ):
   ## initialise x and y data
   var_x  = 0 # time
   data_x = []
   data_y = []
-  ## initialise data-traversal variable
+  ## initialise quantity to track data traversal
   prev_time = np.inf
   ## read data backwards
   filepath_file = WWFnF.createFilepath([ filepath_data, "Turb.dat" ])
@@ -224,33 +225,45 @@ def loadTurbData(
           cur_time = float(data_split[var_x]) / t_turb # normalise by eddy turnover time
           ## if the simulation has been restarted, only read the progressed data
           if cur_time < prev_time: # walking backwards
+            cur_val = float(data_split[var_y])
+            if cur_val == 0:
+              if bool_debug:
+                raise Exception(f"Error: encountered 0-value in quantity index {var_y} in 'Turb.dat' at time = {cur_time}.")
+              continue
             data_x.append(cur_time)
-            data_y.append(float(data_split[var_y]))
+            data_y.append(cur_val)
             prev_time = cur_time
-  ## reverse the reversed lists
+  ## reorder the data
   data_x = data_x[::-1]
   data_y = data_y[::-1]
-  ## subset data
+  ## subset data based on time
   index_start = WWLists.getIndexClosestValue(data_x, time_start)
   index_end   = WWLists.getIndexClosestValue(data_x, time_end)
   return data_x[index_start : index_end], data_y[index_start : index_end]
 
 
-def getPlotsPerEddy(filepath_data, num_t_turb=100, bool_hide_updates=False):
+def getPlotsPerTturbFromFlashParamFile(
+    filepath_file,
+    num_t_turb        = 100,
+    bool_hide_updates = False
+  ):
+  ## helper functions
   def getName(line):
     return line.split("=")[0].lower()
   def getValue(line):
     return line.split("=")[1].split("[")[0]
-  tmax = None
-  plot_file_interval = None
-  filepath_file = WWFnF.createFilepath([ filepath_data, "Turb.log" ])
-  with open(filepath_file, "r") as fp:
+  ## search routine
+  bool_tmax_found          = False
+  bool_plot_interval_found = None
+  with open(WWFnF.createFilepath([ filepath_file, "Turb.log" ]), "r") as fp:
     for line in fp.readlines():
       if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
         tmax = float(getValue(line))
+        bool_tmax_found = True
       elif "plotfileintervaltime" in getName(line):
         plot_file_interval = float(getValue(line))
-      if (tmax is not None) and (plot_file_interval is not None):
+        bool_plot_interval_found = True
+      if bool_tmax_found and bool_plot_interval_found:
         plots_per_eddy = tmax / plot_file_interval / num_t_turb
         if not(bool_hide_updates):
           print("The following has been read from 'Turb.log':")
@@ -260,10 +273,11 @@ def getPlotsPerEddy(filepath_data, num_t_turb=100, bool_hide_updates=False):
           print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb.")
           print(" ")
         return plots_per_eddy
+  ## failed to read quantity
   return None
 
 
-def loadSpectra(filepath_data, str_spectra_type):
+def loadSpectraDataFromFile(filepath_data, str_spectra_type):
   with open(filepath_data, "r") as fp:
     data_file = fp.readlines() # load in data
     data      = np.array([x.strip().split() for x in data_file[6:]]) # store all data: [row, col]
@@ -274,7 +288,7 @@ def loadSpectra(filepath_data, str_spectra_type):
         data_y = data_y / 2
       elif "mag" in str_spectra_type:
         data_y = data_y / (8 * np.pi)
-      else: Exception("You have passed an invalid spectra type to 'loadSpectra()'.")
+      else: raise Exception(f"You have passed an invalid spectra type {str_spectra_type} to 'LoadFlashData.loadSpectraDataFromFile()'.")
       bool_failed_to_read = False
     except:
       bool_failed_to_read = True
@@ -283,18 +297,16 @@ def loadSpectra(filepath_data, str_spectra_type):
     return data_x, data_y, bool_failed_to_read
 
 
-def loadListSpectra(
-    filepath_data,
-    str_spectra_type  = "mag",
-    plots_per_eddy    = 10,
+def loadListOfSpectraDataInDirectory(
+    filepath_data, str_spectra_type, plots_per_eddy,
     file_start_time   = 2,
     file_end_time     = np.inf,
     read_every        = 1,
     bool_hide_updates = False
   ):
   ## initialise list of spectra data
-  k_group_t       = []
-  power_group_t   = []
+  k_group_t           = []
+  power_group_t       = []
   list_sim_times      = []
   list_failed_to_load = []
   ## filter for spectra data-files
@@ -309,7 +321,7 @@ def loadListSpectra(
   ## loop over each of the spectra file names
   for filename, _ in WWLists.loopListWithUpdates(spectra_filenames[::read_every], bool_hide_updates):
     ## load data
-    spectra_k, spectra_power, bool_failed_to_read = loadSpectra(
+    spectra_k, spectra_power, bool_failed_to_read = loadSpectraDataFromFile(
       filepath_data    = WWFnF.createFilepath([ filepath_data, filename ]),
       str_spectra_type = str_spectra_type
     )
@@ -330,6 +342,50 @@ def loadListSpectra(
     ))
   ## return spectra data
   return k_group_t, power_group_t, list_sim_times
+
+
+def getPlasmaParamsFromFlashParamFile(filepath_sim, rms_mach, k_turb):
+    bool_nu_found  = False
+    bool_eta_found = False
+    ## search through flash.par file for parameters
+    with open(f"{filepath_sim}/flash.par") as file_lines:
+      for line in file_lines:
+        list_line_elems = line.split()
+        ## ignore empty lines
+        if len(list_line_elems) == 0:
+          continue
+        ## read value for 'diff_visc_nu'
+        if list_line_elems[0] == "diff_visc_nu":
+          nu = float(list_line_elems[2])
+          bool_nu_found = True
+        ## read value for 'resistivity'
+        if list_line_elems[0] == "resistivity":
+          eta = float(list_line_elems[2])
+          bool_eta_found = True
+        ## stop searching if both parameters have been identified
+        if bool_nu_found and bool_eta_found:
+          break
+    ## compute plasma numbers
+    if bool_nu_found and bool_eta_found:
+      nu  = nu
+      eta = eta
+      Re  = int(rms_mach / (k_turb * nu))
+      Rm  = int(rms_mach / (k_turb * eta))
+      Pm  = int(nu / eta)
+      print(f"\t> Re = {Re}, Rm = {Rm}, Pm = {Pm}, nu = {nu:0.2e}, eta = {eta:0.2e},")
+      return {
+        "nu"  : nu,
+        "eta" : eta,
+        "Re"  : Re,
+        "Rm"  : Rm,
+        "Pm"  : Pm
+      }
+    else:
+      Exception("\t> ERROR: Could not find {}{}{}.".format(
+        "nu"   if (nu is None)  else "",
+        " or " if (nu is None) and (eta is None) else "",
+        "eta"  if (eta is None) else ""
+      ))
 
 
 ## END OF LIBRARY

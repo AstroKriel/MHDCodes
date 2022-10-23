@@ -4,7 +4,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, re
+import os, re, shutil
 import numpy as np
 
 
@@ -25,26 +25,22 @@ def makeFilter(
     PURPOSE: Create a filter condition for files that look a particular way.
   """
   def meetsCondition(element):
-    ## if str_contains specified, then look for condition
-    if str_contains is not None: bool_contains = element.__contains__(str_contains)
-    else: bool_contains = True # don't consider condition
-    ## if str_not_contains specified, then look for condition
-    if str_not_contains is not None: bool_not_contains = not(element.__contains__(str_not_contains))
-    else: bool_not_contains = True # don't consider condition
-    ## if str_startswith specified, then look for condition
-    if str_startswith is not None: bool_startswith = element.startswith(str_startswith)
-    else: bool_startswith = True # don't consider condition
-    ## if str_endswith specified, then look for condition
-    if str_endswith is not None: bool_endswith = element.endswith(str_endswith)
-    else: bool_endswith = True # don't consider condition
-    ## make sure that the file has the right name structure (i.e. check all conditions have been met)
-    if (
-        bool_contains and 
+    if str_contains is not None:
+      bool_contains = element.__contains__(str_contains)
+    else: bool_contains = True
+    if str_not_contains is not None:
+      bool_not_contains = not(element.__contains__(str_not_contains))
+    else: bool_not_contains = True
+    if str_startswith is not None:
+      bool_startswith = element.startswith(str_startswith)
+    else: bool_startswith = True
+    if str_endswith is not None:
+      bool_endswith = element.endswith(str_endswith)
+    else: bool_endswith = True
+    if (bool_contains and 
         bool_not_contains and 
         bool_startswith and 
-        bool_endswith
-      ):
-      ## if the index range also needs to be checked
+        bool_endswith):
       if file_index_placing is not None:
         ## check that the file index falls within the specified range
         if len(element.split(str_split_by)) > abs(file_index_placing):
@@ -73,9 +69,6 @@ def getFilesFromFolder(
     file_start_index   = 0,
     file_end_index     = np.inf
   ):
-  ''' getFilesFromFolder
-    PURPOSE: Return the names of files that meet the required conditions in the specified folder.
-  '''
   myFilter = makeFilter(
     str_contains,
     str_not_contains,
@@ -89,9 +82,6 @@ def getFilesFromFolder(
 
 
 def readLineFromFile(filepath, des_str, bool_case_sensitive=True):
-  ''' readLineFromFile
-    PURPOSE: Return the first line from a file where an intance of a desired target string appears.
-  '''
   for line in open(filepath).readlines():
     if bool_case_sensitive:
       if des_str in line:
@@ -103,9 +93,6 @@ def readLineFromFile(filepath, des_str, bool_case_sensitive=True):
 
 
 def createFolder(filepath, bool_hide_updates=False):
-  """ createFolder
-  PURPOSE: Create a folder if and only if it does not already exist.
-  """
   if not(os.path.exists(filepath)):
     os.makedirs(filepath)
     if not(bool_hide_updates):
@@ -115,21 +102,25 @@ def createFolder(filepath, bool_hide_updates=False):
 
 
 def createFilepath(list_filepath_folders):
-  """ creatFilePath
-  PURPOSE: Concatinate a list of strings into a single string separated by '/'.
-  """
   return re.sub( '/+', '/', "/".join([
     folder for folder in list_filepath_folders if not(folder == "")
   ]) )
 
 
 def createName(list_name_elems):
-  """ creatFilePath
-  PURPOSE: Concatinate a list of strings into a single string separated by '_'.
-  """
   return re.sub( '_+', '_', "_".join([
     elems for elems in list_name_elems if not(elems == "")
   ]) )
+
+
+def copyFileFromNTo(directory_from, directory_to, filename):
+  shutil.copy( # copy the file and it's permissions (i.e. executable)
+    f"{directory_from}/{filename}",
+    f"{directory_to}/{filename}"
+  )
+  print(f"\t> Successfully coppied: {filename}")
+  print(f"\t\t From: {directory_from}")
+  print(f"\t\t To: {directory_to}")
 
 
 ## END OF LIBRARY

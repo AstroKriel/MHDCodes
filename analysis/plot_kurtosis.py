@@ -21,61 +21,31 @@ os.system("clear") # clear terminal window
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
-## ###############################################################
-## MAIN PROGRAM
-## ###############################################################
-def main():
-  ## #####################
-  ## LOAD KURTOSIS DATASET
-  ## #####################
-  print("Loading data...")
-  ## dataset name
-  abs_filepath_base = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/"
-  rel_filepath_data = "data/sub_sonic/"
-  rel_filepath_plot = "figures/sub_sonic/"
-  ## open data-object
-  dataset_name = "kurtosis_data_gradv.csv"
-  abs_filepath_data = WWFnF.createFilepath([
-    abs_filepath_base,
-    rel_filepath_data,
-    dataset_name
-  ])
-  dataset_obj = open(abs_filepath_data)
-  ## loop over and read data-object
-  list_sim_data = []
-  for sim_data in csv.reader(dataset_obj):
-    list_sim_data.append(sim_data)
+## HELPER FUNCTIONS
+def loadData():
+  list_sim_data     = []
+  abs_filepath_data = WWFnF.createFilepath([ ABS_FILEPATH_BASE, REL_FILEPATH_DATA, "kurtosis_data_gradv.csv" ])
+  with open(abs_filepath_data, "r") as dataset_obj:
+    for sim_data in csv.reader(dataset_obj):
+      list_sim_data.append(sim_data)
+  return list_sim_data
 
-  ## ##################
-  ## PLOT KURTOSIS DATA
-  ## ##################
-  print("Plotting data...")
+def plotData(list_sim_data):
   ## create figure
   factor = 1.45
   _, ax = plt.subplots(figsize=(8.5/factor, 5/factor))
   ## plot data
   for sim_index in range(1, len(list_sim_data)):
-    Re   = float(list_sim_data[sim_index][1])
-    val  = float(list_sim_data[sim_index][3])
-    err  = float(list_sim_data[sim_index][4])
-    if list_sim_data[sim_index][5] == "x":
-      marker = "o"
-    elif list_sim_data[sim_index][5] == "y":
-      marker = "s"
-    else:
-      marker = "D"
+    Re  = float(list_sim_data[sim_index][1])
+    val = float(list_sim_data[sim_index][3])
+    err = float(list_sim_data[sim_index][4])
     print("\t", Re, val, err)
     ax.errorbar(
-      x      = Re,
-      y      = val,
-      yerr   = err,
-      marker = marker,
-      color  = "cornflowerblue" if Re < 100 else "darkgray" if Re > 2000 else "orangered",
-      markeredgecolor = "black",
-      markersize = 9,
-      elinewidth = 2,
-      capsize    = 7.5,
-      zorder     = 10
+      x     = Re,
+      y     = val,
+      yerr  = err,
+      color = "cornflowerblue" if Re < 100 else "darkgray" if Re > 2000 else "orangered",
+      marker="o", markeredgecolor="black", markersize=9, elinewidth=2, capsize=7.5, zorder=10
     )
   ## undject y-axis range
   ax.set_ylim([-1.0, 2.0])
@@ -96,7 +66,7 @@ def main():
     r"Gaussian", color="black",
     ha="right", va="bottom", fontsize=17
   )
-  ## add legend
+  ## add legends
   ax.text(
     0.05, 0.925,
     r"Rm $\approx 3300$", color="black",
@@ -126,12 +96,34 @@ def main():
   ## save figure
   plot_name = "fig_kurtosis.pdf"
   abs_filepath_plot = WWFnF.createFilepath([
-    abs_filepath_base,
-    rel_filepath_plot,
+    ABS_FILEPATH_BASE,
+    REL_FILEPATH_PLOT,
     plot_name
   ])
   plt.savefig(abs_filepath_plot)
   print("Figure saved:", abs_filepath_plot)
+
+
+## ###############################################################
+## MAIN PROGRAM
+## ###############################################################
+def main():
+  ## LOAD KURTOSIS DATASET
+  ## ---------------------
+  print("Loading data...")
+  list_sim_data = loadData()
+  ## PLOT KURTOSIS DATA
+  ## ------------------
+  print("Plotting data...")
+  plotData(list_sim_data)
+
+
+## ###############################################################
+## PROGRAM PARAMETERS
+## ###############################################################
+ABS_FILEPATH_BASE = "/Users/dukekriel/Documents/Studies/TurbulentDynamo/"
+REL_FILEPATH_DATA = "data/sub_sonic/"
+REL_FILEPATH_PLOT = "figures/sub_sonic/"
 
 
 ## ###############################################################

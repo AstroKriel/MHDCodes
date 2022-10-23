@@ -17,11 +17,11 @@ from TheUsefulModule import WWFnF
 ## ###############################################################
 BASEPATH       = "/scratch/ek9/nk7952/"
 SONIC_REGIME   = "super_sonic"
-DATA_SUBFOLDER = "spect"
+DATA_SUBFOLDER = ""
 # JOB_NAME       = "job_run_sim.sh"
-# JOB_NAME       = "job_calc_spect.sh"
+JOB_NAME       = "job_calc_spect.sh"
 # JOB_NAME       = "job_plot_spect.sh"
-JOB_NAME       = "job_fit_spect_full.sh"
+# JOB_NAME       = "job_fit_spect_full.sh"
 
 def main():
   ## ##############################
@@ -29,13 +29,15 @@ def main():
   ## ##############################
   ## loop over the simulation suites
   for suite_folder in [
-      "Re10", "Re500", "Rm3000"
-    ]: # "Re10", "Re500", "Rm3000", "keta"
+      "Re10",
+      # "Re500",
+      "Rm3000"
+    ]:
 
     ## loop over the different resolution runs
     for sim_res in [
-        "18", "36", "72", "144", "288"
-      ]: # "18", "36", "72", "144", "288", "576"
+        "576"
+      ]:
 
       ## print to the terminal what suite is being looked at
       str_msg = "Looking at suite: {}, Nres = {}".format( suite_folder, sim_res )

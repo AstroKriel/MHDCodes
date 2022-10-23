@@ -4,11 +4,10 @@
 ## MODULES
 ## ###############################################################
 import os
-import matplotlib as mpl
 
-## 'tmpfile' needs to be loaded before 'matplotlib'.
-## This is so matplotlib stores cache in a temporary directory.
-## (Useful for plotting in parallel)
+## 'tmpfile' needs to be loaded before any 'matplotlib' libraries,
+## so matplotlib stores its cache in a temporary directory.
+## (necessary when plotting in parallel)
 import tempfile
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
@@ -23,7 +22,7 @@ from ThePlottingModule import PlotSpectra
 ## PREPARE WORKSPACE
 ## ##############################################################
 os.system("clear") # clear terminal window
-mpl.use("Agg") # work in a non-interactive environment
+plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ##############################################################
@@ -80,7 +79,7 @@ def main():
   ## ############################
   ## LOAD SIMULATION PLT PER EDDY
   ## ############################
-  plots_per_eddy = LoadFlashData.getPlotsPerEddy(filepath_sim, bool_hide_updates=False)
+  plots_per_eddy = LoadFlashData.getPlotsPerTturbFromFlashParamFile(filepath_sim, bool_hide_updates=False)
   if plots_per_eddy is None:
     Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
   
@@ -88,14 +87,14 @@ def main():
   ## LOAD AND PLOT SPECTRA DATA
   ## ##########################
   print("Loading kinetic energy spectra...")
-  kin_k, kin_power, kin_list_sim_times = LoadFlashData.loadListSpectra(
+  kin_k, kin_power, kin_list_sim_times = LoadFlashData.loadListOfSpectraDataInDirectory(
     filepath_data     = filepath_spect,
     str_spectra_type  = "vel",
     plots_per_eddy    = plots_per_eddy,
     bool_hide_updates = bool_hide_updates
   )
   print("Loading magnetic energy spectra...")
-  mag_k, mag_power, mag_list_sim_times = LoadFlashData.loadListSpectra(
+  mag_k, mag_power, mag_list_sim_times = LoadFlashData.loadListOfSpectraDataInDirectory(
     filepath_data     = filepath_spect,
     str_spectra_type  = "mag",
     plots_per_eddy    = plots_per_eddy,

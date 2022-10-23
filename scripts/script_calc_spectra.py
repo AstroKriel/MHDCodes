@@ -21,11 +21,8 @@ os.system("clear")  # clear terminal window
 ## ###############################################################
 def processPltFile(filenames, num_proc):
   for file_name in filenames:
-    print("--------- Looking at: " + file_name + " -----------------------------------")
-    os.system("mpirun -np {} spectra_mpi {} -vels_spect -mags_spect".format(
-      num_proc,
-      file_name
-    ))
+    print(f"--------- Looking at: {file_name} -----------------------------------")
+    os.system(f"mpirun -np {num_proc} spectra_mpi {file_name} -vels_spect -mags_spect")
     print(" ")
 
 
@@ -50,8 +47,8 @@ def main():
   ## ---------------------------- OPEN ARGUMENTS
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
-  bool_check_only = args["check_only"] # only check for and process unprocessed (plt) spectra files
   directory_data  = args["data_path"]  # directory where data is stored
+  bool_check_only = args["check_only"] # only check for and process unprocessed (plt) spectra files
   file_start      = args["file_start"] # first file to process
   file_end        = args["file_end"]   # last file to process
   num_proc        = args["num_proc"]   # number of processors

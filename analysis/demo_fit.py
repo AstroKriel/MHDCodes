@@ -31,7 +31,7 @@ class MagSpectrum():
 ## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
-def loadSpectra(filepath):
+def loadSpectraDataFromFile(filepath):
   data_k_group_t     = []
   data_power_group_t = []
   ## loop over spectra files in t/t_turb = [10, 30]
@@ -77,18 +77,22 @@ def fitMagSpectra(ax, data_k, data_power):
 
 
 ## ###############################################################
-## MAIN PROGRAM
+## PROGRAM PARMETERS
 ## ###############################################################
 BASEPATH = "/scratch/ek9/nk7952/"
 K_TURB   = 2.0
 MACH     = 5.0
 T_TURB   = 1 / (K_TURB * MACH) # ell_turb / (Mach * c_s)
 
+
+## ###############################################################
+## MAIN PROGRAM
+## ###############################################################
 def main():
   filepath_data = f"{BASEPATH}/Rm3000/288/super_sonic/Pm5/spect"
   fig, ax = plt.subplots(figsize=(7,8))
   ## load magnetic energy spectrum
-  data_k_group_t, data_power_group_t = loadSpectra(filepath_data)
+  data_k_group_t, data_power_group_t = loadSpectraDataFromFile(filepath_data)
   ## normalise and time-average
   data_power_ave = AveNormSpectraData(data_power_group_t)
   ax.plot(data_k_group_t[0], data_power_ave, c="r", ls="", marker="o", ms=3)

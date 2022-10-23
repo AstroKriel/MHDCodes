@@ -1,6 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# written by Christoph Federrath, 2020
+#!/bin/env python3
+
+## written by Christoph Federrath, 2020
 import argparse
 from tempfile import mkstemp
 from shutil import move, copyfile
@@ -118,6 +118,6 @@ if __name__ == "__main__":
   overwrite_value("flash.par", "zmin", rp["zmin"])
   overwrite_value("flash.par", "zmax", rp["zmax"])
   overwrite_value("flash.par", "plotFileNumber", sc["plotfilenumber"])
-  overwrite_value("flash.par", "basenm", "\""+"RS_"+rp["basenm"].rstrip()+"\"")
+  # overwrite_value("flash.par", "basenm", "\""+"RS_"+rp["basenm"].rstrip()+"\"")
 
 # ===== MAIN End =====

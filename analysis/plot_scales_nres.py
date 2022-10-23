@@ -190,18 +190,6 @@ class PlotSpectraConvergence():
     ## plot fitted model
     domain_array = np.logspace(np.log10(MIN_AX_NRES), np.log10(MAX_AX_NRES), 100)
     list_scales_model = func(domain_array, *fit_params)
-    # ax.plot(
-    #   domain_array,
-    #   list_scales_model,
-    #   color="k", linestyle="-.", linewidth=2
-    # )
-    ## plot fit uncertainty
-    # ax.fill_between(
-    #   domain_array,
-    #   func(domain_array, *fit_params) - fit_std,
-    #   func(domain_array, *fit_params) + fit_std,
-    #   color="black", alpha=0.2
-    # )
     return list_scales_model[-1], fit_std
 
   def saveFig(self):

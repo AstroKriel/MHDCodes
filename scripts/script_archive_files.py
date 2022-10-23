@@ -6,6 +6,7 @@
 import os
 import sys
 
+## load user defined modules
 from TheUsefulModule import WWFnF
 
 
@@ -16,32 +17,30 @@ BASEPATH     = "/scratch/ek9/nk7952"
 SONIC_REGIME = "super_sonic"
 
 def main():
-  ## ##############################
   ## LOOK AT EACH SIMULATION FOLDER
-  ## ##############################
-  ## loop over the simulation suites
+  ## ------------------------------
+  ## loop over each simulation suite
   for suite_folder in [
       "Re10", "Re500", "Rm3000"
-    ]: # "Re10", "Re500", "Rm3000", "keta"
+    ]:
 
-    ## loop over the different resolution runs
+    ## loop over each resolution
     for sim_res in [
         "72", "144", "288"
-      ]: # "18", "36", "72", "144", "288", "576"
+      ]:
 
-      ## print to the terminal what suite is being looked at
-      str_msg = "Looking at suite: {}, Nres = {}".format( suite_folder, sim_res )
-      print(str_msg)
-      print("=" * len(str_msg))
+      ## print to the terminal which suite is being looked at
+      str_message = f"Looking at suite: {suite_folder}, Nres = {sim_res}"
+      print(str_message)
+      print("=" * len(str_message))
 
-      ## loop over the simulation folders
+      ## loop over each simulation folder
       for sim_folder in [
           "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
         ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
 
-        ## ##################################
-        ## CHECK THE SIMULATION FOLDER EXISTS
-        ## ##################################
+        ## CHECK THAT THE SIMULATION FOLDER EXISTS
+        ## ---------------------------------------
         ## create filepath to simulation folder
         sim_filepath_plt = WWFnF.createFilepath([
           BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder, "plt"
@@ -50,10 +49,12 @@ def main():
         if not os.path.exists(sim_filepath_plt):
           print(sim_filepath_plt, "does not exist.")
           continue
+
         ## archive data
         os.chdir(sim_filepath_plt) # change the directory
         os.system("pwd") # check the directory
         os.system("archive.py -i Turb_hdf5_plt_cnt_*") # archive data
+
       print(" ")
     print(" ")
 
