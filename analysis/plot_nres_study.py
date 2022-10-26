@@ -23,28 +23,9 @@ plt.ioff()
 plt.switch_backend("agg")
 
 
-def fitScales(
-    ax, list_res, list_scales_group_res,
-    bounds = ( (0.01, 1, 0), (50, 1000, 3) )
-  ):
-  ## check if scales increase or decrease with resolution
-  if np.mean(list_scales_group_res[0 ]) < np.mean(list_scales_group_res[-1 ]):
-    func = UserModels.ListOfModels.logistic_growth_increasing
-  else: func = UserModels.ListOfModels.logistic_growth_decreasing
-  ## fit scales
-  fit_params, fit_cov = curve_fit(
-    f     = func,
-    xdata = list_res,
-    ydata = [ np.median(list_scales) for list_scales in list_scales_group_res ],
-    sigma = [ np.std(list_scales)    for list_scales in list_scales_group_res ],
-    bounds=bounds, absolute_sigma=True, maxfev=10**5
-  )
-  fit_std = np.sqrt(np.diag(fit_cov))[0] # confidence in fit
-  ## plot fitted model
-  domain_array = np.logspace(np.log10(1), np.log10(5000), 100)
-  list_scales_model = func(domain_array, *fit_params)
-  return list_scales_model[-1], fit_std
-
+## ###############################################################
+## HELPER FUNCTIONS
+## ###############################################################
 def plotErrorBar_1D(ax, x, array_y, color="k", marker="o"):
   y_median = np.percentile(array_y, 50)
   y_p16    = np.percentile(array_y, 16)
@@ -62,20 +43,38 @@ def plotErrorBar_1D(ax, x, array_y, color="k", marker="o"):
   )
 
 
+def fitScales(
+    ax, list_res, list_scales_group_res,
+    bounds = ( (0.01, 1, 0), (50, 1000, 3) )
+  ):
+  ## check if measured scales increase or decrease with resolution
+  if np.mean(list_scales_group_res[0 ]) < np.mean(list_scales_group_res[-1 ]):
+    func = UserModels.ListOfModels.logistic_growth_increasing
+  else: func = UserModels.ListOfModels.logistic_growth_decreasing
+  fit_params, fit_cov = curve_fit(
+    f     = func,
+    xdata = list_res,
+    ydata = [ np.median(list_scales) for list_scales in list_scales_group_res ],
+    sigma = [ np.std(list_scales)    for list_scales in list_scales_group_res ],
+    bounds=bounds, absolute_sigma=True, maxfev=10**5
+  )
+  fit_std = np.sqrt(np.diag(fit_cov))[0] # confidence in fit
+  domain_array = np.logspace(np.log10(1), np.log10(5000), 100)
+  list_scales_model = func(domain_array, *fit_params)
+  return list_scales_model[-1], fit_std
+
+
 ## ###############################################################
 ## MEASURE, PLOT + SAVE CONVEREGED SCALES
 ## ###############################################################
 class PlotSpectraConvergence():
   def __init__(
       self,
-      suite_folder, sim_folder, filepath_plot
+      filepath_sim, filepath_vis, sim_name
     ):
-    ## store input parameters
-    self.suite_folder             = suite_folder
-    self.sim_folder               = sim_folder
-    self.sim_name                 = f"{self.suite_folder}_{self.sim_folder}"
-    self.filepath_plot            = filepath_plot
-    ## initialise datasets
+    self.filepath_sim             = filepath_sim
+    self.filepath_vis             = filepath_vis
+    self.sim_name                 = sim_name
     self.list_sim_res             = []
     self.list_alpha_kin_group_res = []
     self.list_k_nu_group_res      = []
@@ -87,9 +86,7 @@ class PlotSpectraConvergence():
       ## load json-file into a dictionary
       try:
         dict_sim_data = WWObjs.loadJson2Dict(
-          filepath = WWFnF.createFilepath([
-            BASEPATH, self.suite_folder, sim_res, SONIC_REGIME, self.sim_folder
-          ]),
+          filepath = f"{self.filepath_sim}/{sim_res}",
           filename = f"{self.sim_name}_dataset.json",
           bool_hide_updates = True
         )
@@ -114,9 +111,9 @@ class PlotSpectraConvergence():
     # self.__fitDataset()
     self.__annotateFigure()
     ## save figure
-    fig_name = f"{self.sim_name}_nres_study.png"
-    plt.savefig(f"{self.filepath_plot}/{fig_name}")
-    print("Figure saved:", fig_name)
+    filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_study.png"
+    plt.savefig(filepath_fig)
+    print("Figure saved:", filepath_fig)
     ## close plot
     plt.close(fig)
 
@@ -173,34 +170,41 @@ def main():
   ## loop over the simulation suites
   for suite_folder in LIST_SUITE_FOLDER:
 
-    ## CHECK THE SUITE'S FIGURE FOLDER EXISTS
-    ## --------------------------------------
-    filepath_plot = WWFnF.createFilepath([ 
-      BASEPATH, suite_folder, SONIC_REGIME
-    ])
-    if not os.path.exists(filepath_plot):
-      print(f"{filepath_plot} does not exist.")
-      continue
-    str_message = "Looking at suite: {}".format(suite_folder)
+    ## COMMUNICATE PROGRESS
+    ## --------------------
+    str_message = f"Looking at suite: {suite_folder}"
     print(str_message)
     print("=" * len(str_message))
-    print("Saving figures in:", filepath_plot)
     print(" ")
 
     ## loop over the simulation folders
     for sim_folder in LIST_SIM_FOLDER:
 
+      ## define name of simulation dataset
+      sim_name = f"{suite_folder}_{sim_folder}"
+      ## define filepath to simulation
+      filepath_sim = WWFnF.createFilepath([ 
+        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
+      ])
+
       ## CHECK THE NRES=288 DATASET EXISTS
       ## ---------------------------------
-      filename_sim_dataset = f"{suite_folder}_{sim_folder}_dataset.json"
-      ## check that the simulation folder exists at Nres=288
+      ## check that the simulation data exists at Nres=288
       if not os.path.isfile(WWFnF.createFilepath([ 
-          BASEPATH, suite_folder, "288", SONIC_REGIME, sim_folder, filename_sim_dataset
+          filepath_sim, "288", f"{sim_name}_dataset.json"
         ])): continue
+
+      ## MAKE SURE A VISUALISATION FOLDER EXISTS
+      ## ---------------------------------------
+      ## where plots/dataset of converged data will be stored
+      filepath_vis = WWFnF.createFilepath([ 
+        filepath_sim, "vis_folder"
+      ])
+      WWFnF.createFolder(filepath_vis, bool_hide_updates=True)
 
       ## MEASURE HOW WELL SCALES ARE CONVERGED
       ## -------------------------------------
-      obj = PlotSpectraConvergence(suite_folder, sim_folder, filepath_plot)
+      obj = PlotSpectraConvergence(filepath_sim, filepath_vis, sim_name)
       obj.readDataset()
       obj.createFigure()
       # obj.createDataset()
@@ -218,8 +222,8 @@ BOOL_DEBUG        = 0
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_RES      = [ "144", "288", "576" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
 
 ## ###############################################################

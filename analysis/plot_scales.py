@@ -74,9 +74,9 @@ def plotErrorBar_1D(ax, x, array_y, color="k", marker="o"):
 ## LOAD + PLOT MHD SCALES
 ## ###############################################################
 class PlotSimScales():
-  def __init__(self, filepath_plots):
-    self.filepath_plots = filepath_plots
-    print("Saving figures in:", self.filepath_plots)
+  def __init__(self, filepath_vis):
+    self.filepath_vis = filepath_vis
+    print("Saving figures in:", self.filepath_vis)
     print(" ")
     ## INITIALISE DATA CONTAINERS
     ## --------------------------
@@ -167,7 +167,7 @@ class PlotSimScales():
     ax.set_yscale("log")
     ## save plot
     fig_name = f"fig_dependance_knu_{STR_SIM_RES}.png"
-    fig_filepath = WWFnF.createFilepath([ self.filepath_plots, fig_name ])
+    fig_filepath = WWFnF.createFilepath([ self.filepath_vis, fig_name ])
     plt.savefig(fig_filepath)
     plt.close(fig)
     print("Figure saved:", fig_name)
@@ -196,7 +196,7 @@ class PlotSimScales():
     ax.set_yscale("log")
     ## save plot
     fig_name = f"fig_dependance_kp_{STR_SIM_RES}.png"
-    fig_filepath = WWFnF.createFilepath([ self.filepath_plots, fig_name ])
+    fig_filepath = WWFnF.createFilepath([ self.filepath_vis, fig_name ])
     plt.savefig(fig_filepath)
     plt.close(fig)
     print("Figure saved:", fig_name)

@@ -171,7 +171,7 @@ class PlotSpectraFit():
 
   def plotSpectra_TargetTime(
       self,
-      filepath_plot, target_time
+      filepath_vis, target_time
     ):
     ## get fit index associated with the target time
     fit_index = WWLists.getIndexClosestValue(self.sim_times, target_time)
@@ -186,7 +186,7 @@ class PlotSpectraFit():
     ## plot spectra data
     self.__plotAnnotatedSpectra(
       fig, ax,
-      filepath_plot, fit_index, fig_name,
+      filepath_vis, fit_index, fig_name,
       y_min = 1e-18,
       y_max = 1e2,
       x_min = 0.1,
@@ -221,7 +221,7 @@ class PlotSpectraFit():
       self.__plotAnnotatedSpectra(
         fig                = fig,
         ax                 = ax,
-        filepath_plot      = filepath_frames,
+        filepath_vis      = filepath_frames,
         time_index         = time_index,
         bool_plot_kin      = bool_plot_kin,
         bool_plot_mag      = bool_plot_mag,
@@ -237,7 +237,7 @@ class PlotSpectraFit():
 
   def __plotAnnotatedSpectra(
       self,
-      fig, ax, filepath_plot, time_index,
+      fig, ax, filepath_vis, time_index,
       fig_name           = None,
       y_min              = 1e-21,
       y_max              = 1e2,
@@ -392,7 +392,7 @@ class PlotSpectraFit():
       ]) + ".png"
     ## save the figure
     fig.savefig(
-      WWFnF.createFilepath([ filepath_plot, fig_name ]),
+      WWFnF.createFilepath([ filepath_vis, fig_name ]),
       dpi = 150
     )
     ## clear figure and axis

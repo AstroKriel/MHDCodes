@@ -221,7 +221,7 @@ class PlotTurbData():
 ## ###############################################################
 ## FIGURE INITIALISATION AND SAVING
 ## ###############################################################
-def plotSimData(filepath_sim, filepath_plot, sim_name):
+def plotSimData(filepath_sim, filepath_vis, sim_name):
   ## CREATE FIGURE
   ## -------------
   print("Initialising figure...")
@@ -244,7 +244,7 @@ def plotSimData(filepath_sim, filepath_plot, sim_name):
   ## save the figure
   print("Saving figure...")
   fig_name = f"{sim_name}_time_evolution.png"
-  fig_filepath = WWFnF.createFilepath([ filepath_plot, fig_name ])
+  fig_filepath = WWFnF.createFilepath([ filepath_vis, fig_name ])
   plt.savefig(fig_filepath)
   plt.close()
   print("Figure saved:", fig_name)
@@ -286,18 +286,18 @@ def main():
 
       ## CHECK THAT THE VISUALISATION FOLDER EXISTS
       ## ------------------------------------------
-      filepath_plot = WWFnF.createFilepath([
+      filepath_vis = WWFnF.createFilepath([
         BASEPATH, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
       ])
-      if not os.path.exists(filepath_plot):
-        print("{} does not exist.".format(filepath_plot))
+      if not os.path.exists(filepath_vis):
+        print("{} does not exist.".format(filepath_vis))
         continue
 
       ## print to the terminal which suite is being looked at
       str_message = f"Looking at suite: {suite_folder}, Nres = {sim_res}"
       print(str_message)
       print("=" * len(str_message))
-      print("Saving figures in:", filepath_plot)
+      print("Saving figures in:", filepath_vis)
       print(" ")
 
       ## PLOT SIMULATION DATA
@@ -315,7 +315,7 @@ def main():
         if not os.path.exists(filepath_sim): continue
         ## plot simulation data
         sim_name = f"{suite_folder}_{sim_folder}"
-        plotSimData(filepath_sim, filepath_plot, sim_name)
+        plotSimData(filepath_sim, filepath_vis, sim_name)
 
         ## create empty space
         print(" ")

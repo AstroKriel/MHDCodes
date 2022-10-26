@@ -13,7 +13,6 @@ import numpy as np
 import tempfile
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 
 from scipy import interpolate
 from lmfit import Model
@@ -233,7 +232,7 @@ class PlotSpectra():
     self.list_k_eq = []
     self.list_k_eq_time = []
     for time_index in range(len(self.list_mag_power_norm_group_t)):
-      ## measure energy ratio spectrum
+      ## calculate energy ratio spectrum
       list_E_ratio = [
         list_mag_power / list_kin_power
         for list_kin_power, list_mag_power in zip(
@@ -241,18 +240,12 @@ class PlotSpectra():
           self.list_mag_power_group_t[time_index]
         )
       ]
-      # ## find the vally in the energy ratio spectrum
-      # list_E_ratio_inv       = [ 1/ratio for ratio in list_E_ratio ]
-      # list_E_ratio_minima, _ = signal.find_peaks(list_E_ratio_inv)
-      # if len(list_E_ratio_minima) > 0:
-      #   minima_prominance = signal.peak_prominences(list_E_ratio_inv, list_E_ratio_minima)[0]
-      #   minima_index      = np.argmax(minima_prominance)
-      #   k_end_index       = list_E_ratio_minima[minima_index]
-      # else: k_end_index   = len(self.list_mag_k)-1
-      # ## interpolate spectrum
-      # array_k_interp       = np.linspace(1, self.list_mag_k[k_end_index-1], 10**5)
-      # array_E_ratio_interp = interpLogLogData(self.list_mag_k[:k_end_index], list_E_ratio[:k_end_index], array_k_interp, "cubic")
-      self.ax_spect_ratio.plot(self.list_mag_k, list_E_ratio, color="black", ls="-", lw=1, alpha=0.1, zorder=3)
+      ## plot ratio of spectra
+      self.ax_spect_ratio.plot(
+        self.list_mag_k,
+        list_E_ratio,
+        color="black", ls="-", lw=1, alpha=0.1, zorder=3
+      )
       ## measure k_eq
       tol = 1e-1
       if any(
@@ -387,7 +380,7 @@ class PlotSpectra():
 ## HANDLING PLOT CALLS
 ## ###############################################################
 def plotSimData(
-    filepath_sim, filepath_plot, sim_name, Nres,
+    filepath_sim, filepath_vis, sim_name, Nres,
     Re=None, Rm=None, Pm=None
   ):
   ## INITIALISE FIGURE
@@ -451,7 +444,7 @@ def plotSimData(
   ## -----------
   print("Saving figure...")
   fig_name = f"{sim_name}_dataset.png"
-  fig_filepath = WWFnF.createFilepath([ filepath_plot, fig_name ])
+  fig_filepath = WWFnF.createFilepath([ filepath_vis, fig_name ])
   plt.savefig(fig_filepath)
   plt.close()
   print("Figure saved:", fig_name)
@@ -480,40 +473,43 @@ def main():
   ## loop over the simulation suites
   for suite_folder in LIST_SUITE_FOLDER:
 
-    ## loop over the different resolution runs
-    for sim_res in LIST_SIM_RES:
+    ## loop over the simulation folders
+    for sim_folder in LIST_SIM_FOLDER:
 
-      ## CHECK THE SUITE'S FIGURE FOLDER EXISTS
-      ## --------------------------------------
-      filepath_plot = WWFnF.createFilepath([
-        BASEPATH, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
+      ## CHECK THE SIMULATION EXISTS
+      ## ---------------------------
+      filepath_sim = WWFnF.createFilepath([
+        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
       ])
-      if not os.path.exists(filepath_plot):
-        print(f"{filepath_plot} does not exist.")
-        continue
-      str_message = "Looking at suite: {}, Nres = {}".format(suite_folder, sim_res)
+      if not os.path.exists(filepath_sim): continue
+      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}"
       print(str_message)
       print("=" * len(str_message))
-      print("Saving figures in:", filepath_plot)
       print(" ")
 
-      ## loop over the simulation folders
-      for sim_folder in LIST_SIM_FOLDER:
+      ## loop over the different resolution runs
+      for sim_res in LIST_SIM_RES:
 
-        ## CHECK THE SIMULATION FOLDER EXISTS
-        ## ----------------------------------
-        ## create filepath to the simulation folder
-        filepath_sim = WWFnF.createFilepath([
-          BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder
+        ## CHECK THE RESOLUTION RUN EXISTS
+        ## -------------------------------
+        filepath_sim_res = WWFnF.createFilepath([
+          filepath_sim, sim_res
         ])
         ## check that the filepath exists
-        if not os.path.exists(filepath_sim): continue
+        if not os.path.exists(filepath_sim_res): continue
 
-        ## PLOT SIMULATION DATA AND MEASURE QUANTITIES
-        ## -------------------------------------------
+        ## MAKE SURE A VISUALISATION FOLDER EXISTS
+        ## ---------------------------------------
+        filepath_sim_res_plot = WWFnF.createFilepath([
+          filepath_sim_res, "vis_folder"
+        ])
+        WWFnF.createFolder(filepath_sim_res_plot, bool_hide_updates=True)
+
+        ## PLOT SIMULATION DATA AND SAVE MEASURED QUANTITIES
+        ## -------------------------------------------------
         sim_name = f"{suite_folder}_{sim_folder}"
         plotSimData(
-          filepath_sim, filepath_plot, sim_name, sim_res,
+          filepath_sim_res, filepath_sim_res_plot, sim_name, sim_res,
           Re = getPlasmaNumberFromSimName(suite_folder, "Re"),
           Rm = getPlasmaNumberFromSimName(suite_folder, "Rm"),
           Pm = getPlasmaNumberFromSimName(sim_folder, "Pm")
@@ -537,7 +533,8 @@ K_TURB            = 2.0
 RMS_MACH          = 5.0
 T_TURB            = 1 / (K_TURB * RMS_MACH) # ell_turb / (rms_mach * c_s)
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_RES      = [ "144", "288", "576" ]
+LIST_SIM_RES      = [ "18", "36", "72" ]
+# LIST_SIM_RES      = [ "144", "288", "576" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 
 
