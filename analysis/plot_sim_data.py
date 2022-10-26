@@ -65,6 +65,12 @@ class DataSet():
 ## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
+def plotPDF(ax, list_data, color):
+  list_dens, list_bin_edges = np.histogram(list_data, bins=10, density=True)
+  list_dens_norm = np.append(0, list_dens / list_dens.sum())
+  ax.fill_between(list_bin_edges, list_dens_norm, step="pre", alpha=0.2, color=color)
+  ax.plot(list_bin_edges, list_dens_norm, drawstyle="steps", color=color)
+
 def getPlasmaNumberFromSimName(sim_name, plasma_number):
   return float(sim_name.replace(plasma_number, "")) if plasma_number in sim_name else None
 
@@ -125,12 +131,6 @@ def getMagSpectraPeak(ax, list_k_data, list_power_data, bool_plot=True):
   k_max = np.argmax(list_power_data) + 1
   if bool_plot: ax.plot(array_k_interp, array_power_interp, ls="-", c="orange")
   return k_p, k_max
-
-def plotPDF(ax, list_data, color):
-  list_dens, list_bin_edges = np.histogram(list_data, bins=10, density=True)
-  list_dens_norm = np.append(0, list_dens / list_dens.sum())
-  ax.fill_between(list_bin_edges, list_dens_norm, step="pre", alpha=0.2, color=color)
-  ax.plot(list_bin_edges, list_dens_norm, drawstyle="steps", color=color)
 
 
 ## ###############################################################
