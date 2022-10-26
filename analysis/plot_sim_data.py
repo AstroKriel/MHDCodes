@@ -26,6 +26,7 @@ from ThePlottingModule import PlotFuncs
 from TheUsefulModule import WWLists, WWFnF, WWObjs
 from TheLoadingModule import LoadFlashData
 from TheFittingModule import FitMHDScales
+from TheJobModule import SimParams
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -35,27 +36,30 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################
-## STORING DATASET
+## DATASET
 ## ###############################################################
 class DataSet():
   def __init__(
       self,
       Nres,
-      Pm, Re, Rm,
-      Mach, Gamma, E_sat_ratio,
+      Re, Rm, Pm,
+      rms_mach, Gamma, E_sat_ratio,
       list_alpha_kin, list_k_nu, list_k_p, list_k_eq
     ):
-    self.Nres            = Nres
-    self.Pm              = Pm
-    self.Re              = Re
-    self.Rm              = Rm
-    self.Mach            = Mach
-    self.Gamma           = Gamma
-    self.E_sat_ratio     = E_sat_ratio
-    self.list_alpha_kin  = list_alpha_kin
-    self.list_k_nu       = list_k_nu
-    self.list_k_p        = list_k_p
-    self.list_k_eq       = list_k_eq
+    self.Nres           = Nres
+    self.Re             = Re
+    self.Rm             = Rm
+    self.Pm             = Pm
+    self.rms_mach       = rms_mach
+    self.Gamma          = Gamma
+    self.E_sat_ratio    = E_sat_ratio
+    self.list_alpha_kin = list_alpha_kin
+    self.list_k_nu      = list_k_nu
+    self.list_k_p       = list_k_p
+    self.list_k_eq      = list_k_eq
+
+  def saveDataset(self):
+    a = 10
 
 
 ## ###############################################################
@@ -123,14 +127,14 @@ def getMagSpectraPeak(ax, list_k_data, list_power_data, bool_plot=True):
   return k_p, k_max
 
 def plotPDF(ax, list_data, color):
-  list_dens, list_bin_edges = np.histogram(list_data, bins=100, density=True)
+  list_dens, list_bin_edges = np.histogram(list_data, bins=10, density=True)
   list_dens_norm = np.append(0, list_dens / list_dens.sum())
   ax.fill_between(list_bin_edges, list_dens_norm, step="pre", alpha=0.2, color=color)
   ax.plot(list_bin_edges, list_dens_norm, drawstyle="steps", color=color)
 
 
 ## ###############################################################
-## PLOT NORMALISED AND TIME-AVERAGED ENERGY SPECTRA
+## PLOT NORMALISED + TIME-AVERAGED ENERGY SPECTRA
 ## ###############################################################
 class PlotSpectra():
   def __init__(
@@ -329,7 +333,7 @@ class PlotSpectra():
       loc="upper right", bbox_to_anchor=(0.99, 0.99),
       frameon=True, facecolor="white", edgecolor="grey", framealpha=1.0, fontsize=18
     ).set_zorder(10)
-    PlotFuncs.plotLabelBox(
+    PlotFuncs.plotBoxOfLabels(
       self.fig, self.axs_spect_data[0],
       box_alignment   = (0.0, 0.0),
       xpos            = 0.025,
@@ -389,37 +393,24 @@ def plotSimData(
   ## INITIALISE FIGURE
   ## -----------------
   print("Initialising figure...")
-  fig_scale = 1.0
-  fig_aspect_ratio = 5, 8
-  num_rows, num_cols = 3, 4
-  fig = plt.figure(
-    constrained_layout = True,
-    figsize = (
-      fig_scale * fig_aspect_ratio[1] * num_cols,
-      fig_scale * fig_aspect_ratio[0] * num_rows
-  ))
-  gs  = GridSpec(num_rows, num_cols, figure=fig)
-  ax_mach        = fig.add_subplot(gs[0,  0])
-  ax_energy      = fig.add_subplot(gs[1,  0])
-  ax_spect_kin   = fig.add_subplot(gs[:2, 1])
+  fig, fig_grid = PlotFuncs.initFigureGrid(
+    fig_scale        = 1.0,
+    fig_aspect_ratio = (5.0, 8.0),
+    num_rows         = 3,
+    num_cols         = 4
+  )
+  ax_mach        = fig.add_subplot(fig_grid[0,  0])
+  ax_energy      = fig.add_subplot(fig_grid[1,  0])
+  ax_spect_kin   = fig.add_subplot(fig_grid[:2, 1])
   ax_spect_mag   = ax_spect_kin.twinx()
-  ax_spect_ratio = fig.add_subplot(gs[:2, 2])
-  ax_scales_time = fig.add_subplot(gs[2,  1])
-  ax_scales_pdf  = fig.add_subplot(gs[2,  2])
+  ax_spect_ratio = fig.add_subplot(fig_grid[:2, 2])
+  ax_scales_time = fig.add_subplot(fig_grid[2,  1])
+  ax_scales_pdf  = fig.add_subplot(fig_grid[2,  2])
   ## ANNOTATE SIMULATION PARAMETERS
   ## ------------------------------
-  ## Re and Pm have been defined
-  if (Re is not None) and (Pm is not None):
-    nu  = float(MACH) / (K_TURB * float(Re))
-    eta = nu / float(Pm)
-    Rm  = float(MACH) / (K_TURB * eta)
-  ## Rm and Pm have been defined
-  elif (Rm is not None) and (Pm is not None):
-    eta = float(MACH) / (K_TURB * float(Rm))
-    nu  = eta * float(Pm)
-    Re  = float(MACH) / (K_TURB * nu)
-  ## annotate parameters
-  PlotFuncs.plotLabelBox(
+  ## annotate plasma parameters
+  Re, Rm, Pm, _, _ = SimParams.getPlasmaParams(RMS_MACH, K_TURB, Re, Rm, Pm)
+  PlotFuncs.plotBoxOfLabels(
     fig, ax_mach,
     box_alignment   = (1.0, 0.0),
     xpos            = 0.95,
@@ -440,7 +431,7 @@ def plotSimData(
     filepath_data = filepath_sim
   )
   time_exp_start, time_exp_end = plot_turb_obj.getExpTimeBounds()
-  Mach        = plot_turb_obj.getMach()
+  rms_mach    = plot_turb_obj.getMach()
   Gamma       = plot_turb_obj.getGamma()
   E_sat_ratio = plot_turb_obj.getEsatRatio()
   ## PLOT FITTED SPECTRA
@@ -459,7 +450,7 @@ def plotSimData(
   ## SAVE FIGURE
   ## -----------
   print("Saving figure...")
-  fig_name = f"{sim_name}_check.png"
+  fig_name = f"{sim_name}_dataset.png"
   fig_filepath = WWFnF.createFilepath([ filepath_plot, fig_name ])
   plt.savefig(fig_filepath)
   plt.close()
@@ -470,7 +461,7 @@ def plotSimData(
   dataset_obj  = DataSet(
     Nres,
     Pm, Re, Rm,
-    Mach, Gamma, E_sat_ratio,
+    rms_mach, Gamma, E_sat_ratio,
     list_alpha_kin, list_k_nu, list_k_p, list_k_eq
   )
   WWObjs.saveObj2Json(
@@ -506,24 +497,26 @@ def main():
       print("Saving figures in:", filepath_plot)
       print(" ")
 
-      ## PLOT SIMULATION DATA
-      ## --------------------
       ## loop over the simulation folders
       for sim_folder in LIST_SIM_FOLDER:
 
+        ## CHECK THE SIMULATION FOLDER EXISTS
+        ## ----------------------------------
         ## create filepath to the simulation folder
         filepath_sim = WWFnF.createFilepath([
           BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder
         ])
         ## check that the filepath exists
         if not os.path.exists(filepath_sim): continue
-        ## plot simulation data
+
+        ## PLOT SIMULATION DATA AND MEASURE QUANTITIES
+        ## -------------------------------------------
         sim_name = f"{suite_folder}_{sim_folder}"
         plotSimData(
           filepath_sim, filepath_plot, sim_name, sim_res,
           Re = getPlasmaNumberFromSimName(suite_folder, "Re"),
           Rm = getPlasmaNumberFromSimName(suite_folder, "Rm"),
-          Pm = getPlasmaNumberFromSimName(suite_folder, "Pm")
+          Pm = getPlasmaNumberFromSimName(sim_folder, "Pm")
         )
 
         if BOOL_DEBUG: return
@@ -541,10 +534,10 @@ BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
 FILENAME_TURB     = "Turb.dat"
 K_TURB            = 2.0
-MACH              = 5.0
-T_TURB            = 1 / (K_TURB * MACH) # ell_turb / (Mach * c_s)
+RMS_MACH          = 5.0
+T_TURB            = 1 / (K_TURB * RMS_MACH) # ell_turb / (rms_mach * c_s)
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_RES      = [ "576" ]
+LIST_SIM_RES      = [ "144", "288", "576" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 
 

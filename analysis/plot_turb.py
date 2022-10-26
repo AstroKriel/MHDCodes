@@ -139,8 +139,8 @@ class PlotTurbData():
     ## add log axis-ticks
     PlotFuncs.addLogAxisTicks(
       self.axs[1],
-      bool_major_ticks    = True,
-      max_num_major_ticks = num_y_major_ticks
+      bool_major_ticks = True,
+      num_major_ticks  = num_y_major_ticks
     )
 
   def __fitData(self):
@@ -225,18 +225,14 @@ def plotSimData(filepath_sim, filepath_plot, sim_name):
   ## CREATE FIGURE
   ## -------------
   print("Initialising figure...")
-  fig_scale          = 1.0
-  fig_aspect_ratio   = (5.0, 8.0)
-  num_rows, num_cols = (2, 2)
-  fig = plt.figure(
-    constrained_layout = True,
-    figsize            = (
-      fig_scale * fig_aspect_ratio[1] * num_cols,
-      fig_scale * fig_aspect_ratio[0] * num_rows
-  ))
-  gs  = GridSpec(num_rows, num_cols, figure=fig)
-  ax_mach   = fig.add_subplot(gs[0,  0])
-  ax_energy = fig.add_subplot(gs[1,  0])
+  fig, fig_grid = PlotFuncs.initFigureGrid(
+    fig_scale        = 1.0,
+    fig_aspect_ratio = (5.0, 8.0),
+    num_rows         = 2,
+    num_cols         = 2
+  )
+  ax_mach   = fig.add_subplot(fig_grid[0, 0])
+  ax_energy = fig.add_subplot(fig_grid[1, 0])
   ## PLOT INTEGRATED QUANTITIES (Turb.dat)
   ## -------------------------------------
   PlotTurbData(

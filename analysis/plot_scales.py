@@ -107,7 +107,9 @@ class PlotSimScales():
       ## loop over the simulation folders
       for sim_folder in LIST_SIM_FOLDER:
         ## check that the fitted spectra data exists for the Nres=288 simulation setup
-        filepath_sim = WWFnF.createFilepath([ BASEPATH, suite_folder, STR_SIM_RES, SONIC_REGIME, sim_folder ])
+        filepath_sim = WWFnF.createFilepath([
+          BASEPATH, suite_folder, STR_SIM_RES, SONIC_REGIME, sim_folder
+        ])
         dataset_name = f"{suite_folder}_{sim_folder}_dataset.json"
         filepath_dataset = f"{filepath_sim}/{dataset_name}"
         if not os.path.isfile(filepath_dataset): continue

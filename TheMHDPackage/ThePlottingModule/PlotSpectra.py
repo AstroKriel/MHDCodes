@@ -69,7 +69,7 @@ class PlotAveSpectraFit():
     self.ax.set_xscale("log")
     self.ax.set_yscale("log")
     ## add log axis-ticks
-    PlotFuncs.addLogAxisTicks(ax, bool_major_ticks=True, max_num_major_ticks=5)
+    PlotFuncs.addLogAxisTicks(ax, bool_major_ticks=True, num_major_ticks=5)
 
   def __plotSpectra(
       self,
@@ -354,7 +354,7 @@ class PlotSpectraFit():
         str_mag_spectra,
         rf"{str_alpha_mag_1}, {str_alpha_mag_2}, {str_k_eta}, {str_k_eta_alpha_2}, {str_k_p}"
       ]
-    PlotFuncs.plotLabelBox(
+    PlotFuncs.plotBoxOfLabels(
       fig, ax,
       box_alignment   = (0.0, 0.0),
       xpos            = 0.025,

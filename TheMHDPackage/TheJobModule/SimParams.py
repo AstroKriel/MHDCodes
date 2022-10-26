@@ -10,6 +10,21 @@ from TheUsefulModule import WWVariables
 ## ###############################################################
 ## DEFINE SIMULATION PARAMETERS
 ## ###############################################################
+def getPlasmaParams(rms_mach, k_turb, Re=None, Rm=None, Pm=None):
+  ## Re and Pm have been defined
+  if (Re is not None) and (Pm is not None):
+    nu  = round(rms_mach / (k_turb * Re), 5)
+    eta = round(nu / Pm, 5)
+    Rm  = round(rms_mach / (k_turb * eta))
+  ## Rm and Pm have been defined
+  elif (Rm is not None) and (Pm is not None):
+    eta = round(rms_mach / (k_turb * Rm), 5)
+    nu  = round(eta * Pm, 5)
+    Re  = round(rms_mach / (k_turb * nu))
+  ## error
+  else: raise Exception(f"You have not defined the required number of plasma Reynolds numbers: Re = {Re} or Rm = {Rm}, and Pm = {Rm}.")
+  return Re, Rm, Pm, nu, eta
+
 class SimParams():
   def __init__(
       self,
@@ -80,18 +95,7 @@ class SimParams():
       raise Exception(f"ERROR: You have not defined the following parameter(s): {list_params_not_defined}")
 
   def __definePlasmaNumbers(self):
-    ## Re and Pm have been defined
-    if (self.Re is not None) and (self.Pm is not None):
-      self.nu  = round(self.rms_mach / (self.k_turb * self.Re), 5)
-      self.eta = round(self.nu / self.Pm, 5)
-      self.Rm  = round(self.rms_mach / (self.k_turb * self.eta))
-    ## Rm and Pm have been defined
-    elif (self.Rm is not None) and (self.Pm is not None):
-      self.eta = round(self.rms_mach / (self.k_turb * self.Rm), 5)
-      self.nu  = round(self.eta * self.Pm, 5)
-      self.Re  = round(self.rms_mach / (self.k_turb * self.nu))
-    ## error
-    else: raise Exception(f"You have not defined the required number of plasma Reynolds numbers: Re = {self.Re} or Rm = {self.Rm}, and Pm = {self.Rm}.")
+    self.Re, self.Rm, self.Pm, self.nu, self.eta = getPlasmaParams(self.rms_mach, self.k_turb, self.Re, self.Rm, self.Pm)
 
 
 ## ###############################################################

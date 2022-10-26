@@ -85,7 +85,6 @@ def saveObj2Json(
 
 def loadJson2Dict(
     filepath, filename,
-    bool_raise_error  = False,
     bool_hide_updates = False
   ):
   ## create filepath where object is stored
@@ -97,11 +96,7 @@ def loadJson2Dict(
     with open(filepath_file, "r") as input:
       return json.load(input)
   ## indicate the file was not found
-  else:
-    ## raise exception
-    if bool_raise_error: Exception(f"No json-file '{filename}' found in '{filepath}'.")
-    ## return flag
-    return -1
+  else: raise Exception(f"No json-file '{filename}' found in '{filepath}'.")
 
 
 ## ###############################################################

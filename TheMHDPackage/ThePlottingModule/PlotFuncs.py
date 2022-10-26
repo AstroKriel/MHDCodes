@@ -15,13 +15,11 @@ import cmasher as cmr
   ## cmr diverging maps: iceburn, wildfire, fusion
 
 from matplotlib.lines import Line2D
-from matplotlib.ticker import ScalarFormatter, NullFormatter
+from matplotlib.gridspec import GridSpec
 from matplotlib.offsetbox import TextArea, VPacker, AnnotationBbox
-from matplotlib.collections import LineCollection
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from TheUsefulModule import WWFnF
-from TheFittingModule import FitDistro
 from ThePlottingModule import TheMatplotlibStyler
 
 
@@ -49,6 +47,16 @@ def aniEvolution(
   print("Saved animation:", filepath_output)
   print(" ")
 
+def initFigureGrid(fig_aspect_ratio, num_rows, num_cols, fig_scale=1.0):
+  fig = plt.figure(
+    constrained_layout = True,
+    figsize            = (
+      fig_scale * fig_aspect_ratio[1] * num_cols,
+      fig_scale * fig_aspect_ratio[0] * num_rows
+  ))
+  fig_grid = GridSpec(num_rows, num_cols, figure=fig)
+  return fig, fig_grid
+
 
 ## ###############################################################
 ## PLOTTING HELPER FUNCTIONS
@@ -74,136 +82,40 @@ class MidpointNormalize(colors.Normalize):
     x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
     return np.ma.masked_array(np.interp(value, x, y))
 
-class MidPointLogNorm(colors.LogNorm):
-  ## https://stackoverflow.com/questions/48625475/python-shifted-logarithmic-colorbar-white-color-offset-to-center
-  def __init__(
-      self,
-      midpoint = None,
-      vmin = None,
-      vmax = None,
-      clip = False
-    ):
-    colors.LogNorm.__init__(
-      self,
-      vmin = vmin,
-      vmax = vmax,
-      clip = clip
-    )
-    self.midpoint = midpoint
-  def __call__(
-      self,
-      value,
-      clip = None
-    ):
-    x = [
-      np.log(self.vmin),
-      np.log(self.midpoint),
-      np.log(self.vmax)
-    ]
-    y = [0, 0.5, 1]
-    return np.ma.masked_array(np.interp(np.log(value), x, y))
-
-class FixLogAxis():
-  ''' Makes sure that the axis' domain range spans at least an order of magnitude.
-  '''
-  def __init__(
-      self,
-      ax,
-      bool_fix_x_axis = False,
-      bool_fix_y_axis = False
-    ):
-    ## save figure axis
-    self.ax = ax
-    ## adjust the x-axis
-    if bool_fix_x_axis:
-      tmp_min, tmp_max = ax.get_xlim()
-      self.fix(
-        tmp_axis    = ax.xaxis,
-        tmp_min     = tmp_min,
-        tmp_max     = tmp_max,
-        bool_x_axis = True
-      )
-    ## adjust the y-axis
-    if bool_fix_y_axis:
-      tmp_min, tmp_max = ax.get_ylim()
-      self.fix(
-        tmp_axis    = ax.yaxis,
-        tmp_min     = tmp_min,
-        tmp_max     = tmp_max,
-        bool_y_axis = True
-      )
-  def fix(
-      self,
-      tmp_axis, tmp_min, tmp_max,
-      bool_x_axis=False, bool_y_axis=False
-    ):
-    ## ######################
-    ## CHANGE THE AXIS DOMAIN
-    ## #######
-    if abs(np.log10(tmp_min) - np.log10(tmp_max)) < 0.5:
-      ## centre the points and make sure the range wider
-      new_min = 10**( (np.log10(tmp_min) + np.log10(tmp_max))/2 - 0.25 )
-      new_max = 10**( (np.log10(tmp_min) + np.log10(tmp_max))/2 + 0.25 )
-      if bool_x_axis: self.ax.set_xlim([new_min, new_max])
-      elif bool_y_axis: self.ax.set_ylim([new_min, new_max])
-      tmp_min = new_min
-      tmp_max = new_max
-    # elif 1.1 > abs(np.log10(tmp_min) - np.log10(tmp_max)) > 1:
-    #     new_min = 10**( np.log10(tmp_min) - 0.1 )
-    #     new_max = 10**( np.log10(tmp_max) + 0.1 )
-    #     if bool_x_axis: self.ax.set_xlim([new_min, new_max])
-    #     elif bool_y_axis: self.ax.set_ylim([new_min, new_max])
-    #     tmp_min = new_min
-    #     tmp_max = new_max
-    ## #####################
-    ## CHANGE THE AXIS TICKS
-    ## #######
-    # print(abs(np.log10(tmp_min) - np.log10(tmp_max))) # TODO: different crit thresh for x and y-axis
-    if abs(np.log10(tmp_min) - np.log10(tmp_max)) < 0.75:
-      ## show major and minor axis tick labels
-      for axis in [tmp_axis]:
-        axis.set_major_formatter(ScalarFormatter())
-        axis.set_minor_formatter(ScalarFormatter())
-    else:
-      ## only show major axis tick labels
-      for axis in [tmp_axis]:
-        axis.set_major_formatter(ScalarFormatter())
-        axis.set_minor_formatter(NullFormatter())
-
 
 ## ###############################################################
 ## ADD TO PLOTS
 ## ###############################################################
 def addLinearAxisTicks(
     ax,
-    bool_minor_ticks    = False,
-    bool_major_ticks    = False,
-    max_num_minor_ticks = 10,
-    max_num_major_ticks = 10
+    bool_minor_ticks = False,
+    bool_major_ticks = False,
+    num_minor_ticks  = 10,
+    num_major_ticks  = 10
   ):
   ## add minor axis ticks
   if bool_minor_ticks:
-    y_minor = mpl.ticker.LinearLocator(numticks=max_num_minor_ticks)
+    y_minor = mpl.ticker.LinearLocator(numticks=num_minor_ticks)
     ax.yaxis.set_minor_locator(y_minor)
     ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
   ## add major axis ticks
   if bool_major_ticks:
-    y_major = mpl.ticker.LinearLocator(numticks=max_num_major_ticks)
+    y_major = mpl.ticker.LinearLocator(numticks=num_major_ticks)
     ax.yaxis.set_major_locator(y_major)
 
 def addLogAxisTicks(
     ax,
-    bool_minor_ticks    = False,
-    bool_major_ticks    = False,
-    max_num_minor_ticks = 100,
-    max_num_major_ticks = 6
+    bool_minor_ticks = False,
+    bool_major_ticks = False,
+    num_minor_ticks  = 100,
+    num_major_ticks  = 6
   ):
   ## add minor axis ticks
   if bool_minor_ticks:
     y_minor = mpl.ticker.LogLocator(
       base     = 10.0,
       subs     = np.arange(2, 10) * 0.1,
-      numticks = max_num_minor_ticks
+      numticks = num_minor_ticks
     )
     ax.yaxis.set_minor_locator(y_minor)
     ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
@@ -211,11 +123,11 @@ def addLogAxisTicks(
   if bool_major_ticks:
     y_major = mpl.ticker.LogLocator(
       base     = 10.0,
-      numticks = max_num_major_ticks
+      numticks = num_major_ticks
     )
     ax.yaxis.set_major_locator(y_major)
 
-def plotLabelBox(
+def plotBoxOfLabels(
     fig, ax,
     list_fig_labels = [],
     xpos            = 0.05,
@@ -245,24 +157,14 @@ def plotLabelBox(
   ann.set_figure(fig)
   fig.artists.append(ann)
 
-def showDataOutsideAxis(ax, data_x, data_y, range_y):
-    ## loop over data points
-    for x, y in zip(data_x, data_y):
-      ## if the data point lies outside the figure bounds 
-      if (y < range_y[0]) or (y > range_y[1]):
-        ## indicate point x-value
-        ax.axvline(x=x, ls="-", color="black", alpha=0.1)
-
 def insetPlot(
     ax, data_x, data_y,
-    ax_inset_bounds = [
-      0.0, 1.0, 1.0, 0.5
-    ],
+    ax_inset_bounds = [ 0.0, 1.0, 1.0, 0.5 ],
     label_x    = None,
     label_y    = None,       
     range_y    = None,
     bool_log_y = False,
-    fs = 20
+    fontsize   = 20
   ):
   ## create inset axis
   ax_inset = ax.inset_axes(ax_inset_bounds)
@@ -270,30 +172,17 @@ def insetPlot(
   ## plot data
   ax_inset.plot(data_x, data_y, "k.")
   ## add axis label
-  ax_inset.set_xlabel(label_x, fontsize=fs)
-  ax_inset.set_ylabel(label_y, fontsize=fs)
-  ax_inset.xaxis.set_label_position("top") 
-  ## set y-axis range
-  if range_y is not None:
-    ax_inset.set_ylim(range_y)
-    ## check if any points are outside of the figure window
-    showDataOutsideAxis(ax_inset, data_x, data_y, range_y)
-  ## transform y-axis range
-  if bool_log_y:
-    ax_inset.set_yscale("log")
-    FixLogAxis(ax_inset, bool_fix_y_axis=True)
+  ax_inset.set_xlabel(label_x, fontsize=fontsize)
+  ax_inset.set_ylabel(label_y, fontsize=fontsize)
+  ax_inset.xaxis.set_label_position("top")
   ## return inset axis
   return ax_inset
 
 def insetPDF(
     ax, data,
-    ax_inset_bounds = [
-      0.0, 1.0, 1.0, 0.5
-    ],
-    label_x    = None,
-    label_y    = None,       
-    range_y    = None,
-    bool_log_y = False
+    ax_inset_bounds = [ 0.0, 1.0, 1.0, 0.5 ],
+    label_x = None,
+    label_y = None
   ):
   ## create inset axis
   ax_inset = ax.inset_axes(ax_inset_bounds)
@@ -317,40 +206,37 @@ def addLegend(
     lw          = 2,
     title       = None,
     ncol        = 1,
-    bpad        = 0.8,
-    tpad        = 0.5,
     rspacing    = 0.5,
     cspacing    = 0.5,
     fontsize    = 16,
   ):
-  def checkList(list_input, list_ref):
-    if len(list_input) < len(list_ref): list_input.extend( list_input[0] * len(list_ref) )
+  ## helper function
+  def checkListLength(list_input, list_ref):
+    if len(list_input) < len(list_ref):
+      list_input.extend( list_input[0] * (len(list_ref)-len(list_input)) )
   ## check that the inputs are the correct length
-  checkList(list_artists, list_legend_labels)
-  checkList(list_marker_colors, list_legend_labels)
-  ## useful lists
-  list_markers = [ ".", "o", "s", "D", "^", "v" ] # list of marker styles
+  checkListLength(list_artists, list_legend_labels)
+  checkListLength(list_marker_colors, list_legend_labels)
+  ## lists of artists (marker and line styles) the user can choose from
+  list_markers = [ ".", "o", "s", "D", "^", "v" ]
   list_lines   = [
     "-", "--", "-.", ":",
     (0, (5, 1.5)),
     (0, (2, 1.5)),
     (0, (7, 3, 4, 3, 4, 3)),
     (0, (6, 3, 1, 3, 1, 3, 1, 3))
-  ] # list of line styles
+  ]
   ## iniialise list of artists for legend
   list_legend_artists = []
-  ## create legend artists
   for artist, marker_color in zip(list_artists, list_marker_colors):
     ## if the artist is a marker
     if artist in list_markers:
       list_legend_artists.append( 
         Line2D(
           [0], [0],
-          marker          = artist,
-          color           = marker_color,
-          linewidth       = 0,
-          markeredgecolor = "white",
-          markersize      = ms
+          marker = artist,
+          color  = marker_color,
+          linewidth= 0, markeredgecolor= "white", markersize= ms
         )
       )
     ## if the artist is a line
@@ -364,7 +250,7 @@ def addLegend(
         )
       )
     ## otherwise throw an error
-    else: Exception("Artist '{}' is not valid.".format(artist))
+    else: Exception(f"Artist '{artist}' is not valid.")
   ## draw the legend
   legend = ax.legend(
     list_legend_artists,
@@ -374,8 +260,8 @@ def addLegend(
     loc            = loc,
     bbox_to_anchor = bbox,
     ncol           = ncol,
-    borderpad      = bpad,
-    handletextpad  = tpad,
+    borderpad      = 0.8,
+    handletextpad  = 0.5,
     labelspacing   = rspacing,
     columnspacing  = cspacing,
     fontsize       = fontsize,
@@ -427,7 +313,7 @@ def plot2DField(
     plotColorbar(im_obj, cbar_label)
   ## add labels
   if list_fig_labels is not None:
-    plotLabelBox(fig, ax, list_fig_labels)
+    plotBoxOfLabels(fig, ax, list_fig_labels)
   ## add axis labels
   if not bool_hide_labels:
     ax.set_xticks([-1, -0.5, 0, 0.5, 1])
@@ -546,18 +432,18 @@ def plotHistogram(
       ax.hist(
         vals,
         histtype = "step",
-        bins  = logbins,
-        label = sim_label,
-        color = my_colormap[col_index] if fill_color is None else fill_color,
-        fill  = True,
-        alpha = alpha
+        bins     = logbins,
+        color    = my_colormap[col_index] if fill_color is None else fill_color,
+        label    = sim_label,
+        alpha    = alpha,
+        fill     = True
       )
       ax.hist(
         vals,
         histtype = "step", 
-        bins  = logbins,
-        color = my_colormap[col_index] if fill_color is None else fill_color,
-        fill  = False
+        bins     = logbins,
+        color    = my_colormap[col_index] if fill_color is None else fill_color,
+        fill     = False
       )
       ## log axis
       ax.set_xscale("log")
@@ -579,82 +465,6 @@ def plotHistogram(
         color = my_colormap[col_index] if fill_color is None else fill_color,
         fill  = False
       )
-
-def plotErrorBar(
-    ax, data_x, data_y,
-    ## color inputs
-    color     = None,
-    num_cols  = 1,
-    col_index = 0,
-    cmap_str  = "cmr.tropical",
-    ## marker info
-    alpha  = 1,
-    marker = "o",
-    ms     = 8,
-    label  = None
-  ):
-  ## if a color has not been defined
-  if color is None:
-    ## extract colours from Cmasher's colormap
-    cmasher_colormap = plt.get_cmap(cmap_str, num_cols)
-    my_colormap = cmasher_colormap(np.linspace(0, 1, num_cols))
-    color = my_colormap[col_index]
-  ## calculate quantiles: x-data
-  x_median = data_x
-  x_1sig   = None
-  if isinstance(data_x, (list, np.ndarray)):
-    if len(data_x) > 1:
-      x_median = np.percentile(data_x, 50)
-      x_p16    = np.percentile(data_x, 16)
-      x_p84    = np.percentile(data_x, 84)
-      x_1sig   = np.vstack([
-        x_median - x_p16,
-        x_p84 - x_median
-      ])
-  ## calculate quantiles: y-data
-  y_median = data_y
-  y_1sig   = None
-  if isinstance(data_y, (list, np.ndarray)):
-    if len(data_y) > 1:
-      y_median = np.percentile(data_y, 50)
-      y_p16    = np.percentile(data_y, 16)
-      y_p84    = np.percentile(data_y, 84)
-      y_1sig   = np.vstack([
-        y_median - y_p16,
-        y_p84 - y_median
-      ])
-  ## plot errorbar
-  ax.errorbar(
-    x_median,
-    y_median,
-    xerr   = x_1sig,
-    yerr   = y_1sig,
-    color  = color,
-    alpha  = alpha,
-    fmt    = marker,
-    label  = label,
-    markersize=ms, elinewidth=2, linestyle="None", markeredgecolor="black", capsize=7.5, zorder=10
-  )
-
-def plotList1DDistributions(
-    ax, list_x, list_y_group,
-    color = "black",
-    alpha = 1.0
-  ):
-  for group_index in range(len(list_x)):
-    plot_y = list_y_group[group_index]
-    plot_x = [ list_x[group_index] ] * len(plot_y)
-    ax.plot(plot_x, plot_y, ".", color=color, alpha=alpha, zorder=7)
-
-def plotList2DDistributions(
-    ax, list_x_group, list_y_group,
-    color = "black",
-    alpha = 1.0
-  ):
-  for group_index in range(len(list_x_group)):
-    plot_x = list_x_group[group_index]
-    plot_y = list_y_group[group_index]
-    ax.plot(plot_x, plot_y, ".", color=color, alpha=alpha, zorder=7)
 
 
 ## ###############################################################
@@ -707,234 +517,48 @@ class CreateDistributionStatsLabel():
 class CreateFunctionLabel():
   def __init__(
       self,
-      list_params,
-      func_label,
-      var_str,
-      num_digits = 3,
+      list_params, func_label, var_str,
+      num_digits     = 3,
       bool_hide_coef = False
     ):
-    self.list_params = list_params
-    self.num_digits = num_digits
-    self.var_str = var_str
-    self.label = ""
+    self.list_params    = list_params
+    self.num_digits     = num_digits
+    self.var_str        = var_str
+    self.label          = ""
     self.bool_hide_coef = bool_hide_coef
     if "PowerLawOffset".lower() in func_label.lower(): self.labelPowerLawOffset()
     elif "PowerLaw".lower() in func_label.lower(): self.labelPowerLaw()
     elif "LinearOffset".lower() in func_label.lower(): self.labelLinearOffset()
     elif "Linear".lower() in func_label.lower(): self.labelLinear()
-    else: Exception("Undefined KDE function: can't create label for '{}'".format(func_label))
+    else: Exception(f"Undefined KDE function: can't create label for '{func_label}'")
+
   def labelPowerLawOffset(self):
     str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)
     str_exp  = CreateDistributionStatsLabel.exp(self.list_params[1], self.num_digits)
     str_off  = CreateDistributionStatsLabel.offset(self.list_params[2], self.num_digits)
     if np.percentile(self.list_params[2], 50) > 0: str_sum_sep = r" $+$ "
     else: str_sum_sep = r" $-$ "
-    ## save output string
     if self.bool_hide_coef: self.label = self.var_str + str_exp + str_sum_sep + str_off
     else: self.label = str_coef + self.var_str + str_exp + str_sum_sep + str_off
+
   def labelPowerLaw(self):
     str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)
     str_exp  = CreateDistributionStatsLabel.exp(self.list_params[1], self.num_digits)
-    ## save output string
     if self.bool_hide_coef: self.label = self.var_str + str_exp
     else: self.label = str_coef + self.var_str + str_exp
+
   def labelLinearOffset(self):
     str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)
     str_off  = CreateDistributionStatsLabel.offset(self.list_params[1], self.num_digits)
     if np.percentile(self.list_params[1], 50) > 0: str_sum_sep = r" $+$ "
     else: str_sum_sep = r" $-$ "
-    ## save output string
     if self.bool_hide_coef: self.label = self.var_str + str_sum_sep + str_off
     else: self.label = str_coef + self.var_str + str_sum_sep + str_off
+
   def labelLinear(self):
     str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)
-    ## save output string
     if self.bool_hide_coef: self.label = self.var_str
     else: self.label = str_coef + self.var_str
-
-def plotDistributionFit(
-    ax, var_str, func_label,
-    ## fitting parameters
-    input_x, input_y,
-    func_fit, func_plot,
-    bool_resample = False,
-    bool_log_fit  = False,
-    list_func_indices_unlog = [],
-    errors     = None,
-    p0         = None,
-    bounds     = None,
-    num_resamp = 10**3,
-    maxfev     = 10**3,
-    ## label parameters
-    bool_show_label = True,
-    pre_label  = r"",
-    num_digits = 3,
-    bool_hide_coef = False,
-    plot_domain = None,
-    plot_args   = {
-      "x":0.05,
-      "y":0.95,
-      "va":"top",
-      "ha":"left", 
-      "color":"black",
-      "ls":"--",
-      "bool_box":True
-    },
-    ## debug
-    bool_debug = False
-  ):
-  ## ###########
-  ## LOG X-INPUT
-  ## ###
-  ## if resampling from input distribution(s)
-  if bool_resample:
-    input_x = FitDistro.resampleFrom1DKDE(input_x, num_resamp=num_resamp)
-  ## if fitting to a number of distributions
-  if isinstance(input_x[0], (list, np.ndarray)) and len(list(input_x[0])) > 1:
-    ## define fitting domain
-    if plot_domain is None:
-      plot_domain = np.linspace(
-        min([ np.percentile(sub_list, 16) for sub_list in input_x ]), # smallest x-value
-        max([ np.percentile(sub_list, 84) for sub_list in input_x ]), # largest x-value
-        100
-      )
-    ## log transform
-    if bool_log_fit:
-      fit_x = [[
-          np.log(x)
-          if x > 0 else np.log(np.median(sub_list)) # make sure not to log 0
-          for x in sub_list
-        ] for sub_list in input_x
-      ]
-    ## no log transoform
-    else: fit_x = input_x
-  else:
-    ## define fitting domain
-    if plot_domain is None:
-      plot_domain = np.linspace(min(input_x), max(input_x), 100)
-    ## log transform
-    if bool_log_fit:
-      fit_x = [
-        np.log(x)
-        if x > 0 else np.log(np.median(input_x))
-        for x in input_x
-      ]
-    ## no log transoform
-    else: fit_x = input_x
-  ## ###########
-  ## LOG Y-INPUT
-  ## ###
-  ## if resampling from input distribution(s)
-  if bool_resample:
-    input_y = FitDistro.resampleFrom1DKDE(input_y, num_resamp=num_resamp)
-  ## log transform
-  if bool_log_fit:
-    ## if fitting to a number of distributions
-    if isinstance(input_y[0], (list, np.ndarray)) and len(list(input_y[0])) > 1:
-      fit_y = [[
-          np.log(y)
-          if y > 0
-          else np.log(np.median(sub_list)) # make sure not to log 0
-          for y in sub_list
-        ] for sub_list in input_y
-      ]
-    else:
-      fit_y = [
-        np.log(y)
-        if y > 0 else np.log(np.median(input_y)) # make sure not to log 0
-        for y in input_y
-      ]
-  ## no log transform
-  else: fit_y = input_y
-  ## #######################
-  ## FIT TO RESAMPLED POINTS
-  ## #########
-  list_fit_params, _ = FitDistro.fitToDistributions(
-    input_x = fit_x,
-    input_y = fit_y,
-    func    = func_fit,
-    p0      = p0,
-    bounds  = bounds,
-    errors  = errors,
-    maxfev  = maxfev
-  )
-  ## undo log-transform
-  if bool_log_fit:
-    for index_unlog in list_func_indices_unlog:
-      list_fit_params[index_unlog] = np.exp(list_fit_params[index_unlog])
-  ## initialise plot variables
-  num_params = len(list_fit_params)
-  ## calculate the median of the fitted parameters
-  median_params = [
-    np.median(list_fit_params[index_param])
-    for index_param in range(num_params)
-  ]
-  ## ##########################
-  ## PLOT FITS TO DISTRIBUTIONS
-  ## #########
-  ## plot all fitted lines
-  if bool_debug:
-    list_lines = [] # plot of each fit
-    ## loop over each fit
-    for fit_index in range(len(list_fit_params[0])):
-      ## get the fitted parameters
-      fit_params = [
-        list_param[fit_index]
-        for list_param in list_fit_params
-      ]
-      ## create plot artist
-      list_lines.append(
-        np.column_stack((
-          plot_domain,
-          func_plot(plot_domain, *fit_params)
-        ))
-      )
-    ## plot all artists
-    ax.add_collection(
-      LineCollection(list_lines, linestyle="-", color=plot_args["color"], alpha=0.01),
-      autolim = False # ignore these points when setting the axis limits
-    )
-  ## plot line of best fit
-  ax.add_collection(
-    LineCollection(
-      [
-        np.column_stack((
-          plot_domain,
-          func_plot(plot_domain, *median_params)
-        ))
-      ],
-      linestyle=plot_args["ls"], lw=2, color=plot_args["color"], zorder=7
-    ),
-    autolim = False # ignore these  points when setting the axis limits
-  )
-  ## check the distribution of resampled points being fitted to
-  if bool_debug:
-    if isinstance(fit_x[0], list):
-      plotList2DDistributions(ax, fit_x, fit_y, color="red", alpha=0.05)
-    else: plotList1DDistributions(ax, fit_x, fit_y, color="red", alpha=0.05)
-  ## #############
-  ## ADD FIT LABEL
-  ## #######
-  if bool_show_label:
-    ax.text(
-      **FitDistro.getDictWithoutKeys(plot_args, ["ls", "bool_box"]),
-      s = pre_label + CreateFunctionLabel(
-        list_params = list_fit_params,
-        func_label  = func_label,
-        var_str     = var_str,
-        num_digits  = num_digits,
-        bool_hide_coef = bool_hide_coef
-      ).label,
-      fontsize=16, transform=ax.transAxes,
-      bbox = dict(
-        facecolor = "white",
-        edgecolor = "gray",
-        boxstyle  = "round",
-        alpha     = 0.85
-      ) if plot_args["bool_box"] else None
-    )
-  ## return the fitted parameters
-  return list_fit_params
 
 
 ## END OF LIBRARY
