@@ -90,11 +90,11 @@ def loadListFLASHFieldSlice(
   ## initialise list of cube data
   list_data_mag_sorted = []
   ## filter for datacube files
-  flash_filenames = WWFnF.getFilesFromFolder(
+  flash_filenames = WWFnF.getFilesFromFilepath(
     filepath           = filepath_data, 
-    str_contains       = "Turb_hdf5_plt_cnt_",
-    str_not_contains   = "spect",
-    file_index_placing = -1,
+    filename_contains       = "Turb_hdf5_plt_cnt_",
+    filename_not_contains   = "spect",
+    loc_file_index = -1,
     file_start_index   = file_start_index,
     file_end_index     = file_end_index
   )
@@ -155,11 +155,11 @@ def loadFLASHFieldDataList(
     bool_debug       = False
   ):
   ## get all plt files in the directory
-  filenames = WWFnF.getFilesFromFolder(
+  filenames = WWFnF.getFilesFromFilepath(
     filepath           = filepath_data,
-    str_contains       = "Turb_hdf5_plt_cnt_",
-    str_not_contains   = "spect",
-    file_index_placing = -1,
+    filename_contains       = "Turb_hdf5_plt_cnt_",
+    filename_not_contains   = "spect",
+    loc_file_index = -1,
     file_start_index   = (start_time * plots_per_eddy),
     file_end_index     = (end_time * plots_per_eddy)
   )
@@ -310,11 +310,11 @@ def loadListOfSpectraDataInDirectory(
   list_sim_times      = []
   list_failed_to_load = []
   ## filter for spectra data-files
-  spectra_filenames = WWFnF.getFilesFromFolder(
+  spectra_filenames = WWFnF.getFilesFromFilepath(
     filepath           = filepath_data, 
-    str_contains       = "hdf5_plt_cnt",
-    str_endswith       = "spect_" + str_spectra_type + "s.dat",
-    file_index_placing = -3,
+    filename_contains       = "hdf5_plt_cnt",
+    filename_endswith       = "spect_" + str_spectra_type + "s.dat",
+    loc_file_index = -3,
     file_start_index   = plots_per_eddy * file_start_time,
     file_end_index     = plots_per_eddy * file_end_time
   )

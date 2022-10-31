@@ -21,7 +21,9 @@ os.system("clear") # clear terminal window
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
+## ###############################################################
 ## HELPER FUNCTIONS
+## ###############################################################
 def loadData():
   list_sim_data     = []
   abs_filepath_data = WWFnF.createFilepath([ ABS_FILEPATH_BASE, REL_FILEPATH_DATA, "kurtosis_data_gradv.csv" ])

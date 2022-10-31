@@ -14,19 +14,24 @@ from TheFittingModule import UserModels
 from TheUsefulModule import WWLists
 
 ## ###############################################################
-## CLASS OF USEFUL FUNCTIONS
+## FUNCTIONS THAT INTERPOLATE AND FIT
 ## ###############################################################
 def fitExpFunc(
     ax, data_x, data_y, index_start_fit, index_end_fit,
     linestyle  = "-"
   ):
   ## define fit domain
-  data_fit_domain = np.linspace(data_x[index_start_fit], data_x[index_end_fit], 10**2)[1:-1]
+  data_fit_domain = np.linspace(
+    data_x[index_start_fit],
+    data_x[index_end_fit],
+    10**2
+  )[1:-1]
   ## interpolate the non-uniform data
   interp_spline = interpolate.interp1d(
     data_x[index_start_fit : index_end_fit],
     data_y[index_start_fit : index_end_fit],
-    kind = "cubic"
+    kind       = "cubic",
+    fill_value = "extrapolate"
   )
   ## save time range being fitted to
   time_start = data_x[index_start_fit]
@@ -68,12 +73,17 @@ def fitConstFunc(
     linestyle = "-"
   ):
   ## define fit domain
-  data_fit_domain = np.linspace(data_x[index_start_fit], data_x[index_end_fit], 10**2)[1:-1]
+  data_fit_domain = np.linspace(
+    data_x[index_start_fit],
+    data_x[index_end_fit],
+    10**2
+  )[1:-1]
   ## interpolate the non-uniform data
   interp_spline = interpolate.interp1d(
     data_x[index_start_fit : index_end_fit],
     data_y[index_start_fit : index_end_fit],
-    kind = "cubic"
+    kind       = "cubic",
+    fill_value = "extrapolate"
   )
   ## uniformly sample interpolated data
   data_y_sampled = interp_spline(data_fit_domain)

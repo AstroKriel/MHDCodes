@@ -42,14 +42,14 @@ class DataSet():
       self,
       Nres,
       Re, Rm, Pm,
-      rms_mach, Gamma, E_sat_ratio,
+      rms_Mach, Gamma, E_sat_ratio,
       list_alpha_kin, list_k_nu, list_k_p, list_k_eq
     ):
     self.Nres           = Nres
     self.Re             = Re
     self.Rm             = Rm
     self.Pm             = Pm
-    self.rms_mach       = rms_mach
+    self.rms_Mach       = rms_Mach
     self.Gamma          = Gamma
     self.E_sat_ratio    = E_sat_ratio
     self.list_alpha_kin = list_alpha_kin
@@ -159,11 +159,13 @@ class PlotSpectra():
     self.__labelScalesPlots()
     self.__labelEnergyRatioPlot()
 
-  def getKinScales(self):
-    return self.list_alpha_kin, self.list_k_nu
-
-  def getMagScales(self):
-    return self.list_k_p, self.list_k_eq
+  def getFittedParams(self):
+    return {
+      "list_alpha_kin" : self.list_alpha_kin,
+      "list_k_nu"      : self.list_k_nu,
+      "list_k_p"       : self.list_k_p,
+      "list_k_eq"      : self.list_k_eq
+    }
 
   def __loadData(self):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
@@ -194,8 +196,14 @@ class PlotSpectra():
     self.list_kin_k             = list_kin_k_group_t[0]
     self.list_mag_k             = list_mag_k_group_t[0]
     ## store normalised and time-averaged energy spectra
-    self.list_kin_power_norm_group_t = [ np.array(list_power) / sum(list_power) for list_power in list_kin_power_group_t ]
-    self.list_mag_power_norm_group_t = [ np.array(list_power) / sum(list_power) for list_power in list_mag_power_group_t ]
+    self.list_kin_power_norm_group_t = [
+      np.array(list_power) / sum(list_power)
+      for list_power in list_kin_power_group_t
+    ]
+    self.list_mag_power_norm_group_t = [
+      np.array(list_power) / sum(list_power)
+      for list_power in list_mag_power_group_t
+    ]
 
   def __plotEnergySpectra(self):
     plot_args = { "marker":"o", "color":"k", "ms":7, "ls":"", "alpha":1.0, "zorder":3 }
@@ -271,7 +279,10 @@ class PlotSpectra():
     self.list_alpha_kin = []
     self.list_k_nu      = []
     for time_index in range(len(self.list_kin_power_norm_group_t)):
-      end_index_kin = WWLists.getIndexClosestValue(self.list_kin_power_norm_group_t[time_index], 10**(-7))
+      end_index_kin = WWLists.getIndexClosestValue(
+        self.list_kin_power_norm_group_t[time_index],
+        10**(-7)
+      )
       params_kin    = fitKinSpectra(
         self.axs_spect_data[0],
         self.list_kin_k[1:end_index_kin],
@@ -339,14 +350,14 @@ class PlotSpectra():
       ]
     )
     ## adjust kinetic energy axis
-    self.axs_spect_data[0].set_xlim([ 0.9, max(self.list_mag_k) ])
+    # self.axs_spect_data[0].set_xlim([ 0.9, max(self.list_mag_k) ])
     self.axs_spect_data[0].set_xlabel(r"$k$")
     self.axs_spect_data[0].set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$", color="green")
     self.axs_spect_data[0].tick_params(axis="y", colors="green")
     self.axs_spect_data[0].set_xscale("log")
     self.axs_spect_data[0].set_yscale("log")
     ## adjust magnetic energy axis
-    self.axs_spect_data[1].set_xlim([ 0.9, max(self.list_mag_k) ])
+    # self.axs_spect_data[1].set_xlim([ 0.9, max(self.list_mag_k) ])
     self.axs_spect_data[1].set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k)$", color="red")
     self.axs_spect_data[1].tick_params(axis="y", colors="red")
     self.axs_spect_data[1].spines["left"].set_edgecolor("green")
@@ -423,10 +434,7 @@ def plotSimData(
     axs           = [ ax_mach, ax_energy ],
     filepath_data = filepath_sim
   )
-  time_exp_start, time_exp_end = plot_turb_obj.getExpTimeBounds()
-  rms_mach    = plot_turb_obj.getMach()
-  Gamma       = plot_turb_obj.getGamma()
-  E_sat_ratio = plot_turb_obj.getEsatRatio()
+  dict_turb_params = plot_turb_obj.getFittedParams()
   ## PLOT FITTED SPECTRA
   ## -------------------
   plot_spectra_obj = PlotSpectra(
@@ -435,11 +443,10 @@ def plotSimData(
     axs_scales     = [ ax_scales_time, ax_scales_pdf ],
     ax_spect_ratio = ax_spect_ratio,
     filepath_data  = f"{filepath_sim}/spect",
-    time_exp_start = time_exp_start,
-    time_exp_end   = time_exp_end
+    time_exp_start = dict_turb_params["time_start"],
+    time_exp_end   = dict_turb_params["time_end"]
   )
-  list_alpha_kin, list_k_nu = plot_spectra_obj.getKinScales()
-  list_k_p, list_k_eq = plot_spectra_obj.getMagScales()
+  dict_spectra_params = plot_spectra_obj.getFittedParams()
   ## SAVE FIGURE
   ## -----------
   print("Saving figure...")
@@ -454,8 +461,13 @@ def plotSimData(
   dataset_obj  = DataSet(
     Nres,
     Pm, Re, Rm,
-    rms_mach, Gamma, E_sat_ratio,
-    list_alpha_kin, list_k_nu, list_k_p, list_k_eq
+    dict_turb_params["rms_Mach"],
+    dict_turb_params["Gamma"],
+    dict_turb_params["E_sat_ratio"],
+    dict_spectra_params["list_alpha_kin"],
+    dict_spectra_params["list_k_nu"],
+    dict_spectra_params["list_k_p"],
+    dict_spectra_params["list_k_eq"]
   )
   WWObjs.saveObj2Json(
     obj      = dataset_obj,
@@ -492,9 +504,7 @@ def main():
 
         ## CHECK THE RESOLUTION RUN EXISTS
         ## -------------------------------
-        filepath_sim_res = WWFnF.createFilepath([
-          filepath_sim, sim_res
-        ])
+        filepath_sim_res = f"{filepath_sim}/{sim_res}/"
         ## check that the filepath exists
         if not os.path.exists(filepath_sim_res): continue
 
@@ -508,12 +518,17 @@ def main():
         ## PLOT SIMULATION DATA AND SAVE MEASURED QUANTITIES
         ## -------------------------------------------------
         sim_name = f"{suite_folder}_{sim_folder}"
+        # try:
         plotSimData(
           filepath_sim_res, filepath_sim_res_plot, sim_name, sim_res,
           Re = getPlasmaNumberFromSimName(suite_folder, "Re"),
           Rm = getPlasmaNumberFromSimName(suite_folder, "Rm"),
           Pm = getPlasmaNumberFromSimName(sim_folder, "Pm")
         )
+        # except:
+        #   print("Ecountered a problem:", filepath_sim_res)
+        #   print(" ")
+        #   continue
 
         if BOOL_DEBUG: return
         ## create empty space
@@ -531,11 +546,11 @@ SONIC_REGIME      = "super_sonic"
 FILENAME_TURB     = "Turb.dat"
 K_TURB            = 2.0
 RMS_MACH          = 5.0
-T_TURB            = 1 / (K_TURB * RMS_MACH) # ell_turb / (rms_mach * c_s)
+T_TURB            = 1 / (K_TURB * RMS_MACH) # ell_turb / (rms_Mach * c_s)
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_RES      = [ "18", "36", "72" ]
-# LIST_SIM_RES      = [ "144", "288", "576" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+LIST_SIM_RES      = [ "72" ]
 
 
 ## ###############################################################

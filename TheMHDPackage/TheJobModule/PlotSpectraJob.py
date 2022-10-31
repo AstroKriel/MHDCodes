@@ -1,6 +1,6 @@
 import os
 
-class PrepPlotSpectra():
+class PlotSpectraJob():
   def __init__(
       self,
       filepath_sim, suite_folder, sonic_regime, sim_folder, sim_res
@@ -29,6 +29,8 @@ class PrepPlotSpectra():
     self.sim_res      = sim_res
     self.sim_folder   = sim_folder
     self.__createJob()
+    ## print to terminal that job file has been created
+    print(f"\t> Created job '{self.job_name}' to run '{self.program_name}' in:\n\t", self.filepath_spect)
 
   def __createJob(self):
     ## create job file
@@ -52,7 +54,5 @@ class PrepPlotSpectra():
         f"{self.filepath_sim}/..", # path to simulation suite
         self.sim_folder
       ))
-    ## print to terminal that job file has been created
-    print(f"\t> Created job '{self.job_name}' to run '{self.program_name}'")
 
-
+## END OF LIBRARY

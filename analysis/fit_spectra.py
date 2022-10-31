@@ -239,9 +239,9 @@ class SpectraObject():
     ## create plotting object looking at simulation fit
     spectra_plot_obj = PlotSpectra.PlotSpectraFit(self.fits_obj)
     ## remove old frames
-    list_filenames_to_delete = WWFnF.getFilesFromFolder(
+    list_filenames_to_delete = WWFnF.getFilesFromFilepath(
       filepath     = filepath_vis_frames, 
-      str_contains = f"_{self.fits_obj.sim_label}_"
+      filename_contains = f"_{self.fits_obj.sim_label}_"
     )
     if len(list_filenames_to_delete) > 0:
       print("\t> Removing old spectra frames...")

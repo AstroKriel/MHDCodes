@@ -12,43 +12,43 @@ import numpy as np
 ## WORKING WITH FILES / FOLDERS
 ## ###############################################################
 def makeFilter(
-    str_contains       = None,
-    str_not_contains   = None,
-    str_startswith     = None,
-    str_endswith       = None,
-    file_index_placing = None,
-    file_start_index   = 0,
-    file_end_index     = np.inf,
-    str_split_by       = "_"
+    filename_contains     = None,
+    filename_not_contains = None,
+    filename_startswith   = None,
+    filename_endswith     = None,
+    loc_file_index        = None,
+    file_start_index      = 0,
+    file_end_index        = np.inf,
+    filename_split_wrt    = "_"
   ):
   """ makeFilter
     PURPOSE: Create a filter condition for files that look a particular way.
   """
   def meetsCondition(element):
-    if str_contains is not None:
-      bool_contains = element.__contains__(str_contains)
+    if filename_contains is not None:
+      bool_contains = element.__contains__(filename_contains)
     else: bool_contains = True
-    if str_not_contains is not None:
-      bool_not_contains = not(element.__contains__(str_not_contains))
+    if filename_not_contains is not None:
+      bool_not_contains = not(element.__contains__(filename_not_contains))
     else: bool_not_contains = True
-    if str_startswith is not None:
-      bool_startswith = element.startswith(str_startswith)
+    if filename_startswith is not None:
+      bool_startswith = element.startswith(filename_startswith)
     else: bool_startswith = True
-    if str_endswith is not None:
-      bool_endswith = element.endswith(str_endswith)
+    if filename_endswith is not None:
+      bool_endswith = element.endswith(filename_endswith)
     else: bool_endswith = True
     if (bool_contains and 
         bool_not_contains and 
         bool_startswith and 
         bool_endswith):
-      if file_index_placing is not None:
+      if loc_file_index is not None:
         ## check that the file index falls within the specified range
-        if len(element.split(str_split_by)) > abs(file_index_placing):
+        if len(element.split(filename_split_wrt)) > abs(loc_file_index):
           bool_time_after  = (
-            int(element.split(str_split_by)[file_index_placing]) >= file_start_index
+            int(element.split(filename_split_wrt)[loc_file_index]) >= file_start_index
           )
           bool_time_before = (
-            int(element.split(str_split_by)[file_index_placing]) <= file_end_index
+            int(element.split(filename_split_wrt)[loc_file_index]) <= file_end_index
           )
           ## if the file meets all the required conditions
           if (bool_time_after and bool_time_before): return True
@@ -59,22 +59,22 @@ def makeFilter(
   return meetsCondition
 
 
-def getFilesFromFolder(
+def getFilesFromFilepath(
     filepath, 
-    str_contains       = None,
-    str_startswith     = None,
-    str_endswith       = None,
-    str_not_contains   = None,
-    file_index_placing = None,
+    filename_contains       = None,
+    filename_startswith     = None,
+    filename_endswith       = None,
+    filename_not_contains   = None,
+    loc_file_index = None,
     file_start_index   = 0,
     file_end_index     = np.inf
   ):
   myFilter = makeFilter(
-    str_contains,
-    str_not_contains,
-    str_startswith,
-    str_endswith,
-    file_index_placing,
+    filename_contains,
+    filename_not_contains,
+    filename_startswith,
+    filename_endswith,
+    loc_file_index,
     file_start_index,
     file_end_index
   )
@@ -96,9 +96,9 @@ def createFolder(filepath, bool_hide_updates=False):
   if not(os.path.exists(filepath)):
     os.makedirs(filepath)
     if not(bool_hide_updates):
-      print("SUCCESS: Folder created. \n\t" + filepath + "\n")
+      print("Success: Created folder:\n\t" + filepath + "\n")
   elif not(bool_hide_updates):
-    print("WARNING: Folder already exists (folder not created). \n\t" + filepath + "\n")
+    print("Warning: Folder already exists:\n\t" + filepath + "\n")
 
 
 def createFilepath(list_filepath_folders):

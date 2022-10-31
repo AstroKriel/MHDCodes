@@ -63,11 +63,11 @@ def main():
   ## PROCESS ALL THE PLT FILES
   ## #########################
   # loop over the data directory and compute spectra files
-  list_filenames = WWFnF.getFilesFromFolder(
+  list_filenames = WWFnF.getFilesFromFilepath(
     filepath           = directory_data,
-    str_contains       = "Turb_hdf5_plt_cnt_",
-    str_not_contains   = "spect",
-    file_index_placing = -1,
+    filename_contains       = "Turb_hdf5_plt_cnt_",
+    filename_not_contains   = "spect",
+    loc_file_index = -1,
     file_start_index   = file_start,
     file_end_index     = file_end
   )
@@ -84,19 +84,19 @@ def main():
   ## CHECK WHICH PLT FILES WERE NOT PROCESSED
   ## ########################################
   ## now check which spectra files have successfully been computed
-  list_filenames_spect_mag = WWFnF.getFilesFromFolder(
+  list_filenames_spect_mag = WWFnF.getFilesFromFilepath(
     filepath           = directory_data,
-    str_contains       = "Turb_hdf5_plt_cnt_",
-    str_endswith       = "spect_mags.dat",
-    file_index_placing = -3,
+    filename_contains       = "Turb_hdf5_plt_cnt_",
+    filename_endswith       = "spect_mags.dat",
+    loc_file_index = -3,
     file_start_index   = file_start,
     file_end_index     = file_end
   )
-  list_filenames_spect_vel = WWFnF.getFilesFromFolder(
+  list_filenames_spect_vel = WWFnF.getFilesFromFilepath(
     filepath           = directory_data,
-    str_contains       = "Turb_hdf5_plt_cnt_",
-    str_endswith       = "spect_vels.dat",
-    file_index_placing = -3,
+    filename_contains       = "Turb_hdf5_plt_cnt_",
+    filename_endswith       = "spect_vels.dat",
+    loc_file_index = -3,
     file_start_index   = file_start,
     file_end_index     = file_end
   )

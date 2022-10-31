@@ -169,3 +169,4 @@ class PrepSimJob():
       print("\t> 'flash.par' has been successfully written.")
     else: raise Exception("ERROR: 'flash.par' failed to write correctly.")
 
+## END OF LIBRARY

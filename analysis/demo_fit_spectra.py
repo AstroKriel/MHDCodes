@@ -12,9 +12,7 @@ from ThePlottingModule import TheMatplotlibStyler
 ## PREPARE WORKSPACE
 ## ###############################################################
 os.system("clear") # clear terminal window
-## use a non-interactive plotting backend
-plt.ioff()
-plt.switch_backend("agg")
+plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################

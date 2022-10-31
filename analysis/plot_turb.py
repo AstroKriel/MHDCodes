@@ -42,9 +42,10 @@ class PlotTurbData():
     ## quantities to measure
     self.time_exp_start = None
     self.time_exp_end   = None
-    self.Mach           = None
+    self.rms_Mach       = None
     self.Gamma          = None
     self.E_sat_ratio    = None
+    self.bool_fitted    = False
     ## perform routine
     print("Loading volume integrated data...")
     self.__loadData()
@@ -52,17 +53,14 @@ class PlotTurbData():
     self.__plotEnergyRatio()
     self.__fitData()
 
-  def getExpTimeBounds(self):
-    return self.time_exp_start, self.time_exp_end
-
-  def getMach(self):
-    return self.Mach
-
-  def getGamma(self):
-    return self.Gamma
-
-  def getEsatRatio(self):
-    return self.E_sat_ratio
+  def getFittedParams(self):
+    return {
+      "time_start"  : self.time_exp_start,
+      "time_end"    : self.time_exp_end,
+      "rms_Mach"    : self.rms_Mach,
+      "Gamma"       : self.Gamma,
+      "E_sat_ratio" : self.E_sat_ratio
+    }
 
   def __loadData(self):
     ## load kinetic energy
@@ -81,7 +79,7 @@ class PlotTurbData():
       time_start    = 0.1,
       time_end      = np.inf
     )
-    ## load mach data
+    ## load Mach data
     data_time, data_Mach = LoadFlashData.loadTurbData(
       filepath_data = self.filepath_data,
       var_y         = 13, # 13 (new), 8 (old)
@@ -89,8 +87,9 @@ class PlotTurbData():
       time_start    = 0.1,
       time_end      = np.inf
     )
-    ## only relevant when loading data while a simulation is running (i.e., dealing w/ data synchronisation)
-    ## check the largest sample of data that has been safely written
+    ## Only relevant when loading data while a simulation is running
+    ## (i.e., dealing w/ data synchronisation). So, only grab the portion
+    ## (i.e., time-range) of data that has been sefely written for all quantities
     max_len = min([
       len(data_time),
       len(data_Mach),
@@ -144,33 +143,34 @@ class PlotTurbData():
     )
 
   def __fitData(self):
-    ls_kin         = "--"
-    ls_sat         = ":"
-    str_label_Esat = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ "
-    str_label_Mach = r"$\mathcal{M} =$ "
-    growth_percent = self.data_E_ratio[-1] / self.data_E_ratio[
-      WWLists.getIndexClosestValue(self.data_time, 5.0)
-    ]
+    linestyle_kin  = "--"
+    linestyle_sat  = ":"
+    label_Esat     = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ "
+    label_Mach     = r"$\mathcal{M} =$ "
+    t_start_index  = WWLists.getIndexClosestValue(self.data_time, 5.0)
+    growth_percent = self.data_E_ratio[-1] / self.data_E_ratio[t_start_index]
     ## IF DYNAMO GROWTH OCCURS
     ## -----------------------
     if growth_percent > 100:
       ## find saturated energy ratio
+      index_sat_start = WWLists.getIndexClosestValue(
+        self.data_time,
+        0.75 * self.data_time[-1]
+      )
       self.E_sat_ratio = FitFuncs.fitConstFunc(
         ax              = self.axs[1],
         data_x          = self.data_time,
         data_y          = self.data_E_ratio,
-        str_label       = str_label_Esat,
-        index_start_fit = WWLists.getIndexClosestValue(
-          self.data_time, (0.75 * self.data_time[-1])
-        ),
+        str_label       = label_Esat,
+        index_start_fit = index_sat_start,
         index_end_fit   = len(self.data_time)-1,
-        linestyle       = ls_sat
+        linestyle       = linestyle_sat
       )
       ## get index range corresponding with kinematic phase of the dynamo
-      index_exp_start = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-8))
-      index_exp_end   = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_sat_ratio/100)
-      index_start_fit = min([ index_exp_start, index_exp_end ])
-      index_end_fit   = max([ index_exp_start, index_exp_end ])
+      index_E_lo = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-8))
+      index_E_hi = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_sat_ratio/100)
+      index_start_fit = min([ index_E_lo, index_E_hi ])
+      index_end_fit   = max([ index_E_lo, index_E_hi ])
       ## find growth rate of exponential
       self.Gamma = FitFuncs.fitExpFunc(
         ax              = self.axs[1],
@@ -178,7 +178,7 @@ class PlotTurbData():
         data_y          = self.data_E_ratio,
         index_start_fit = index_start_fit,
         index_end_fit   = index_end_fit,
-        linestyle       = ls_kin
+        linestyle       = linestyle_kin
       )
     ## IF NO GROWTH OCCURS
     ## -------------------
@@ -191,21 +191,24 @@ class PlotTurbData():
         ax              = self.axs[1],
         data_x          = self.data_time,
         data_y          = self.data_E_ratio,
-        str_label       = str_label_Esat,
+        str_label       = label_Esat,
         index_start_fit = index_start_fit,
         index_end_fit   = index_end_fit,
-        linestyle       = ls_sat
+        linestyle       = linestyle_sat
       )
-    ## find average mach number
-    self.Mach = FitFuncs.fitConstFunc(
+    ## find average Mach number
+    self.rms_Mach = FitFuncs.fitConstFunc(
       ax              = self.axs[0],
       data_x          = self.data_time,
       data_y          = self.data_Mach,
-      str_label       = str_label_Mach,
+      str_label       = label_Mach,
       index_start_fit = index_start_fit,
       index_end_fit   = index_end_fit,
-      linestyle       = ls_kin
+      linestyle       = linestyle_kin
     )
+    ## INIDCATE THAT FIT OCCURED SUCCESSFULLY
+    ## --------------------------------------
+    self.bool_fitted = True
     ## ANNOTATE FIGURE
     ## ---------------
     ## add legend
@@ -221,7 +224,7 @@ class PlotTurbData():
 ## ###############################################################
 ## FIGURE INITIALISATION AND SAVING
 ## ###############################################################
-def plotSimData(filepath_sim, filepath_vis, sim_name):
+def plotSimData(filepath_data, filepath_vis, sim_name):
   ## CREATE FIGURE
   ## -------------
   print("Initialising figure...")
@@ -231,13 +234,13 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
     num_rows         = 2,
     num_cols         = 2
   )
-  ax_mach   = fig.add_subplot(fig_grid[0, 0])
+  ax_Mach   = fig.add_subplot(fig_grid[0, 0])
   ax_energy = fig.add_subplot(fig_grid[1, 0])
   ## PLOT INTEGRATED QUANTITIES (Turb.dat)
   ## -------------------------------------
   PlotTurbData(
-    axs           = [ ax_mach, ax_energy ],
-    filepath_data = filepath_sim
+    axs           = [ ax_Mach, ax_energy ],
+    filepath_data = filepath_data
   )
   ## SAVE FIGURE
   ## -----------
@@ -251,76 +254,68 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
 
 
 ## ###############################################################
-## PROGRAM PARAMETERS
-## ###############################################################
-BOOL_FIT_MODEL = 0
-BOOL_DEBUG     = 0
-BASEPATH       = "/scratch/ek9/nk7952/"
-SONIC_REGIME   = "super_sonic"
-FILENAME_TURB  = "Turb.dat"
-K_TURB         = 2.0
-MACH           = 5.0
-T_TURB         = 1 / (K_TURB * MACH) # ell_turb / (Mach * c_s)
-
-
-## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
   ## LOOK AT EACH SIMULATION
   ## -----------------------
   ## loop over each simulation suite
-  for suite_folder in [
-      "Re10",
-      # "Re500",
-      "Rm3000"
-    ]:
+  for suite_folder in LIST_SUITE_FOLDER:
 
-    ## loop over each resolution
-    for sim_res in [
-        # "72",
-        # "144",
-        # "288",
-        "576"
-      ]:
+    ## loop over each simulation folder
+    for sim_folder in LIST_SIM_FOLDER:
 
-      ## CHECK THAT THE VISUALISATION FOLDER EXISTS
-      ## ------------------------------------------
-      filepath_vis = WWFnF.createFilepath([
-        BASEPATH, suite_folder, sim_res, SONIC_REGIME, "vis_folder"
+      ## CHECK THE SIMULATION EXISTS
+      ## ---------------------------
+      filepath_sim = WWFnF.createFilepath([
+        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
       ])
-      if not os.path.exists(filepath_vis):
-        print("{} does not exist.".format(filepath_vis))
-        continue
-
-      ## print to the terminal which suite is being looked at
-      str_message = f"Looking at suite: {suite_folder}, Nres = {sim_res}"
+      if not os.path.exists(filepath_sim): continue
+      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}"
       print(str_message)
       print("=" * len(str_message))
-      print("Saving figures in:", filepath_vis)
       print(" ")
 
-      ## PLOT SIMULATION DATA
-      ## --------------------
-      ## loop over each simulation folder
-      for sim_folder in [
-          "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
-        ]: # "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250"
+      ## loop over each resolution
+      for sim_res in LIST_SIM_RES:
 
-        ## create filepath to the simulation folder
-        filepath_sim = WWFnF.createFilepath([
-          BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder
-        ])
+        ## CHECK THE RESOLUTION RUN EXISTS
+        ## -------------------------------
+        filepath_sim_res = f"{filepath_sim}/{sim_res}/"
         ## check that the filepath exists
-        if not os.path.exists(filepath_sim): continue
-        ## plot simulation data
+        if not os.path.exists(filepath_sim_res): continue
+
+        ## MAKE SURE A VISUALISATION FOLDER EXISTS
+        ## ---------------------------------------
+        filepath_sim_res_plot = WWFnF.createFilepath([
+          filepath_sim_res, "vis_folder"
+        ])
+        WWFnF.createFolder(filepath_sim_res_plot, bool_hide_updates=True)
+
+        ## PLOT SIMULATION DATA
+        ## --------------------
         sim_name = f"{suite_folder}_{sim_folder}"
-        plotSimData(filepath_sim, filepath_vis, sim_name)
+        plotSimData(filepath_sim_res, filepath_sim_res_plot, sim_name)
 
         ## create empty space
         print(" ")
       print(" ")
     print(" ")
+
+
+## ###############################################################
+## PROGRAM PARAMETERS
+## ###############################################################
+BASEPATH          = "/scratch/ek9/nk7952/"
+SONIC_REGIME      = "super_sonic"
+FILENAME_TURB     = "Turb.dat"
+K_TURB            = 2.0
+RMS_MACH          = 5.0
+T_TURB            = 1 / (K_TURB * RMS_MACH) # ell_turb / (Mach * c_s)
+LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+LIST_SIM_RES      = [ "18", "36", "72" ]
+# LIST_SIM_RES      = [ "144", "288", "576" ]
 
 
 ## ###############################################################

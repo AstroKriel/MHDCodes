@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 ## PREPARE WORKSPACE
 ## ###############################################################
 os.system("clear") # clear terminal window
-plt.ioff()
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 

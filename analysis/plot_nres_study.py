@@ -18,9 +18,7 @@ from ThePlottingModule import PlotFuncs
 ## PREPARE WORKSPACE
 ## ###############################################################
 os.system("clear") # clear terminal window
-## use a non-interactive plotting backend
-plt.ioff()
-plt.switch_backend("agg")
+plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################
@@ -152,12 +150,10 @@ class PlotSpectraConvergence():
   def __annotateFigure(self):
     ## label k_nu
     self.ax_k_nu.set_ylabel(r"$k_\nu$")
-    self.ax_k_nu.set_xscale("log")
     self.ax_k_nu.set_yscale("log")
     ## label k_p
     self.ax_k_p.set_ylabel(r"$k_{\rm p}$")
     self.ax_k_p.set_xlabel(r"$N_{\rm res}$")
-    self.ax_k_p.set_xscale("log")
     self.ax_k_p.set_yscale("log")
 
 

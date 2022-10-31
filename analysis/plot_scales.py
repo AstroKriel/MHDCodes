@@ -216,9 +216,9 @@ def main():
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
-STR_SIM_RES       = "576"
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+STR_SIM_RES       = "576"
 
 
 ## ###############################################################
