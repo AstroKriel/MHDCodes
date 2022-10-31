@@ -159,6 +159,7 @@ def main():
         filepath_sim_res = f"{filepath_sim}/{sim_res}/"
         ## check that the filepath exists
         if not os.path.exists(filepath_sim_res): continue
+        print(f"Looking at Nres = {sim_res}")
 
         ## evaluate function
         obj_sim_folder = ReorganiseSimFolder(filepath_sim_res)

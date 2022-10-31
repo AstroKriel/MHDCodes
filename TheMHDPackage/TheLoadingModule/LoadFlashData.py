@@ -239,41 +239,6 @@ def loadTurbData(
   return data_x[index_start : index_end], data_y[index_start : index_end]
 
 
-def getPlotsPerEddy(
-    filepath_file,
-    num_t_turb        = 100,
-    bool_hide_updates = False
-  ):
-  ## helper functions
-  def getName(line):
-    return line.split("=")[0].lower()
-  def getValue(line):
-    return line.split("=")[1].split("[")[0]
-  ## search routine
-  bool_tmax_found          = False
-  bool_plot_interval_found = None
-  with open(WWFnF.createFilepath([ filepath_file, "Turb.log" ]), "r") as fp:
-    for line in fp.readlines():
-      if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
-        tmax = float(getValue(line))
-        bool_tmax_found = True
-      elif "plotfileintervaltime" in getName(line):
-        plot_file_interval = float(getValue(line))
-        bool_plot_interval_found = True
-      if bool_tmax_found and bool_plot_interval_found:
-        plots_per_eddy = tmax / plot_file_interval / num_t_turb
-        if not(bool_hide_updates):
-          print("The following has been read from 'Turb.log':")
-          print("\t> 'tmax'".ljust(25),                 "=", tmax)
-          print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
-          print("\t> # plt-files / t_turb".ljust(25),   "=", plots_per_eddy)
-          print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb.")
-          print(" ")
-        return plots_per_eddy
-  ## failed to read quantity
-  return None
-
-
 def loadSpectraData(filepath_data, str_spectra_type):
   with open(filepath_data, "r") as fp:
     data_file = fp.readlines() # load in data
@@ -339,6 +304,41 @@ def loadAllSpectraData(
     ))
   ## return spectra data
   return list_k_group_t, list_power_group_t, list_sim_times
+
+
+def getPlotsPerEddy(
+    filepath_file,
+    num_t_turb        = 100,
+    bool_hide_updates = False
+  ):
+  ## helper functions
+  def getName(line):
+    return line.split("=")[0].lower()
+  def getValue(line):
+    return line.split("=")[1].split("[")[0]
+  ## search routine
+  bool_tmax_found          = False
+  bool_plot_interval_found = None
+  with open(WWFnF.createFilepath([ filepath_file, "Turb.log" ]), "r") as fp:
+    for line in fp.readlines():
+      if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
+        tmax = float(getValue(line))
+        bool_tmax_found = True
+      elif "plotfileintervaltime" in getName(line):
+        plot_file_interval = float(getValue(line))
+        bool_plot_interval_found = True
+      if bool_tmax_found and bool_plot_interval_found:
+        plots_per_eddy = tmax / plot_file_interval / num_t_turb
+        if not(bool_hide_updates):
+          print("The following has been read from 'Turb.log':")
+          print("\t> 'tmax'".ljust(25),                 "=", tmax)
+          print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
+          print("\t> # plt-files / t_turb".ljust(25),   "=", plots_per_eddy)
+          print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb.")
+          print(" ")
+        return plots_per_eddy
+  ## failed to read quantity
+  return None
 
 
 def getPlasmaNumbers(filepath_sim, rms_Mach, k_turb):
