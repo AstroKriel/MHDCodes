@@ -1,0 +1,99 @@
+## ~/.alias
+# eval "echo 'Source: .alias...'"
+
+
+## ======== COMMAND SHORTCUTS ========
+## ===================================
+
+## list contents in directory
+alias lss="ls -XG" # list files in column format
+alias lsl="ls -XG -l" # list files + orgnaise by name
+alias lst="ls -trlG -h" # list files + orgnaise by last time changed
+alias lsh="ls -XlhG"
+
+## python 3
+alias py="python3"
+
+## view long column-formated files
+alias less="less -S"
+
+## check the size / number of folders / files in current directory
+alias dir_size='du -hcs * | sort -h'
+alias num_files='find . -maxdepth 1 -mindepth 1 -type d -exec sh -c '\''echo "{} : $(find "{}" -type f | wc -l)" file\(s\)'\'' \;'
+
+## emacs shortcut
+alias e='emacs $OPTIONS'
+
+
+## ======== HOME DIRECTORY ========
+## ================================
+export HOME=/home/586/$USER
+alias dhome="cd $HOME"
+
+
+## ======== FREQUENTLY VISITED DIRECTORIES ========
+## ================================================
+
+## bin
+export BIN=$HOME/bin
+alias dbin="cd $BIN"
+
+## scratch
+export SCRATCH_ek9=/scratch/ek9/$USER
+export SCRATCH_jh2=/scratch/jh2/$USER
+alias dscrek9="cd $SCRATCH_ek9"
+alias dscrjh2="cd $SCRATCH_jh2"
+
+## gdata
+export GDATA_ek9=/g/data1b/ek9/$USER
+export GDATA_jh2=/g/data1b/jh2/$USER
+alias dgdek9="cd $GDATA_ek9"
+alias dgdjh2="cd $GDATA_jh2"
+
+## MHD analysis codes
+export MHDCodes=$HOME/MHDCodes
+export MHDPackage=$MHDCodes/TheMHDPackage
+alias dmhd="cd $MHDCodes"
+
+## FLASH directories
+export FLASH=$HOME/nk-flash
+export FORCE=$FLASH/source/physics/sourceTerms/Stir/StirFromFileMain/forcing_generator
+export STIR=$FLASH/source/Simulation/SimulationMain/StirFromFile
+alias dflash="cd $FLASH"
+alias dforce="cd $FORCE"
+alias dstir="cd $STIR"
+
+## useful 'tool' directories
+export TOOLS=$HOME/nk-tools
+export SPECTRA=$TOOLS/spectra
+alias dtools="cd $TOOLS"
+
+
+## ======== CREATE INTERACTIVE JOBS ========
+## =========================================
+
+## Federrath group
+alias job_48cpus_ek9="qsub -I -X -P ek9 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=48,mem=192GB"
+alias job_8cpus_ek9="qsub -I -X -P ek9 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=8,mem=32GB"
+
+## Krumholz group
+alias job_48cpus_jh2="qsub -I -X -P jh2 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=48,mem=192GB"
+alias job_8cpus_jh2="qsub -I -X -P jh2 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=8,mem=32GB"
+
+
+## ======== QUERY JOBS / STORAGE AVAILABILITY ========
+## ===================================================
+
+## query group status
+alias info_ek9="lquota; nci-files-report -f scratch -p ek9; nci-files-report -f gdata -p ek9; nci_account -v"
+alias info_jh2="lquota; nci-files-report -f scratch -p jh2; nci-files-report -f gdata -p ek9; nci_account -v"
+
+## query active jobs
+alias myps='ps -elf | grep $USER'
+alias qs='qstat | grep -e $USER'
+alias qa='nqstat_anu'
+alias qn='qstat -f | grep "Job_Name"'
+alias qi='qstat -f | grep "Job Id"'
+
+
+## END OF ALIAS

@@ -1,10 +1,10 @@
-## START OF MODULE
+## START OF LIBRARY
 
 
 ## ###############################################################
-## DEPENDENCIES: REQUIRED MODULES
+## MODULES
 ## ###############################################################
-import os, re
+import os, re, shutil
 import numpy as np
 
 
@@ -12,47 +12,43 @@ import numpy as np
 ## WORKING WITH FILES / FOLDERS
 ## ###############################################################
 def makeFilter(
-    str_contains       = None,
-    str_not_contains   = None,
-    str_startswith     = None,
-    str_endswith       = None,
-    file_index_placing = None,
-    file_start_index   = 0,
-    file_end_index     = np.inf,
-    str_split_by       = "_"
+    filename_contains     = None,
+    filename_not_contains = None,
+    filename_startswith   = None,
+    filename_endswith     = None,
+    loc_file_index        = None,
+    file_start_index      = 0,
+    file_end_index        = np.inf,
+    filename_split_wrt    = "_"
   ):
   """ makeFilter
     PURPOSE: Create a filter condition for files that look a particular way.
   """
   def meetsCondition(element):
-    ## if str_contains specified, then look for condition
-    if str_contains is not None: bool_contains = element.__contains__(str_contains)
-    else: bool_contains = True # don't consider condition
-    ## if str_not_contains specified, then look for condition
-    if str_not_contains is not None: bool_not_contains = not(element.__contains__(str_not_contains))
-    else: bool_not_contains = True # don't consider condition
-    ## if str_startswith specified, then look for condition
-    if str_startswith is not None: bool_startswith = element.startswith(str_startswith)
-    else: bool_startswith = True # don't consider condition
-    ## if str_endswith specified, then look for condition
-    if str_endswith is not None: bool_endswith = element.endswith(str_endswith)
-    else: bool_endswith = True # don't consider condition
-    ## make sure that the file has the right name structure (i.e. check all conditions have been met)
-    if (
-        bool_contains and 
+    if filename_contains is not None:
+      bool_contains = element.__contains__(filename_contains)
+    else: bool_contains = True
+    if filename_not_contains is not None:
+      bool_not_contains = not(element.__contains__(filename_not_contains))
+    else: bool_not_contains = True
+    if filename_startswith is not None:
+      bool_startswith = element.startswith(filename_startswith)
+    else: bool_startswith = True
+    if filename_endswith is not None:
+      bool_endswith = element.endswith(filename_endswith)
+    else: bool_endswith = True
+    if (bool_contains and 
         bool_not_contains and 
         bool_startswith and 
-        bool_endswith
-      ):
-      ## if the index range also needs to be checked
-      if file_index_placing is not None:
+        bool_endswith):
+      if loc_file_index is not None:
         ## check that the file index falls within the specified range
-        if len(element.split(str_split_by)) > abs(file_index_placing):
+        if len(element.split(filename_split_wrt)) > abs(loc_file_index):
           bool_time_after  = (
-            int(element.split(str_split_by)[file_index_placing]) >= file_start_index
+            int(element.split(filename_split_wrt)[loc_file_index]) >= file_start_index
           )
           bool_time_before = (
-            int(element.split(str_split_by)[file_index_placing]) <= file_end_index
+            int(element.split(filename_split_wrt)[loc_file_index]) <= file_end_index
           )
           ## if the file meets all the required conditions
           if (bool_time_after and bool_time_before): return True
@@ -62,70 +58,65 @@ def makeFilter(
     else: return False
   return meetsCondition
 
-
-def getFilesFromFolder(
+def getFilesFromFilepath(
     filepath, 
-    str_contains       = None,
-    str_startswith     = None,
-    str_endswith       = None,
-    str_not_contains   = None,
-    file_index_placing = None,
+    filename_contains       = None,
+    filename_startswith     = None,
+    filename_endswith       = None,
+    filename_not_contains   = None,
+    loc_file_index = None,
     file_start_index   = 0,
     file_end_index     = np.inf
   ):
-  ''' getFilesFromFolder
-    PURPOSE: Return the names of files that meet the required conditions in the specified folder.
-  '''
   myFilter = makeFilter(
-    str_contains,
-    str_not_contains,
-    str_startswith,
-    str_endswith,
-    file_index_placing,
+    filename_contains,
+    filename_not_contains,
+    filename_startswith,
+    filename_endswith,
+    loc_file_index,
     file_start_index,
     file_end_index
   )
   return list(filter(myFilter, sorted(os.listdir(filepath))))
 
-
-def readLineFromFile(filepath, des_str):
-  ''' readLineFromFile
-    PURPOSE: Return the first line from a file where an intance of a desired target string appears.
-  '''
+def readLineFromFile(filepath, des_str, bool_case_sensitive=True):
   for line in open(filepath).readlines():
-    if des_str in line:
-      return line
+    if bool_case_sensitive:
+      if des_str in line:
+        return line
+    else:
+      if des_str.lower() in line.lower():
+        return line
   return None
 
-
 def createFolder(filepath, bool_hide_updates=False):
-  """ createFolder
-  PURPOSE: Create a folder if and only if it does not already exist.
-  """
   if not(os.path.exists(filepath)):
     os.makedirs(filepath)
     if not(bool_hide_updates):
-      print("SUCCESS: Folder created. \n\t" + filepath + "\n")
+      print("Success: Created folder:\n\t" + filepath + "\n")
   elif not(bool_hide_updates):
-    print("WARNING: Folder already exists (folder not created). \n\t" + filepath + "\n")
-
+    print("Warning: Folder already exists:\n\t" + filepath + "\n")
 
 def createFilepath(list_filepath_folders):
-  """ creatFilePath
-  PURPOSE: Concatinate a list of strings into a single string separated by '/'.
-  """
   return re.sub( '/+', '/', "/".join([
     folder for folder in list_filepath_folders if not(folder == "")
   ]) )
 
-
 def createName(list_name_elems):
-  """ creatFilePath
-  PURPOSE: Concatinate a list of strings into a single string separated by '_'.
-  """
   return re.sub( '_+', '_', "_".join([
     elems for elems in list_name_elems if not(elems == "")
   ]) )
 
+def copyFileFromNTo(directory_from, directory_to, filename):
+  ## copy the file and it's permissions
+  shutil.copy(
+    f"{directory_from}/{filename}",
+    f"{directory_to}/{filename}"
+  )
+  print(f"> Coppied:")
+  print(f"\t File: {filename}")
+  print(f"\t From: {directory_from}")
+  print(f"\t To:   {directory_to}")
 
-## END OF MODULE
+
+## END OF LIBRARY

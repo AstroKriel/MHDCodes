@@ -1,8 +1,22 @@
 {
 	"folders": [
-		{
-			"path": "."
-		}
-	],
-  "settings": {}
+    {
+      "path": "."
+    },
+    {
+      "path": "../flash4"
+    },
+    {
+      "path": "../cf-tools"
+    },
+    {
+      "path": "../cf-python"
+    },
+    {
+      "path": "../scratch"
+    }
+  ],
+  "settings": {
+    "editor.fontSize": 10.5
+  }
 }
