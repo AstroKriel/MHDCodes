@@ -71,12 +71,12 @@ class SpectraObject():
       bool_hide_updates        = False
     ):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    plots_per_eddy = LoadFlashData.getPlotsPerTturbFromFlashParamFile(self.filepath_data + "/../", bool_hide_updates=False)
+    plots_per_eddy = LoadFlashData.getPlotsPerEddy(self.filepath_data + "/../", bool_hide_updates=False)
     if plots_per_eddy is None:
       Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
     ## load kinetic energy spectra
     print("Loading kinetic energy spectra...")
-    list_kin_k_group_t, list_kin_power_group_t, list_kin_list_sim_times = LoadFlashData.loadListOfSpectraDataInDirectory(
+    list_kin_k_group_t, list_kin_power_group_t, list_kin_list_sim_times = LoadFlashData.loadAllSpectraData(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
       file_start_time   = 5,
@@ -86,7 +86,7 @@ class SpectraObject():
     )
     ## load magnetic energy spectra
     print("Loading magnetic energy spectra...")
-    list_mag_k_group_t, list_mag_power_group_t, list_mag_list_sim_times = LoadFlashData.loadListOfSpectraDataInDirectory(
+    list_mag_k_group_t, list_mag_power_group_t, list_mag_list_sim_times = LoadFlashData.loadAllSpectraData(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
       file_start_time   = 5,

@@ -89,7 +89,7 @@ for sim_index in range(len(filepaths_data)):
 for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
   ## find min and max colorbar limits, save field slices and simulation times
   print("Loading data...")
-  col_min_val, col_max_val, list_flash_fields, list_sim_times = loadFLASHFieldDataList(
+  col_min_val, col_max_val, list_flash_fields, list_sim_times = loadAllPlotData_slice(
     filepath_data,
     start_time[sim_index],
     end_time[sim_index],

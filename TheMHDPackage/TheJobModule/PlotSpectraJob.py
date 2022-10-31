@@ -1,13 +1,19 @@
 import os
+from TheJobModule.SimParams import SimParams
 
 class PlotSpectraJob():
   def __init__(
       self,
-      filepath_sim, suite_folder, sonic_regime, sim_folder, sim_res
+      filepath_sim,
+      obj_sim_params : SimParams
     ):
     self.filepath_sim   = filepath_sim
     self.filepath_plt   = f"{self.filepath_sim}/plt"
     self.filepath_spect = f"{self.filepath_sim}/spect"
+    self.suite_folder   = obj_sim_params.suite_folder
+    self.sonic_regime   = obj_sim_params.sonic_regime
+    self.sim_folder     = obj_sim_params.sim_folder
+    self.sim_res        = obj_sim_params.sim_res
     if not os.path.exists(self.filepath_plt):
       print(self.filepath_plt, "does not exist.")
       return
@@ -20,17 +26,13 @@ class PlotSpectraJob():
     self.program_name = "plot_spectra.py"
     self.job_name     = "job_plot_spect.sh"
     self.job_tagname  = "{}{}{}plot{}".format(
-      sonic_regime.split("_")[0],
+      self.sonic_regime.split("_")[0],
       self.suite_folder,
       self.sim_folder,
       self.sim_res
     )
-    self.suite_folder = suite_folder
-    self.sim_res      = sim_res
-    self.sim_folder   = sim_folder
+    ## perform routine
     self.__createJob()
-    ## print to terminal that job file has been created
-    print(f"\t> Created job '{self.job_name}' to run '{self.program_name}' in:\n\t", self.filepath_spect)
 
   def __createJob(self):
     ## create job file
@@ -49,10 +51,9 @@ class PlotSpectraJob():
       job_file.write("#PBS -m bea\n")
       job_file.write(f"#PBS -M neco.kriel@anu.edu.au\n")
       job_file.write("\n")
-      job_file.write("{} -suite_path {} -sim_folder {} 1>shell_plot.out00 2>&1\n".format(
-        self.program_name,
-        f"{self.filepath_sim}/..", # path to simulation suite
-        self.sim_folder
-      ))
+      job_file.write(". ~/modules_flash\n")
+      job_file.write(f"{self.program_name} -suite_path {self.filepath_sim}/.. -sim_folder {self.sim_folder} 1>shell_plot.out00 2>&1\n")
+    ## indicate progress
+    print(f"\t> Created job '{self.job_name}' to run '{self.program_name}' in:\n\t", self.filepath_spect)
 
 ## END OF LIBRARY

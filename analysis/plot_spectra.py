@@ -79,7 +79,7 @@ def main():
   ## ############################
   ## LOAD SIMULATION PLT PER EDDY
   ## ############################
-  plots_per_eddy = LoadFlashData.getPlotsPerTturbFromFlashParamFile(filepath_sim, bool_hide_updates=False)
+  plots_per_eddy = LoadFlashData.getPlotsPerEddy(filepath_sim, bool_hide_updates=False)
   if plots_per_eddy is None:
     Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
   
@@ -87,14 +87,14 @@ def main():
   ## LOAD AND PLOT SPECTRA DATA
   ## ##########################
   print("Loading kinetic energy spectra...")
-  kin_k, kin_power, kin_list_sim_times = LoadFlashData.loadListOfSpectraDataInDirectory(
+  kin_k, kin_power, kin_list_sim_times = LoadFlashData.loadAllSpectraData(
     filepath_data     = filepath_spect,
     str_spectra_type  = "vel",
     plots_per_eddy    = plots_per_eddy,
     bool_hide_updates = bool_hide_updates
   )
   print("Loading magnetic energy spectra...")
-  mag_k, mag_power, mag_list_sim_times = LoadFlashData.loadListOfSpectraDataInDirectory(
+  mag_k, mag_power, mag_list_sim_times = LoadFlashData.loadAllSpectraData(
     filepath_data     = filepath_spect,
     str_spectra_type  = "mag",
     plots_per_eddy    = plots_per_eddy,

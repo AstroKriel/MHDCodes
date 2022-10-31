@@ -29,7 +29,7 @@ class MagSpectrum():
 ## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
-def loadSpectraDataFromFile(filepath):
+def loadSpectraData(filepath):
   data_k_group_t     = []
   data_power_group_t = []
   ## loop over spectra files in t/t_turb = [10, 30]
@@ -90,7 +90,7 @@ def main():
   filepath_data = f"{BASEPATH}/Rm3000/288/super_sonic/Pm5/spect"
   fig, ax = plt.subplots(figsize=(7,8))
   ## load magnetic energy spectrum
-  data_k_group_t, data_power_group_t = loadSpectraDataFromFile(filepath_data)
+  data_k_group_t, data_power_group_t = loadSpectraData(filepath_data)
   ## normalise and time-average
   data_power_ave = AveNormSpectraData(data_power_group_t)
   ax.plot(data_k_group_t[0], data_power_ave, c="r", ls="", marker="o", ms=3)

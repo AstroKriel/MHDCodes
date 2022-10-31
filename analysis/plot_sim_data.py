@@ -25,7 +25,7 @@ from ThePlottingModule import PlotFuncs
 from TheUsefulModule import WWLists, WWFnF, WWObjs
 from TheLoadingModule import LoadFlashData
 from TheFittingModule import FitMHDScales
-from TheJobModule import SimParams
+from TheJobModule.SimParams import getPlasmaNumbers
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -133,7 +133,7 @@ def getMagSpectraPeak(ax, list_k_data, list_power_data, bool_plot=True):
 
 
 ## ###############################################################
-## PLOT NORMALISED + TIME-AVERAGED ENERGY SPECTRA
+## OPERATOR CLASS: PLOT NORMALISED + TIME-AVERAGED ENERGY SPECTRA
 ## ###############################################################
 class PlotSpectra():
   def __init__(
@@ -169,11 +169,11 @@ class PlotSpectra():
 
   def __loadData(self):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    plots_per_eddy = LoadFlashData.getPlotsPerTturbFromFlashParamFile(f"{self.filepath_data}/../", bool_hide_updates=True)
+    plots_per_eddy = LoadFlashData.getPlotsPerEddy(f"{self.filepath_data}/../", bool_hide_updates=True)
     if plots_per_eddy is None:
       Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
     ## load kinetic energy spectra
-    list_kin_k_group_t, list_kin_power_group_t, self.list_kin_time = LoadFlashData.loadListOfSpectraDataInDirectory(
+    list_kin_k_group_t, list_kin_power_group_t, self.list_kin_time = LoadFlashData.loadAllSpectraData(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "vel",
       file_start_time   = self.time_exp_start,
@@ -182,7 +182,7 @@ class PlotSpectra():
       bool_hide_updates = True
     )
     ## load magnetic energy spectra
-    list_mag_k_group_t, list_mag_power_group_t, self.list_mag_time = LoadFlashData.loadListOfSpectraDataInDirectory(
+    list_mag_k_group_t, list_mag_power_group_t, self.list_mag_time = LoadFlashData.loadAllSpectraData(
       filepath_data     = self.filepath_data,
       str_spectra_type  = "mag",
       file_start_time   = self.time_exp_start,
@@ -403,7 +403,7 @@ def plotSimData(
     num_rows         = 3,
     num_cols         = 4
   )
-  ax_mach        = fig.add_subplot(fig_grid[0,  0])
+  ax_Mach        = fig.add_subplot(fig_grid[0,  0])
   ax_energy      = fig.add_subplot(fig_grid[1,  0])
   ax_spect_kin   = fig.add_subplot(fig_grid[:2, 1])
   ax_spect_mag   = ax_spect_kin.twinx()
@@ -413,9 +413,9 @@ def plotSimData(
   ## ANNOTATE SIMULATION PARAMETERS
   ## ------------------------------
   ## annotate plasma parameters
-  Re, Rm, Pm, _, _ = SimParams.getPlasmaParams(RMS_MACH, K_TURB, Re, Rm, Pm)
+  Re, Rm, Pm, _, _ = getPlasmaNumbers(RMS_MACH, K_TURB, Re, Rm, Pm)
   PlotFuncs.plotBoxOfLabels(
-    fig, ax_mach,
+    fig, ax_Mach,
     box_alignment   = (1.0, 0.0),
     xpos            = 0.95,
     ypos            = 0.05,
@@ -431,7 +431,7 @@ def plotSimData(
   ## PLOT INTEGRATED QUANTITIES (Turb.dat)
   ## -------------------------------------
   plot_turb_obj = PlotTurbData(
-    axs           = [ ax_mach, ax_energy ],
+    axs           = [ ax_Mach, ax_energy ],
     filepath_data = filepath_sim
   )
   dict_turb_params = plot_turb_obj.getFittedParams()

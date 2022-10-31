@@ -8,75 +8,86 @@ from TheUsefulModule import WWVariables
 
 
 ## ###############################################################
-## DEFINE SIMULATION PARAMETERS
+## HELPER FUNCTION: CALCULATE SIMULATION PARAMETERS
 ## ###############################################################
-def getPlasmaParams(rms_mach, k_turb, Re=None, Rm=None, Pm=None):
+def getPlasmaNumbers(Mach, k_turb, Re=None, Rm=None, Pm=None):
   ## Re and Pm have been defined
   if (Re is not None) and (Pm is not None):
-    nu  = round(rms_mach / (k_turb * Re), 5)
+    nu  = round(Mach / (k_turb * Re), 5)
     eta = round(nu / Pm, 5)
-    Rm  = round(rms_mach / (k_turb * eta))
+    Rm  = round(Mach / (k_turb * eta))
   ## Rm and Pm have been defined
   elif (Rm is not None) and (Pm is not None):
-    eta = round(rms_mach / (k_turb * Rm), 5)
+    eta = round(Mach / (k_turb * Rm), 5)
     nu  = round(eta * Pm, 5)
-    Re  = round(rms_mach / (k_turb * nu))
+    Re  = round(Mach / (k_turb * nu))
   ## error
-  else: raise Exception(f"You have not defined the required number of plasma Reynolds numbers: Re = {Re} or Rm = {Rm}, and Pm = {Rm}.")
+  else: raise Exception(f"You have not defined enough plasma Reynolds numbers: Re = {Re}, Rm = {Rm}, and Pm = {Rm}.")
   return Re, Rm, Pm, nu, eta
 
+def getPlasmaNumberFromName(name, name_ref):
+  name_lower = name.lower()
+  name_ref_lower = name_ref.lower()
+  return float(name_lower.replace(name_ref_lower, "")) if name_ref_lower in name_lower else None
+
+
+## ###############################################################
+## OPERATOR CLASS
+## ###############################################################
 class SimParams():
   def __init__(
       self,
-      num_blocks, sim_res, k_turb, rms_mach,
-      Re = None,
-      Rm = None,
-      Pm = None
+      suite_folder, sim_folder, sim_res,
+      num_blocks, k_turb, Mach,
+      Re=None, Rm=None, Pm=None
     ):
-    WWVariables.assertType("num_blocks", num_blocks, list)
-    WWVariables.assertType("sim_res",    sim_res,    int)
-    WWVariables.assertType("k_turb",     k_turb,     (int, float))
-    WWVariables.assertType("rms_mach",   rms_mach,   (int, float))
-    self.num_blocks   = num_blocks
+    WWVariables.assertType("suite_folder", suite_folder, str)
+    WWVariables.assertType("sim_folder",   sim_folder,   str)
+    WWVariables.assertType("sim_res",      sim_res,      int)
+    WWVariables.assertType("num_blocks",   num_blocks,   list)
+    WWVariables.assertType("k_turb",       k_turb,       (int, float))
+    WWVariables.assertType("Mach",         Mach,         (int, float))
+    ## input parameters
+    self.suite_folder = suite_folder
+    self.sim_folder   = sim_folder
     self.sim_res      = sim_res
+    self.num_blocks   = num_blocks
     self.k_turb       = k_turb
-    self.rms_mach     = rms_mach
+    self.Mach         = Mach
+    ## parameters to define
     self.sonic_regime = None
     self.Re           = Re
     self.Rm           = Rm
     self.Pm           = Pm
     self.nu           = None
     self.eta          = None
+    ## perform routines
     self.__defineSonicRegime()
     self.__definePlasmaNumbers()
     self.__checkSimParamsDefined()
 
-  def getSimParams(self):
-    return {
-      "num_blocks"   : self.num_blocks,
-      "sim_res"      : self.sim_res,
-      "k_turb"       : self.k_turb,
-      "sonic_regime" : self.sonic_regime,
-      "Re"           : self.Re,
-      "Rm"           : self.Rm,
-      "Pm"           : self.Pm,
-      "nu"           : self.nu,
-      "eta"          : self.eta
-    }
+  # def saveSimParams(self):
+  #   a = 10
 
   def __defineSonicRegime(self):
-    if self.rms_mach < 1:
+    if self.Mach < 1:
       self.sonic_regime = "sub_sonic"
     else: self.sonic_regime = "super_sonic"
+
+  def __definePlasmaNumbers(self):
+    self.Re, self.Rm, self.Pm, self.nu, self.eta = getPlasmaNumbers(
+      self.Mach,
+      self.k_turb,
+      self.Re,
+      self.Rm,
+      self.Pm
+    )
 
   def __checkSimParamsDefined(self):
     list_param_names = [
       "sonic_regime",
-      "Re",
-      "Rm",
-      "Pm",
-      "nu",
-      "eta"
+      "Re", "Rm", "Pm",
+      "nu", "eta"
     ]
     list_bool_params_defined = [
       self.sonic_regime is None,
@@ -92,10 +103,7 @@ class SimParams():
       if bool_val
     ]
     if len(list_params_not_defined) > 0:
-      raise Exception(f"ERROR: You have not defined the following parameter(s): {list_params_not_defined}")
-
-  def __definePlasmaNumbers(self):
-    self.Re, self.Rm, self.Pm, self.nu, self.eta = getPlasmaParams(self.rms_mach, self.k_turb, self.Re, self.Rm, self.Pm)
+      raise Exception(f"ERROR: You have not defined the following parameter(s):", list_params_not_defined)
 
 
 ## ###############################################################
@@ -114,7 +122,7 @@ def tests():
     num_blocks = [ 36, 36, 48 ],
     sim_res    = 288,
     k_turb     = 2.0,
-    rms_mach   = 5.0,
+    Mach       = 5.0,
     Re         = 1,
     Pm         = 1
   )

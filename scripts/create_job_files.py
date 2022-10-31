@@ -10,6 +10,7 @@ from TheUsefulModule import WWFnF
 from TheJobModule.PrepSimJob import PrepSimJob
 from TheJobModule.CalcSpectraJob import CalcSpectraJob
 from TheJobModule.PlotSpectraJob import PlotSpectraJob
+from TheJobModule.SimParams import SimParams, getPlasmaNumberFromName
 
 
 ## ###############################################################
@@ -44,16 +45,27 @@ def main():
         ## check that the filepath exists
         if not os.path.exists(filepath_sim_res): continue
 
+        obj_sim_params = SimParams(
+          suite_folder = suite_folder,
+          sim_folder   = sim_folder,
+          sim_res      = int(sim_res),
+          num_blocks   = NUM_BLOCKS,
+          k_turb       = K_TURB,
+          Mach         = MACH,
+          Re           = getPlasmaNumberFromName(suite_folder, "Re"),
+          Rm           = getPlasmaNumberFromName(suite_folder, "Rm"),
+          Pm           = getPlasmaNumberFromName(sim_folder,   "Pm")
+        )
+
         ## CREATE JOB FILE TO RUN SIMULATION
         ## ---------------------------------
         if BOOL_PREP_SIM:
-          PrepSimJob(
-            filepath_home = BASEPATH,
-            filepath_sim  = filepath_sim_res,
-            suite_folder  = suite_folder,
-            sim_res       = sim_res,
-            sim_folder    = sim_folder
+          obj_prep_sim = PrepSimJob(
+            filepath_ref   = f"{BASEPATH}/backup_files/",
+            filepath_sim   = filepath_sim_res,
+            obj_sim_params = obj_sim_params
           )
+          obj_prep_sim.fromLowerNres(f"{filepath_sim}/36/")
 
         ## CREATE JOB FILE TO CALCULATE SPECTRA
         ## ------------------------------------
@@ -61,9 +73,7 @@ def main():
           CalcSpectraJob(
             filepath_plt = f"{filepath_sim_res}/plt/",
             suite_folder = suite_folder,
-            sonic_regime = SONIC_REGIME,
-            sim_folder   = sim_folder,
-            sim_res      = sim_res
+            obj_sim_params = obj_sim_params
           )
 
         ## CREATE JOB FILE TO PLOT SPECTRA
@@ -72,9 +82,7 @@ def main():
           PlotSpectraJob(
             filepath_scratch = BASEPATH,
             filepath_sim     = filepath_sim_res,
-            suite_folder     = suite_folder,
-            sim_res          = sim_res,
-            sim_folder       = sim_folder
+            obj_sim_params   = obj_sim_params
           )
 
         ## create an empty line after each suite
@@ -97,8 +105,8 @@ NUM_BLOCKS         = [
   12, 12, 18  # Nres = 36, 72
   # 6,  6,  6   # Nres = 18
 ]
-BOOL_PREP_SIM      = 0
-BOOL_CALC_SPECTRA  = 1
+BOOL_PREP_SIM      = 1
+BOOL_CALC_SPECTRA  = 0
 BOOL_PLOT_SPECTRA  = 0
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]

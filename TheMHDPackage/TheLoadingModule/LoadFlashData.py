@@ -14,7 +14,7 @@ from TheUsefulModule import WWFnF, WWLists
 ## ###############################################################
 ## FUNCTIONS FOR LOADING FLASH DATA
 ## ###############################################################
-def reformatFLASHField(field, num_blocks, num_procs):
+def reformatFlashData(field, num_blocks, num_procs):
   """ reformatField
   PURPOSE:
     This code reformats FLASH (HDF5) simulation data from:
@@ -49,7 +49,7 @@ def reformatFLASHField(field, num_blocks, num_procs):
   return field_sorted
 
 
-def loadFLASHFieldSlice(
+def loadPltFileData_slice(
     filepath_data,
     num_blocks      = [ 36, 36, 48 ],
     num_procs       = [ 8,  8,  6  ],
@@ -68,7 +68,7 @@ def loadFLASHFieldSlice(
       print("--------- All the keys that were used: " + str(names))
     flash_file.close() # close the file stream
     ## reformat data
-    data_sorted = reformatFLASHField(data, num_blocks, num_procs)
+    data_sorted = reformatFlashData(data, num_blocks, num_procs)
     data_slice = data_sorted[ :, :, len(data_sorted[0,0,:])//2 ]
     ## return data normalised by rms value
     if bool_rms_norm:
@@ -91,19 +91,19 @@ def loadListFLASHFieldSlice(
   list_data_mag_sorted = []
   ## filter for datacube files
   flash_filenames = WWFnF.getFilesFromFilepath(
-    filepath           = filepath_data, 
-    filename_contains       = "Turb_hdf5_plt_cnt_",
-    filename_not_contains   = "spect",
-    loc_file_index = -1,
-    file_start_index   = file_start_index,
-    file_end_index     = file_end_index
+    filepath              = filepath_data, 
+    filename_contains     = "Turb_hdf5_plt_cnt_",
+    filename_not_contains = "spect",
+    loc_file_index        = -1,
+    file_start_index      = file_start_index,
+    file_end_index        = file_end_index
   )
   ## loop over each of the datacube file names
   for filename, _ in WWLists.loopListWithUpdates(flash_filenames, bool_hide_updates):
     ## load all datacube files in folder
     list_data_mag_sorted.append(
-      loadFLASHFieldSlice(
-        filepath_data = WWFnF.createFilepath([ filepath_data, filename ]),
+      loadPltFileData_slice(
+        filepath_data = f"{filepath_data}/{filename}",
         num_blocks    = num_blocks,
         num_procs     = num_procs,
         str_field     = str_field,
@@ -121,7 +121,7 @@ def loadListFLASHFieldSlice(
   return list_data_mag_sorted, list_col_range
 
 
-def loadFLASH3DField(
+def loadPltFileData_3D(
     filepath_data,
     num_blocks      = [ 36, 36, 48 ],
     num_procs       = [ 8,  8,  6  ],
@@ -133,35 +133,35 @@ def loadFLASH3DField(
     names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
     data_x, data_y, data_z = np.array([flash_file[i] for i in names])
     if bool_print_info: 
-      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys()))) # print keys
+      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys())))
       print("--------- All the keys that were used: " + str(names))
     flash_file.close() # close the file stream
     ## reformat data
-    data_sorted_x = reformatFLASHField(data_x, num_blocks, num_procs)
-    data_sorted_y = reformatFLASHField(data_y, num_blocks, num_procs)
-    data_sorted_z = reformatFLASHField(data_z, num_blocks, num_procs)
+    data_sorted_x = reformatFlashData(data_x, num_blocks, num_procs)
+    data_sorted_y = reformatFlashData(data_y, num_blocks, num_procs)
+    data_sorted_z = reformatFlashData(data_z, num_blocks, num_procs)
     return data_sorted_x, data_sorted_y, data_sorted_z
 
 
-def loadFLASHFieldDataList(
+def loadAllPlotData_slice(
     filepath_data,
-    start_time = 0,
-    end_time   = np.inf,
-    str_field  = "mag",
-    num_blocks = [36, 36, 48],
-    num_procs  = [8, 8, 6],
+    start_time       = 0,
+    end_time         = np.inf,
+    str_field        = "mag",
+    num_blocks       = [36, 36, 48],
+    num_procs        = [8, 8, 6],
     plots_per_eddy   = 10,
     plot_every_index = 1,
     bool_debug       = False
   ):
   ## get all plt files in the directory
   filenames = WWFnF.getFilesFromFilepath(
-    filepath           = filepath_data,
-    filename_contains       = "Turb_hdf5_plt_cnt_",
-    filename_not_contains   = "spect",
-    loc_file_index = -1,
-    file_start_index   = (start_time * plots_per_eddy),
-    file_end_index     = (end_time * plots_per_eddy)
+    filepath              = filepath_data,
+    filename_contains     = "Turb_hdf5_plt_cnt_",
+    filename_not_contains = "spect",
+    loc_file_index        = -1,
+    file_start_index      = (start_time * plots_per_eddy),
+    file_end_index        = (end_time * plots_per_eddy)
   )
   ## find min and max colorbar limits
   col_min_val = np.nan
@@ -170,13 +170,13 @@ def loadFLASHFieldDataList(
   list_field_mags = []
   list_sim_times  = []
   # plot_file_indices = range(len(filenames))[::plot_every_index]
-  for filename, file_index in WWLists.loopListWithUpdates(filenames):
+  for filename, _ in WWLists.loopListWithUpdates(filenames):
     ## load dataset
-    field_mag = loadFLASHFieldSlice(
-      WWFnF.createFilepath([filepath_data, filename]),
-      num_blocks,
-      num_procs,
-      str_field
+    field_mag = loadPltFileData_slice(
+      filepath_data = f"{filepath_data}/{filename}",
+      num_blocks    = num_blocks,
+      num_procs     = num_procs,
+      str_field     = str_field
     )
     ## check the dimensions of the 2D slice
     if bool_debug:
@@ -184,9 +184,9 @@ def loadFLASHFieldDataList(
       print( len(field_mag[0]) )
     ## append slice of field magnitude
     list_field_mags.append( field_mag[:,:] )
-    ## append the simulation timepoint
+    ## append the simulation time
     list_sim_times.append( float(filename.split("_")[-1]) / plots_per_eddy )
-    ## find min and max value
+    ## find data magnitude bounds
     col_min_val = np.nanmin([
       np.nanmin(field_mag[:,:]),
       col_min_val
@@ -242,7 +242,7 @@ def loadTurbData(
   return data_x[index_start : index_end], data_y[index_start : index_end]
 
 
-def getPlotsPerTturbFromFlashParamFile(
+def getPlotsPerEddy(
     filepath_file,
     num_t_turb        = 100,
     bool_hide_updates = False
@@ -277,7 +277,7 @@ def getPlotsPerTturbFromFlashParamFile(
   return None
 
 
-def loadSpectraDataFromFile(filepath_data, str_spectra_type):
+def loadSpectraData(filepath_data, str_spectra_type):
   with open(filepath_data, "r") as fp:
     data_file = fp.readlines() # load in data
     data      = np.array([x.strip().split() for x in data_file[6:]]) # store all data: [row, col]
@@ -288,7 +288,7 @@ def loadSpectraDataFromFile(filepath_data, str_spectra_type):
         data_y = data_y / 2
       elif "mag" in str_spectra_type:
         data_y = data_y / (8 * np.pi)
-      else: raise Exception(f"You have passed an invalid spectra type {str_spectra_type} to 'LoadFlashData.loadSpectraDataFromFile()'.")
+      else: raise Exception(f"You have passed an invalid spectra type {str_spectra_type} to 'LoadFlashData.loadSpectraData()'.")
       bool_failed_to_read = False
     except:
       bool_failed_to_read = True
@@ -297,7 +297,7 @@ def loadSpectraDataFromFile(filepath_data, str_spectra_type):
     return data_x, data_y, bool_failed_to_read
 
 
-def loadListOfSpectraDataInDirectory(
+def loadAllSpectraData(
     filepath_data, str_spectra_type, plots_per_eddy,
     file_start_time   = 2,
     file_end_time     = np.inf,
@@ -305,24 +305,24 @@ def loadListOfSpectraDataInDirectory(
     bool_hide_updates = False
   ):
   ## initialise list of spectra data
-  k_group_t           = []
-  power_group_t       = []
+  list_k_group_t      = []
+  list_power_group_t  = []
   list_sim_times      = []
   list_failed_to_load = []
   ## filter for spectra data-files
-  spectra_filenames = WWFnF.getFilesFromFilepath(
-    filepath           = filepath_data, 
-    filename_contains       = "hdf5_plt_cnt",
-    filename_endswith       = "spect_" + str_spectra_type + "s.dat",
-    loc_file_index = -3,
-    file_start_index   = plots_per_eddy * file_start_time,
-    file_end_index     = plots_per_eddy * file_end_time
+  list_spectra_filenames = WWFnF.getFilesFromFilepath(
+    filepath          = filepath_data, 
+    filename_contains = "hdf5_plt_cnt",
+    filename_endswith = "spect_" + str_spectra_type + "s.dat",
+    loc_file_index    = -3,
+    file_start_index  = plots_per_eddy * file_start_time,
+    file_end_index    = plots_per_eddy * file_end_time
   )
   ## loop over each of the spectra file names
-  for filename, _ in WWLists.loopListWithUpdates(spectra_filenames[::read_every], bool_hide_updates):
+  for filename, _ in WWLists.loopListWithUpdates(list_spectra_filenames[::read_every], bool_hide_updates):
     ## load data
-    spectra_k, spectra_power, bool_failed_to_read = loadSpectraDataFromFile(
-      filepath_data    = WWFnF.createFilepath([ filepath_data, filename ]),
+    list_k, list_power, bool_failed_to_read = loadSpectraData(
+      filepath_data    = f"{filepath_data}/{filename}",
       str_spectra_type = str_spectra_type
     )
     ## check if the data was read successfully
@@ -330,8 +330,8 @@ def loadListOfSpectraDataInDirectory(
       list_failed_to_load.append(filename)
       continue
     ## store data
-    k_group_t.append(spectra_k)
-    power_group_t.append(spectra_power)
+    list_k_group_t.append(list_k)
+    list_power_group_t.append(list_power)
     list_sim_times.append(
       float(filename.split("_")[-3]) / plots_per_eddy
     )
@@ -341,10 +341,10 @@ def loadListOfSpectraDataInDirectory(
       [" "] + list_failed_to_load
     ))
   ## return spectra data
-  return k_group_t, power_group_t, list_sim_times
+  return list_k_group_t, list_power_group_t, list_sim_times
 
 
-def getPlasmaParamsFromFlashParamFile(filepath_sim, rms_mach, k_turb):
+def getPlasmaNumbers(filepath_sim, rms_Mach, k_turb):
     bool_nu_found  = False
     bool_eta_found = False
     ## search through flash.par file for parameters
@@ -369,8 +369,8 @@ def getPlasmaParamsFromFlashParamFile(filepath_sim, rms_mach, k_turb):
     if bool_nu_found and bool_eta_found:
       nu  = nu
       eta = eta
-      Re  = int(rms_mach / (k_turb * nu))
-      Rm  = int(rms_mach / (k_turb * eta))
+      Re  = int(rms_Mach / (k_turb * nu))
+      Rm  = int(rms_Mach / (k_turb * eta))
       Pm  = int(nu / eta)
       print(f"\t> Re = {Re}, Rm = {Rm}, Pm = {Pm}, nu = {nu:0.2e}, eta = {eta:0.2e},")
       return {

@@ -46,7 +46,7 @@ class PlotTurbData():
     self.Gamma          = None
     self.E_sat_ratio    = None
     self.bool_fitted    = False
-    ## perform routine
+    ## perform routines
     print("Loading volume integrated data...")
     self.__loadData()
     self.__plotMach()
