@@ -80,7 +80,7 @@ def fitMagSpectra(ax, data_k, data_power):
 BASEPATH = "/scratch/ek9/nk7952/"
 K_TURB   = 2.0
 MACH     = 5.0
-T_TURB   = 1 / (K_TURB * MACH) # ell_turb / (Mach * c_s)
+T_TURB   = 1 / (K_TURB * MACH)
 
 
 ## ###############################################################

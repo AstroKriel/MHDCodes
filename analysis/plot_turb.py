@@ -246,11 +246,11 @@ def plotSimData(filepath_data, filepath_vis, sim_name):
   ## -----------
   ## save the figure
   print("Saving figure...")
-  fig_name = f"{sim_name}_time_evolution.png"
-  fig_filepath = WWFnF.createFilepath([ filepath_vis, fig_name ])
+  fig_name     = f"{sim_name}_time_evolution.png"
+  fig_filepath = f"{filepath_vis}/{fig_name}"
   plt.savefig(fig_filepath)
   plt.close()
-  print("Figure saved:", fig_name)
+  print("Figure saved:", fig_filepath)
 
 
 ## ###############################################################
@@ -311,11 +311,11 @@ SONIC_REGIME      = "super_sonic"
 FILENAME_TURB     = "Turb.dat"
 K_TURB            = 2.0
 RMS_MACH          = 5.0
-T_TURB            = 1 / (K_TURB * RMS_MACH) # ell_turb / (Mach * c_s)
+T_TURB            = 1 / (K_TURB * RMS_MACH)
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES      = [ "18", "36", "72" ]
-# LIST_SIM_RES      = [ "144", "288", "576" ]
+# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+LIST_SIM_RES      = [ "72" ]
 
 
 ## ###############################################################

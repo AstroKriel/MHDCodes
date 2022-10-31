@@ -50,8 +50,8 @@ def main():
           print(f"\t> {JOB_NAME} does not exist in:\n\t", filepath_sim_res)
           continue
         ## indicate which folder is being worked on
-        print(f"Looking at: {filepath_sim_res}")
-        print("\t> Submitting job:", JOB_NAME)
+        print("Looking at:", filepath_sim_res)
+        print("Submitting job:", JOB_NAME)
         p = subprocess.Popen([ "qsub", JOB_NAME ], cwd=filepath_sim_res)
         p.wait()
 
@@ -66,11 +66,12 @@ def main():
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
-DATA_SUBFOLDER    = "plt"
 JOB_NAME          = "job_calc_spect.sh"
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 LIST_SIM_RES      = [ "72" ]
+DATA_SUBFOLDER    = "plt"
 
 
 ## ###############################################################

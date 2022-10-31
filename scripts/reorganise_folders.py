@@ -18,9 +18,9 @@ def removeFiles(filepath_files, file_name_starts_with):
     filename_startswith = file_name_starts_with
   )
   if len(list_files_in_filepath) > 0:
-    os.system(f"rm {filepath_files}/{file_name_starts_with}*")
-    print(f"\t> Removed {len(list_files_in_filepath)} '{file_name_starts_with}*' files.")
-  else: print(f"\t> There are no '{file_name_starts_with}*' files in:\n\t", filepath_files)
+    os.system(f"rm {filepath_files}/{file_name_starts_with}_*")
+    print(f"\t> Removed {len(list_files_in_filepath)} '{file_name_starts_with}_*' files.")
+  else: print(f"\t> There are no '{file_name_starts_with}_*' files in:\n\t", filepath_files)
   print(" ")
 
 def moveFiles(
@@ -35,9 +35,9 @@ def moveFiles(
     filename_not_contains = filename_not_contains
   )
   if len(list_files_in_filepath) > 0:
-    os.system(f"mv {filepath_files_from}/*{filename_contains}* {filepath_files_to}/.")
-    print(f"\t> Moved {len(list_files_in_filepath)} '*{filename_contains}*' files to:\n\t", filepath_files_to)
-  else: print(f"\t> There are no '*{filename_contains}*' files in:\n\t", filepath_files_from)
+    os.system(f"mv {filepath_files_from}/*_{filename_contains}* {filepath_files_to}/.")
+    print(f"\t> Moved {len(list_files_in_filepath)} '*_{filename_contains}*' files to:\n\t", filepath_files_to)
+  else: print(f"\t> There are no '*_{filename_contains}*' files in:\n\t", filepath_files_from)
   print(" ")
 
 def countFiles(
@@ -51,7 +51,7 @@ def countFiles(
     filename_contains     = filename_contains,
     filename_not_contains = filename_not_contains
   )
-  print(f"\t> There are {len(list_files_in_filepath)} '*{filename_contains}*' files in:\n\t", filepath_files)
+  print(f"\t> There are {len(list_files_in_filepath)} '*_{filename_contains}*' files in:\n\t", filepath_files)
   print(" ")
 
 
@@ -72,7 +72,7 @@ class ReorganiseSimFolder():
     removeFiles(self.filepath_sim, "Turb_slice")
     ## count number of chk-files
     list_chk_files = WWFnF.getFilesFromFilepath(
-      filepath       = self.filepath_sim,
+      filepath            = self.filepath_sim,
       filename_startswith = "Turb_hdf5_chk_"
     )
     ## if there are many chk-files

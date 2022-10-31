@@ -72,7 +72,6 @@ def main():
         if BOOL_CALC_SPECTRA:
           CalcSpectraJob(
             filepath_plt = f"{filepath_sim_res}/plt/",
-            suite_folder = suite_folder,
             obj_sim_params = obj_sim_params
           )
 
@@ -105,13 +104,13 @@ NUM_BLOCKS         = [
   12, 12, 18  # Nres = 36, 72
   # 6,  6,  6   # Nres = 18
 ]
-BOOL_PREP_SIM      = 1
-BOOL_CALC_SPECTRA  = 0
+BOOL_PREP_SIM      = 0
+BOOL_CALC_SPECTRA  = 1
 BOOL_PLOT_SPECTRA  = 0
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES      = [ "72" ]
 # LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+LIST_SIM_RES      = [ "72" ]
 
 
 ## ###############################################################

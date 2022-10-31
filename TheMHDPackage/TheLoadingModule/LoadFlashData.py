@@ -50,10 +50,7 @@ def reformatFlashData(field, num_blocks, num_procs):
 
 
 def loadPltFileData_slice(
-    filepath_data,
-    num_blocks      = [ 36, 36, 48 ],
-    num_procs       = [ 8,  8,  6  ],
-    str_field       = "mag",
+    filepath_data, num_blocks, num_procs, str_field,
     bool_rms_norm   = False,
     bool_print_info = False
   ):
@@ -212,7 +209,7 @@ def loadTurbData(
   ## initialise quantity to track data traversal
   prev_time = np.inf
   ## read data backwards
-  filepath_file = WWFnF.createFilepath([ filepath_data, "Turb.dat" ])
+  filepath_file = f"{filepath_data}/Turb.dat"
   with open(filepath_file, "r") as fp:
     num_data_columns = len(fp.readline().split())
     for line in reversed(fp.readlines()):

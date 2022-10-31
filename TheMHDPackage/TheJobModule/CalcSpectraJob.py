@@ -3,8 +3,7 @@ from TheJobModule.SimParams import SimParams
 class CalcSpectraJob():
   def __init__(
       self,
-      filepath_plt,
-      obj_sim_params : SimParams
+      filepath_plt, obj_sim_params : SimParams
     ):
     self.filepath_plt = filepath_plt
     self.max_hours    = int(8)

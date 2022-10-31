@@ -58,7 +58,6 @@ def makeFilter(
     else: return False
   return meetsCondition
 
-
 def getFilesFromFilepath(
     filepath, 
     filename_contains       = None,
@@ -80,7 +79,6 @@ def getFilesFromFilepath(
   )
   return list(filter(myFilter, sorted(os.listdir(filepath))))
 
-
 def readLineFromFile(filepath, des_str, bool_case_sensitive=True):
   for line in open(filepath).readlines():
     if bool_case_sensitive:
@@ -91,7 +89,6 @@ def readLineFromFile(filepath, des_str, bool_case_sensitive=True):
         return line
   return None
 
-
 def createFolder(filepath, bool_hide_updates=False):
   if not(os.path.exists(filepath)):
     os.makedirs(filepath)
@@ -100,27 +97,26 @@ def createFolder(filepath, bool_hide_updates=False):
   elif not(bool_hide_updates):
     print("Warning: Folder already exists:\n\t" + filepath + "\n")
 
-
 def createFilepath(list_filepath_folders):
   return re.sub( '/+', '/', "/".join([
     folder for folder in list_filepath_folders if not(folder == "")
   ]) )
-
 
 def createName(list_name_elems):
   return re.sub( '_+', '_', "_".join([
     elems for elems in list_name_elems if not(elems == "")
   ]) )
 
-
 def copyFileFromNTo(directory_from, directory_to, filename):
-  shutil.copy( # copy the file and it's permissions (i.e. executable)
+  ## copy the file and it's permissions
+  shutil.copy(
     f"{directory_from}/{filename}",
     f"{directory_to}/{filename}"
   )
-  print(f"\t> Successfully coppied: {filename}")
-  print(f"\t\t From: {directory_from}")
-  print(f"\t\t To: {directory_to}")
+  print(f"> Coppied:")
+  print(f"\t File: {filename}")
+  print(f"\t From: {directory_from}")
+  print(f"\t To:   {directory_to}")
 
 
 ## END OF LIBRARY

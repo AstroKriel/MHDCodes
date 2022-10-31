@@ -17,12 +17,92 @@ os.system("clear")  # clear terminal window
 
 
 ## ###############################################################
-## PROCESSING FUNCTION
+## HELPER FUNCTION
 ## ###############################################################
-def processPltFile(filenames, num_proc):
-  for file_name in filenames:
-    print(f"--------- Looking at: {file_name} -----------------------------------")
-    os.system(f"mpirun -np {num_proc} spectra_mpi {file_name} -vels_spect -mags_spect")
+def processAllPltFiles(list_filenames_plt, num_proc):
+  for filename_plt in list_filenames_plt:
+    print(f"--------- Looking at: {filename_plt} -----------------------------------")
+    os.system(f"mpirun -np {num_proc} spectra_mpi {filename_plt} -vels_spect -mags_spect")
+    print(" ")
+
+
+## ###############################################################
+## OPERATOR CLASS
+## ###############################################################
+class CalcSpectraFiles():
+  def __init__(
+      self,
+      filepath_data, num_proc, file_start, file_end
+    ):
+    self.filepath_data = filepath_data
+    self.num_proc      = num_proc
+    self.file_start    = file_start
+    self.file_end      = file_end
+    ## perform routines
+    self.__processFiles()
+    self.__checkAllFilesProcessed()
+    self.__reprocessFiles()
+    print("Finished running the spectra code")
+
+  def __processFiles(self):
+    ## loop over and compute spectra for plt-files in the data directory
+    self.list_filenames_plt = WWFnF.getFilesFromFilepath(
+      filepath              = self.filepath_data,
+      filename_contains     = "plt",
+      filename_not_contains = "spect",
+      loc_file_index        = -1,
+      file_start_index      = self.file_start,
+      file_end_index        = self.file_end
+    )
+    print(f"There are {len(self.list_filenames_plt)} files to process")
+    if len(self.list_filenames_plt) > 0:
+      print("\t> " + "\n\t> ".join(self.list_filenames_plt))
+      print(" ")
+      print("Processing plt-files...")
+      processAllPltFiles(self.list_filenames_plt, self.num_proc)
+
+  def __checkAllFilesProcessed(self):
+    ## check all spectra files have been successfully computed
+    list_filenames_spect_mag = WWFnF.getFilesFromFilepath(
+      filepath          = self.filepath_data,
+      filename_contains = "plt",
+      filename_endswith = "spect_mags.dat",
+      loc_file_index    = -3,
+      file_start_index  = self.file_start,
+      file_end_index    = self.file_end
+    )
+    list_filenames_spect_vel = WWFnF.getFilesFromFilepath(
+      filepath          = self.filepath_data,
+      filename_contains = "plt",
+      filename_endswith = "spect_vels.dat",
+      loc_file_index    = -3,
+      file_start_index  = self.file_start,
+      file_end_index    = self.file_end
+    )
+    ## initialise list of files to (re)process
+    self.list_filenames_to_redo = []
+    ## check if there are any files that were not been processed
+    for filename_plt in self.list_filenames_plt:
+      bool_mags_exists = False
+      bool_vels_exists = False
+      if f"{filename_plt}_spect_mags.dat" in list_filenames_spect_mag:
+        bool_mags_exists = True
+      if f"{filename_plt}_spect_vels.dat" in list_filenames_spect_vel:
+        bool_vels_exists = True
+      ## (re)process plt-file if either spectra files are missing
+      if not(bool_mags_exists) or not(bool_vels_exists):
+        self.list_filenames_to_redo.append(filename_plt)
+
+  def __reprocessFiles(self):
+    ## if there are any plt-files to (re)process
+    if len(self.list_filenames_to_redo) > 0:
+      print(f"There are {len(self.list_filenames_to_redo)} plt-files to (re)process:")
+      print("\t" + "\n\t> ".join(self.list_filenames_to_redo)) # print file names
+      print(" ")
+      ## loop over processes plt-files
+      print("(Re)processing plt-files...")
+      processAllPltFiles(self.list_filenames_to_redo, self.num_proc)
+    else: print("There are no more plt-files to process.")
     print(" ")
 
 
@@ -37,96 +117,30 @@ def main():
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
   args_opt = parser.add_argument_group(description="Optional processing arguments:")
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
-  args_opt.add_argument("-check_only", **WWArgparse.opt_bool_arg)
   args_opt.add_argument("-file_start", **WWArgparse.opt_arg, type=int, default=0)
   args_opt.add_argument("-file_end",   **WWArgparse.opt_arg, type=int, default=np.inf)
-  args_opt.add_argument("-num_proc",   **WWArgparse.opt_arg, type=str, default="8")
+  args_opt.add_argument("-num_proc",   **WWArgparse.opt_arg, type=int, default=8)
   ## ------------------- DEFINE REQUIRED ARGUMENTS
   args_req = parser.add_argument_group(description="Required processing arguments:")
   args_req.add_argument("-data_path",  type=str, required=True, help="type: %(type)s")
   ## ---------------------------- OPEN ARGUMENTS
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
-  directory_data  = args["data_path"]  # directory where data is stored
-  bool_check_only = args["check_only"] # only check for and process unprocessed (plt) spectra files
-  file_start      = args["file_start"] # first file to process
-  file_end        = args["file_end"]   # last file to process
-  num_proc        = args["num_proc"]   # number of processors
+  filepath_data = args["data_path"]
+  file_start    = args["file_start"]
+  file_end      = args["file_end"]
+  num_proc      = args["num_proc"]
   ## ---------------------------- START CODE
-  print("Began running the spectra code in folder: " + directory_data)
+  print("Began running the spectra code in folder: " + filepath_data)
   print("First file index to process: "              + str(file_start))
   print("Last file index to process: "               + str(file_end))
   print("Number of processors: "                     + str(num_proc))
   print(" ")
 
-  ## #########################
-  ## PROCESS ALL THE PLT FILES
-  ## #########################
-  # loop over the data directory and compute spectra files
-  list_filenames = WWFnF.getFilesFromFilepath(
-    filepath           = directory_data,
-    filename_contains       = "Turb_hdf5_plt_cnt_",
-    filename_not_contains   = "spect",
-    loc_file_index = -1,
-    file_start_index   = file_start,
-    file_end_index     = file_end
-  )
-  if not(bool_check_only):
-    print("There are {} files to process.".format( len(list_filenames) ))
-    if len(list_filenames) > 0:
-      print("These files are:")
-      print("\t> " + "\n\t> ".join(list_filenames))
-      print(" ")
-    ## loop over and process file names
-      processPltFile(list_filenames, num_proc)
-
-  ## ########################################
-  ## CHECK WHICH PLT FILES WERE NOT PROCESSED
-  ## ########################################
-  ## now check which spectra files have successfully been computed
-  list_filenames_spect_mag = WWFnF.getFilesFromFilepath(
-    filepath           = directory_data,
-    filename_contains       = "Turb_hdf5_plt_cnt_",
-    filename_endswith       = "spect_mags.dat",
-    loc_file_index = -3,
-    file_start_index   = file_start,
-    file_end_index     = file_end
-  )
-  list_filenames_spect_vel = WWFnF.getFilesFromFilepath(
-    filepath           = directory_data,
-    filename_contains       = "Turb_hdf5_plt_cnt_",
-    filename_endswith       = "spect_vels.dat",
-    loc_file_index = -3,
-    file_start_index   = file_start,
-    file_end_index     = file_end
-  )
-  ## initialise list of files to (re)process
-  list_filenames_redo = []
-  ## check if there are any files that were not been processed
-  for file_name in list_filenames:
-    ## for each plt file
-    bool_mags_exists = False
-    bool_vels_exists = False
-    ## do not (re)process the plt file if both the velocity and magnetic spectra files have already been processed
-    if (file_name + "_spect_mags.dat") in list_filenames_spect_mag:
-      bool_mags_exists = True
-    if (file_name + "_spect_vels.dat") in list_filenames_spect_vel:
-      bool_vels_exists = True
-    ## (re)process the plt file if either the magnetic or velocity spectra files are missing
-    if not(bool_mags_exists) or not(bool_vels_exists):
-      list_filenames_redo.append(file_name)
-  ## if there are any plt files to (re)process
-  if len(list_filenames_redo) > 0:
-    print("There are {} plt files to (re)process.".format( len(list_filenames_redo) ))
-    print("These files are:")
-    print("\t" + "\n\t".join(list_filenames_redo)) # print file names
-    print(" ")
-    ## loop over plt file names and processes them
-    print("Processing these plt files again...")
-    processPltFile(list_filenames_redo, num_proc)
-  else: print("There are no more plt files to process.")
-  print(" ")
-  print("Finished running the spectra code.")
+  ## #################
+  ## CALCULATE SPECTRA
+  ## #################
+  CalcSpectraFiles(filepath_data, num_proc, file_start, file_end)
 
 
 ## ###############################################################

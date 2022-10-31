@@ -102,7 +102,9 @@ class PrepSimJob():
       job_file.write(". ~/modules_flash\n")
       job_file.write(f"mpirun ./{self.filename_flash_exe} 1>shell_sim.out00 2>&1\n")
     ## indicate progress
-    print(f"\t> Created job '{job_name}' to run a FLASH simulation in:\n\t", self.filepath_sim)
+    print(f"> Created job:")
+    print(f"\t> File: {job_name}")
+    print(f"\t> In:   {self.filepath_sim}")
 
   def __modifyFlashParamFile(self, filepath_ref):
     bool_switched_nu     = False
@@ -135,66 +137,73 @@ class PrepSimJob():
           if len(list_ref_line_elems) == 0:
             new_file.write("\n")
             continue
-          ## define viscosity is turned on
-          elif list_ref_line_elems[0] == "useViscosity":
-            new_file.write("useViscosity = .true.\n")
+          ## extract parameter name
+          param_name = list_ref_line_elems[0]
+          ## turn viscosity on
+          if param_name == "useViscosity":
             bool_switched_nu = True
-          ## define 'nu'
-          elif list_ref_line_elems[0] == "diff_visc_nu":
+            new_file.write("useViscosity = .true.\n")
+          ## define nu
+          elif param_name == "diff_visc_nu":
+            bool_defined_nu = True
             new_file.write("diff_visc_nu = {} # implies Re = {}\n".format(
               self.obj_sim_params.nu,
               self.obj_sim_params.Re
             ))
-            bool_defined_nu = True
-          ## define resistivity is turned on
-          elif list_ref_line_elems[0] == "useMagneticResistivity":
-            new_file.write("useMagneticResistivity = .true.\n")
+          ## turn resistivity on
+          elif param_name == "useMagneticResistivity":
             bool_switched_eta = True
-          ## define 'eta'
-          elif list_ref_line_elems[0] == "resistivity":
+            new_file.write("useMagneticResistivity = .true.\n")
+          ## define eta
+          elif param_name == "resistivity":
+            bool_defined_eta = True
             new_file.write("resistivity = {} # implies Rm = {} and Pm = {}\n".format(
               self.obj_sim_params.eta,
               self.obj_sim_params.Rm,
               self.obj_sim_params.Pm
             ))
-            bool_defined_eta = True
-          ## define wall clock timelimit
-          elif list_ref_line_elems[0] == "wall_clock_time_limit":
+          ## define wall clock limit
+          elif param_name == "wall_clock_time_limit":
+            bool_defined_runtime = True
             new_file.write("wall_clock_time_limit = {} # closes sim and saves state\n".format(
               self.max_hours * 60 * 60 - 1000 # [seconds]
             ))
-            bool_defined_runtime = True
-          elif list_ref_line_elems[0] == "checkpointFileIntervalTime":
-            new_file.write(f"checkpointFileIntervalTime = {self.t_turb} # 1 t_turb\n")
+          ## define chk-file interval [t_sim]
+          elif param_name == "checkpointFileIntervalTime":
             bool_defined_chk = True
-          elif list_ref_line_elems[0] == "plotFileIntervalTime":
-            new_file.write(f"plotFileIntervalTime = {self.t_turb / 10} # 0.1 t_turb\n")
+            new_file.write(f"checkpointFileIntervalTime = {self.t_turb} # 1 t_turb\n")
+          ## define plt-file interval [t_sim]
+          elif param_name == "plotFileIntervalTime":
             bool_defined_plt = True
-          elif list_ref_line_elems[0] == "tmax":
-            new_file.write(f"tmax = {100 * self.t_turb} # 100 t_turb\n")
+            new_file.write(f"plotFileIntervalTime = {self.t_turb / 10} # 0.1 t_turb\n")
+          ## define t_max [t_sim]
+          elif param_name == "tmax":
             bool_defined_tmax = True
-          ## define 'iProcs'
-          elif list_ref_line_elems[0] == "iProcs":
-            new_file.write(f"iProcs = {self.iprocs}\n")
+            new_file.write(f"tmax = {100 * self.t_turb} # 100 t_turb\n")
+          ## define number of procs in i-direction
+          elif param_name == "iProcs":
             bool_defined_iproc = True
-          ## define 'jProcs'
-          elif list_ref_line_elems[0] == "jProcs":
-            new_file.write(f"jProcs = {self.jprocs}\n")
+            new_file.write(f"iProcs = {self.iprocs}\n")
+          ## define number of procs in j-direction
+          elif param_name == "jProcs":
             bool_defined_jproc = True
-          ## define 'kProcs'
-          elif list_ref_line_elems[0] == "kProcs":
-            new_file.write(f"kProcs = {self.kprocs}\n")
+            new_file.write(f"jProcs = {self.jprocs}\n")
+          ## define number of procs in k-direction
+          elif param_name == "kProcs":
             bool_defined_kproc = True
-          ## reset 'restart'
-          elif list_ref_line_elems[0] == "restart":
-            new_file.write("restart = .false.\n")
+            new_file.write(f"kProcs = {self.kprocs}\n")
+          ## reset restart flag
+          elif param_name == "restart":
             bool_no_restart = True
-          elif list_ref_line_elems[0] == "checkpointFileNumber":
-            new_file.write("checkpointFileNumber = 0\n")
+            new_file.write("restart = .false.\n")
+          ## define chk-file number
+          elif param_name == "checkpointFileNumber":
             bool_reset_chk_num = True
-          elif list_ref_line_elems[0] == "plotFileNumber":
-            new_file.write("plotFileNumber = 0\n")
+            new_file.write("checkpointFileNumber = 0\n")
+          ## define plt-file number
+          elif param_name == "plotFileNumber":
             bool_reset_plt_num = True
+            new_file.write("plotFileNumber = 0\n")
           ## write other line contents
           else: new_file.write(ref_line_elems)
     ## check that all parameters have been defined
@@ -215,7 +224,7 @@ class PrepSimJob():
       bool_reset_plt_num
     ]
     if not (False in list_bool):
-      print("\t> Successfully modified 'flash.par'")
+      print("> Successfully modified 'flash.par'")
     else: raise Exception("ERROR: 'flash.par' failed to write:", list_bool)
 
 ## END OF LIBRARY
