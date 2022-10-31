@@ -3,10 +3,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import sys
-import argparse
-import numpy as np
+import os, sys
 import matplotlib.pyplot as plt
 
 
@@ -21,8 +18,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-    ## something
-    doStuff = None
+    a = 10
 
 
 ## ###############################################################
