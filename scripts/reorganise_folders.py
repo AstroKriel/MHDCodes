@@ -3,9 +3,9 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import sys
+import os, sys
 
+## load user defined modules
 from TheUsefulModule import WWFnF
 
 

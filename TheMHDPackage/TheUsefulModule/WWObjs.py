@@ -8,12 +8,12 @@ import os
 import json
 import numpy as np
 
-## relative import of 'createFilepath'
-from TheUsefulModule import WWFnF
-
 ## always import the c-version of pickle
 try: import cPickle as pickle
 except ModuleNotFoundError: import pickle
+
+## load user defined modules
+from TheUsefulModule import WWFnF
 
 
 ## ###############################################################

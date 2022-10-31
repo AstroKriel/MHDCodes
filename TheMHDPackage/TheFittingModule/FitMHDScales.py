@@ -13,7 +13,7 @@ from scipy.signal import argrelextrema
 from scipy.special import k0, k1
 from scipy.optimize import curve_fit, fsolve
 
-## user-defined modules
+## load user defined modules
 from TheUsefulModule import WWLists
 
 

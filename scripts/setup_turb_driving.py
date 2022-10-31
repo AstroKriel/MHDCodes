@@ -3,11 +3,11 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys
-import subprocess
+import os, sys, subprocess
 
 from datetime import datetime
 
+## load user defined modules
 from TheUsefulModule import WWFnF
 
 
