@@ -10,7 +10,7 @@ from TheUsefulModule import WWVariables
 ## ###############################################################
 ## HELPER FUNCTION: CALCULATE SIMULATION PARAMETERS
 ## ###############################################################
-def getPlasmaNumbers(Mach, k_turb, Re=None, Rm=None, Pm=None):
+def getPlasmaNumbers_fromInputs(Mach, k_turb, Re=None, Rm=None, Pm=None):
   ## Re and Pm have been defined
   if (Re is not None) and (Pm is not None):
     nu  = round(Mach / (k_turb * Re), 5)
@@ -75,7 +75,7 @@ class SimParams():
     else: self.sonic_regime = "super_sonic"
 
   def __definePlasmaNumbers(self):
-    self.Re, self.Rm, self.Pm, self.nu, self.eta = getPlasmaNumbers(
+    self.Re, self.Rm, self.Pm, self.nu, self.eta = getPlasmaNumbers_fromInputs(
       self.Mach,
       self.k_turb,
       self.Re,

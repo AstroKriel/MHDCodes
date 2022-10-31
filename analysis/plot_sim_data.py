@@ -25,7 +25,7 @@ from ThePlottingModule import PlotFuncs
 from TheUsefulModule import WWLists, WWFnF, WWObjs
 from TheLoadingModule import LoadFlashData
 from TheFittingModule import FitMHDScales
-from TheJobModule.SimParams import getPlasmaNumbers
+from TheJobModule.SimParams import getPlasmaNumbers_fromInputs
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -169,7 +169,7 @@ class PlotSpectra():
 
   def __loadData(self):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    plots_per_eddy = LoadFlashData.getPlotsPerEddy(f"{self.filepath_data}/../", bool_hide_updates=True)
+    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(f"{self.filepath_data}/../", bool_hide_updates=True)
     if plots_per_eddy is None:
       Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
     ## load kinetic energy spectra
@@ -413,7 +413,7 @@ def plotSimData(
   ## ANNOTATE SIMULATION PARAMETERS
   ## ------------------------------
   ## annotate plasma parameters
-  Re, Rm, Pm, _, _ = getPlasmaNumbers(RMS_MACH, K_TURB, Re, Rm, Pm)
+  Re, Rm, Pm, _, _ = getPlasmaNumbers_fromInputs(RMS_MACH, K_TURB, Re, Rm, Pm)
   PlotFuncs.plotBoxOfLabels(
     fig, ax_Mach,
     box_alignment   = (1.0, 0.0),

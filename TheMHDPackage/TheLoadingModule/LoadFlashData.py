@@ -49,7 +49,29 @@ def reformatFlashData(field, num_blocks, num_procs):
   return field_sorted
 
 
-def loadPltFileData_slice(
+def loadPltData_3D(
+    filepath_data,
+    num_blocks      = [ 36, 36, 48 ],
+    num_procs       = [ 8,  8,  6  ],
+    str_field       = "mag",
+    bool_print_info = False
+  ):
+  ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
+  with h5py.File(filepath_data, "r") as flash_file:
+    names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
+    data_x, data_y, data_z = np.array([flash_file[i] for i in names])
+    if bool_print_info: 
+      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys())))
+      print("--------- All the keys that were used: " + str(names))
+    flash_file.close() # close the file stream
+    ## reformat data
+    data_sorted_x = reformatFlashData(data_x, num_blocks, num_procs)
+    data_sorted_y = reformatFlashData(data_y, num_blocks, num_procs)
+    data_sorted_z = reformatFlashData(data_z, num_blocks, num_procs)
+    return data_sorted_x, data_sorted_y, data_sorted_z
+
+
+def loadPltData_slice(
     filepath_data, num_blocks, num_procs, str_field,
     bool_rms_norm   = False,
     bool_print_info = False
@@ -74,73 +96,7 @@ def loadPltFileData_slice(
     else: return data_slice
 
 
-def loadListFLASHFieldSlice(
-    filepath_data,
-    file_start_index  = 2,
-    file_end_index    = np.inf,
-    num_blocks        = [ 36, 36, 48 ],
-    num_procs         = [ 8,  8,  6  ],
-    str_field         = "mag",
-    bool_rms_norm     = False,
-    bool_hide_updates = False
-  ):
-  ## initialise list of cube data
-  list_data_mag_sorted = []
-  ## filter for datacube files
-  flash_filenames = WWFnF.getFilesFromFilepath(
-    filepath              = filepath_data, 
-    filename_contains     = "Turb_hdf5_plt_cnt_",
-    filename_not_contains = "spect",
-    loc_file_index        = -1,
-    file_start_index      = file_start_index,
-    file_end_index        = file_end_index
-  )
-  ## loop over each of the datacube file names
-  for filename, _ in WWLists.loopListWithUpdates(flash_filenames, bool_hide_updates):
-    ## load all datacube files in folder
-    list_data_mag_sorted.append(
-      loadPltFileData_slice(
-        filepath_data = f"{filepath_data}/{filename}",
-        num_blocks    = num_blocks,
-        num_procs     = num_procs,
-        str_field     = str_field,
-        bool_rms_norm = bool_rms_norm
-      )
-    )
-  if not len(list_data_mag_sorted) > 0:
-    Exception("Could not load any data in:", filepath_data)
-  ## get bounds of data for colorbar limits
-  list_col_range = [
-    np.min(list_data_mag_sorted),
-    np.max(list_data_mag_sorted)
-  ]
-  ## return data
-  return list_data_mag_sorted, list_col_range
-
-
-def loadPltFileData_3D(
-    filepath_data,
-    num_blocks      = [ 36, 36, 48 ],
-    num_procs       = [ 8,  8,  6  ],
-    str_field       = "mag",
-    bool_print_info = False
-  ):
-  ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
-  with h5py.File(filepath_data, "r") as flash_file:
-    names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
-    data_x, data_y, data_z = np.array([flash_file[i] for i in names])
-    if bool_print_info: 
-      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys())))
-      print("--------- All the keys that were used: " + str(names))
-    flash_file.close() # close the file stream
-    ## reformat data
-    data_sorted_x = reformatFlashData(data_x, num_blocks, num_procs)
-    data_sorted_y = reformatFlashData(data_y, num_blocks, num_procs)
-    data_sorted_z = reformatFlashData(data_z, num_blocks, num_procs)
-    return data_sorted_x, data_sorted_y, data_sorted_z
-
-
-def loadAllPlotData_slice(
+def loadAllPltData_slice(
     filepath_data,
     start_time       = 0,
     end_time         = np.inf,
@@ -169,7 +125,7 @@ def loadAllPlotData_slice(
   # plot_file_indices = range(len(filenames))[::plot_every_index]
   for filename, _ in WWLists.loopListWithUpdates(filenames):
     ## load dataset
-    field_mag = loadPltFileData_slice(
+    field_mag = loadPltData_slice(
       filepath_data = f"{filepath_data}/{filename}",
       num_blocks    = num_blocks,
       num_procs     = num_procs,
@@ -250,7 +206,7 @@ def loadSpectraData(filepath_data, str_spectra_type):
         data_y = data_y / 2
       elif "mag" in str_spectra_type:
         data_y = data_y / (8 * np.pi)
-      else: raise Exception(f"You have passed an invalid spectra type {str_spectra_type} to 'LoadFlashData.loadSpectraData()'.")
+      else: raise Exception(f"You have passed an invalid spectra type '{str_spectra_type}'.")
       bool_failed_to_read = False
     except:
       bool_failed_to_read = True
@@ -306,7 +262,7 @@ def loadAllSpectraData(
   return list_k_group_t, list_power_group_t, list_sim_times
 
 
-def getPlotsPerEddy(
+def getPlotsPerEddy_fromTurbLog(
     filepath_file,
     num_t_turb        = 100,
     bool_hide_updates = False
@@ -341,7 +297,7 @@ def getPlotsPerEddy(
   return None
 
 
-def getPlasmaNumbers(filepath_sim, rms_Mach, k_turb):
+def getPlasmaNumbers_fromFlashPar(filepath_sim, rms_Mach, k_turb):
     bool_nu_found  = False
     bool_eta_found = False
     ## search through flash.par file for parameters

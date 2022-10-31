@@ -71,7 +71,7 @@ class SpectraObject():
       bool_hide_updates        = False
     ):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    plots_per_eddy = LoadFlashData.getPlotsPerEddy(self.filepath_data + "/../", bool_hide_updates=False)
+    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(self.filepath_data + "/../", bool_hide_updates=False)
     if plots_per_eddy is None:
       Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
     ## load kinetic energy spectra

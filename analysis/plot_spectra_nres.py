@@ -7,7 +7,7 @@ from TheLoadingModule import LoadFlashData
 
 ## HELPER FUNCTION
 def getAveNormKinSpectra(filepath_data, ax=None, color="k"):
-  plots_per_eddy = LoadFlashData.getPlotsPerEddy(
+  plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(
     f"{filepath_data}/../",
     bool_hide_updates=True
   )
