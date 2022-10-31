@@ -4,12 +4,10 @@
 ## MODULES
 ## ###############################################################
 import os, sys, subprocess
-
 from datetime import datetime
 
 ## load user defined modules
 from TheUsefulModule import WWFnF
-
 
 
 class TuneForceGenInput():
@@ -19,7 +17,6 @@ class TuneForceGenInput():
     a = 10
   def editForceGen(self):
     a = 10
-
 
 
 ## ###############################################################
