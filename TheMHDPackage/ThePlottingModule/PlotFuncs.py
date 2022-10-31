@@ -19,6 +19,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.offsetbox import TextArea, VPacker, AnnotationBbox
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+## load user defined modules
 from TheUsefulModule import WWFnF
 from ThePlottingModule import TheMatplotlibStyler
 

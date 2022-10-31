@@ -3,10 +3,9 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys
-import subprocess
+import os, sys, subprocess
 
-## load old user defined modules
+## load user defined modules
 from TheUsefulModule import WWFnF
 
 

@@ -5,7 +5,7 @@
 ## ###############################################################
 import os, sys
 
-## load old user defined modules
+## load user defined modules
 from TheUsefulModule import WWFnF
 from TheJobModule.PrepSimJob import PrepSimJob
 from TheJobModule.CalcSpectraJob import CalcSpectraJob

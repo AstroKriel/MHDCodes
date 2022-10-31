@@ -7,7 +7,7 @@
 import h5py
 import numpy as np
 
-## relative import of 
+## load user defined modules
 from TheUsefulModule import WWFnF, WWLists
 
 

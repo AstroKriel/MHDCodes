@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 from scipy.optimize import curve_fit
 
+## load user defined modules
 from TheUsefulModule import WWFnF, WWObjs
 from TheFittingModule import UserModels
 from ThePlottingModule import PlotFuncs

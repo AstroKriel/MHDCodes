@@ -9,6 +9,7 @@ import numpy as np
 from scipy import stats
 from scipy.optimize import curve_fit
 
+## load user defined modules
 from TheUsefulModule import WWLists
 
 

@@ -9,7 +9,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy import interpolate
 
-## user-defined modules
+## load user defined modules
 from TheFittingModule import UserModels
 from TheUsefulModule import WWLists
 
