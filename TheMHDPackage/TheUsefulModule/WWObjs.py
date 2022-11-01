@@ -4,8 +4,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import json
+import os, json
 import numpy as np
 
 ## always import the c-version of pickle
@@ -17,46 +16,13 @@ from TheUsefulModule import WWFnF
 
 
 ## ###############################################################
-## WORKING WITH PICKLE-FILES
-## ###############################################################
-def saveObj2Pickle(
-    obj, filepath, filename,
-    bool_hide_updates = False
-  ):
-  ## create filepath where object will be saved
-  filepath_file = WWFnF.createFilepath([ filepath, filename ])
-  with open(filepath_file, "wb") as output:
-    pickle.dump(obj, output, -1) # specify highest binary protocol
-  ## indicate success
-  if not(bool_hide_updates): print("Saved pickle-file:", filepath_file)
-
-def loadPickle2Obj(
-    filepath, filename,
-    bool_hide_updates = False
-  ):
-  ## create filepath where object is saved
-  filepath_file = WWFnF.createFilepath([ filepath, filename ])
-  ## read file if it exists
-  if os.path.isfile(filepath_file):
-    if not(bool_hide_updates):
-      print("Reading in pickle-file:", filepath_file)
-    with open(filepath_file, "rb") as input:
-      return pickle.load(input)
-  ## indicate the file was not found
-  else: raise Exception(f"ERROR: No pickle-file found: {filepath_file}.")
-
-
-## ###############################################################
 ## WORKING WITH JSON-FILES
 ## ###############################################################
 class NumpyEncoder(json.JSONEncoder):
   def default(self, obj):
-    if isinstance(obj, np.integer):
-      return int(obj)
-    elif isinstance(obj, np.floating):
-      return float(obj)
-    elif isinstance(obj, np.ndarray):
-      return obj.tolist()
+    if isinstance(obj, np.integer):    return int(obj)
+    elif isinstance(obj, np.floating): return float(obj)
+    elif isinstance(obj, np.ndarray):  return obj.tolist()
     return json.JSONEncoder.default(self, obj)
 
 def saveObj2Json(
