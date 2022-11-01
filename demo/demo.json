@@ -1,11 +1,11 @@
 {
   "my_float": 4.0,
-  "my_int": 3,
+  "my_int": 1,
   "my_list": [
     1,
     2,
     3,
     4
   ],
-  "my_str": "bye bye"
+  "my_str": "bye bye dude"
 }

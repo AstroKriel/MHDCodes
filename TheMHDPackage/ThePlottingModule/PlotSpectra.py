@@ -320,7 +320,7 @@ class PlotSpectraFit():
     ## #################
     ## ADD FIGURE LABELS
     ## #################
-    list_fig_labels = []
+    list_labels = []
     ## kinetic energy spectra labels
     if bool_plot_kin:
       str_kin_spectra  = r"$\mathcal{P}_{\rm kin}(k) = A_{\rm kin} k^{\alpha_{\rm kin}} \exp\left\{-\frac{k}{k_\nu}\right\}$"
@@ -330,7 +330,7 @@ class PlotSpectraFit():
       str_A_kin        = r"$A_{\rm kin} = $ "+"{:.1e}".format(val_A_kin)
       str_alpha_kin    = r"$\alpha_{\rm kin} = $ "+"{:.1f}".format(val_alpha_kin)
       str_k_nu         = r"$k_\nu = $ "+"{:.1f}".format(val_k_nu)
-      list_fig_labels += [
+      list_labels += [
         str_kin_spectra,
         rf"{str_A_kin}, {str_alpha_kin}, {str_k_nu}"
       ]
@@ -351,18 +351,18 @@ class PlotSpectraFit():
       str_k_eta_alpha_2 = r"$k_\eta^{1/\alpha_{{\rm mag}, 2}} = $ "+"{:.2f}".format(val_k_eta_alpha_2)
       str_k_p           = r"$k_{\rm p} = $ "+"{:.1f}".format(val_k_p)
       str_k_max         = r"$k_{\rm max} = $ "+"{:.1f}".format(val_k_max)
-      list_fig_labels  += [
+      list_labels      += [
         str_mag_spectra,
         rf"{str_alpha_mag_1}, {str_alpha_mag_2}, {str_k_eta}, {str_k_eta_alpha_2}, {str_k_p}"
       ]
-    PlotFuncs.plotBoxOfLabels(
+    PlotFuncs.addBoxOfLabels(
       fig, ax,
-      box_alignment   = (0.0, 0.0),
-      xpos            = 0.025,
-      ypos            = 0.025,
-      alpha           = 0.0,
-      fontsize        = 14,
-      list_fig_labels = list_fig_labels
+      box_alignment = (0.0, 0.0),
+      xpos          = 0.025,
+      ypos          = 0.025,
+      alpha         = 0.0,
+      fontsize      = 14,
+      list_labels   = list_labels
     )
     ## add legend
     ax.legend(frameon=False, loc="upper left", facecolor="white", framealpha=0.0, fontsize=14)

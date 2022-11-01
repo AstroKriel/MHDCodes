@@ -222,14 +222,14 @@ class PlotTurbData():
 
   def __labelPlots(self):
     ## annotate simulation parameters
-    PlotFuncs.plotBoxOfLabels(
+    PlotFuncs.addBoxOfLabels(
       self.fig, self.axs[0],
-      box_alignment   = (1.0, 0.0),
-      xpos            = 0.95,
-      ypos            = 0.05,
-      alpha           = 0.5,
-      fontsize        = 18,
-      list_fig_labels = [
+      box_alignment = (1.0, 0.0),
+      xpos          = 0.95,
+      ypos          = 0.05,
+      alpha         = 0.5,
+      fontsize      = 18,
+      list_labels   = [
         r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(self.N_res)),
         r"${\rm Re} = $ "          + "{:d}".format(int(self.Re)),
         r"${\rm Rm} = $ "          + "{:d}".format(int(self.Rm)),
@@ -254,7 +254,7 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
   ## INITIALISE FIGURE
   ## -----------------
   print("Initialising figure...")
-  fig, fig_grid = PlotFuncs.initFigureGrid(
+  fig, fig_grid = PlotFuncs.createFigGrid(
     fig_scale        = 1.0,
     fig_aspect_ratio = (5.0, 8.0),
     num_rows         = 2,

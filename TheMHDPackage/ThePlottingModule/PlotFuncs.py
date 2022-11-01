@@ -48,7 +48,11 @@ def aniEvolution(
   print("Saved animation:", filepath_output)
   print(" ")
 
-def initFigureGrid(fig_aspect_ratio, num_rows, num_cols, fig_scale=1.0):
+
+## ###############################################################
+## CREATE FIGURE
+## ###############################################################
+def createFigGrid(fig_aspect_ratio, num_rows, num_cols, fig_scale=1.0):
   fig = plt.figure(
     constrained_layout = True,
     figsize            = (
@@ -60,9 +64,9 @@ def initFigureGrid(fig_aspect_ratio, num_rows, num_cols, fig_scale=1.0):
 
 
 ## ###############################################################
-## PLOTTING HELPER FUNCTIONS
+## ADD TO PLOTS
 ## ###############################################################
-def plotColorbar(mappable, cbar_label=None):
+def addColorbar(mappable, cbar_label=None):
   ''' from: https://joseph-long.com/writing/colorbars/
   '''
   last_axes = plt.gca()
@@ -75,18 +79,6 @@ def plotColorbar(mappable, cbar_label=None):
   plt.sca(last_axes)
   return cbar
 
-class MidpointNormalize(colors.Normalize):
-  def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-    self.midpoint = midpoint
-    colors.Normalize.__init__(self, vmin, vmax, clip)
-  def __call__(self, value, clip=None):
-    x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-    return np.ma.masked_array(np.interp(value, x, y))
-
-
-## ###############################################################
-## ADD TO PLOTS
-## ###############################################################
 def addLinearAxisTicks(
     ax,
     bool_minor_ticks = False,
@@ -128,26 +120,26 @@ def addLogAxisTicks(
     )
     ax.yaxis.set_major_locator(y_major)
 
-def plotBoxOfLabels(
-    fig, ax,
-    list_fig_labels = [],
-    xpos            = 0.05,
-    ypos            = 0.95,
-    box_alignment   = (0.0, 1.0), # align: left, upper
-    alpha           = 0.5,
-    fontsize        = 16
+def addBoxOfLabels(
+    fig, ax, list_labels,
+    ## default: (left, upper)
+    xpos          = 0.05,
+    ypos          = 0.95,
+    box_alignment = (0.0, 1.0),
+    alpha         = 0.5,
+    fontsize      = 16
   ):
-  if len(list_fig_labels) == 0: return
-  list_labels_str = [
-    TextArea(tmp_label, textprops={"fontsize":fontsize})
-    for tmp_label in list_fig_labels
+  if len(list_labels) == 0: return
+  list_text_areas = [
+    TextArea(label, textprops={"fontsize" : fontsize})
+    for label in list_labels
   ]
   texts_vbox = VPacker(
-    children = list_labels_str,
-    pad = 2.5,
-    sep = 5.0,
+    children = list_text_areas,
+    pad      = 2.5,
+    sep      = 5.0,
   )
-  ann = AnnotationBbox(
+  abox = AnnotationBbox(
     texts_vbox,
     fontsize      = fontsize,
     xy            = (xpos, ypos),
@@ -155,44 +147,22 @@ def plotBoxOfLabels(
     box_alignment = box_alignment,
     bboxprops     = dict(color="grey", facecolor="white", boxstyle="round", alpha=alpha, zorder=10)
   )
-  ann.set_figure(fig)
-  fig.artists.append(ann)
+  abox.set_figure(fig)
+  fig.artists.append(abox)
 
-def insetPlot(
-    ax, data_x, data_y,
+def addInsetAxis(
+    ax, 
     ax_inset_bounds = [ 0.0, 1.0, 1.0, 0.5 ],
-    label_x    = None,
-    label_y    = None,       
-    range_y    = None,
-    bool_log_y = False,
-    fontsize   = 20
+    label_x         = None,
+    label_y         = None,
+    fontsize        = 20
   ):
   ## create inset axis
   ax_inset = ax.inset_axes(ax_inset_bounds)
   ax_inset.xaxis.tick_top()
-  ## plot data
-  ax_inset.plot(data_x, data_y, "k.")
   ## add axis label
   ax_inset.set_xlabel(label_x, fontsize=fontsize)
   ax_inset.set_ylabel(label_y, fontsize=fontsize)
-  ax_inset.xaxis.set_label_position("top")
-  ## return inset axis
-  return ax_inset
-
-def insetPDF(
-    ax, data,
-    ax_inset_bounds = [ 0.0, 1.0, 1.0, 0.5 ],
-    label_x = None,
-    label_y = None
-  ):
-  ## create inset axis
-  ax_inset = ax.inset_axes(ax_inset_bounds)
-  ax_inset.xaxis.tick_top()
-  ## plot data
-  plotPDF(ax_inset, data)
-  ## add axis label
-  ax_inset.set_xlabel(label_x)
-  ax_inset.set_ylabel(label_y)
   ax_inset.xaxis.set_label_position("top")
   ## return inset axis
   return ax_inset
@@ -216,9 +186,11 @@ def addLegend(
     if len(list_input) < len(list_ref):
       list_input.extend( list_input[0] * (len(list_ref)-len(list_input)) )
   ## check that the inputs are the correct length
-  checkListLength(list_artists, list_legend_labels)
+  checkListLength(list_artists,       list_legend_labels)
   checkListLength(list_marker_colors, list_legend_labels)
-  ## lists of artists (marker and line styles) the user can choose from
+  ## iniialise list of artists to draw
+  list_legend_artists = []
+  ## lists of artists the user can choose from
   list_markers = [ ".", "o", "s", "D", "^", "v" ]
   list_lines   = [
     "-", "--", "-.", ":",
@@ -227,36 +199,25 @@ def addLegend(
     (0, (7, 3, 4, 3, 4, 3)),
     (0, (6, 3, 1, 3, 1, 3, 1, 3))
   ]
-  ## iniialise list of artists for legend
-  list_legend_artists = []
   for artist, marker_color in zip(list_artists, list_marker_colors):
     ## if the artist is a marker
     if artist in list_markers:
       list_legend_artists.append( 
-        Line2D(
-          [0], [0],
-          marker = artist,
-          color  = marker_color,
-          linewidth= 0, markeredgecolor= "white", markersize= ms
-        )
+        Line2D([0], [0], marker=artist, color=marker_color, linewidth=0, markeredgecolor="white", markersize=ms)
       )
     ## if the artist is a line
     elif artist in list_lines:
       list_legend_artists.append(
-        Line2D(
-          [0], [0],
-          linestyle = artist,
-          color     = marker_color,
-          linewidth = lw
-        )
+        Line2D([0], [0], linestyle=artist, color=marker_color, linewidth=lw)
       )
     ## otherwise throw an error
-    else: Exception(f"Artist '{artist}' is not valid.")
-  ## draw the legend
+    else: Exception(f"ERROR: '{artist}' is not a valid valid.")
+  ## create legend
   legend = ax.legend(
     list_legend_artists,
     list_legend_labels,
-    frameon=False, facecolor=None,
+    frameon        = False,
+    facecolor      = None,
     title          = title,
     loc            = loc,
     bbox_to_anchor = bbox,
@@ -268,30 +229,33 @@ def addLegend(
     fontsize       = fontsize,
     labelcolor     = label_color
   )
-  ## add legend
+  ## draw legend
   ax.add_artist(legend)
 
 
 ## ###############################################################
 ## PLOT 2D FIELDS
 ## ###############################################################
+class MidpointNormalize(colors.Normalize):
+  def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+    self.midpoint = midpoint
+    colors.Normalize.__init__(self, vmin, vmax, clip)
+  def __call__(self, value, clip=None):
+    x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+    return np.ma.masked_array(np.interp(value, x, y))
+
 def plot2DField(
-    ## 2D field data
-    field, 
-    ## filepath where figure will be saved
-    filepath_fig,
-    ## pass a figure object (optional)
-    fig = None,
-    ax  = None,
-    ## colormap details (optional)
-    bool_colorbar = True,
-    cmap_str      = "cmr.arctic",
-    cbar_label    = None,
-    cbar_lims     = None,
-    bool_mid_norm = False,
-    mid_norm      = 0,
-    ## label figure (optional)
-    list_fig_labels  = None,
+    field, filepath_fig,
+    fig              = None,
+    ax               = None,
+    bool_save        = False,
+    bool_colorbar    = True,
+    cmap_str         = "cmr.arctic",
+    cbar_label       = None,
+    cbar_lims        = None,
+    bool_mid_norm    = False,
+    mid_norm         = 0,
+    list_labels      = None,
     bool_hide_labels = False
   ):
   ## check that a figure object has been passed
@@ -311,10 +275,10 @@ def plot2DField(
   )
   ## add colorbar
   if bool_colorbar:
-    plotColorbar(im_obj, cbar_label)
+    addColorbar(im_obj, cbar_label)
   ## add labels
-  if list_fig_labels is not None:
-    plotBoxOfLabels(fig, ax, list_fig_labels)
+  if list_labels is not None:
+    addBoxOfLabels(fig, ax, list_labels)
   ## add axis labels
   if not bool_hide_labels:
     ax.set_xticks([-1, -0.5, 0, 0.5, 1])
@@ -322,154 +286,15 @@ def plot2DField(
     ax.set_xticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
     ax.set_yticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
   ## save figure
-  plt.savefig(filepath_fig)
-  ## clear figure and axis
-  fig.artists.clear()
-  ax.clear()
+  if bool_save:
+    plt.savefig(filepath_fig)
+    ## clear figure and axis
+    fig.artists.clear()
+    ax.clear()
 
 
 ## ###############################################################
-## PLOT DISTRIBUTION STATISTICS
-## ###############################################################
-def plotPDF(
-    ax, vals,
-    num_bins = 10,
-    label    = "",
-    orientation = "vertical",
-    fill_color  = None,
-    cmap_str    = "cmr.tropical",
-    num_cols    = 1,
-    col_index   = 0,
-    bool_log    = False,
-    bool_set_axis_lim = False
-  ):
-  if len(vals) > 3:
-    ## calculate density of data
-    dens, bin_edges = np.histogram(vals, bins=num_bins, density=True)
-    ## normalise density
-    dens_norm = np.append(0, dens / dens.sum())
-    ## extract colours from Cmasher's colormap
-    cmasher_colormap = plt.get_cmap(cmap_str, num_cols)
-    my_colormap = cmasher_colormap(np.linspace(0, 1, num_cols))
-    ## log bins
-    if bool_log:
-      ## create bin locations
-      _, bins = np.histogram(vals, bins=num_bins)
-      bin_edges = np.logspace(np.log10(bins[0]), np.log10(bins[-1]), len(bins))
-      if "v" in orientation: ax.set_xscale("log")
-      else: ax.set_yscale("log")
-    ## fill PDF with colour
-    if "v" in orientation:
-      ## fill PDF
-      ax.fill_between(
-        bin_edges,
-        dens_norm, 
-        step  = "pre",
-        alpha = 0.2,
-        color = my_colormap[col_index] if fill_color is None else fill_color
-      )
-      ## plot PDF lines
-      ax.plot(
-        bin_edges,
-        dens_norm, 
-        drawstyle = "steps",
-        label = label,
-        color = my_colormap[col_index] if fill_color is None else fill_color
-      )
-      ## set x-lim range
-      if bool_set_axis_lim:
-        bin_step = bin_edges[1] - bin_edges[0]
-        ax.set_xlim([
-          min(bin_edges[1:]) - bin_step/2,
-          max(bin_edges[1:]) + bin_step/2
-        ])
-    else:
-      ## fill PDF
-      ax.fill_betweenx(
-        bin_edges,
-        dens_norm, 
-        step  = "post",
-        alpha = 0.2,
-        color = my_colormap[col_index] if fill_color is None else fill_color
-      )
-      ## plot PDF lines
-      ax.plot(
-        dens_norm, 
-        bin_edges,
-        drawstyle = "steps",
-        label = label,
-        color = my_colormap[col_index] if fill_color is None else fill_color
-      )
-      ## set y-lim range
-      if bool_set_axis_lim:
-        bin_step = bin_edges[1] - bin_edges[0]
-        ax.set_ylim([
-          min(bin_edges[1:]) - bin_step/2,
-          max(bin_edges[1:]) + bin_step/2
-        ])
-      ## put y-axis tights on the right
-      ax.yaxis.tick_right()
-
-def plotHistogram(
-    ax, vals,
-    num_bins   = 10,
-    sim_label  = "",
-    fill_color = None,
-    cmap_str   = "cmr.tropical",
-    num_cols   = 1,
-    col_index  = 0,
-    alpha      = 0.4,
-    bool_log   = False
-  ):
-  if len(vals) > 3:
-    ## extract colours from Cmasher's colormap
-    cmasher_colormap = plt.get_cmap(cmap_str, num_cols)
-    my_colormap = cmasher_colormap(np.linspace(0, 1, num_cols))
-    if bool_log:
-      ## create bin locations
-      _, bins = np.histogram(vals, bins=num_bins)
-      logbins = np.logspace(np.log10(bins[0]), np.log10(bins[-1]), len(bins))
-      ## plot bins
-      ax.hist(
-        vals,
-        histtype = "step",
-        bins     = logbins,
-        color    = my_colormap[col_index] if fill_color is None else fill_color,
-        label    = sim_label,
-        alpha    = alpha,
-        fill     = True
-      )
-      ax.hist(
-        vals,
-        histtype = "step", 
-        bins     = logbins,
-        color    = my_colormap[col_index] if fill_color is None else fill_color,
-        fill     = False
-      )
-      ## log axis
-      ax.set_xscale("log")
-    else:
-      ## stacked histogram
-      ax.hist(
-        vals,
-        histtype = "step",
-        bins  = num_bins,
-        label = sim_label,
-        color = my_colormap[col_index] if fill_color is None else fill_color,
-        fill  = True,
-        alpha = alpha
-      )
-      ax.hist(
-        vals,
-        histtype = "step", 
-        bins  = num_bins,
-        color = my_colormap[col_index] if fill_color is None else fill_color,
-        fill  = False
-      )
-
-
-## ###############################################################
-## FITTING LINE TO MANY DISTRIBUTIONS
+## CREATE LABELS FOR STATISTICAL MODELS (TODO: update)
 ## ###############################################################
 class CreateDistributionStatsLabel():
   def coef(param_list, num_digits=3):
@@ -484,6 +309,7 @@ class CreateDistributionStatsLabel():
       "{" + str_low  + "}",
       "{" + str_high + "}"
     )
+
   def exp(param_list, num_digits=3):
     str_median = ("{0:."+str(num_digits)+"g}").format(np.percentile(param_list, 50))
     num_decimals = 2
@@ -502,6 +328,7 @@ class CreateDistributionStatsLabel():
         "^{" + str_high + "}" +
       "}"
     )
+
   def offset(param_list, num_digits=3):
     str_median = ("{0:."+str(num_digits)+"g}").format(np.percentile(param_list, 50))
     num_decimals = 2

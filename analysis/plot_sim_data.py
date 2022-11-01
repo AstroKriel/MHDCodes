@@ -328,14 +328,14 @@ class PlotSpectra():
       frameon=True, facecolor="white", edgecolor="grey", framealpha=1.0, fontsize=18
     ).set_zorder(10)
     ## add legend: measured parameter values
-    PlotFuncs.plotBoxOfLabels(
+    PlotFuncs.addBoxOfLabels(
       self.fig, self.axs_spectra[0],
-      box_alignment   = (0.0, 0.0),
-      xpos            = 0.025,
-      ypos            = 0.025,
-      alpha           = 1.0,
-      fontsize        = 18,
-      list_fig_labels = [
+      box_alignment = (0.0, 0.0),
+      xpos          = 0.025,
+      ypos          = 0.025,
+      alpha         = 1.0,
+      fontsize      = 18,
+      list_labels   = [
         rf"{label_A_kin}, {label_alpha_kin}, {label_k_nu}",
         rf"{label_k_p}, {label_k_max}"
       ]
@@ -389,7 +389,7 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
   ## INITIALISE FIGURE
   ## -----------------
   print("Initialising figure...")
-  fig, fig_grid = PlotFuncs.initFigureGrid(
+  fig, fig_grid = PlotFuncs.createFigGrid(
     fig_scale        = 1.0,
     fig_aspect_ratio = (5.0, 8.0),
     num_rows         = 3,
