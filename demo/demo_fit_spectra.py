@@ -5,7 +5,7 @@ import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 from lmfit import Model
-from ThePlottingModule import TheMatplotlibStyler
+import ThePlottingModule.TheMatplotlibStyler
 
 
 ## ###############################################################
@@ -75,19 +75,11 @@ def fitMagSpectra(ax, data_k, data_power):
 
 
 ## ###############################################################
-## PROGRAM PARMETERS
-## ###############################################################
-BASEPATH = "/scratch/ek9/nk7952/"
-K_TURB   = 2.0
-MACH     = 5.0
-T_TURB   = 1 / (K_TURB * MACH)
-
-
-## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  filepath_data = f"{BASEPATH}/Rm3000/288/super_sonic/Pm5/spect"
+  filepath_scratch = "/scratch/ek9/nk7952/"
+  filepath_data    = f"{filepath_scratch}/Rm3000/288/super_sonic/Pm5/spect"
   fig, ax = plt.subplots(figsize=(7,8))
   ## load magnetic energy spectrum
   data_k_group_t, data_power_group_t = loadSpectraData(filepath_data)
@@ -100,7 +92,7 @@ def main():
   ax.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k)$")
   ax.set_xscale("log")
   ax.set_yscale("log")
-  fig.savefig(f"{BASEPATH}/mag_spect_fit.png")
+  fig.savefig(f"{filepath_scratch}/mag_spect_fit.png")
 
 
 ## ###############################################################

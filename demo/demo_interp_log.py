@@ -3,10 +3,10 @@ import scipy.interpolate
 import matplotlib.pyplot as plt
 
 def interpLogData(x, y, x_interp):
-    interpolator_linear = scipy.interpolate.interp1d(
-      np.log10(x), np.log10(y), kind="linear"
-    )
-    return np.power(10.0, interpolator_linear(np.log10(x_interp)))
+  interpolator_linear = scipy.interpolate.interp1d(
+    np.log10(x), np.log10(y), kind="linear"
+  )
+  return np.power(10.0, interpolator_linear(np.log10(x_interp)))
 
 x = [1, 2, 3] # np.linspace(x_min, x_max, num_points)
 y = np.exp(x)
