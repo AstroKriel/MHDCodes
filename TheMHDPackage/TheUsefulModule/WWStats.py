@@ -8,7 +8,7 @@ from scipy.stats import norm
 
 
 ## ###############################################################
-## WORKING WITH DISTRIBUTIONS
+## WORKING WITH STATISTICS
 ## ###############################################################
 def sampleGaussFromQuantiles(
     p1, p2,

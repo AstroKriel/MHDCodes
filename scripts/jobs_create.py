@@ -7,10 +7,11 @@ import os, sys
 
 ## load user defined modules
 from TheUsefulModule import WWFnF
+from TheLoadingModule import LoadFlashData
+from TheJobModule.SimInputParams import SimParams
 from TheJobModule.PrepSimJob import PrepSimJob
 from TheJobModule.CalcSpectraJob import CalcSpectraJob
 from TheJobModule.PlotSpectraJob import PlotSpectraJob
-from TheJobModule.SimParams import SimParams, getPlasmaNumberFromName
 
 
 ## ###############################################################
@@ -52,9 +53,9 @@ def main():
           num_blocks   = NUM_BLOCKS,
           k_turb       = K_TURB,
           Mach         = MACH,
-          Re           = getPlasmaNumberFromName(suite_folder, "Re"),
-          Rm           = getPlasmaNumberFromName(suite_folder, "Rm"),
-          Pm           = getPlasmaNumberFromName(sim_folder,   "Pm")
+          Re           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Re"),
+          Rm           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Rm"),
+          Pm           = LoadFlashData.getPlasmaNumbers_fromName(sim_folder,   "Pm")
         )
 
         ## CREATE JOB FILE TO RUN SIMULATION

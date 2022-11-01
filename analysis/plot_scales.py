@@ -170,7 +170,7 @@ class PlotSimScales():
     fig_filepath = WWFnF.createFilepath([ self.filepath_vis, fig_name ])
     plt.savefig(fig_filepath)
     plt.close(fig)
-    print("Figure saved:", fig_name)
+    print("Saved figure:", fig_name)
 
   def plotDependance_kp(self):
     fig, ax = plt.subplots(1, 1, figsize=(7/1.1, 4/1.1))
@@ -199,7 +199,7 @@ class PlotSimScales():
     fig_filepath = WWFnF.createFilepath([ self.filepath_vis, fig_name ])
     plt.savefig(fig_filepath)
     plt.close(fig)
-    print("Figure saved:", fig_name)
+    print("Saved figure:", fig_name)
 
 
 ## ###############################################################

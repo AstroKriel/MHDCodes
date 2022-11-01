@@ -23,21 +23,19 @@ def saveObj2Pickle(
     obj, filepath, filename,
     bool_hide_updates = False
   ):
-  ## create filepath where object is to be saved
-  filepath_file = WWFnF.createFilepath([filepath, filename])
-  ## save file
+  ## create filepath where object will be saved
+  filepath_file = WWFnF.createFilepath([ filepath, filename ])
   with open(filepath_file, "wb") as output:
-    pickle.dump(obj, output, -1) # -1 specifies highest binary protocol
+    pickle.dump(obj, output, -1) # specify highest binary protocol
   ## indicate success
   if not(bool_hide_updates): print("Saved pickle-file:", filepath_file)
 
 def loadPickle2Obj(
     filepath, filename,
-    bool_raise_error  = False,
     bool_hide_updates = False
   ):
-  ## create filepath where object is stored
-  filepath_file = WWFnF.createFilepath([filepath, filename])
+  ## create filepath where object is saved
+  filepath_file = WWFnF.createFilepath([ filepath, filename ])
   ## read file if it exists
   if os.path.isfile(filepath_file):
     if not(bool_hide_updates):
@@ -45,11 +43,7 @@ def loadPickle2Obj(
     with open(filepath_file, "rb") as input:
       return pickle.load(input)
   ## indicate the file was not found
-  else:
-    ## raise exception
-    if bool_raise_error: Exception(f"No pickle-file '{filename}' found in '{filepath}'.")
-    ## return flag
-    return -1
+  else: raise Exception(f"ERROR: No pickle-file found: {filepath_file}.")
 
 
 ## ###############################################################
@@ -69,8 +63,8 @@ def saveObj2Json(
     obj, filepath, filename,
     bool_hide_updates = False
   ):
-  ## create filepath where object is to be saved
-  filepath_file = WWFnF.createFilepath([filepath, filename])
+  ## create filepath where object will be saved
+  filepath_file = WWFnF.createFilepath([ filepath, filename ])
   ## save object to file
   with open(filepath_file, "w") as file_pointer:
     json.dump(
@@ -87,8 +81,8 @@ def loadJson2Dict(
     filepath, filename,
     bool_hide_updates = False
   ):
-  ## create filepath where object is stored
-  filepath_file = WWFnF.createFilepath([filepath, filename])
+  ## create filepath where object is saved
+  filepath_file = WWFnF.createFilepath([ filepath, filename ])
   ## read file if it exists
   if os.path.isfile(filepath_file):
     if not(bool_hide_updates):
@@ -96,7 +90,7 @@ def loadJson2Dict(
     with open(filepath_file, "r") as input:
       return json.load(input)
   ## indicate the file was not found
-  else: raise Exception(f"No json-file '{filename}' found in '{filepath}'.")
+  else: raise Exception(f"ERROR: No json-file found: {filepath_file}.")
 
 
 ## ###############################################################

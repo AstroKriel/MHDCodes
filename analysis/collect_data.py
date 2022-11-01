@@ -14,6 +14,9 @@ def func():
 ## MAIN PROGRAM
 def main():
   ## Re3600Pm1, Re1700Pm2, Re600Pm5
+  filepath_Re3600Pm1 = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm1/288/"
+  filepath_Re1700Pm2 = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm2/288/"
+  filepath_Re600Pm5  = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm5/288"
   a = 10
 
 

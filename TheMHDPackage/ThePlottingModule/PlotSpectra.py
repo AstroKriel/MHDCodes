@@ -196,7 +196,7 @@ class PlotSpectraFit():
     ## close figure
     plt.close(fig)
     ## print information to the terminal
-    print("\t> Figure saved:", fig_name)
+    print("\t> Saved figure:", fig_name)
 
   def plotSpectraEvolution(
       self,

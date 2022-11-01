@@ -1,5 +1,5 @@
 import os
-from TheJobModule.SimParams import SimParams
+from TheJobModule.SimInputParams import SimParams
 
 class PlotSpectraJob():
   def __init__(
@@ -52,7 +52,7 @@ class PlotSpectraJob():
       job_file.write(f"#PBS -M neco.kriel@anu.edu.au\n")
       job_file.write("\n")
       job_file.write(". ~/modules_flash\n")
-      job_file.write(f"{self.program_name} -suite_path {self.filepath_sim}/.. -sim_folder {self.sim_folder} 1>shell_plot.out00 2>&1\n")
+      job_file.write(f"{self.program_name} -suite_path {self.filepath_sim}/.. -sim_folder {self.sim_folder} 1>shell_plot_spect.out00 2>&1\n")
     ## indicate progress
     print(f"\t> Created job '{self.job_name}' to run '{self.program_name}' in:\n\t", self.filepath_spect)
 

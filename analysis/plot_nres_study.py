@@ -112,7 +112,7 @@ class PlotSpectraConvergence():
     ## save figure
     filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_study.png"
     plt.savefig(filepath_fig)
-    print("Figure saved:", filepath_fig)
+    print("Saved figure:", filepath_fig)
     ## close plot
     plt.close(fig)
 

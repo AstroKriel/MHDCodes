@@ -1,4 +1,4 @@
-from TheJobModule.SimParams import SimParams
+from TheJobModule.SimInputParams import SimParams
 
 class CalcSpectraJob():
   def __init__(
@@ -9,7 +9,7 @@ class CalcSpectraJob():
     self.max_hours    = int(8)
     self.num_cpus     = int(6)
     self.max_mem      = int(4 * self.num_cpus)
-    self.program_name = "calc_spectra.py"
+    self.program_name = "compute_spectra.py"
     self.job_name     = "job_calc_spect.sh"
     self.job_tagname  = "{}{}{}sim{}".format(
       obj_sim_params.sonic_regime.split("_")[0],
@@ -38,7 +38,7 @@ class CalcSpectraJob():
       job_file.write(f"#PBS -M neco.kriel@anu.edu.au\n")
       job_file.write("\n")
       job_file.write(". ~/modules_flash\n")
-      job_file.write(f"{self.program_name} -data_path {self.filepath_plt} -num_proc {self.num_cpus} 1>shell_calc.out00 2>&1\n")
+      job_file.write(f"{self.program_name} -data_path {self.filepath_plt} -num_proc {self.num_cpus} 1>shell_calc_spect.out00 2>&1\n")
     ## indicate progress
     print(f"\t> Created job '{self.job_name}' to run '{self.program_name}' in:\n\t", self.filepath_plt)
 

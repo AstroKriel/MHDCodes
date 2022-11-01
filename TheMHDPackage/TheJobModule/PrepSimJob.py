@@ -1,5 +1,5 @@
 from TheUsefulModule import WWFnF
-from TheJobModule.SimParams import SimParams
+from TheJobModule.SimInputParams import SimParams
 
 class PrepSimJob():
   def __init__(

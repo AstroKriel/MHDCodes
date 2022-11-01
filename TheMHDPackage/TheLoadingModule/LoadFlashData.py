@@ -179,9 +179,10 @@ def loadTurbData(
           ## if the simulation has been restarted, only read the progressed data
           if cur_time < prev_time: # walking backwards
             cur_val = float(data_split[var_y])
-            if cur_val == 0:
+            if cur_val == 0.0:
               if bool_debug:
-                raise Exception(f"Error: encountered 0-value in quantity index {var_y} in 'Turb.dat' at time = {cur_time}.")
+                raise Exception(f"Error: encountered 0-value in quantity index {var_y} in 'Turb.dat' at time = {cur_time}")
+              ## ignore time point
               continue
             data_x.append(cur_time)
             data_y.append(cur_val)
@@ -298,8 +299,8 @@ def getPlotsPerEddy_fromTurbLog(
 
 
 def getPlasmaNumbers_fromFlashPar(filepath_sim, rms_Mach, k_turb):
-    bool_nu_found  = False
-    bool_eta_found = False
+    bool_found_nu  = False
+    bool_found_eta = False
     ## search through flash.par file for parameters
     with open(f"{filepath_sim}/flash.par") as file_lines:
       for line in file_lines:
@@ -310,16 +311,16 @@ def getPlasmaNumbers_fromFlashPar(filepath_sim, rms_Mach, k_turb):
         ## read value for 'diff_visc_nu'
         if list_line_elems[0] == "diff_visc_nu":
           nu = float(list_line_elems[2])
-          bool_nu_found = True
+          bool_found_nu = True
         ## read value for 'resistivity'
         if list_line_elems[0] == "resistivity":
           eta = float(list_line_elems[2])
-          bool_eta_found = True
+          bool_found_eta = True
         ## stop searching if both parameters have been identified
-        if bool_nu_found and bool_eta_found:
+        if bool_found_nu and bool_found_eta:
           break
     ## compute plasma numbers
-    if bool_nu_found and bool_eta_found:
+    if bool_found_nu and bool_found_eta:
       nu  = nu
       eta = eta
       Re  = int(rms_Mach / (k_turb * nu))
@@ -334,11 +335,35 @@ def getPlasmaNumbers_fromFlashPar(filepath_sim, rms_Mach, k_turb):
         "Pm"  : Pm
       }
     else:
-      Exception("\t> ERROR: Could not find {}{}{}.".format(
-        "nu"   if (nu is None)  else "",
-        " or " if (nu is None) and (eta is None) else "",
-        "eta"  if (eta is None) else ""
+      bool_found_neither = (not bool_found_nu) and (not bool_found_eta)
+      raise Exception("\t> ERROR: Could not find {}{}{}{}.".format(
+        "either " if bool_found_neither else "",
+        "nu"   if not bool_found_nu  else "",
+        " or " if bool_found_neither else "",
+        "eta"  if not bool_found_eta else ""
       ))
+
+
+def getPlasmaNumbers_fromInputs(Mach, k_turb, Re=None, Rm=None, Pm=None):
+  ## Re and Pm have been defined
+  if (Re is not None) and (Pm is not None):
+    nu  = round(Mach / (k_turb * Re), 5)
+    eta = round(nu / Pm, 5)
+    Rm  = round(Mach / (k_turb * eta))
+  ## Rm and Pm have been defined
+  elif (Rm is not None) and (Pm is not None):
+    eta = round(Mach / (k_turb * Rm), 5)
+    nu  = round(eta * Pm, 5)
+    Re  = round(Mach / (k_turb * nu))
+  ## error
+  else: raise Exception(f"You have not defined enough plasma Reynolds numbers: Re = {Re}, Rm = {Rm}, and Pm = {Rm}.")
+  return Re, Rm, Pm, nu, eta
+
+
+def getPlasmaNumbers_fromName(name, name_ref):
+  name_lower = name.lower()
+  name_ref_lower = name_ref.lower()
+  return float(name_lower.replace(name_ref_lower, "")) if name_ref_lower in name_lower else None
 
 
 ## END OF LIBRARY

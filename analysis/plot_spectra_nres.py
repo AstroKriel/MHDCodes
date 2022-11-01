@@ -73,7 +73,7 @@ def main():
   ax.legend(loc="upper right")
   plt.savefig(filepath_fig)
   plt.close()
-  print("Figure saved:", filepath_fig)
+  print("Saved figure:", filepath_fig)
 
 ## START OF PROGRAM
 if __name__ == "__main__":

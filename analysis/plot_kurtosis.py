@@ -103,7 +103,7 @@ def plotData(list_sim_data):
     plot_name
   ])
   plt.savefig(abs_filepath_plot)
-  print("Figure saved:", abs_filepath_plot)
+  print("Saved figure:", abs_filepath_plot)
 
 
 ## ###############################################################
