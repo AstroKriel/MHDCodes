@@ -315,9 +315,7 @@ def main():
 
         ## MAKE SURE A VISUALISATION FOLDER EXISTS
         ## ---------------------------------------
-        filepath_sim_res_plot = WWFnF.createFilepath([
-          filepath_sim_res, "vis_folder"
-        ])
+        filepath_sim_res_plot = f"{filepath_sim_res}/vis_folder/"
         WWFnF.createFolder(filepath_sim_res_plot, bool_hide_updates=True)
 
         ## PLOT SIMULATION DATA

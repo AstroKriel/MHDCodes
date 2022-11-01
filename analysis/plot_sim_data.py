@@ -278,6 +278,7 @@ class PlotSpectra():
       self.A_kin_group_t.append(params_kin[0])
       self.alpha_kin_group_t.append(params_kin[1])
       self.k_nu_group_t.append(params_kin[2])
+    ## plot scales
     self.axs_scales[0].plot(self.list_kin_time, self.k_nu_group_t, "g-", label=r"$k_\nu$")
     plotPDF(self.axs_scales[1], self.k_nu_group_t, "g")
 
@@ -285,14 +286,17 @@ class PlotSpectra():
     self.k_p_group_t   = []
     self.k_max_group_t = []
     for time_index in range(len(self.list_mag_power_norm_group_t)):
+      ## extract interpolated and raw magnetic peak-scale
       k_p, k_max = getMagSpectraPeak(
         self.axs_spectra[1],
         self.list_mag_k,
         self.list_mag_power_norm_group_t[time_index],
         bool_plot = False
       )
+      ## store measured scales
       self.k_p_group_t.append(k_p)
       self.k_max_group_t.append(k_max)
+    ## plot scales
     self.axs_scales[0].plot(self.list_mag_time, self.k_p_group_t, "k-", label=r"$k_{\rm p}$")
     plotPDF(self.axs_scales[1], self.k_p_group_t, "k")
 
@@ -306,13 +310,13 @@ class PlotSpectra():
       np.mean(np.max(self.list_mag_power_norm_group_t, axis=1)),
       label=r"$k_{\rm max}$", color="black", marker="o", ms=10, ls="", zorder=7
     )
-    ## create labels
+    ## create labels for measured scales
     label_A_kin     = r"$A_{\rm kin} = $ " +"{:.1e}".format(np.mean(self.A_kin_group_t))
     label_alpha_kin = r"$\alpha = $ "      +"{:.1f}".format(np.mean(self.alpha_kin_group_t))
     label_k_nu      = r"$k_\nu = $ "       +"{:.1e}".format(np.mean(self.k_nu_group_t))
     label_k_p       = r"$k_{\rm p} = $ "   +"{:.1f}".format(np.mean(self.k_p_group_t))
     label_k_max     = r"$k_{\rm max} = $ " +"{:.1f}".format(np.mean(self.k_max_group_t))
-    ## add legends
+    ## add legend: markers/linestyles of plotted quantities
     list_lines_ax0, list_labels_ax0 = self.axs_spectra[0].get_legend_handles_labels()
     list_lines_ax1, list_labels_ax1 = self.axs_spectra[1].get_legend_handles_labels()
     list_lines  = list_lines_ax0  + list_lines_ax1
@@ -323,6 +327,7 @@ class PlotSpectra():
       loc="upper right", bbox_to_anchor=(0.99, 0.99),
       frameon=True, facecolor="white", edgecolor="grey", framealpha=1.0, fontsize=18
     ).set_zorder(10)
+    ## add legend: measured parameter values
     PlotFuncs.plotBoxOfLabels(
       self.fig, self.axs_spectra[0],
       box_alignment   = (0.0, 0.0),
@@ -428,27 +433,6 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
   plt.savefig(fig_filepath)
   plt.close()
   print("Saved figure:", fig_filepath)
-  # ## SAVE DATASET
-  # ## ------------
-  # dataset_name = f"{sim_name}_dataset.json"
-  # dataset_obj  = DataSet(
-  #   dict_sim_params["N_res"],
-  #   dict_sim_params["Re"],
-  #   dict_sim_params["Rm"],
-  #   dict_sim_params["Pm"],
-  #   dict_turb_params["rms_Mach"],
-  #   dict_turb_params["Gamma"],
-  #   dict_turb_params["E_sat_ratio"],
-  #   dict_spectra_params["alpha_kin_group_t"],
-  #   dict_spectra_params["k_nu_group_t"],
-  #   dict_spectra_params["k_p_group_t"],
-  #   dict_spectra_params["k_eq_group_t"]
-  # )
-  # WWObjs.saveObj2Json(
-  #   obj      = dataset_obj,
-  #   filepath = filepath_sim,
-  #   filename = dataset_name
-  # )
 
 
 ## ###############################################################
