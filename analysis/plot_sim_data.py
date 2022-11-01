@@ -57,9 +57,6 @@ class DataSet():
     self.list_k_p       = list_k_p
     self.list_k_eq      = list_k_eq
 
-  def saveDataset(self):
-    a = 10
-
 
 ## ###############################################################
 ## HELPER FUNCTIONS
@@ -150,14 +147,14 @@ class PlotSpectra():
     self.time_exp_end   = time_exp_end
     print("Loading energy spectra...")
     self.__loadData()
-    self.__plotEnergySpectra()
-    self.__plotEnergyRatio()
+    self.__plotSpectra()
+    self.__plotSpectraRatio()
     print("Fitting energy spectra...")
     self.__fitKinSpectra()
     self.__fitMagSpectra()
-    self.__labelEnergySpectraPlot()
+    self.__labelSpectraPlot()
     self.__labelScalesPlots()
-    self.__labelEnergyRatioPlot()
+    self.__labelSpectraRatioPlot()
 
   def getFittedParams(self):
     return {
@@ -165,6 +162,13 @@ class PlotSpectra():
       "list_k_nu"      : self.list_k_nu,
       "list_k_p"       : self.list_k_p,
       "list_k_eq"      : self.list_k_eq
+    }
+
+  def getAveSpectra(self):
+    return {
+      "list_k"             : self.list_mag_k,
+      "list_kin_power_ave" : self.list_kin_power_ave,
+      "list_mag_power_ave" : self.list_mag_power_ave
     }
 
   def __loadData(self):
@@ -190,12 +194,12 @@ class PlotSpectra():
       plots_per_eddy    = plots_per_eddy,
       bool_hide_updates = True
     )
-    ## store energy spectra
+    ## store time-evolving energy spectra
     self.list_kin_power_group_t = list_kin_power_group_t
     self.list_mag_power_group_t = list_mag_power_group_t
     self.list_kin_k             = list_kin_k_group_t[0]
     self.list_mag_k             = list_mag_k_group_t[0]
-    ## store normalised and time-averaged energy spectra
+    ## store normalised energy spectra
     self.list_kin_power_norm_group_t = [
       np.array(list_power) / sum(list_power)
       for list_power in list_kin_power_group_t
@@ -204,20 +208,23 @@ class PlotSpectra():
       np.array(list_power) / sum(list_power)
       for list_power in list_mag_power_group_t
     ]
+    ## store normalised, and time-averaged energy spectra
+    self.list_kin_power_ave = np.mean(self.list_kin_power_norm_group_t, axis=0)
+    self.list_mag_power_ave = np.mean(self.list_mag_power_norm_group_t, axis=0)
 
-  def __plotEnergySpectra(self):
+  def __plotSpectra(self):
     plot_args = { "marker":"o", "color":"k", "ms":7, "ls":"", "alpha":1.0, "zorder":3 }
     label_kin = r"$\widehat{\mathcal{P}}_{\rm kin}(k)$ data"
     label_mag = r"$\widehat{\mathcal{P}}_{\rm mag}(k)$ data"
     ## plot average normalised energy spectra
     self.axs_spect_data[0].plot(
       self.list_kin_k,
-      np.mean(self.list_kin_power_norm_group_t, axis=0),
+      self.list_kin_power_ave,
       label=label_kin, markerfacecolor="green", **plot_args
     )
     self.axs_spect_data[1].plot(
       self.list_mag_k,
-      np.mean(self.list_mag_power_norm_group_t, axis=0),
+      self.list_mag_power_ave,
       label=label_mag, markerfacecolor="red", **plot_args
     )
     ## plot each time realisation of the normalised kinetic energy spectrum
@@ -235,7 +242,7 @@ class PlotSpectra():
         color="red", ls="-", lw=1, alpha=0.1, zorder=1
       )
 
-  def __plotEnergyRatio(self):
+  def __plotSpectraRatio(self):
     ## for each time realisation
     self.list_k_eq = []
     self.list_k_eq_time = []
@@ -310,7 +317,7 @@ class PlotSpectra():
     self.axs_scales[0].plot(self.list_mag_time, self.list_k_p, "k-", label=r"$k_{\rm p}$")
     plotPDF(self.axs_scales[1], self.list_k_p, "k")
 
-  def __labelEnergySpectraPlot(self):
+  def __labelSpectraPlot(self):
     ## annotate measured scales
     plot_args = { "ls":"--", "lw":2, "zorder":7 }
     self.axs_spect_data[0].axvline(x=np.mean(self.list_k_nu), **plot_args, color="green", label=r"$k_\nu$")
@@ -374,11 +381,11 @@ class PlotSpectra():
     self.axs_scales[0].set_xlabel(r"$t/t_{\rm turb}$")
     self.axs_scales[0].set_ylabel(r"$k$")
     self.axs_scales[0].set_yscale("log")
-    ## PDF of scales
+    ## PDF of scales 
     self.axs_scales[1].set_xlabel(r"$k$")
     self.axs_scales[1].set_ylabel(r"PDF")
 
-  def __labelEnergyRatioPlot(self):
+  def __labelSpectraRatioPlot(self):
     self.ax_spect_ratio.axhline(y=1, color="red", ls="--")
     self.ax_spect_ratio.set_xlim([ 0.9, max(self.list_mag_k) ])
     self.ax_spect_ratio.set_xlabel(r"$k$")
@@ -518,17 +525,12 @@ def main():
         ## PLOT SIMULATION DATA AND SAVE MEASURED QUANTITIES
         ## -------------------------------------------------
         sim_name = f"{suite_folder}_{sim_folder}"
-        # try:
         plotSimData(
           filepath_sim_res, filepath_sim_res_plot, sim_name, sim_res,
           Re = getPlasmaNumberFromSimName(suite_folder, "Re"),
           Rm = getPlasmaNumberFromSimName(suite_folder, "Rm"),
           Pm = getPlasmaNumberFromSimName(sim_folder, "Pm")
         )
-        # except:
-        #   print("Ecountered a problem:", filepath_sim_res)
-        #   print(" ")
-        #   continue
 
         if BOOL_DEBUG: return
         ## create empty space

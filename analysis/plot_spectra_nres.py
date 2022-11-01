@@ -42,26 +42,26 @@ def main():
   # list_k_144, list_spectra_144 = getAveNormKinSpectra(f"{filepath_sim}/144/spect/", ax, "darkorange")
   # list_k_288, list_spectra_288 = getAveNormKinSpectra(f"{filepath_sim}/288/spect/")
   # list_k_576, list_spectra_576 = getAveNormKinSpectra(f"{filepath_sim}/576/spect/")
-  list_k_72_new_6, list_spectra_72_new_6, _ = LoadFlashData.loadSpectraData(
-    filepath_data = f"{filepath_sim}/72/plt/Turb_hdf5_plt_cnt_0100_spect_vels.dat",
+  list_k_72_new_2, list_spectra_72_new_2, _ = LoadFlashData.loadSpectraData(
+    filepath_data = f"{filepath_sim}/72/compare/np2/Turb_hdf5_plt_cnt_0100_spect_vels.dat",
     str_spectra_type = "vel"
   )
-  list_k_72_new_2, list_spectra_72_new_2, _ = LoadFlashData.loadSpectraData(
-    filepath_data = f"{filepath_sim}/72/plt/Turb_hdf5_plt_cnt_0101_spect_vels.dat",
+  list_k_72_new_6, list_spectra_72_new_6, _ = LoadFlashData.loadSpectraData(
+    filepath_data = f"{filepath_sim}/72/compare/np6/Turb_hdf5_plt_cnt_0100_spect_vels.dat",
     str_spectra_type = "vel"
   )
   # ax.plot(list_k_18, list_spectra_18, "r--", label="18", zorder=3)
   # ax.plot(list_k_36, list_spectra_36, "g--", label="36", zorder=3)
   # ax.plot(list_k_72, list_spectra_72, "b--", label="72 (old)", zorder=3)
   ax.plot(
-    list_k_72_new_6,
-    np.array(list_spectra_72_new_6) / sum(list_spectra_72_new_6),
-    "k-", label="72 (nproc=6)", zorder=5
-  )
-  ax.plot(
     list_k_72_new_2,
     np.array(list_spectra_72_new_2) / sum(list_spectra_72_new_2),
     "r-", label="72 (nproc=2)", zorder=5
+  )
+  ax.plot(
+    list_k_72_new_6,
+    np.array(list_spectra_72_new_6) / sum(list_spectra_72_new_6),
+    "k-", label="72 (nproc=6)", zorder=5
   )
   # ax.plot(list_k_144, list_spectra_144, "r-", label="144", zorder=3)
   # ax.plot(list_k_288, list_spectra_288, "g-", label="288", zorder=3)
