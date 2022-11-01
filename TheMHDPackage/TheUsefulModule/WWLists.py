@@ -21,8 +21,10 @@ def getIndexClosestValue(input_vals, target_value):
   array_vals = np.asarray(input_vals)
   ## check there are sufficient points
   if array_vals.shape[0] < 3:
-    raise Exception(f"ERROR: There are insuffient elements:", array_vals.shape)
-  return np.argmin(np.abs(array_vals - target_value))
+    raise Exception(f"ERROR: There are insuffient elements:", input_vals)
+  if target_value == np.inf:  return np.nanargmax(array_vals)
+  if target_value == -np.inf: return np.nanargmin(array_vals)
+  return np.nanargmin(np.abs(array_vals - target_value))
 
 def flattenList(list_elems):
   return list(np.concatenate(list_elems).flat)

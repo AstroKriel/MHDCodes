@@ -60,11 +60,11 @@ def fitToDistributions(
   if bool_y_list: num_fits = len(input_y[0])
   ## check that the input distribution has at least one dimension
   if not bool_x_list and not bool_y_list:
-    Exception("You need to input a list of distributions in at least one dimension.")
+    Exception("ERROR:You need to input a list of distributions in at least one dimension.")
   ## if a 2D distribition has been provided, check that the number of point in each dimenesion is the same
   if bool_x_list and bool_y_list:
     if not len(list(input_x)) == len(list(input_y)):
-      Exception("You provided a list of 2D distributions, but there weren't the same number of elements in each dimension. The number of components were: '{}' and '{}'.".format(len(list(input_x)), len(list(input_y))))
+      raise Exception("ERROR:You provided a list of 2D distributions, but there weren't the same number of elements in each dimension. The number of components were: '{}' and '{}'.".format(len(list(input_x)), len(list(input_y))))
   ## #######################
   ## INTERPRET INPUT: X-DATA
   ## #########
@@ -120,7 +120,7 @@ def fitToDistributions(
     list_fit_errors_group.append(np.sqrt(np.diag(fit_cov)))
   ## error checking
   if fit_params is None:
-    Exception("Fitter wasn't able to fit successfully.")
+    Exception("ERROR:Fitter wasn't able to fit successfully.")
   ## regig fit paramaters and associated errors
   ## distribution for each parameter: [ [a0_0, ..., a0_m], ... [an_0, ..., an_m] ] for n parameters and m fits
   list_fit_params_organised_group = [ [ 

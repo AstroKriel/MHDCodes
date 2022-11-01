@@ -33,16 +33,8 @@ def aniEvolution(
   ):
   ''' Animate plot frames into .mp4 video.
   '''
-  ## create filepath to where plots are saved
-  filepath_input = WWFnF.createFilepath([
-    filepath_frames,
-    input_name
-  ])
-  ## create filepath to where animation should be saved
-  filepath_output = WWFnF.createFilepath([
-    filepath_movie,
-    output_name
-  ])
+  filepath_input  = f"{filepath_frames}/{input_name}"
+  filepath_output = f"{filepath_movie}/{output_name}"
   ## animate the plot-frames
   os.system(f"ffmpeg -y -start_number 0 -i {filepath_input} -loglevel quiet -vb 40M -framerate 40 -vf scale=1440:-1 -vcodec mpeg4 {filepath_output}")
   print("Saved animation:", filepath_output)
@@ -211,7 +203,7 @@ def addLegend(
         Line2D([0], [0], linestyle=artist, color=marker_color, linewidth=lw)
       )
     ## otherwise throw an error
-    else: Exception(f"ERROR: '{artist}' is not a valid valid.")
+    else: raise Exception(f"ERROR: '{artist}' is not a valid valid.")
   ## create legend
   legend = ax.legend(
     list_legend_artists,
@@ -358,7 +350,7 @@ class CreateFunctionLabel():
     elif "PowerLaw".lower() in func_label.lower(): self.labelPowerLaw()
     elif "LinearOffset".lower() in func_label.lower(): self.labelLinearOffset()
     elif "Linear".lower() in func_label.lower(): self.labelLinear()
-    else: Exception(f"Undefined KDE function: can't create label for '{func_label}'")
+    else: raise Exception(f"Undefined KDE function: can't create label for '{func_label}'")
 
   def labelPowerLawOffset(self):
     str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)

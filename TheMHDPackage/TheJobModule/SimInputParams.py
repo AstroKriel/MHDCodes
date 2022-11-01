@@ -11,14 +11,14 @@ from TheUsefulModule import WWVariables, WWObjs
 ## HELPER FUNCTIONS
 ## ###############################################################
 def saveSimInputParams(obj_sim_params, filepath):
-  WWObjs.saveObj2Json(
+  WWObjs.saveObj2JsonFile(
     obj      = obj_sim_params,
     filepath = filepath,
     filename = "sim_inputs.json"
   )
 
 def readSimInputParams(filepath):
-  dict_input_params = WWObjs.loadJson2Dict(
+  dict_input_params = WWObjs.loadJsonFile2Dict(
     filepath = filepath,
     filename = "sim_inputs.json"
   )
@@ -114,9 +114,9 @@ class SimInputParams():
     ## t_turb = ell_turb / (Mach * c_s)
     self.t_turb = 1 / (self.k_turb * self.desired_Mach)
     ## define sonic regime
-    if self.desired_Mach < 1:
-      self.sonic_regime = "sub_sonic"
-    else: self.sonic_regime = "super_sonic"
+    if self.desired_Mach > 1:
+      self.sonic_regime     = "super_sonic"
+    else: self.sonic_regime = "sub_sonic"
 
   def __definePlasmaParameters(self):
     ## Re and Pm have been defined

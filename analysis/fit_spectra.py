@@ -71,9 +71,9 @@ class SpectraObject():
       bool_hide_updates        = False
     ):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(self.filepath_data + "/../", bool_hide_updates=False)
+    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(f"{self.filepath_data}/../", bool_hide_updates=False)
     if plots_per_eddy is None:
-      Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
+      raise Exception("ERROR: failed to read number of plt-files per turn-over-time from 'Turb.log'!")
     ## load kinetic energy spectra
     print("Loading kinetic energy spectra...")
     list_kin_k_group_t, list_kin_power_group_t, list_kin_list_sim_times = LoadFlashData.loadAllSpectraData(
@@ -141,7 +141,7 @@ class SpectraObject():
       **mag_fit_dict
     )
     ## save spectra-fit data in a json-file
-    WWObjs.saveObj2Json(
+    WWObjs.saveObj2JsonFile(
       obj      = self.fits_obj,
       filepath = self.filepath_data,
       filename = self.filename_spectra_fits
@@ -154,12 +154,11 @@ class SpectraObject():
     ):
     ## load spectra-fit data as a dictionary
     try:
-      fits_dict = WWObjs.loadJson2Dict(
+      fits_dict = WWObjs.loadJsonFile2Dict(
         filepath = self.filepath_data,
         filename = self.filename_spectra_fits
       )
-    except:
-      Exception(f"Error: '{self.filename_spectra_fits}' does not exist.")
+    except: raise Exception(f"Error: '{self.filename_spectra_fits}' does not exist!")
     ## store dictionary data in spectra-fit object
     fits_obj = FitMHDScales.SpectraFit(**fits_dict)
     ## check whether any simulation parameters need to be updated:
@@ -188,7 +187,7 @@ class SpectraObject():
     ## if any of the attributes have been updated
     if bool_obj_was_updated:
       ## save the updated spectra object
-      WWObjs.saveObj2Json(
+      WWObjs.saveObj2JsonFile(
         obj      = fits_obj,
         filepath = self.filepath_data,
         filename = self.filename_spectra_fits
@@ -383,7 +382,7 @@ def main():
   )
   if bool_fit_spectra or not(bool_missing_plasma_numbers):
     if bool_missing_plasma_numbers:
-      Exception("Error: Undefined plasma-Reynolds numbers. Need to define two of the following: 'Re', 'Rm', and 'Pm'.")
+      raise Exception("ERROR: Undefined plasma-Reynolds numbers. Need to define two of the following: 'Re', 'Rm', and 'Pm'.")
     if Re == None: Re = Rm / Pm
     if Rm == None: Rm = Re * Pm
     if Pm == None: Pm = Rm / Re

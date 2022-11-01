@@ -11,15 +11,14 @@ import numpy as np
 ## so matplotlib stores its cache in a temporary directory.
 ## (necessary when plotting in parallel)
 import tempfile
-
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
 
 from scipy import interpolate
 from lmfit import Model
 
-## load user routines
-from plot_turb import PlotTurbData
+## load user defined routines
+from plot_turb_data import PlotTurbData
 
 ## load user defined modules
 from TheUsefulModule import WWLists, WWFnF, WWObjs
@@ -27,6 +26,7 @@ from TheJobModule import SimInputParams
 from TheLoadingModule import LoadFlashData
 from ThePlottingModule import PlotFuncs
 from TheFittingModule import FitMHDScales
+
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -67,7 +67,12 @@ def fitKinSpectra(ax, list_k_data, list_power_data, bool_plot=True):
   ]
   array_k_fit     = np.logspace(np.log10(min(list_k_data)), np.log10(max(list_k_data)), 1000)
   array_power_fit = FitMHDScales.SpectraModels.kinetic_linear(array_k_fit, *fit_params)
-  if bool_plot: ax.plot(array_k_fit, array_power_fit, label=label_fit, color="black", ls="-", lw=3, zorder=5)
+  if bool_plot:
+    ax.plot(
+      array_k_fit,
+      array_power_fit,
+      label=label_fit, color="black", ls="-", lw=3, zorder=5
+    )
   return fit_params
 
 def fitMagSpectra(ax, list_k_data, list_power_data):
@@ -91,15 +96,28 @@ def fitMagSpectra(ax, list_k_data, list_power_data):
   ]
   array_k_fit     = np.logspace(0, 2, 1000)
   array_power_fit = FitMHDScales.SpectraModels.magnetic_linear(array_k_fit, *fit_params)
-  ax.plot(array_k_fit, array_power_fit, label=label_fit, color="black", ls="-.", lw=3, zorder=5)
+  ax.plot(
+    array_k_fit,
+    array_power_fit,
+    label=label_fit, color="black", ls="-.", lw=3, zorder=5
+  )
   return fit_params
 
 def getMagSpectraPeak(ax, list_k_data, list_power_data, bool_plot=True):
-  array_k_interp = np.logspace(np.log10(min(list_k_data)), np.log10(max(list_k_data)), 3*len(list_power_data))[1:-1]
+  array_k_interp = np.logspace(
+    np.log10(min(list_k_data)),
+    np.log10(max(list_k_data)),
+    3*len(list_power_data)
+  )[1:-1]
   array_power_interp = interpLogLogData(list_k_data, list_power_data, array_k_interp, "cubic")
   k_p   = array_k_interp[np.argmax(array_power_interp)]
   k_max = np.argmax(list_power_data) + 1
-  if bool_plot: ax.plot(array_k_interp, array_power_interp, ls="-", c="orange")
+  if bool_plot:
+    ax.plot(
+      array_k_interp,
+      array_power_interp,
+      color="orange", ls="-"
+    )
   return k_p, k_max
 
 
@@ -139,19 +157,26 @@ class PlotSpectra():
       "list_mag_power_ave" : self.list_mag_power_ave,
       ## measured quantities
       "list_growth_time"   : self.list_mag_time,
-      "list_k_eq_time"     : self.list_k_eq_time,
+      "list_time_k_eq"     : self.list_time_k_eq,
       "alpha_kin_group_t"  : self.alpha_kin_group_t,
       "k_nu_group_t"       : self.k_nu_group_t,
       "k_p_group_t"        : self.k_p_group_t,
       "k_eq_group_t"       : self.k_eq_group_t,
     }
 
+  def saveFittedParams(self, filepath_sim):
+    dict_params = self.getFittedParams()
+    WWObjs.saveDict2JsonFile(f"{filepath_sim}/sim_outputs.json", dict_params)
+
   def __loadData(self):
     print("Loading energy spectra...")
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(f"{self.filepath_data}/../", bool_hide_updates=True)
+    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(
+      f"{self.filepath_data}/../",
+      bool_hide_updates = True
+    )
     if plots_per_eddy is None:
-      Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
+      raise Exception("ERROR: failed to read number of plt-files per turn-over-time from 'Turb.log'!")
     ## load kinetic energy spectra
     list_kin_k_group_t, list_kin_power_group_t, self.list_kin_time = LoadFlashData.loadAllSpectraData(
       filepath_data     = self.filepath_data,
@@ -221,7 +246,7 @@ class PlotSpectra():
   def __plotSpectraRatio(self):
     ## for each time realisation
     self.k_eq_group_t   = []
-    self.list_k_eq_time = []
+    self.list_time_k_eq = []
     for time_index in range(len(self.list_mag_time)):
       ## calculate energy ratio spectrum
       list_spectra_ratio = [
@@ -253,15 +278,19 @@ class PlotSpectra():
         k_eq       = self.list_mag_k[k_eq_index]
         k_eq_power = list_spectra_ratio[k_eq_index]
         self.k_eq_group_t.append(k_eq)
-        self.list_k_eq_time.append(self.list_mag_time[time_index])
+        self.list_time_k_eq.append(self.list_mag_time[time_index])
         if BOOL_DEBUG: self.ax_spectra_ratio.plot(k_eq, k_eq_power, "ko")
-    self.axs_scales[0].plot(self.list_k_eq_time, self.k_eq_group_t, "r-", label=r"$k_{\rm eq}$")
+    self.axs_scales[0].plot(
+      self.list_time_k_eq,
+      self.k_eq_group_t,
+      color="red", ls="-", label=r"$k_{\rm eq}$"
+    )
 
   def __fitKinSpectra(self):
     self.A_kin_group_t     = []
     self.alpha_kin_group_t = []
     self.k_nu_group_t      = []
-    for time_index in range(len(self.list_kin_power_norm_group_t)):
+    for time_index in range(len(self.list_kin_time)):
       ## find k-index to stop fitting kinetic energy spectrum
       end_index_kin = WWLists.getIndexClosestValue(
         self.list_kin_power_norm_group_t[time_index],
@@ -279,13 +308,17 @@ class PlotSpectra():
       self.alpha_kin_group_t.append(params_kin[1])
       self.k_nu_group_t.append(params_kin[2])
     ## plot scales
-    self.axs_scales[0].plot(self.list_kin_time, self.k_nu_group_t, "g-", label=r"$k_\nu$")
+    self.axs_scales[0].plot(
+      self.list_kin_time,
+      self.k_nu_group_t,
+      color="green", ls="-", label=r"$k_\nu$"
+    )
     plotPDF(self.axs_scales[1], self.k_nu_group_t, "g")
 
   def __fitMagSpectra(self):
     self.k_p_group_t   = []
     self.k_max_group_t = []
-    for time_index in range(len(self.list_mag_power_norm_group_t)):
+    for time_index in range(len(self.list_mag_time)):
       ## extract interpolated and raw magnetic peak-scale
       k_p, k_max = getMagSpectraPeak(
         self.axs_spectra[1],
@@ -297,7 +330,11 @@ class PlotSpectra():
       self.k_p_group_t.append(k_p)
       self.k_max_group_t.append(k_max)
     ## plot scales
-    self.axs_scales[0].plot(self.list_mag_time, self.k_p_group_t, "k-", label=r"$k_{\rm p}$")
+    self.axs_scales[0].plot(
+      self.list_mag_time,
+      self.k_p_group_t,
+      color="black", ls="-", label=r"$k_{\rm p}$"
+    )
     plotPDF(self.axs_scales[1], self.k_p_group_t, "k")
 
   def __labelSpectraPlot(self):
@@ -308,7 +345,7 @@ class PlotSpectra():
     self.axs_spectra[1].plot(
       np.mean(self.k_max_group_t),
       np.mean(np.max(self.list_mag_power_norm_group_t, axis=1)),
-      label=r"$k_{\rm max}$", color="black", marker="o", ms=10, ls="", zorder=7
+      color="black", marker="o", ms=10, ls="", label=r"$k_{\rm max}$", zorder=7
     )
     ## create labels for measured scales
     label_A_kin     = r"$A_{\rm kin} = $ " +"{:.1e}".format(np.mean(self.A_kin_group_t))
@@ -341,14 +378,14 @@ class PlotSpectra():
       ]
     )
     ## adjust kinetic energy axis
-    # self.axs_spectra[0].set_xlim([ 0.9, max(self.list_mag_k) ])
+    self.axs_spectra[0].set_xlim([ 0.9, 1.1*max(self.list_mag_k) ])
     self.axs_spectra[0].set_xlabel(r"$k$")
     self.axs_spectra[0].set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$", color="green")
     self.axs_spectra[0].tick_params(axis="y", colors="green")
     self.axs_spectra[0].set_xscale("log")
     self.axs_spectra[0].set_yscale("log")
     ## adjust magnetic energy axis
-    # self.axs_spectra[1].set_xlim([ 0.9, max(self.list_mag_k) ])
+    self.axs_spectra[1].set_xlim([ 0.9, 1.1*max(self.list_mag_k) ])
     self.axs_spectra[1].set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k)$", color="red")
     self.axs_spectra[1].tick_params(axis="y", colors="red")
     self.axs_spectra[1].spines["left"].set_edgecolor("green")
@@ -411,6 +448,7 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
     dict_sim_params = dict_sim_params
   )
   obj_plot_turb.performRoutines()
+  obj_plot_turb.saveFittedParams(filepath_sim)
   dict_turb_params = obj_plot_turb.getFittedParams()
   ## PLOT FITTED SPECTRA
   ## -------------------
@@ -424,12 +462,12 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
     time_exp_end     = dict_turb_params["time_growth_end"]
   )
   obj_plot_spectra.performRoutines()
-  dict_spectra_params = obj_plot_spectra.getFittedParams()
+  obj_plot_spectra.saveFittedParams(filepath_sim)
   ## SAVE FIGURE
   ## -----------
   print("Saving figure...")
-  fig_name = f"{sim_name}_dataset.png"
-  fig_filepath = WWFnF.createFilepath([ filepath_vis, fig_name ])
+  fig_name     = f"{sim_name}_dataset.png"
+  fig_filepath = f"{filepath_vis}/{fig_name}"
   plt.savefig(fig_filepath)
   plt.close()
   print("Saved figure:", fig_filepath)
@@ -469,9 +507,7 @@ def main():
 
         ## MAKE SURE A VISUALISATION FOLDER EXISTS
         ## ---------------------------------------
-        filepath_sim_res_plot = WWFnF.createFilepath([
-          filepath_sim_res, "vis_folder"
-        ])
+        filepath_sim_res_plot = f"{filepath_sim_res}/vis_folder"
         WWFnF.createFolder(filepath_sim_res_plot, bool_hide_updates=True)
 
         ## PLOT SIMULATION DATA AND SAVE MEASURED QUANTITIES

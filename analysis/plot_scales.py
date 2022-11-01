@@ -124,9 +124,9 @@ class PlotSimScales():
 
   def __getParams(self, filepath_data, dataset_name):
     ## load spectra-fit data as a dictionary
-    dict = WWObjs.loadJson2Dict(
-      filepath          = filepath_data,
-      filename          = dataset_name,
+    dict = WWObjs.loadJsonFile2Dict(
+      filepath = filepath_data,
+      filename = dataset_name,
       bool_hide_updates = True
     )
     ## extract plasma Reynolds numbers

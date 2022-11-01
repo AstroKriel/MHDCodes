@@ -193,7 +193,9 @@ def loadTurbData(
   ## subset data based on time
   index_start = WWLists.getIndexClosestValue(data_x, time_start)
   index_end   = WWLists.getIndexClosestValue(data_x, time_end)
-  return data_x[index_start : index_end], data_y[index_start : index_end]
+  data_x_sub = data_x[index_start : index_end]
+  data_y_sub = data_y[index_start : index_end]
+  return data_x_sub, data_y_sub
 
 
 def loadSpectraData(filepath_data, str_spectra_type):
@@ -276,7 +278,7 @@ def getPlotsPerEddy_fromTurbLog(
   ## search routine
   bool_tmax_found          = False
   bool_plot_interval_found = None
-  with open(WWFnF.createFilepath([ filepath_file, "Turb.log" ]), "r") as fp:
+  with open(f"{filepath_file}/Turb.log", "r") as fp:
     for line in fp.readlines():
       if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
         tmax = float(getValue(line))
@@ -336,7 +338,7 @@ def getPlasmaNumbers_fromFlashPar(filepath_sim, rms_Mach, k_turb):
       }
     else:
       bool_found_neither = (not bool_found_nu) and (not bool_found_eta)
-      raise Exception("\t> ERROR: Could not find {}{}{}{}.".format(
+      raise Exception("ERROR:\t> ERROR: Could not find {}{}{}{}.".format(
         "either " if bool_found_neither else "",
         "nu"   if not bool_found_nu  else "",
         " or " if bool_found_neither else "",

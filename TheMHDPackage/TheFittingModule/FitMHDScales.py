@@ -200,7 +200,7 @@ class SpectraModels():
       )
     except Warning:
       print("Bounds of input arguments:", np.min(arg), np.max(arg))
-      Exception("Error: failed to fit modified bessel function.")
+      raise Exception("ERROR: failed to fit modified bessel function.")
     return np.log(A) + alpha_1 * np.log(k) + log_bessel
     # return np.log(A) + alpha_1 * np.log(k) + np.log(k0( (np.array(k) / k_eta)**(alpha_2) ))
 

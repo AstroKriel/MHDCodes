@@ -15,11 +15,12 @@ os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
 
 ## load user defined modules
-from TheUsefulModule import WWLists, WWFnF
+from TheUsefulModule import WWLists, WWFnF, WWObjs
 from TheJobModule import SimInputParams
 from TheLoadingModule import LoadFlashData
 from ThePlottingModule import PlotFuncs
 from TheFittingModule import FitFuncs
+
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -69,12 +70,20 @@ class PlotTurbData():
       "E_sat_ratio"       : self.E_sat_ratio
     }
 
+  def saveFittedParams(self, filepath_sim):
+    dict_params = self.getFittedParams()
+    WWObjs.saveDict2JsonFile(f"{filepath_sim}/sim_outputs.json", dict_params)
+
   def __loadData(self):
     print("Loading volume integrated data...")
+    ## check if the Turb.dat file is formatted
+    with open(f"{self.filepath_data}/Turb.dat") as fp:
+      file_first_line = fp.readline()
+    bool_format_new = "#01_time" in file_first_line.split() # new if #01_time else #00_time
     ## load kinetic energy
     _, data_kin_energy = LoadFlashData.loadTurbData(
       filepath_data = self.filepath_data,
-      var_y         = 6, # 9+1 (new), 6 (old)
+      var_y         = 9 if bool_format_new else 6, # 9+1 (new), 6 (old)
       t_turb        = self.t_turb,
       time_start    = 0.1,
       time_end      = np.inf
@@ -82,7 +91,7 @@ class PlotTurbData():
     ## load magnetic energy
     _, data_mag_energy = LoadFlashData.loadTurbData(
       filepath_data = self.filepath_data,
-      var_y         = 29, # 11+1 (new), 29 (old)
+      var_y         = 11 if bool_format_new else 29, # 11+1 (new), 29 (old)
       t_turb        = self.t_turb,
       time_start    = 0.1,
       time_end      = np.inf
@@ -90,7 +99,7 @@ class PlotTurbData():
     ## load Mach data
     data_time, data_Mach = LoadFlashData.loadTurbData(
       filepath_data = self.filepath_data,
-      var_y         = 8, # 13+1 (new), 8 (old)
+      var_y         = 13 if bool_format_new else 8, # 13+1 (new), 8 (old)
       t_turb        = self.t_turb,
       time_start    = 0.1,
       time_end      = np.inf
@@ -120,16 +129,24 @@ class PlotTurbData():
     ## define plot domain
     self.max_time = max([
       100,
-      max(self.data_time[:max_len])
+      max(self.data_time)
     ])
 
   def __plotMach(self):
-    self.axs[0].plot(self.data_time, self.data_Mach, color="orange", ls="-", lw=1.5, zorder=3)
+    self.axs[0].plot(
+      self.data_time,
+      self.data_Mach,
+      color="orange", ls="-", lw=1.5, zorder=3
+    )
     self.axs[0].set_ylabel(r"$\mathcal{M}$")
     self.axs[0].set_xlim([ 0, self.max_time ])
   
   def __plotEnergyRatio(self):
-    self.axs[1].plot(self.data_time, self.data_E_ratio, color="orange", ls="-", lw=1.5, zorder=3)
+    self.axs[1].plot(
+      self.data_time,
+      self.data_E_ratio,
+      color="orange", ls="-", lw=1.5, zorder=3
+    )
     ## define y-axis range for the energy ratio plot
     min_E_ratio         = min(self.data_E_ratio)
     log_min_E_ratio     = np.log10(min_E_ratio)
@@ -192,8 +209,11 @@ class PlotTurbData():
     ## -------------------
     else:
       ## get index range corresponding with end of the simulation
-      index_start_fit = WWLists.getIndexClosestValue(self.data_time, (0.75 * self.data_time[-1]))
-      index_end_fit   = len(self.data_time)-1
+      index_start_fit = WWLists.getIndexClosestValue(
+        self.data_time,
+        0.75 * self.data_time[-1]
+      )
+      index_end_fit = len(self.data_time)-1
       ## find average energy ratio
       self.E_sat_ratio = FitFuncs.fitConstFunc(
         ax              = self.axs[1],
@@ -270,6 +290,7 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
     filepath_data   = filepath_sim,
     dict_sim_params = dict_sim_params
   )
+  obj_plot_turb.saveFittedParams(filepath_sim)
   obj_plot_turb.performRoutines()
   ## SAVE FIGURE
   ## -----------
@@ -333,15 +354,15 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "sub_sonic"
+SONIC_REGIME      = "super_sonic"
 
-# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
-LIST_SUITE_FOLDER = [ "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm5" ]
-LIST_SIM_RES      = [ "288" ]
+# LIST_SUITE_FOLDER = [ "Rm3000" ]
+# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm5" ]
+# LIST_SIM_RES      = [ "288" ]
 
 
 ## ###############################################################

@@ -61,7 +61,7 @@ def main():
       ## CHECK THE SIMULATION EXISTS
       ## ---------------------------
       sonic_regime = "super_sonic" if DES_MACH > 1 else "sub_sonic" if DES_MACH < 1 else "trans_sonic"
-      if sonic_regime == "trans_sonic": raise Exception("ERROR: no 'trans-sonic' sim. has been run, yet.")
+      if sonic_regime == "trans_sonic": raise Exception("ERROR: 'trans-sonic' sim. is not implemented yet.")
       filepath_sim = WWFnF.createFilepath([
         BASEPATH, suite_folder, sonic_regime, sim_folder
       ])
@@ -80,8 +80,8 @@ def main():
         ## check that the filepath exists
         if not os.path.exists(filepath_sim_res): continue
 
-        # ## create and save simulation input parameters file
-        # makeSimInputParams(filepath_sim_res, suite_folder, sim_folder, sim_res)
+        ## create and save simulation input parameters file
+        makeSimInputParams(filepath_sim_res, suite_folder, sim_folder, sim_res)
 
         ## create empty space
         print(" ")

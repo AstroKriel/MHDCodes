@@ -1,10 +1,10 @@
 import os, json
 os.system("clear")
 
-def saveDict2Json(filepath_file, input_dict):
+def saveDict2JsonFile(filepath_file, input_dict):
   ## if json-file already exists, then append dictionary
   if os.path.isfile(filepath_file):
-    append2JsonFile(filepath_file, input_dict)
+    appendDict2JsonFile(filepath_file, input_dict)
   ## create json-file with dictionary
   else: createJsonFile(filepath_file, input_dict)
 
@@ -13,7 +13,7 @@ def createJsonFile(filepath_file, dict2save):
     json.dump(dict2save, fp, sort_keys=True, indent=2)
   print("Saved json-file:", filepath_file)
 
-def append2JsonFile(filepath_file, dict2append):
+def appendDict2JsonFile(filepath_file, dict2append):
   ## read json-file into dict
   with open(filepath_file, "r") as fp_r:
     dict_old = json.load(fp_r)
@@ -31,12 +31,12 @@ def main():
     "my_float" : 4.0,
     "my_str"   : "hi there mate"
   }
-  saveDict2Json(filename, my_dict_1)
+  saveDict2JsonFile(filename, my_dict_1)
   my_dict_2 = {
     "my_list" : [ 1, 2, 3, 4 ],
     "my_str"  : "bye bye dude"
   }
-  saveDict2Json(filename, my_dict_2)
+  saveDict2JsonFile(filename, my_dict_2)
 
 if __name__ == "__main__":
   main()

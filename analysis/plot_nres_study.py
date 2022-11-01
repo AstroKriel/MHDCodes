@@ -84,7 +84,7 @@ class PlotSpectraConvergence():
     for sim_res in LIST_SIM_RES:
       ## load json-file into a dictionary
       try:
-        dict_sim_data = WWObjs.loadJson2Dict(
+        dict_sim_data = WWObjs.loadJsonFile2Dict(
           filepath = f"{self.filepath_sim}/{sim_res}",
           filename = f"{self.sim_name}_dataset.json",
           bool_hide_updates = True

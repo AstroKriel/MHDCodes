@@ -58,7 +58,7 @@ sim_names     = args["sim_names"]   # name of figures
 ## ###############################################################
 ## ---------------------------- START CODE
 if len(sim_names) < len(folders_sims):
-  Exception("You need to give a label to every simulation.")
+  raise Exception("ERROR: You need to give a label to every simulation.")
 ## if a time-range isn't specified for one of the simulations, then use the default time-range
 if len(start_time) < len(folders_sims):
   start_time.extend( [1] * (len(folders_sims) - len(start_time)) )
