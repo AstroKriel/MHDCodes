@@ -4,8 +4,8 @@
 import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
+
 from lmfit import Model
-import ThePlottingModule.TheMatplotlibStyler
 
 
 ## ###############################################################
@@ -16,7 +16,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################
-## MAGNETIC SPECTRUM MODEL
+## MAGNETIC ENERGY SPECTRUM MODEL
 ## ###############################################################
 class MagSpectrum():
   def linear(k, A, alpha_1, alpha_2, k_eta):
@@ -32,7 +32,6 @@ class MagSpectrum():
 def loadSpectraData(filepath):
   data_k_group_t     = []
   data_power_group_t = []
-  ## loop over spectra files in t/t_turb = [10, 30]
   for file_index in range(100, 300):
     filepath_file = f"{filepath}/Turb_hdf5_plt_cnt_{str(file_index).zfill(4)}_spect_mags.dat"
     data          = open(filepath_file).readlines()
@@ -43,9 +42,10 @@ def loadSpectraData(filepath):
     data_power_group_t.append(data_power)
   return data_k_group_t, data_power_group_t
 
-def AveNormSpectraData(data_power_group_t):
+def aveNormSpectraData(data_power_group_t):
   data_power_norm_group_t = [
-    np.array(data_power) / np.sum(data_power) for data_power in data_power_group_t
+    np.array(data_power) / np.sum(data_power)
+    for data_power in data_power_group_t
   ]
   return np.median(data_power_norm_group_t, axis=0)
 
@@ -80,11 +80,11 @@ def fitMagSpectra(ax, data_k, data_power):
 def main():
   filepath_scratch = "/scratch/ek9/nk7952/"
   filepath_data    = f"{filepath_scratch}/Rm3000/288/super_sonic/Pm5/spect"
-  fig, ax = plt.subplots(figsize=(7,8))
+  fig, ax          = plt.subplots(figsize=(7,8))
   ## load magnetic energy spectrum
   data_k_group_t, data_power_group_t = loadSpectraData(filepath_data)
   ## normalise and time-average
-  data_power_ave = AveNormSpectraData(data_power_group_t)
+  data_power_ave = aveNormSpectraData(data_power_group_t)
   ax.plot(data_k_group_t[0], data_power_ave, c="r", ls="", marker="o", ms=3)
   fitMagSpectra(ax, data_k_group_t[0], data_power_ave)
   ## save figure
@@ -103,4 +103,4 @@ if __name__ == "__main__":
   sys.exit()
 
 
-## END OF PROGRAM
+## END OF DEMO PROGRAM

@@ -22,12 +22,14 @@ os.system("clear")
 ## HELPER FUNCTION
 ## ###############################################################
 def makeSimInputParams(filepath_sim, suite_folder, sim_folder, sim_res):
+  ## number of cells per block that the flash4-exe was compiled with
   if sim_res in [ "144", "288", "576" ]:
     num_blocks = [ 36, 36, 48 ]
   elif sim_res in [ "36", "72" ]:
     num_blocks = [ 12, 12, 18 ]
   elif sim_res in [ "18" ]:
     num_blocks = [ 6, 6, 6 ]
+  ## create object to define simulation input parameters
   obj_sim_params = SimInputParams.SimInputParams()
   obj_sim_params.defineParams(
     suite_folder = suite_folder,
@@ -40,6 +42,7 @@ def makeSimInputParams(filepath_sim, suite_folder, sim_folder, sim_res):
     Rm           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Rm"),
     Pm           = LoadFlashData.getPlasmaNumbers_fromName(sim_folder,   "Pm")
   )
+  ## write input file
   SimInputParams.saveSimInputParams(obj_sim_params, filepath_sim)
 
 
@@ -57,11 +60,13 @@ def main():
 
       ## CHECK THE SIMULATION EXISTS
       ## ---------------------------
+      sonic_regime = "super_sonic" if DES_MACH > 1 else "sub_sonic" if DES_MACH < 1 else "trans_sonic"
+      if sonic_regime == "trans_sonic": raise Exception("ERROR: no 'trans-sonic' sim. has been run, yet.")
       filepath_sim = WWFnF.createFilepath([
-        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
+        BASEPATH, suite_folder, sonic_regime, sim_folder
       ])
       if not os.path.exists(filepath_sim): continue
-      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}"
+      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}, regime: {sonic_regime}"
       print(str_message)
       print("=" * len(str_message))
       print(" ")
@@ -88,7 +93,6 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "super_sonic"
 K_TURB            = 2.0
 DES_MACH          = 5.0
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
