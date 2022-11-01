@@ -432,7 +432,7 @@ class FitSpectra(metaclass=abc.ABCMeta): # abstract base class
     ## if there is only one good fit, then use it
     elif num_good_fits == 1: best_fit_index = list_good_fit_indices[0]
     ## if there are no good fits, then use the fit with the smallest error
-    else: best_fit_index = WWLists.getIndexListMin(fit_2norm_group_k)
+    else: best_fit_index = np.nanargmin(fit_2norm_group_k)
     ## return best fit index
     return best_fit_index
   
