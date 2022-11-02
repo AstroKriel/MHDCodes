@@ -93,11 +93,7 @@ def getSimData(fig, ax, filepath_sim, sim_name, Re, Pm, bool_ref_plot=False):
   ax.set_xlabel(r"$k$")
   ax.set_xscale("log")
   ax.set_yscale("log")
-  PlotFuncs.addLogAxisTicks(
-    ax,
-    bool_major_ticks = True,
-    num_major_ticks  = 10
-  )
+  PlotFuncs.addLogAxisTicks(ax, bool_major_ticks=True, num_major_ticks=10)
   ## save dataset
   dict_params = {
     "Re"                      : Re,
@@ -117,7 +113,7 @@ def main():
   filepath_Re1700Pm2 = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm2/288/"
   filepath_Re600Pm5  = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm5/288/"
   ## initialise figure
-  fig, fig_grid = PlotFuncs.createFigGrid(1, 3, fig_aspect_ratio=(5,4))
+  fig, fig_grid = PlotFuncs.createFigure_grid(1, 3, fig_aspect_ratio=(5,4))
   ax_Re3600Pm1 = fig.add_subplot(fig_grid[0])
   ax_Re1700Pm2 = fig.add_subplot(fig_grid[1])
   ax_Re600Pm5  = fig.add_subplot(fig_grid[2])

@@ -97,7 +97,7 @@ class PlotSpectraConvergence():
       self.list_k_p_group_res.append(dict_sim_data["list_k_p"])
 
   def createFigure(self):
-    fig, fig_grid = PlotFuncs.createFigGrid(
+    fig, fig_grid = PlotFuncs.createFigure_grid(
       fig_scale        = 1.0,
       fig_aspect_ratio = (5.0, 8.0),
       num_rows         = 2,

@@ -14,6 +14,7 @@ import cmasher as cmr
   ## cmr sequential maps: tropical, ocean, arctic, bubblegum, lavender
   ## cmr diverging maps: iceburn, wildfire, fusion
 
+from matplotlib.cm import ScalarMappable
 from matplotlib.lines import Line2D
 from matplotlib.gridspec import GridSpec
 from matplotlib.offsetbox import TextArea, VPacker, AnnotationBbox
@@ -42,9 +43,9 @@ def aniEvolution(
 
 
 ## ###############################################################
-## CREATE FIGURE
+## WORKING WITH FIGURES AND COLORBARS
 ## ###############################################################
-def createFigGrid(
+def createFigure_grid(
     num_rows         = 1,
     num_cols         = 1,
     fig_scale        = 1.0,
@@ -59,12 +60,37 @@ def createFigGrid(
   fig_grid = GridSpec(num_rows, num_cols, figure=fig)
   return fig, fig_grid
 
+def saveFigure(fig, filepath_fig):
+  print("Saving figure...")
+  fig.set_tight_layout(True)
+  fig.savefig(filepath_fig)
+  plt.close(fig)
+  print("Saved figure:", filepath_fig)
+
+def createCmap(cmap_name, vmin=0.0, vmax=1.0):
+  ## cmr cmaps span [0.0, 1.0], so pass (vmin, vmax) to subset the cmap
+  return cmr.get_sub_cmap(cmap_name, vmin, vmax)
+
 
 ## ###############################################################
 ## ADD TO PLOTS
 ## ###############################################################
-def addColorbar_fromCmap(cmap, cmin, vmax):
-  a = 10
+def addColorbar_fromCmap(
+    fig, ax, cmap,
+    vmin=0.0, vmax=1.0, label=None, fontsize=16, orientation="horizontal"
+  ):
+  norm = colors.Normalize(vmin=vmin, vmax=vmax)
+  smap = ScalarMappable(cmap=cmap, norm=norm)
+  div  = make_axes_locatable(ax)
+  if "h" in orientation:   cax = div.new_vertical(size="5%", pad=0.1)
+  elif "v" in orientation: cax = div.new_horizontal(size="5%", pad=0.1)
+  else: raise Exception(f"ERROR: '{orientation}' is not a supported orientation!")
+  fig.add_axes(cax)
+  cbar = fig.colorbar(mappable=smap, cax=cax, orientation=orientation)
+  if "h" in orientation:
+    cax.set_title(label, fontsize=fontsize)
+    cax.xaxis.set_ticks_position("top")
+  else: cbar.ax.set_ylabel(label, rotation=-90, va="bottom", fontsize=fontsize)
 
 def addColorbar_fromMappble(mappable, cbar_title=None):
   ''' from: https://joseph-long.com/writing/colorbars/
@@ -251,7 +277,7 @@ def plot2DField(
     bool_save        = False,
     bool_colorbar    = True,
     cmap_str         = "cmr.arctic",
-    cbar_label       = None,
+    cbar_title       = None,
     cbar_lims        = None,
     bool_mid_norm    = False,
     mid_norm         = 0,
@@ -275,7 +301,7 @@ def plot2DField(
   )
   ## add colorbar
   if bool_colorbar:
-    addColorbar(im_obj, cbar_label)
+    addColorbar_fromMappble(im_obj, cbar_title)
   ## add labels
   if list_labels is not None:
     addBoxOfLabels(fig, ax, list_labels)

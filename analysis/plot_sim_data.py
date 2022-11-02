@@ -442,7 +442,7 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
   ## INITIALISE FIGURE
   ## -----------------
   print("Initialising figure...")
-  fig, fig_grid = PlotFuncs.createFigGrid(
+  fig, fig_grid = PlotFuncs.createFigure_grid(
     fig_scale        = 1.0,
     fig_aspect_ratio = (5.0, 8.0),
     num_rows         = 3,
