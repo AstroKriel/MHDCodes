@@ -130,13 +130,27 @@ class PlotSpectra():
       fig, axs_spectra, axs_scales, ax_spectra_ratio,
       filepath_data, time_exp_start, time_exp_end
     ):
-    self.fig              = fig
-    self.axs_spectra      = axs_spectra
-    self.axs_scales       = axs_scales
-    self.ax_spectra_ratio = ax_spectra_ratio
-    self.filepath_data    = filepath_data
-    self.time_exp_start   = time_exp_start
-    self.time_exp_end     = time_exp_end
+    ## save input arguments
+    self.fig                = fig
+    self.axs_spectra        = axs_spectra
+    self.axs_scales         = axs_scales
+    self.ax_spectra_ratio   = ax_spectra_ratio
+    self.filepath_data      = filepath_data
+    self.time_exp_start     = time_exp_start
+    self.time_exp_end       = time_exp_end
+    ## initialise quantities to measure
+    self.list_mag_k         = None
+    self.list_kin_power_ave = None
+    self.list_mag_power_ave = None
+    self.plots_per_eddy     = None
+    self.list_mag_time      = None
+    self.list_time_k_eq     = None
+    self.alpha_kin_group_t  = None
+    self.k_nu_group_t       = None
+    self.k_p_group_t        = None
+    self.k_eq_group_t       = None
+    ## flag to check that quantities have been measured
+    self.bool_fitted        = False
 
   def performRoutines(self):
     self.__loadData()
@@ -150,12 +164,14 @@ class PlotSpectra():
     self.__labelSpectraRatioPlot()
 
   def getFittedParams(self):
+    if not self.bool_fitted: self.performRoutines()
     return {
       ## normalised and time-averaged energy spectra
       "list_k"             : self.list_mag_k,
       "list_kin_power_ave" : self.list_kin_power_ave,
       "list_mag_power_ave" : self.list_mag_power_ave,
       ## measured quantities
+      "plots_per_eddy"     : self.plots_per_eddy,
       "list_growth_time"   : self.list_mag_time,
       "list_time_k_eq"     : self.list_time_k_eq,
       "alpha_kin_group_t"  : self.alpha_kin_group_t,
@@ -171,11 +187,11 @@ class PlotSpectra():
   def __loadData(self):
     print("Loading energy spectra...")
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(
+    self.plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(
       f"{self.filepath_data}/../",
       bool_hide_updates = True
     )
-    if plots_per_eddy is None:
+    if self.plots_per_eddy is None:
       raise Exception("ERROR: failed to read number of plt-files per turn-over-time from 'Turb.log'!")
     ## load kinetic energy spectra
     list_kin_k_group_t, list_kin_power_group_t, self.list_kin_time = LoadFlashData.loadAllSpectraData(
@@ -183,7 +199,7 @@ class PlotSpectra():
       str_spectra_type  = "vel",
       file_start_time   = self.time_exp_start,
       file_end_time     = self.time_exp_end,
-      plots_per_eddy    = plots_per_eddy,
+      plots_per_eddy    = self.plots_per_eddy,
       bool_hide_updates = True
     )
     ## load magnetic energy spectra
@@ -192,7 +208,7 @@ class PlotSpectra():
       str_spectra_type  = "mag",
       file_start_time   = self.time_exp_start,
       file_end_time     = self.time_exp_end,
-      plots_per_eddy    = plots_per_eddy,
+      plots_per_eddy    = self.plots_per_eddy,
       bool_hide_updates = True
     )
     ## store time-evolving energy spectra

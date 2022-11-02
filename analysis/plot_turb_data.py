@@ -37,7 +37,7 @@ class PlotTurbData():
       self,
       fig, axs, filepath_data, dict_sim_params
     ):
-    ## input arguments
+    ## save input arguments
     self.fig            = fig
     self.axs            = axs
     self.filepath_data  = filepath_data
@@ -52,6 +52,7 @@ class PlotTurbData():
     self.rms_Mach       = None
     self.Gamma          = None
     self.E_sat_ratio    = None
+    ## flag to check that quantities have been measured
     self.bool_fitted    = False
 
   def performRoutines(self):
@@ -62,6 +63,7 @@ class PlotTurbData():
     self.__labelPlots()
 
   def getFittedParams(self):
+    if not self.bool_fitted: self.performRoutines()
     return {
       "time_growth_start" : self.time_exp_start,
       "time_growth_end"   : self.time_exp_end,
