@@ -44,7 +44,12 @@ def aniEvolution(
 ## ###############################################################
 ## CREATE FIGURE
 ## ###############################################################
-def createFigGrid(fig_aspect_ratio, num_rows, num_cols, fig_scale=1.0):
+def createFigGrid(
+    num_rows         = 1,
+    num_cols         = 1,
+    fig_scale        = 1.0,
+    fig_aspect_ratio = (4,6)
+  ):
   fig = plt.figure(
     constrained_layout = True,
     figsize            = (
@@ -58,17 +63,20 @@ def createFigGrid(fig_aspect_ratio, num_rows, num_cols, fig_scale=1.0):
 ## ###############################################################
 ## ADD TO PLOTS
 ## ###############################################################
-def addColorbar(mappable, cbar_label=None):
+def addColorbar_fromCmap(cmap, cmin, vmax):
+  a = 10
+
+def addColorbar_fromMappble(mappable, cbar_title=None):
   ''' from: https://joseph-long.com/writing/colorbars/
   '''
-  last_axes = plt.gca()
-  ax = mappable.axes
-  fig = ax.figure
-  divider = make_axes_locatable(ax)
-  cax = divider.append_axes("right", size="5%", pad=0.1)
-  cbar = fig.colorbar(mappable, cax=cax)
-  cbar.ax.set_ylabel(cbar_label, rotation=-90, va="bottom")
-  plt.sca(last_axes)
+  ax_old  = plt.gca()
+  ax_new  = mappable.axes
+  fig     = ax_new.figure
+  div     = make_axes_locatable(ax_new)
+  ax_cbar = div.append_axes("right", size="5%", pad=0.1)
+  cbar    = fig.colorbar(mappable, cax=ax_cbar)
+  cbar.ax.set_ylabel(cbar_title, rotation=-90, va="bottom")
+  plt.sca(ax_old)
   return cbar
 
 def addLinearAxisTicks(
