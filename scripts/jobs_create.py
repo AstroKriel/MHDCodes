@@ -7,11 +7,10 @@ import os, sys
 
 ## load user defined modules
 from TheUsefulModule import WWFnF
-from TheLoadingModule import LoadFlashData
-from TheJobModule.SimInputParams import SimParams
-from TheJobModule.PrepSimJob import PrepSimJob
-from TheJobModule.CalcSpectraJob import CalcSpectraJob
-from TheJobModule.PlotSpectraJob import PlotSpectraJob
+from TheJobModule import SimInputParams
+from TheJobModule import PrepSimJob
+from TheJobModule import CalcSpectraJob
+from TheJobModule import PlotSpectraJob
 
 
 ## ###############################################################
@@ -28,8 +27,9 @@ def main():
 
       ## CHECK THE SIMULATION EXISTS
       ## ---------------------------
+      sonic_regime = SimInputParams.getSonicRegime(DES_MACH)
       filepath_sim = WWFnF.createFilepath([
-        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
+        BASEPATH, suite_folder, sonic_regime, sim_folder
       ])
       if not os.path.exists(filepath_sim): continue
       str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}"
@@ -46,43 +46,39 @@ def main():
         ## check that the filepath exists
         if not os.path.exists(filepath_sim_res): continue
 
-        obj_sim_params = SimParams(
-          suite_folder = suite_folder,
-          sim_folder   = sim_folder,
-          sim_res      = int(sim_res),
-          num_blocks   = NUM_BLOCKS,
-          k_turb       = K_TURB,
-          Mach         = MACH,
-          Re           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Re"),
-          Rm           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Rm"),
-          Pm           = LoadFlashData.getPlasmaNumbers_fromName(sim_folder,   "Pm")
+        ## READ/CREATE SIMULATION INPUT REFERENCE FILE
+        ## -------------------------------------------
+        if os.path.isfile(f"{filepath_sim_res}/sim_inputs.json"):
+          obj_sim_params = SimInputParams.readSimInputParams(filepath_sim_res)
+        else: obj_sim_params = SimInputParams.makeSimInputParams(
+          filepath_sim_res, suite_folder, sim_folder, sim_res, K_TURB, DES_MACH
         )
+        dict_sim_params = obj_sim_params.getSimParams()
 
         ## CREATE JOB FILE TO RUN SIMULATION
         ## ---------------------------------
         if BOOL_PREP_SIM:
-          obj_prep_sim = PrepSimJob(
-            filepath_ref   = f"{BASEPATH}/backup_files/",
-            filepath_sim   = filepath_sim_res,
-            obj_sim_params = obj_sim_params
+          obj_prep_sim = PrepSimJob.PrepSimJob(
+            filepath_ref    = f"{BASEPATH}/backup_files/",
+            filepath_sim    = filepath_sim_res,
+            dict_sim_params = dict_sim_params
           )
           obj_prep_sim.fromLowerNres(f"{filepath_sim}/36/")
 
         ## CREATE JOB FILE TO CALCULATE SPECTRA
         ## ------------------------------------
         if BOOL_CALC_SPECTRA:
-          CalcSpectraJob(
-            filepath_plt = f"{filepath_sim_res}/plt/",
-            obj_sim_params = obj_sim_params
+          CalcSpectraJob.CalcSpectraJob(
+            filepath_plt    = f"{filepath_sim_res}/plt/",
+            dict_sim_params = dict_sim_params
           )
 
         ## CREATE JOB FILE TO PLOT SPECTRA
         ## -------------------------------
         if BOOL_PLOT_SPECTRA:
-          PlotSpectraJob(
-            filepath_scratch = BASEPATH,
-            filepath_sim     = filepath_sim_res,
-            obj_sim_params   = obj_sim_params
+          PlotSpectraJob.PlotSpectraJob(
+            filepath_sim    = filepath_sim_res,
+            dict_sim_params = dict_sim_params
           )
 
         ## create an empty line after each suite
@@ -97,14 +93,8 @@ def main():
 ## Simulation parameters
 EMAIL_ADDRESS      = "neco.kriel@anu.edu.au"
 BASEPATH           = "/scratch/ek9/nk7952/"
-SONIC_REGIME       = "super_sonic"
-MACH               = 5.0
+DES_MACH           = 5.0
 K_TURB             = 2.0
-NUM_BLOCKS         = [
-  # 36, 36, 48  # Nres = 144, 288, 576
-  12, 12, 18  # Nres = 36, 72
-  # 6,  6,  6   # Nres = 18
-]
 BOOL_PREP_SIM      = 0
 BOOL_CALC_SPECTRA  = 1
 BOOL_PLOT_SPECTRA  = 0

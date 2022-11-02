@@ -42,7 +42,7 @@ class PlotTurbData():
     self.axs            = axs
     self.filepath_data  = filepath_data
     self.t_turb         = dict_sim_params["t_turb"]
-    self.N_res          = dict_sim_params["N_res"]
+    self.N_res          = int(dict_sim_params["sim_res"])
     self.Re             = dict_sim_params["Re"]
     self.Rm             = dict_sim_params["Rm"]
     self.Pm             = dict_sim_params["Pm"]

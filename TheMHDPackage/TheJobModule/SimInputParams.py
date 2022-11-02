@@ -5,11 +5,16 @@
 ## MODULES
 ## ###############################################################
 from TheUsefulModule import WWVariables, WWObjs
-
+from TheLoadingModule import LoadFlashData
 
 ## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
+def getSonicRegime(Mach):
+  sonic_regime = "super_sonic" if Mach > 1 else "sub_sonic" if Mach < 1 else "trans_sonic"
+  if sonic_regime == "trans_sonic": raise Exception("ERROR: 'trans-sonic' sim. is not implemented yet.")
+  return sonic_regime
+
 def saveSimInputParams(obj_sim_params, filepath):
   WWObjs.saveObj2JsonFile(
     obj      = obj_sim_params,
@@ -24,6 +29,31 @@ def readSimInputParams(filepath):
   )
   obj_input_params = SimInputParams(**dict_input_params)
   return obj_input_params
+
+def makeSimInputParams(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, des_mach):
+  ## number of cells per block that the flash4-exe was compiled with
+  if sim_res in [ "144", "288", "576" ]:
+    num_blocks = [ 36, 36, 48 ]
+  elif sim_res in [ "36", "72" ]:
+    num_blocks = [ 12, 12, 18 ]
+  elif sim_res in [ "18" ]:
+    num_blocks = [ 6, 6, 6 ]
+  ## create object to define simulation input parameters
+  obj_sim_params = SimInputParams()
+  obj_sim_params.defineParams(
+    suite_folder = suite_folder,
+    sim_folder   = sim_folder,
+    sim_res      = sim_res,
+    num_blocks   = num_blocks,
+    k_turb       = k_turb,
+    desired_Mach = des_mach,
+    Re           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Re"),
+    Rm           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Rm"),
+    Pm           = LoadFlashData.getPlasmaNumbers_fromName(sim_folder,   "Pm")
+  )
+  ## write input file
+  saveSimInputParams(obj_sim_params, filepath_sim)
+  return obj_sim_params
 
 
 ## ###############################################################
@@ -67,7 +97,7 @@ class SimInputParams():
     return {
       "suite_folder" : self.suite_folder,
       "sim_folder"   : self.sim_folder,
-      "N_res"        : int(self.sim_res),
+      "sim_res"      : self.sim_res,
       "num_blocks"   : self.num_blocks,
       "k_turb"       : self.k_turb,
       "desired_Mach" : self.desired_Mach,
@@ -112,11 +142,8 @@ class SimInputParams():
 
   def __defineSonicRegime(self):
     ## t_turb = ell_turb / (Mach * c_s)
-    self.t_turb = 1 / (self.k_turb * self.desired_Mach)
-    ## define sonic regime
-    if self.desired_Mach > 1:
-      self.sonic_regime     = "super_sonic"
-    else: self.sonic_regime = "sub_sonic"
+    self.t_turb       = 1 / (self.k_turb * self.desired_Mach)
+    self.sonic_regime = getSonicRegime(self.desired_Mach)
 
   def __definePlasmaParameters(self):
     ## Re and Pm have been defined
