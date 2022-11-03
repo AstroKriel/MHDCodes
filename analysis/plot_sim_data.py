@@ -543,15 +543,12 @@ def main():
 ## ###############################################################
 BOOL_DEBUG        = 0
 BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "sub_sonic"
+SONIC_REGIME      = "super_sonic"
 
-# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
-
-LIST_SUITE_FOLDER = [ "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm5" ]
-LIST_SIM_RES      = [ "288" ]
+LIST_SIM_RES      = [ "72" ]
 
 
 ## ###############################################################

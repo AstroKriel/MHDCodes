@@ -146,7 +146,7 @@ def main():
         BASEPATH, suite_folder, SONIC_REGIME, sim_folder
       ])
       if not os.path.exists(filepath_sim): continue
-      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}"
+      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}, regime: {SONIC_REGIME}"
       print(str_message)
       print("=" * len(str_message))
       print(" ")

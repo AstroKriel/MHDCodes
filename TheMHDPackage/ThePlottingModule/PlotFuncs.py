@@ -52,7 +52,7 @@ def createFigure_grid(
     fig_aspect_ratio = (4,6)
   ):
   fig = plt.figure(
-    constrained_layout = True,
+    # constrained_layout = True,
     figsize            = (
       fig_scale * fig_aspect_ratio[1] * num_cols,
       fig_scale * fig_aspect_ratio[0] * num_rows

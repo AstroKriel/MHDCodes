@@ -71,13 +71,12 @@ class PlotSpectraConvergence():
       self,
       filepath_sim, filepath_vis, sim_name
     ):
-    self.filepath_sim             = filepath_sim
-    self.filepath_vis             = filepath_vis
-    self.sim_name                 = sim_name
-    self.list_sim_res             = []
-    self.list_alpha_kin_group_res = []
-    self.list_k_nu_group_res      = []
-    self.list_k_p_group_res       = []
+    self.filepath_sim          = filepath_sim
+    self.filepath_vis          = filepath_vis
+    self.sim_name              = sim_name
+    self.list_sim_res          = []
+    self.k_nu_group_t_res      = []
+    self.k_p_group_t_res       = []
 
   def readDataset(self):
     ## read in scales for each resolution run
@@ -85,16 +84,15 @@ class PlotSpectraConvergence():
       ## load json-file into a dictionary
       try:
         dict_sim_data = WWObjs.loadJsonFile2Dict(
-          filepath = f"{self.filepath_sim}/{sim_res}",
-          filename = f"{self.sim_name}_dataset.json",
-          bool_hide_updates = True
+          filepath = f"{self.filepath_sim}/{sim_res}/",
+          filename = f"sim_outputs.json",
+          bool_hide_updates = False
         )
       except: continue
-      ## pull out data
+      ## extract data
       self.list_sim_res.append(sim_res)
-      self.list_alpha_kin_group_res.append(dict_sim_data["list_alpha_kin"])
-      self.list_k_nu_group_res.append(dict_sim_data["list_k_nu"])
-      self.list_k_p_group_res.append(dict_sim_data["list_k_p"])
+      self.k_nu_group_t_res.append(dict_sim_data["k_nu_group_t"])
+      self.k_p_group_t_res.append(dict_sim_data["k_p_group_t"])
 
   def createFigure(self):
     fig, fig_grid = PlotFuncs.createFigure_grid(
@@ -111,10 +109,7 @@ class PlotSpectraConvergence():
     self.__annotateFigure()
     ## save figure
     filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_study.png"
-    plt.savefig(filepath_fig)
-    print("Saved figure:", filepath_fig)
-    ## close plot
-    plt.close(fig)
+    PlotFuncs.saveFigure(fig, filepath_fig)
 
   # def createDataset(self):
   #   spectra_converged_obj = FitMHDScales.SpectraConvergedScales(
@@ -136,12 +131,12 @@ class PlotSpectraConvergence():
       plotErrorBar_1D(
         ax      = self.ax_k_nu,
         x       = int(sim_res),
-        array_y = self.list_k_nu_group_res[res_index]
+        array_y = self.k_nu_group_t_res[res_index]
       )
       plotErrorBar_1D(
         ax      = self.ax_k_p,
         x       = int(sim_res),
-        array_y = self.list_k_p_group_res[res_index]
+        array_y = self.k_p_group_t_res[res_index]
       )
 
   # def __fitDataset(self):
@@ -151,10 +146,12 @@ class PlotSpectraConvergence():
   def __annotateFigure(self):
     ## label k_nu
     self.ax_k_nu.set_ylabel(r"$k_\nu$")
+    self.ax_k_nu.set_xscale("log")
     self.ax_k_nu.set_yscale("log")
     ## label k_p
     self.ax_k_p.set_ylabel(r"$k_{\rm p}$")
     self.ax_k_p.set_xlabel(r"$N_{\rm res}$")
+    self.ax_k_p.set_xscale("log")
     self.ax_k_p.set_yscale("log")
 
 
@@ -169,7 +166,7 @@ def main():
 
     ## COMMUNICATE PROGRESS
     ## --------------------
-    str_message = f"Looking at suite: {suite_folder}"
+    str_message = f"Looking at suite: {suite_folder}, regime: {SONIC_REGIME}"
     print(str_message)
     print("=" * len(str_message))
     print(" ")

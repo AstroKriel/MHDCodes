@@ -7,13 +7,6 @@
 import os, json
 import numpy as np
 
-## always import the c-version of pickle
-try: import cPickle as pickle
-except ModuleNotFoundError: import pickle
-
-## load user defined modules
-from TheUsefulModule import WWFnF
-
 
 ## ###############################################################
 ## WORKING WITH JSON-FILES
