@@ -41,7 +41,6 @@ def plotErrorBar_1D(ax, x, array_y, color="k", marker="o"):
     markersize=7, elinewidth=2, linestyle="None", markeredgecolor="black", capsize=7.5, zorder=10
   )
 
-
 def fitScales(
     ax, list_res, list_scales_group_res,
     bounds = ( (0.01, 1, 0), (50, 1000, 3) )
@@ -64,19 +63,19 @@ def fitScales(
 
 
 ## ###############################################################
-## MEASURE, PLOT + SAVE CONVEREGED SCALES
+## OPERATOR CLASS: PLOT RESOLUTION STUDY
 ## ###############################################################
-class PlotSpectraConvergence():
+class PlotScaleConvergence():
   def __init__(
       self,
       filepath_sim, filepath_vis, sim_name
     ):
-    self.filepath_sim          = filepath_sim
-    self.filepath_vis          = filepath_vis
-    self.sim_name              = sim_name
-    self.list_sim_res          = []
-    self.k_nu_group_t_res      = []
-    self.k_p_group_t_res       = []
+    self.filepath_sim     = filepath_sim
+    self.filepath_vis     = filepath_vis
+    self.sim_name         = sim_name
+    self.list_sim_res     = []
+    self.k_nu_group_t_res = []
+    self.k_p_group_t_res  = []
 
   def readDataset(self):
     ## read in scales for each resolution run
@@ -94,7 +93,7 @@ class PlotSpectraConvergence():
       self.k_nu_group_t_res.append(dict_sim_data["k_nu_group_t"])
       self.k_p_group_t_res.append(dict_sim_data["k_p_group_t"])
 
-  def createFigure(self):
+  def createFigure_scales(self):
     fig, fig_grid = PlotFuncs.createFigure_grid(
       fig_scale        = 1.0,
       fig_aspect_ratio = (5.0, 8.0),
@@ -104,11 +103,11 @@ class PlotSpectraConvergence():
     self.ax_k_nu = fig.add_subplot(fig_grid[0, 0])
     self.ax_k_p  = fig.add_subplot(fig_grid[1, 0])
     ## plot and fit data
-    self.__plotDataset()
+    self.__plotScales()
     # self.__fitDataset()
     self.__annotateFigure()
     ## save figure
-    filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_study.png"
+    filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_scales.png"
     PlotFuncs.saveFigure(fig, filepath_fig)
 
   # def createDataset(self):
@@ -126,7 +125,7 @@ class PlotSpectraConvergence():
   #     filename = f"{self.sim_folder}_{FILENAME_CONVERGED}"
   #   )
 
-  def __plotDataset(self):
+  def __plotScales(self):
     for res_index, sim_res in enumerate(self.list_sim_res):
       plotErrorBar_1D(
         ax      = self.ax_k_nu,
@@ -184,21 +183,17 @@ def main():
       ## CHECK THE NRES=288 DATASET EXISTS
       ## ---------------------------------
       ## check that the simulation data exists at Nres=288
-      if not os.path.isfile(WWFnF.createFilepath([ 
-          filepath_sim, "288", f"{sim_name}_dataset.json"
-        ])): continue
+      if not os.path.isfile(f"{filepath_sim}/288/sim_output.json"): continue
 
       ## MAKE SURE A VISUALISATION FOLDER EXISTS
       ## ---------------------------------------
       ## where plots/dataset of converged data will be stored
-      filepath_vis = WWFnF.createFilepath([ 
-        filepath_sim, "vis_folder"
-      ])
+      filepath_vis = f"{filepath_sim}/vis_folder/"
       WWFnF.createFolder(filepath_vis, bool_hide_updates=True)
 
       ## MEASURE HOW WELL SCALES ARE CONVERGED
       ## -------------------------------------
-      obj = PlotSpectraConvergence(filepath_sim, filepath_vis, sim_name)
+      obj = PlotScaleConvergence(filepath_sim, filepath_vis, sim_name)
       obj.readDataset()
       obj.createFigure()
       # obj.createDataset()

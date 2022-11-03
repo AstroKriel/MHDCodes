@@ -1,5 +1,4 @@
 ## ~/.alias
-# eval "echo 'Source: .alias...'"
 
 
 ## ======== COMMAND SHORTCUTS ========
@@ -18,11 +17,64 @@ alias py="python3"
 alias less="less -S"
 
 ## check the size / number of folders / files in current directory
-alias dir_size='du -hcs * | sort -h'
-alias num_files='find . -maxdepth 1 -mindepth 1 -type d -exec sh -c '\''echo "{} : $(find "{}" -type f | wc -l)" file\(s\)'\'' \;'
+function getFileCount() {
+  find "$1" -type f | wc -l
+}
+alias get_dir_size='du -hcs * | sort -h'
+alias get_file_count='find . -maxdepth 1 -mindepth 1 -type d -exec sh -c '\''echo "{} : $(find "{}" -type f | wc -l)" file\(s\)'\'' \;'
 
-## emacs shortcut
-alias e='emacs $OPTIONS'
+## FILE RECOVERY
+## touch all files in sub-directories
+alias touch_files="find . -type f -exec touch {} +"
+
+## save a list of all the quarantined files
+alias get_quarantined="nci-file-expiry list-quarantined > quarantined.txt"
+
+# ## emacs shortcut
+# alias e='emacs $OPTIONS'
+
+
+## ======== CREATE INTERACTIVE JOBS ========
+## =========================================
+
+function createIntJob() {
+  local group_name="$1"
+  local num_cpus="$2"
+  local mem=$((4 * $2))
+  qsub -I -P "$group_name" -l wd -l software=idl -q express -l walltime=05:00:00,ncpus="$num_cpus",mem="$mem"GB
+}
+
+## Federrath group
+alias create_int_job_48cpus="createIntJob ek9 48"
+alias create_int_job_8cpus="createIntJob ek9 8"
+
+
+## ======== QUERY JOBS / STORAGE AVAILABILITY ========
+## ===================================================
+
+function getGroupInfo() {
+  local group_to_check="$1"
+  local group_to_ignore="$2"
+  lquota | grep -v "$group_to_ignore"
+  echo -e "\n"
+  nci-files-report -f scratch -p "$group_to_check"
+  echo -e "\n"
+  nci-files-report -f gdata -p "$group_to_check"
+  echo -e "\n"
+  nci_account -v
+}
+
+## query group status
+alias get_group_info_ek9="getGroupInfo ek9 jh2"
+alias get_group_info_jh2="getGroupInfo jh2 ek9"
+
+## query active jobs
+alias get_myps='ps -elf | grep $USER'
+alias qs='qstat | grep -e $USER'
+alias qa='nqstat_anu'
+alias qn='qstat -f | grep "Job_Name"'
+alias qi='qstat -f | grep "Job Id"'
+alias get_num_jobs="qs | wc -l"
 
 
 ## ======== HOME DIRECTORY ========
@@ -39,16 +91,24 @@ export BIN=$HOME/bin
 alias dbin="cd $BIN"
 
 ## scratch
-export SCRATCH_ek9=/scratch/ek9/$USER
-export SCRATCH_jh2=/scratch/jh2/$USER
-alias dscrek9="cd $SCRATCH_ek9"
-alias dscrjh2="cd $SCRATCH_jh2"
+export SCREK9=/scratch/ek9/$USER
+export SCRJH2=/scratch/jh2/$USER
+alias dscrek9="cd $SCREK9"
+alias dscrjh2="cd $SCRJH2"
 
 ## gdata
-export GDATA_ek9=/g/data1b/ek9/$USER
-export GDATA_jh2=/g/data1b/jh2/$USER
-alias dgdek9="cd $GDATA_ek9"
-alias dgdjh2="cd $GDATA_jh2"
+export GDEK9=/g/data1b/ek9/$USER
+export GDJH2=/g/data1b/jh2/$USER
+alias dgdek9="cd $GDEK9"
+alias dgdjh2="cd $GDJH2"
+
+## Quokka
+export QUOKKA=$HOME/Quokka
+alias dqk="cd $QUOKKA"
+
+## laptop essentials
+export LAP=$HOME/LaptopEssentials/Gadi
+alias dlap="cd $LAP"
 
 ## MHD analysis codes
 export MHDCodes=$HOME/MHDCodes
@@ -56,44 +116,17 @@ export MHDPackage=$MHDCodes/TheMHDPackage
 alias dmhd="cd $MHDCodes"
 
 ## FLASH directories
-export FLASH=$HOME/nk-flash
-export FORCE=$FLASH/source/physics/sourceTerms/Stir/StirFromFileMain/forcing_generator
+export FLASH=$HOME/flash4
+export FORCE=$FLASH/source/physics/sourceTerms/Stir/StirFromFileMain/turbulence_generator
 export STIR=$FLASH/source/Simulation/SimulationMain/StirFromFile
 alias dflash="cd $FLASH"
 alias dforce="cd $FORCE"
 alias dstir="cd $STIR"
 
-## useful 'tool' directories
-export TOOLS=$HOME/nk-tools
+## useful directories
+export TOOLS=$HOME/cf-tools
 export SPECTRA=$TOOLS/spectra
 alias dtools="cd $TOOLS"
-
-
-## ======== CREATE INTERACTIVE JOBS ========
-## =========================================
-
-## Federrath group
-alias job_48cpus_ek9="qsub -I -X -P ek9 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=48,mem=192GB"
-alias job_8cpus_ek9="qsub -I -X -P ek9 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=8,mem=32GB"
-
-## Krumholz group
-alias job_48cpus_jh2="qsub -I -X -P jh2 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=48,mem=192GB"
-alias job_8cpus_jh2="qsub -I -X -P jh2 -l wd -l software=idl -q express -l walltime=05:00:00,ncpus=8,mem=32GB"
-
-
-## ======== QUERY JOBS / STORAGE AVAILABILITY ========
-## ===================================================
-
-## query group status
-alias info_ek9="lquota; nci-files-report -f scratch -p ek9; nci-files-report -f gdata -p ek9; nci_account -v"
-alias info_jh2="lquota; nci-files-report -f scratch -p jh2; nci-files-report -f gdata -p ek9; nci_account -v"
-
-## query active jobs
-alias myps='ps -elf | grep $USER'
-alias qs='qstat | grep -e $USER'
-alias qa='nqstat_anu'
-alias qn='qstat -f | grep "Job_Name"'
-alias qi='qstat -f | grep "Job Id"'
 
 
 ## END OF ALIAS
