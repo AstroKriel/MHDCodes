@@ -3,7 +3,8 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys, re
+import os, sys
+from TheUsefulModule import WWFnF
 
 
 ## ###############################################################
@@ -13,12 +14,13 @@ os.system("clear") # clear terminal window
 
 
 ## ###############################################################
-## HELPER FUNCTIONS
+## HELPER FUNCTION
 ##################################################################
-def createFilepath(list_filepaths):
-  return re.sub('/+', '/', "/".join([
-    filepath for filepath in list_filepaths if not(filepath == "")
-  ]))
+def downloadFromGadiToMac(filepath_gadi, filepath_mac, filename):
+  print("GADI:", filepath_gadi)
+  print("MAC:",  filepath_mac)
+  os.system(f"scp gadi:{filepath_gadi}/{filename} {filepath_mac}/.")
+  print(" ")
 
 
 ## ###############################################################
@@ -30,70 +32,68 @@ def main():
   for suite_folder in LIST_SUITE_FOLDER:
     for sim_folder in LIST_SIM_FOLDER:
 
-      ## COMMUNICATE PROGRESS
-      ## --------------------
       ## check that the filepath exists (MAC)
-      filepath_mac_sim = createFilepath([
+      filepath_mac_sim = WWFnF.createFilepath([
         BASEPATH_MAC, suite_folder, SONIC_REGIME, sim_folder
       ])
+      filepath_gadi_sim = WWFnF.createFilepath([
+        BASEPATH_GADI, suite_folder, SONIC_REGIME, sim_folder
+      ])
+
+      ## CHECK THE SIMULATION EXISTS
+      ## ---------------------------
       if not os.path.exists(filepath_mac_sim): continue
-      str_message = f"Downloading from suite: {suite_folder}, sim: {sim_folder}"
+
+      ## COMMUNICATE PROGRESS
+      ## --------------------
+      str_message = f"Downloading from suite: {suite_folder}, sim: {sim_folder}, regime: {SONIC_REGIME}"
       print(str_message)
       print("=" * len(str_message))
       print(" ")
 
       if BOOL_GET_PLOTS_CONVERGED:
-        ## create filepath (MAC)
-        filepath_mac_plot = createFilepath([
-          BASEPATH_MAC, suite_folder, SONIC_REGIME
-        ])
-        ## download plots (from GADI)
-        filepath_gadi_plot = createFilepath([
-          BASEPATH_GADI, suite_folder, SONIC_REGIME, sim_folder, "vis_folder"
-        ])
-        print("GADI:", filepath_gadi_plot)
-        print("MAC:", filepath_mac_plot)
-        os.system(f"scp gadi:{filepath_gadi_plot}/{FILENAME_PLOTS_CONVERGED} {filepath_mac_plot}/.")
-        print(" ")
+        downloadFromGadiToMac(
+          filepath_gadi = f"{filepath_gadi_sim}/vis_folder/",
+          ## group everything in the sonic regime (for comparing)
+          filepath_mac  = f"{filepath_mac_sim}/../",
+          filename      = FILENAME_PLOTS_CONVERGED
+        )
 
-      ## loop over the different resolution runs
       if BOOL_GET_PLOTS_NRES or BOOL_GET_VIDEOS_NRES:
         ## for aesthetic reasons
         if BOOL_GET_PLOTS_CONVERGED:
           print(" ")
+
+        ## loop over the different resolution runs
         for sim_res in LIST_SIM_RES:
 
           ## CREATE FILEPATH TO FOLDER ON MAC
           ## --------------------------------
-          ## create filepath to resolution dependent plots (MAC)
-          filepath_mac_nres_plot = createFilepath([
-            BASEPATH_MAC, suite_folder, SONIC_REGIME, sim_folder, sim_res
-          ])
+          ## create filepath to store plots at Nres (MAC)
+          filepath_mac_nres_vis  = f"{filepath_mac_sim}/{sim_res}/" # no need for extra subfolder
+          filepath_gadi_nres_vis = f"{filepath_gadi_sim}/{sim_res}/vis_folder/"
           ## check that the filepath exists (MAC)
-          if not os.path.exists(filepath_mac_nres_plot): continue
+          if not os.path.exists(filepath_mac_nres_vis): continue
 
           ## DOWNLOAD FIT FIGURES FROM GADI
           ## ------------------------------
           if BOOL_GET_PLOTS_NRES:
             ## download plots (from GADI)
-            filepath_gadi_nres_plot = createFilepath([
-              BASEPATH_GADI, suite_folder, SONIC_REGIME, sim_folder, sim_res, "vis_folder"
-            ])
-            print("GADI:", filepath_gadi_nres_plot)
-            print("MAC:", filepath_mac_nres_plot)
-            os.system(f"scp gadi:{filepath_gadi_nres_plot}/{FILENAME_PLOTS_NRES} {filepath_mac_nres_plot}/.")
-            print(" ")
+            downloadFromGadiToMac(
+              filepath_gadi = filepath_gadi_nres_vis,
+              filepath_mac  = filepath_mac_nres_vis,
+              filename      = FILENAME_PLOTS_NRES
+            )
 
           ## DOWNLOAD FIT VIDEOS FROM GADI
           ## -----------------------------
           if BOOL_GET_VIDEOS_NRES:
             ## download animated video (from GADI)
-            filepath_gadi_nres_videos = createFilepath([
-              BASEPATH_GADI, suite_folder, SONIC_REGIME, sim_folder, sim_res
-            ])
-            print("GADI:", filepath_gadi_nres_videos)
-            print("MAC:", filepath_mac_nres_plot)
-            os.system(f"scp gadi:{filepath_gadi_nres_videos}/{FILENAME_PLOTS_NRES} {filepath_mac_nres_plot}/.")
+            downloadFromGadiToMac(
+              filepath_gadi = filepath_gadi_nres_vis,
+              filepath_mac  = filepath_mac_nres_vis,
+              filename      = FILENAME_VIDEOS_NRES
+            )
             print(" ")
 
     ## print empty space
