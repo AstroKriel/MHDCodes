@@ -138,7 +138,7 @@ class PlotSpectraFit():
     self.fits_obj = fits_obj
     ## check that the spectra object has been labelled
     if (self.fits_obj.sim_suite is None) or (self.fits_obj.sim_label is None):
-      Exception("Spectra object should have a suite ({:}) and label ({:}) defned.".format(
+      raise Exception("ERROR:Spectra object should have a suite ({:}) and label ({:}) defned.".format(
         self.fits_obj.sim_suite,
         self.fits_obj.sim_label
       ))
@@ -196,7 +196,7 @@ class PlotSpectraFit():
     ## close figure
     plt.close(fig)
     ## print information to the terminal
-    print("\t> Figure saved:", fig_name)
+    print("\t> Saved figure:", fig_name)
 
   def plotSpectraEvolution(
       self,
@@ -320,7 +320,7 @@ class PlotSpectraFit():
     ## #################
     ## ADD FIGURE LABELS
     ## #################
-    list_fig_labels = []
+    list_labels = []
     ## kinetic energy spectra labels
     if bool_plot_kin:
       str_kin_spectra  = r"$\mathcal{P}_{\rm kin}(k) = A_{\rm kin} k^{\alpha_{\rm kin}} \exp\left\{-\frac{k}{k_\nu}\right\}$"
@@ -330,7 +330,7 @@ class PlotSpectraFit():
       str_A_kin        = r"$A_{\rm kin} = $ "+"{:.1e}".format(val_A_kin)
       str_alpha_kin    = r"$\alpha_{\rm kin} = $ "+"{:.1f}".format(val_alpha_kin)
       str_k_nu         = r"$k_\nu = $ "+"{:.1f}".format(val_k_nu)
-      list_fig_labels += [
+      list_labels += [
         str_kin_spectra,
         rf"{str_A_kin}, {str_alpha_kin}, {str_k_nu}"
       ]
@@ -351,18 +351,18 @@ class PlotSpectraFit():
       str_k_eta_alpha_2 = r"$k_\eta^{1/\alpha_{{\rm mag}, 2}} = $ "+"{:.2f}".format(val_k_eta_alpha_2)
       str_k_p           = r"$k_{\rm p} = $ "+"{:.1f}".format(val_k_p)
       str_k_max         = r"$k_{\rm max} = $ "+"{:.1f}".format(val_k_max)
-      list_fig_labels  += [
+      list_labels      += [
         str_mag_spectra,
         rf"{str_alpha_mag_1}, {str_alpha_mag_2}, {str_k_eta}, {str_k_eta_alpha_2}, {str_k_p}"
       ]
-    PlotFuncs.plotBoxOfLabels(
+    PlotFuncs.addBoxOfLabels(
       fig, ax,
-      box_alignment   = (0.0, 0.0),
-      xpos            = 0.025,
-      ypos            = 0.025,
-      alpha           = 0.0,
-      fontsize        = 14,
-      list_fig_labels = list_fig_labels
+      box_alignment = (0.0, 0.0),
+      xpos          = 0.025,
+      ypos          = 0.025,
+      alpha         = 0.0,
+      fontsize      = 14,
+      list_labels   = list_labels
     )
     ## add legend
     ax.legend(frameon=False, loc="upper left", facecolor="white", framealpha=0.0, fontsize=14)
@@ -392,10 +392,7 @@ class PlotSpectraFit():
         self.fig_tags,
       ]) + ".png"
     ## save the figure
-    fig.savefig(
-      WWFnF.createFilepath([ filepath_vis, fig_name ]),
-      dpi = 150
-    )
+    fig.savefig(f"{filepath_vis}/{fig_name}", dpi=150)
     ## clear figure and axis
     fig.artists.clear()
     ax.clear()
@@ -448,14 +445,14 @@ class PlotSpectra():
     self.filepath_movie     = filepath_movie
 
   def plotSpectra(self, bool_hide_updates=False):
-    '''
-    Plot the evolution of the spectra.
-    '''
     ## plot evolution of spectra
     y_min = 1e-20
     y_max = 10
     x_min = 10**(-1)
-    x_max = max(len(self.kin_k[0]), len(self.mag_k[0]))
+    x_max = max([
+      len(self.kin_k[0]),
+      len(self.mag_k[0])
+    ])
     ## initialise spectra evolution figure
     _, ax = plt.subplots()
     ## loop over each time slice
@@ -463,9 +460,8 @@ class PlotSpectra():
         range(len(self.sim_times)),
         disable = bool_hide_updates or (len(self.sim_times) < 3)
       ):
-      ## #################
       ## PLOT SPECTRA DATA
-      ## #################
+      ## -----------------
       ax.plot(
         self.kin_k[time_index],
         self.kin_power[time_index],
@@ -476,9 +472,8 @@ class PlotSpectra():
         self.mag_power[time_index],
         label=r"mag-spectra", color="red", ls="", marker=".", markersize=8
       )
-      ## ############
-      ## LABEL FIGURE
-      ## ############
+      ## ANNOTATE FIGURE
+      ## ---------------
       ## add time stamp
       ax.text(0.975, 0.975, 
         r"$t / t_{\rm turb} = $ "+"{:.1f}".format(self.sim_times[time_index]), 
@@ -494,18 +489,10 @@ class PlotSpectra():
       ## label axes
       ax.set_xlabel(r"$k$")
       ax.set_ylabel(r"$\mathcal{P}$")
-      ## #############
-      ## SAVE SNAPSHOT
-      ## #############
-      tmp_name = WWFnF.createFilepath([
-        self.filepath_frames,
-        WWFnF.createName([
-          self.fig_name,
-          "spectra={0:04}".format(int(time_index))
-        ])+".png"
-      ])
-      ## save the figure
-      plt.savefig(tmp_name, dpi=150)
+      ## SAVE SNAPSHOT OF FRAME
+      ## ----------------------
+      fig_name_frame = f"{self.filepath_frames}/{self.fig_name}_spectra={int(time_index):04d}.png"
+      plt.savefig(fig_name_frame, dpi=150)
       ## clear axis
       ax.clear()
     ## close figure once plotting has finished
@@ -514,14 +501,11 @@ class PlotSpectra():
     self.__aniSpectra()
 
   def __aniSpectra(self):
-    '''
-    Animate the spectra frames.
-    '''
     PlotFuncs.aniEvolution(
       filepath_frames = self.filepath_frames,
       filepath_movie  = self.filepath_movie,
-      input_name      = WWFnF.createName([ self.fig_name, "spectra=%*.png" ]),
-      output_name     = WWFnF.createName([ self.fig_name, "spectra.mp4" ])
+      input_name      = f"{self.fig_name}_spectra=%*.png",
+      output_name     = f"{self.fig_name}_spectra.mp4"
     )
 
 

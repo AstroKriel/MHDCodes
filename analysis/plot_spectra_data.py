@@ -79,9 +79,9 @@ def main():
   ## ############################
   ## LOAD SIMULATION PLT PER EDDY
   ## ############################
-  plots_per_eddy = LoadFlashData.getPlotsPerEddy(filepath_sim, bool_hide_updates=False)
+  plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(filepath_sim, bool_hide_updates=False)
   if plots_per_eddy is None:
-    Exception("ERROR: # plt-files could not be read from 'Turb.log'.")
+    raise Exception("ERROR: failed to read number of plt-files per turn-over-time from 'Turb.log'!")
   
   ## ##########################
   ## LOAD AND PLOT SPECTRA DATA

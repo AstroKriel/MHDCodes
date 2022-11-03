@@ -84,7 +84,7 @@ class PlotSpectraConvergence():
     for sim_res in LIST_SIM_RES:
       ## load json-file into a dictionary
       try:
-        dict_sim_data = WWObjs.loadJson2Dict(
+        dict_sim_data = WWObjs.loadJsonFile2Dict(
           filepath = f"{self.filepath_sim}/{sim_res}",
           filename = f"{self.sim_name}_dataset.json",
           bool_hide_updates = True
@@ -97,7 +97,7 @@ class PlotSpectraConvergence():
       self.list_k_p_group_res.append(dict_sim_data["list_k_p"])
 
   def createFigure(self):
-    fig, fig_grid = PlotFuncs.initFigureGrid(
+    fig, fig_grid = PlotFuncs.createFigure_grid(
       fig_scale        = 1.0,
       fig_aspect_ratio = (5.0, 8.0),
       num_rows         = 2,
@@ -112,7 +112,7 @@ class PlotSpectraConvergence():
     ## save figure
     filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_study.png"
     plt.savefig(filepath_fig)
-    print("Figure saved:", filepath_fig)
+    print("Saved figure:", filepath_fig)
     ## close plot
     plt.close(fig)
 

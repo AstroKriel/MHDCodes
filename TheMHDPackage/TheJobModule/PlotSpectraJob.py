@@ -1,19 +1,18 @@
+## START OF LIBRARY
 import os
-from TheJobModule.SimParams import SimParams
 
 class PlotSpectraJob():
   def __init__(
       self,
-      filepath_sim,
-      obj_sim_params : SimParams
+      filepath_sim, dict_sim_params
     ):
     self.filepath_sim   = filepath_sim
     self.filepath_plt   = f"{self.filepath_sim}/plt"
     self.filepath_spect = f"{self.filepath_sim}/spect"
-    self.suite_folder   = obj_sim_params.suite_folder
-    self.sonic_regime   = obj_sim_params.sonic_regime
-    self.sim_folder     = obj_sim_params.sim_folder
-    self.sim_res        = obj_sim_params.sim_res
+    self.suite_folder   = dict_sim_params["suite_folder"]
+    self.sonic_regime   = dict_sim_params["sonic_regime"]
+    self.sim_folder     = dict_sim_params["sim_folder"]
+    self.sim_res        = dict_sim_params["sim_res"]
     if not os.path.exists(self.filepath_plt):
       print(self.filepath_plt, "does not exist.")
       return
@@ -52,8 +51,10 @@ class PlotSpectraJob():
       job_file.write(f"#PBS -M neco.kriel@anu.edu.au\n")
       job_file.write("\n")
       job_file.write(". ~/modules_flash\n")
-      job_file.write(f"{self.program_name} -suite_path {self.filepath_sim}/.. -sim_folder {self.sim_folder} 1>shell_plot.out00 2>&1\n")
+      job_file.write(f"{self.program_name} -suite_path {self.filepath_sim}/.. -sim_folder {self.sim_folder} 1>shell_plot_spect.out00 2>&1\n")
     ## indicate progress
-    print(f"\t> Created job '{self.job_name}' to run '{self.program_name}' in:\n\t", self.filepath_spect)
+    print(f"Created PBS job:")
+    print(f"\t> Filename: {self.job_name}")
+    print(f"\t> Directory: {self.filepath_spect}")
 
 ## END OF LIBRARY

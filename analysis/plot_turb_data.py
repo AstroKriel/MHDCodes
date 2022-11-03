@@ -13,13 +13,14 @@ import numpy as np
 import tempfile
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 
 ## load user defined modules
-from ThePlottingModule import PlotFuncs
-from TheUsefulModule import WWLists, WWFnF
+from TheUsefulModule import WWLists, WWFnF, WWObjs
+from TheJobModule import SimInputParams
 from TheLoadingModule import LoadFlashData
+from ThePlottingModule import PlotFuncs
 from TheFittingModule import FitFuncs
+
 
 ## ###############################################################
 ## PREPARE WORKSPACE
@@ -34,56 +35,74 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 class PlotTurbData():
   def __init__(
       self,
-      axs, filepath_data
+      fig, axs, filepath_data, dict_sim_params
     ):
-    ## input arguments
+    ## save input arguments
+    self.fig            = fig
     self.axs            = axs
     self.filepath_data  = filepath_data
-    ## quantities to measure
+    self.t_turb         = dict_sim_params["t_turb"]
+    self.N_res          = int(dict_sim_params["sim_res"])
+    self.Re             = dict_sim_params["Re"]
+    self.Rm             = dict_sim_params["Rm"]
+    self.Pm             = dict_sim_params["Pm"]
+    ## initialise quantities to measure
     self.time_exp_start = None
     self.time_exp_end   = None
     self.rms_Mach       = None
     self.Gamma          = None
     self.E_sat_ratio    = None
+    ## flag to check that quantities have been measured
     self.bool_fitted    = False
-    ## perform routines
-    print("Loading volume integrated data...")
+
+  def performRoutines(self):
     self.__loadData()
     self.__plotMach()
     self.__plotEnergyRatio()
     self.__fitData()
+    self.__labelPlots()
 
   def getFittedParams(self):
+    if not self.bool_fitted: self.performRoutines()
     return {
-      "time_start"  : self.time_exp_start,
-      "time_end"    : self.time_exp_end,
-      "rms_Mach"    : self.rms_Mach,
-      "Gamma"       : self.Gamma,
-      "E_sat_ratio" : self.E_sat_ratio
+      "time_growth_start" : self.time_exp_start,
+      "time_growth_end"   : self.time_exp_end,
+      "rms_Mach"          : self.rms_Mach,
+      "Gamma"             : self.Gamma,
+      "E_sat_ratio"       : self.E_sat_ratio
     }
 
+  def saveFittedParams(self, filepath_sim):
+    dict_params = self.getFittedParams()
+    WWObjs.saveDict2JsonFile(f"{filepath_sim}/sim_outputs.json", dict_params)
+
   def __loadData(self):
+    print("Loading volume integrated data...")
+    ## check if the Turb.dat file is formatted
+    with open(f"{self.filepath_data}/Turb.dat") as fp:
+      file_first_line = fp.readline()
+    bool_format_new = "#01_time" in file_first_line.split() # new if #01_time else #00_time
     ## load kinetic energy
-    _, data_E_K = LoadFlashData.loadTurbData(
+    _, data_kin_energy = LoadFlashData.loadTurbData(
       filepath_data = self.filepath_data,
-      var_y         = 9, # 9 (new), 6 (old)
-      t_turb        = T_TURB,
+      var_y         = 9 if bool_format_new else 6, # 9+1 (new), 6 (old)
+      t_turb        = self.t_turb,
       time_start    = 0.1,
       time_end      = np.inf
     )
     ## load magnetic energy
-    _, data_E_B = LoadFlashData.loadTurbData(
+    _, data_mag_energy = LoadFlashData.loadTurbData(
       filepath_data = self.filepath_data,
-      var_y         = 11, # 11 (new), 29 (old)
-      t_turb        = T_TURB,
+      var_y         = 11 if bool_format_new else 29, # 11+1 (new), 29 (old)
+      t_turb        = self.t_turb,
       time_start    = 0.1,
       time_end      = np.inf
     )
     ## load Mach data
     data_time, data_Mach = LoadFlashData.loadTurbData(
       filepath_data = self.filepath_data,
-      var_y         = 13, # 13 (new), 8 (old)
-      t_turb        = T_TURB,
+      var_y         = 13 if bool_format_new else 8, # 13+1 (new), 8 (old)
+      t_turb        = self.t_turb,
       time_start    = 0.1,
       time_end      = np.inf
     )
@@ -93,35 +112,43 @@ class PlotTurbData():
     max_len = min([
       len(data_time),
       len(data_Mach),
-      len(data_E_B),
-      len(data_E_K)
+      len(data_mag_energy),
+      len(data_kin_energy)
     ])
     ## save data
-    self.data_time = data_time[:max_len]
-    self.data_Mach = data_Mach[:max_len]
-    self.data_E_B  = data_E_B[:max_len]
-    self.data_E_K  = data_E_K[:max_len]
-    ## compute and save energy ratio: 'E_B / E_K'
+    self.data_time       = data_time[:max_len]
+    self.data_Mach       = data_Mach[:max_len]
+    self.data_mag_energy = data_mag_energy[:max_len]
+    self.data_kin_energy = data_kin_energy[:max_len]
+    ## compute and save energy ratio: 'mag_energy / kin_energy'
     self.data_E_ratio = [
-      E_B / E_K
-      for E_B, E_K in zip(
-        data_E_B[:max_len],
-        data_E_K[:max_len]
+      mag_energy / kin_energy
+      for mag_energy, kin_energy in zip(
+        self.data_mag_energy,
+        self.data_kin_energy
       )
     ]
     ## define plot domain
     self.max_time = max([
       100,
-      max(self.data_time[:max_len])
+      max(self.data_time)
     ])
 
   def __plotMach(self):
-    self.axs[0].plot(self.data_time, self.data_Mach, color="orange", ls="-", lw=1.5, zorder=3)
+    self.axs[0].plot(
+      self.data_time,
+      self.data_Mach,
+      color="orange", ls="-", lw=1.5, zorder=3
+    )
     self.axs[0].set_ylabel(r"$\mathcal{M}$")
     self.axs[0].set_xlim([ 0, self.max_time ])
   
   def __plotEnergyRatio(self):
-    self.axs[1].plot(self.data_time, self.data_E_ratio, color="orange", ls="-", lw=1.5, zorder=3)
+    self.axs[1].plot(
+      self.data_time,
+      self.data_E_ratio,
+      color="orange", ls="-", lw=1.5, zorder=3
+    )
     ## define y-axis range for the energy ratio plot
     min_E_ratio         = min(self.data_E_ratio)
     log_min_E_ratio     = np.log10(min_E_ratio)
@@ -184,8 +211,11 @@ class PlotTurbData():
     ## -------------------
     else:
       ## get index range corresponding with end of the simulation
-      index_start_fit = WWLists.getIndexClosestValue(self.data_time, (0.75 * self.data_time[-1]))
-      index_end_fit   = len(self.data_time)-1
+      index_start_fit = WWLists.getIndexClosestValue(
+        self.data_time,
+        0.75 * self.data_time[-1]
+      )
+      index_end_fit = len(self.data_time)-1
       ## find average energy ratio
       self.E_sat_ratio = FitFuncs.fitConstFunc(
         ax              = self.axs[1],
@@ -206,51 +236,72 @@ class PlotTurbData():
       index_end_fit   = index_end_fit,
       linestyle       = linestyle_kin
     )
-    ## INIDCATE THAT FIT OCCURED SUCCESSFULLY
-    ## --------------------------------------
+    ## store time range bounds corresponding with the exponential phase of the dynamo
+    self.time_exp_start = self.data_time[index_start_fit]
+    self.time_exp_end   = self.data_time[index_end_fit]
+    ## inidcate that fit occured successfully
     self.bool_fitted = True
-    ## ANNOTATE FIGURE
-    ## ---------------
-    ## add legend
+
+  def __labelPlots(self):
+    ## annotate simulation parameters
+    PlotFuncs.addBoxOfLabels(
+      self.fig, self.axs[0],
+      box_alignment = (1.0, 0.0),
+      xpos          = 0.95,
+      ypos          = 0.05,
+      alpha         = 0.5,
+      fontsize      = 18,
+      list_labels   = [
+        r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(self.N_res)),
+        r"${\rm Re} = $ "          + "{:d}".format(int(self.Re)),
+        r"${\rm Rm} = $ "          + "{:d}".format(int(self.Rm)),
+        r"${\rm Pm} = $ "          + "{:d}".format(int(self.Pm)),
+      ]
+    )
+    ## annotate measured quantities
     legend_ax0 = self.axs[0].legend(frameon=False, loc="lower left", fontsize=18)
     legend_ax1 = self.axs[1].legend(frameon=False, loc="lower right", fontsize=18)
     self.axs[0].add_artist(legend_ax0)
     self.axs[1].add_artist(legend_ax1)
-    ## store time range bounds corresponding with the exponential phase of the dynamo
-    self.time_exp_start = self.data_time[index_start_fit]
-    self.time_exp_end   = self.data_time[index_end_fit]
 
 
 ## ###############################################################
-## FIGURE INITIALISATION AND SAVING
+## HANDLING PLOT CALLS
 ## ###############################################################
-def plotSimData(filepath_data, filepath_vis, sim_name):
-  ## CREATE FIGURE
-  ## -------------
+def plotSimData(filepath_sim, filepath_vis, sim_name):
+  ## GET SIMULATION PARAMETERS
+  ## -------------------------
+  obj_sim_params  = SimInputParams.readSimInputParams(filepath_sim)
+  dict_sim_params = obj_sim_params.getSimParams()
+  ## INITIALISE FIGURE
+  ## -----------------
   print("Initialising figure...")
-  fig, fig_grid = PlotFuncs.initFigureGrid(
+  fig, fig_grid = PlotFuncs.createFigure_grid(
     fig_scale        = 1.0,
     fig_aspect_ratio = (5.0, 8.0),
     num_rows         = 2,
     num_cols         = 2
   )
-  ax_Mach   = fig.add_subplot(fig_grid[0, 0])
-  ax_energy = fig.add_subplot(fig_grid[1, 0])
-  ## PLOT INTEGRATED QUANTITIES (Turb.dat)
-  ## -------------------------------------
-  PlotTurbData(
-    axs           = [ ax_Mach, ax_energy ],
-    filepath_data = filepath_data
+  ax_Mach    = fig.add_subplot(fig_grid[0, 0])
+  ax_E_ratio = fig.add_subplot(fig_grid[1, 0])
+  ## LOAD AND PLOT INTEGRATED QUANTITIES
+  ## -----------------------------------
+  obj_plot_turb = PlotTurbData(
+    fig             = fig,
+    axs             = [ ax_Mach, ax_E_ratio ],
+    filepath_data   = filepath_sim,
+    dict_sim_params = dict_sim_params
   )
+  obj_plot_turb.saveFittedParams(filepath_sim)
+  obj_plot_turb.performRoutines()
   ## SAVE FIGURE
   ## -----------
-  ## save the figure
   print("Saving figure...")
   fig_name     = f"{sim_name}_time_evolution.png"
   fig_filepath = f"{filepath_vis}/{fig_name}"
   plt.savefig(fig_filepath)
   plt.close()
-  print("Figure saved:", fig_filepath)
+  print("Saved figure:", fig_filepath)
 
 
 ## ###############################################################
@@ -271,7 +322,7 @@ def main():
         BASEPATH, suite_folder, SONIC_REGIME, sim_folder
       ])
       if not os.path.exists(filepath_sim): continue
-      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}"
+      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}, regime: {SONIC_REGIME}"
       print(str_message)
       print("=" * len(str_message))
       print(" ")
@@ -287,9 +338,7 @@ def main():
 
         ## MAKE SURE A VISUALISATION FOLDER EXISTS
         ## ---------------------------------------
-        filepath_sim_res_plot = WWFnF.createFilepath([
-          filepath_sim_res, "vis_folder"
-        ])
+        filepath_sim_res_plot = f"{filepath_sim_res}/vis_folder/"
         WWFnF.createFolder(filepath_sim_res_plot, bool_hide_updates=True)
 
         ## PLOT SIMULATION DATA
@@ -308,14 +357,14 @@ def main():
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
-FILENAME_TURB     = "Turb.dat"
-K_TURB            = 2.0
-RMS_MACH          = 5.0
-T_TURB            = 1 / (K_TURB * RMS_MACH)
+
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
-LIST_SIM_RES      = [ "72" ]
+LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+
+# LIST_SUITE_FOLDER = [ "Rm3000" ]
+# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm5" ]
+# LIST_SIM_RES      = [ "288" ]
 
 
 ## ###############################################################

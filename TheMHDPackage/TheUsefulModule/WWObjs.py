@@ -4,8 +4,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
-import json
+import os, json
 import numpy as np
 
 ## always import the c-version of pickle
@@ -17,78 +16,77 @@ from TheUsefulModule import WWFnF
 
 
 ## ###############################################################
-## WORKING WITH PICKLE-FILES
-## ###############################################################
-def saveObj2Pickle(
-    obj, filepath, filename,
-    bool_hide_updates = False
-  ):
-  ## create filepath where object is to be saved
-  filepath_file = WWFnF.createFilepath([filepath, filename])
-  ## save file
-  with open(filepath_file, "wb") as output:
-    pickle.dump(obj, output, -1) # -1 specifies highest binary protocol
-  ## indicate success
-  if not(bool_hide_updates): print("Saved pickle-file:", filepath_file)
-
-def loadPickle2Obj(
-    filepath, filename,
-    bool_raise_error  = False,
-    bool_hide_updates = False
-  ):
-  ## create filepath where object is stored
-  filepath_file = WWFnF.createFilepath([filepath, filename])
-  ## read file if it exists
-  if os.path.isfile(filepath_file):
-    if not(bool_hide_updates):
-      print("Reading in pickle-file:", filepath_file)
-    with open(filepath_file, "rb") as input:
-      return pickle.load(input)
-  ## indicate the file was not found
-  else:
-    ## raise exception
-    if bool_raise_error: Exception(f"No pickle-file '{filename}' found in '{filepath}'.")
-    ## return flag
-    return -1
-
-
-## ###############################################################
 ## WORKING WITH JSON-FILES
 ## ###############################################################
 class NumpyEncoder(json.JSONEncoder):
   def default(self, obj):
-    if isinstance(obj, np.integer):
-      return int(obj)
-    elif isinstance(obj, np.floating):
-      return float(obj)
-    elif isinstance(obj, np.ndarray):
-      return obj.tolist()
+    if isinstance(obj, np.integer):    return int(obj)
+    elif isinstance(obj, np.floating): return float(obj)
+    elif isinstance(obj, np.ndarray):  return obj.tolist()
     return json.JSONEncoder.default(self, obj)
 
-def saveObj2Json(
-    obj, filepath, filename,
-    bool_hide_updates = False
-  ):
-  ## create filepath where object is to be saved
-  filepath_file = WWFnF.createFilepath([filepath, filename])
+def saveObj2JsonFile(obj, filepath, filename):
+  ## create filepath where object will be saved
+  filepath_file = f"{filepath}/{filename}"
   ## save object to file
-  with open(filepath_file, "w") as file_pointer:
+  with open(filepath_file, "w") as fp:
     json.dump(
-      obj       = vars(obj), # store member variables in a dictionary
-      fp        = file_pointer,
+      obj       = vars(obj), # store obj member-variables in a dictionary
+      fp        = fp,
       cls       = NumpyEncoder,
       sort_keys = True,
       indent    = 2
     )
   ## indicate success
-  if not(bool_hide_updates): print("Saved json-file:", filepath_file)
+  print("Saved json-file:", filepath_file)
 
-def loadJson2Dict(
-    filepath, filename,
-    bool_hide_updates = False
-  ):
-  ## create filepath where object is stored
-  filepath_file = WWFnF.createFilepath([filepath, filename])
+## ###############################################################
+## WORKING WITH DICTIONARIES
+## ###############################################################
+def getDictWithoutKeys(input_dict, list_keys):
+  return {
+    k : v
+    for k, v in input_dict.items()
+    if k not in list_keys
+  }
+
+def saveDict2JsonFile(filepath_file, input_dict):
+  ## if json-file already exists, then append dictionary
+  if os.path.isfile(filepath_file):
+    appendDict2JsonFile(filepath_file, input_dict)
+  ## create json-file with dictionary
+  else: createJsonFile(filepath_file, input_dict)
+
+def createJsonFile(filepath_file, dict2save):
+  with open(filepath_file, "w") as fp:
+    json.dump(
+      obj       = dict2save,
+      fp        = fp,
+      cls       = NumpyEncoder,
+      sort_keys = True,
+      indent    = 2
+    )
+  print("Saved json-file:", filepath_file)
+
+def appendDict2JsonFile(filepath_file, dict2append):
+  ## read json-file into dict
+  with open(filepath_file, "r") as fp_r:
+    dict_old = json.load(fp_r)
+  ## append extra contents to dict
+  dict_old.update(dict2append)
+  ## update (overwrite) json-file
+  with open(filepath_file, "w") as fp_w:
+    json.dump(
+      obj       = dict_old,
+      fp        = fp_w,
+      cls       = NumpyEncoder,
+      sort_keys = True,
+      indent    = 2
+    )
+  print("Updated json-file:", filepath_file)
+
+def loadJsonFile2Dict(filepath, filename, bool_hide_updates=False):
+  filepath_file = f"{filepath}/{filename}"
   ## read file if it exists
   if os.path.isfile(filepath_file):
     if not(bool_hide_updates):
@@ -96,7 +94,7 @@ def loadJson2Dict(
     with open(filepath_file, "r") as input:
       return json.load(input)
   ## indicate the file was not found
-  else: raise Exception(f"No json-file '{filename}' found in '{filepath}'.")
+  else: raise Exception(f"ERROR: No json-file found: {filepath_file}.")
 
 
 ## ###############################################################

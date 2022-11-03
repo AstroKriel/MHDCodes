@@ -49,7 +49,29 @@ def reformatFlashData(field, num_blocks, num_procs):
   return field_sorted
 
 
-def loadPltFileData_slice(
+def loadPltData_3D(
+    filepath_data,
+    num_blocks      = [ 36, 36, 48 ],
+    num_procs       = [ 8,  8,  6  ],
+    str_field       = "mag",
+    bool_print_info = False
+  ):
+  ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
+  with h5py.File(filepath_data, "r") as flash_file:
+    names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
+    data_x, data_y, data_z = np.array([flash_file[i] for i in names])
+    if bool_print_info: 
+      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys())))
+      print("--------- All the keys that were used: " + str(names))
+    flash_file.close() # close the file stream
+    ## reformat data
+    data_sorted_x = reformatFlashData(data_x, num_blocks, num_procs)
+    data_sorted_y = reformatFlashData(data_y, num_blocks, num_procs)
+    data_sorted_z = reformatFlashData(data_z, num_blocks, num_procs)
+    return data_sorted_x, data_sorted_y, data_sorted_z
+
+
+def loadPltData_slice(
     filepath_data, num_blocks, num_procs, str_field,
     bool_rms_norm   = False,
     bool_print_info = False
@@ -74,73 +96,7 @@ def loadPltFileData_slice(
     else: return data_slice
 
 
-def loadListFLASHFieldSlice(
-    filepath_data,
-    file_start_index  = 2,
-    file_end_index    = np.inf,
-    num_blocks        = [ 36, 36, 48 ],
-    num_procs         = [ 8,  8,  6  ],
-    str_field         = "mag",
-    bool_rms_norm     = False,
-    bool_hide_updates = False
-  ):
-  ## initialise list of cube data
-  list_data_mag_sorted = []
-  ## filter for datacube files
-  flash_filenames = WWFnF.getFilesFromFilepath(
-    filepath              = filepath_data, 
-    filename_contains     = "Turb_hdf5_plt_cnt_",
-    filename_not_contains = "spect",
-    loc_file_index        = -1,
-    file_start_index      = file_start_index,
-    file_end_index        = file_end_index
-  )
-  ## loop over each of the datacube file names
-  for filename, _ in WWLists.loopListWithUpdates(flash_filenames, bool_hide_updates):
-    ## load all datacube files in folder
-    list_data_mag_sorted.append(
-      loadPltFileData_slice(
-        filepath_data = f"{filepath_data}/{filename}",
-        num_blocks    = num_blocks,
-        num_procs     = num_procs,
-        str_field     = str_field,
-        bool_rms_norm = bool_rms_norm
-      )
-    )
-  if not len(list_data_mag_sorted) > 0:
-    Exception("Could not load any data in:", filepath_data)
-  ## get bounds of data for colorbar limits
-  list_col_range = [
-    np.min(list_data_mag_sorted),
-    np.max(list_data_mag_sorted)
-  ]
-  ## return data
-  return list_data_mag_sorted, list_col_range
-
-
-def loadPltFileData_3D(
-    filepath_data,
-    num_blocks      = [ 36, 36, 48 ],
-    num_procs       = [ 8,  8,  6  ],
-    str_field       = "mag",
-    bool_print_info = False
-  ):
-  ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
-  with h5py.File(filepath_data, "r") as flash_file:
-    names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
-    data_x, data_y, data_z = np.array([flash_file[i] for i in names])
-    if bool_print_info: 
-      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys())))
-      print("--------- All the keys that were used: " + str(names))
-    flash_file.close() # close the file stream
-    ## reformat data
-    data_sorted_x = reformatFlashData(data_x, num_blocks, num_procs)
-    data_sorted_y = reformatFlashData(data_y, num_blocks, num_procs)
-    data_sorted_z = reformatFlashData(data_z, num_blocks, num_procs)
-    return data_sorted_x, data_sorted_y, data_sorted_z
-
-
-def loadAllPlotData_slice(
+def loadAllPltData_slice(
     filepath_data,
     start_time       = 0,
     end_time         = np.inf,
@@ -169,7 +125,7 @@ def loadAllPlotData_slice(
   # plot_file_indices = range(len(filenames))[::plot_every_index]
   for filename, _ in WWLists.loopListWithUpdates(filenames):
     ## load dataset
-    field_mag = loadPltFileData_slice(
+    field_mag = loadPltData_slice(
       filepath_data = f"{filepath_data}/{filename}",
       num_blocks    = num_blocks,
       num_procs     = num_procs,
@@ -223,9 +179,10 @@ def loadTurbData(
           ## if the simulation has been restarted, only read the progressed data
           if cur_time < prev_time: # walking backwards
             cur_val = float(data_split[var_y])
-            if cur_val == 0:
+            if cur_val == 0.0:
               if bool_debug:
-                raise Exception(f"Error: encountered 0-value in quantity index {var_y} in 'Turb.dat' at time = {cur_time}.")
+                raise Exception(f"Error: encountered 0-value in quantity index {var_y} in 'Turb.dat' at time = {cur_time}")
+              ## ignore time point
               continue
             data_x.append(cur_time)
             data_y.append(cur_val)
@@ -236,42 +193,9 @@ def loadTurbData(
   ## subset data based on time
   index_start = WWLists.getIndexClosestValue(data_x, time_start)
   index_end   = WWLists.getIndexClosestValue(data_x, time_end)
-  return data_x[index_start : index_end], data_y[index_start : index_end]
-
-
-def getPlotsPerEddy(
-    filepath_file,
-    num_t_turb        = 100,
-    bool_hide_updates = False
-  ):
-  ## helper functions
-  def getName(line):
-    return line.split("=")[0].lower()
-  def getValue(line):
-    return line.split("=")[1].split("[")[0]
-  ## search routine
-  bool_tmax_found          = False
-  bool_plot_interval_found = None
-  with open(WWFnF.createFilepath([ filepath_file, "Turb.log" ]), "r") as fp:
-    for line in fp.readlines():
-      if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
-        tmax = float(getValue(line))
-        bool_tmax_found = True
-      elif "plotfileintervaltime" in getName(line):
-        plot_file_interval = float(getValue(line))
-        bool_plot_interval_found = True
-      if bool_tmax_found and bool_plot_interval_found:
-        plots_per_eddy = tmax / plot_file_interval / num_t_turb
-        if not(bool_hide_updates):
-          print("The following has been read from 'Turb.log':")
-          print("\t> 'tmax'".ljust(25),                 "=", tmax)
-          print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
-          print("\t> # plt-files / t_turb".ljust(25),   "=", plots_per_eddy)
-          print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb.")
-          print(" ")
-        return plots_per_eddy
-  ## failed to read quantity
-  return None
+  data_x_sub = data_x[index_start : index_end]
+  data_y_sub = data_y[index_start : index_end]
+  return data_x_sub, data_y_sub
 
 
 def loadSpectraData(filepath_data, str_spectra_type):
@@ -285,7 +209,7 @@ def loadSpectraData(filepath_data, str_spectra_type):
         data_y = data_y / 2
       elif "mag" in str_spectra_type:
         data_y = data_y / (8 * np.pi)
-      else: raise Exception(f"You have passed an invalid spectra type {str_spectra_type} to 'LoadFlashData.loadSpectraData()'.")
+      else: raise Exception(f"You have passed an invalid spectra type '{str_spectra_type}'.")
       bool_failed_to_read = False
     except:
       bool_failed_to_read = True
@@ -341,9 +265,44 @@ def loadAllSpectraData(
   return list_k_group_t, list_power_group_t, list_sim_times
 
 
-def getPlasmaNumbers(filepath_sim, rms_Mach, k_turb):
-    bool_nu_found  = False
-    bool_eta_found = False
+def getPlotsPerEddy_fromTurbLog(
+    filepath_file,
+    num_t_turb        = 100,
+    bool_hide_updates = False
+  ):
+  ## helper functions
+  def getName(line):
+    return line.split("=")[0].lower()
+  def getValue(line):
+    return line.split("=")[1].split("[")[0]
+  ## search routine
+  bool_tmax_found          = False
+  bool_plot_interval_found = None
+  with open(f"{filepath_file}/Turb.log", "r") as fp:
+    for line in fp.readlines():
+      if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
+        tmax = float(getValue(line))
+        bool_tmax_found = True
+      elif "plotfileintervaltime" in getName(line):
+        plot_file_interval = float(getValue(line))
+        bool_plot_interval_found = True
+      if bool_tmax_found and bool_plot_interval_found:
+        plots_per_eddy = tmax / plot_file_interval / num_t_turb
+        if not(bool_hide_updates):
+          print("The following has been read from 'Turb.log':")
+          print("\t> 'tmax'".ljust(25),                 "=", tmax)
+          print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
+          print("\t> # plt-files / t_turb".ljust(25),   "=", plots_per_eddy)
+          print(f"\tAssumed the simulation ran for {num_t_turb} t/t_turb.")
+          print(" ")
+        return plots_per_eddy
+  ## failed to read quantity
+  return None
+
+
+def getPlasmaNumbers_fromFlashPar(filepath_sim, rms_Mach, k_turb):
+    bool_found_nu  = False
+    bool_found_eta = False
     ## search through flash.par file for parameters
     with open(f"{filepath_sim}/flash.par") as file_lines:
       for line in file_lines:
@@ -354,16 +313,16 @@ def getPlasmaNumbers(filepath_sim, rms_Mach, k_turb):
         ## read value for 'diff_visc_nu'
         if list_line_elems[0] == "diff_visc_nu":
           nu = float(list_line_elems[2])
-          bool_nu_found = True
+          bool_found_nu = True
         ## read value for 'resistivity'
         if list_line_elems[0] == "resistivity":
           eta = float(list_line_elems[2])
-          bool_eta_found = True
+          bool_found_eta = True
         ## stop searching if both parameters have been identified
-        if bool_nu_found and bool_eta_found:
+        if bool_found_nu and bool_found_eta:
           break
     ## compute plasma numbers
-    if bool_nu_found and bool_eta_found:
+    if bool_found_nu and bool_found_eta:
       nu  = nu
       eta = eta
       Re  = int(rms_Mach / (k_turb * nu))
@@ -378,11 +337,35 @@ def getPlasmaNumbers(filepath_sim, rms_Mach, k_turb):
         "Pm"  : Pm
       }
     else:
-      Exception("\t> ERROR: Could not find {}{}{}.".format(
-        "nu"   if (nu is None)  else "",
-        " or " if (nu is None) and (eta is None) else "",
-        "eta"  if (eta is None) else ""
+      bool_found_neither = (not bool_found_nu) and (not bool_found_eta)
+      raise Exception("ERROR:\t> ERROR: Could not find {}{}{}{}.".format(
+        "either " if bool_found_neither else "",
+        "nu"   if not bool_found_nu  else "",
+        " or " if bool_found_neither else "",
+        "eta"  if not bool_found_eta else ""
       ))
+
+
+def getPlasmaNumbers_fromInputs(Mach, k_turb, Re=None, Rm=None, Pm=None):
+  ## Re and Pm have been defined
+  if (Re is not None) and (Pm is not None):
+    nu  = round(Mach / (k_turb * Re), 5)
+    eta = round(nu / Pm, 5)
+    Rm  = round(Mach / (k_turb * eta))
+  ## Rm and Pm have been defined
+  elif (Rm is not None) and (Pm is not None):
+    eta = round(Mach / (k_turb * Rm), 5)
+    nu  = round(eta * Pm, 5)
+    Re  = round(Mach / (k_turb * nu))
+  ## error
+  else: raise Exception(f"You have not defined enough plasma Reynolds numbers: Re = {Re}, Rm = {Rm}, and Pm = {Rm}.")
+  return Re, Rm, Pm, nu, eta
+
+
+def getPlasmaNumbers_fromName(name, name_ref):
+  name_lower = name.lower()
+  name_ref_lower = name_ref.lower()
+  return float(name_lower.replace(name_ref_lower, "")) if name_ref_lower in name_lower else None
 
 
 ## END OF LIBRARY

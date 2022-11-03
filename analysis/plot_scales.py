@@ -124,9 +124,9 @@ class PlotSimScales():
 
   def __getParams(self, filepath_data, dataset_name):
     ## load spectra-fit data as a dictionary
-    dict = WWObjs.loadJson2Dict(
-      filepath          = filepath_data,
-      filename          = dataset_name,
+    dict = WWObjs.loadJsonFile2Dict(
+      filepath = filepath_data,
+      filename = dataset_name,
       bool_hide_updates = True
     )
     ## extract plasma Reynolds numbers
@@ -170,7 +170,7 @@ class PlotSimScales():
     fig_filepath = WWFnF.createFilepath([ self.filepath_vis, fig_name ])
     plt.savefig(fig_filepath)
     plt.close(fig)
-    print("Figure saved:", fig_name)
+    print("Saved figure:", fig_name)
 
   def plotDependance_kp(self):
     fig, ax = plt.subplots(1, 1, figsize=(7/1.1, 4/1.1))
@@ -199,7 +199,7 @@ class PlotSimScales():
     fig_filepath = WWFnF.createFilepath([ self.filepath_vis, fig_name ])
     plt.savefig(fig_filepath)
     plt.close(fig)
-    print("Figure saved:", fig_name)
+    print("Saved figure:", fig_name)
 
 
 ## ###############################################################

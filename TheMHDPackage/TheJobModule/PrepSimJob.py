@@ -1,20 +1,27 @@
+## START OF LIBRARY
+
 from TheUsefulModule import WWFnF
-from TheJobModule.SimParams import SimParams
 
 class PrepSimJob():
   def __init__(
       self,
-      filepath_ref, filepath_sim,
-      obj_sim_params : SimParams
+      filepath_ref, filepath_sim, dict_sim_params
     ):
-    self.filepath_ref   = filepath_ref
-    self.filepath_sim   = filepath_sim
-    self.obj_sim_params = obj_sim_params
-    self.suite_folder   = obj_sim_params.suite_folder
-    self.sonic_regime   = obj_sim_params.sonic_regime
-    self.sim_folder     = obj_sim_params.sim_folder
-    self.sim_res        = obj_sim_params.sim_res
-    self.num_blocks     = obj_sim_params.num_blocks
+    self.filepath_ref = filepath_ref
+    self.filepath_sim = filepath_sim
+    self.suite_folder = dict_sim_params["suite_folder"]
+    self.sonic_regime = dict_sim_params["sonic_regime"]
+    self.sim_folder   = dict_sim_params["sim_folder"]
+    self.sim_res      = dict_sim_params["sim_res"]
+    self.num_blocks   = dict_sim_params["num_blocks"]
+    self.k_turb       = dict_sim_params["k_turb"]
+    self.desired_Mach = dict_sim_params["desired_Mach"]
+    self.t_turb       = dict_sim_params["t_turb"]
+    self.nu           = dict_sim_params["nu"]
+    self.eta          = dict_sim_params["eta"]
+    self.Re           = dict_sim_params["Re"]
+    self.Rm           = dict_sim_params["Rm"]
+    self.Pm           = dict_sim_params["Pm"]
     self.__calcJobParams()
 
   def fromLowerNres(self, filepath_ref_sim):
@@ -57,8 +64,6 @@ class PrepSimJob():
     )
 
   def __calcJobParams(self):
-    ## t_turb [t_sim] = 1 / (k_turb * Mach * c_s)
-    self.t_turb   = 1 / (self.obj_sim_params.k_turb * self.obj_sim_params.Mach)
     nxb, nyb, nzb = self.num_blocks
     self.iprocs   = int(self.sim_res) // nxb
     self.jprocs   = int(self.sim_res) // nyb
@@ -68,6 +73,7 @@ class PrepSimJob():
     if self.num_cpus > 1000:
       self.max_hours = 24
     else: self.max_hours = 48
+    self.job_name    = "job_run_sim.sh"
     self.job_tagname = "{}{}{}sim{}".format(
       self.sonic_regime.split("_")[0],
       self.suite_folder,
@@ -81,10 +87,8 @@ class PrepSimJob():
     )
 
   def __createJob(self):
-    ## define job details
-    job_name = "job_run_sim.sh"
     ## create/overwrite job file
-    with open(f"{self.filepath_sim}/{job_name}", "w") as job_file:
+    with open(f"{self.filepath_sim}/{self.job_name}", "w") as job_file:
       ## write contents
       job_file.write("#!/bin/bash\n")
       job_file.write("#PBS -P ek9\n")
@@ -102,9 +106,9 @@ class PrepSimJob():
       job_file.write(". ~/modules_flash\n")
       job_file.write(f"mpirun ./{self.filename_flash_exe} 1>shell_sim.out00 2>&1\n")
     ## indicate progress
-    print(f"> Created job:")
-    print(f"\t> File: {job_name}")
-    print(f"\t> In:   {self.filepath_sim}")
+    print(f"Created PBS job:")
+    print(f"\t> Filename: {self.job_name}")
+    print(f"\t> Directory: {self.filepath_sim}")
 
   def __modifyFlashParamFile(self, filepath_ref):
     bool_switched_nu     = False
@@ -146,10 +150,7 @@ class PrepSimJob():
           ## define nu
           elif param_name == "diff_visc_nu":
             bool_defined_nu = True
-            new_file.write("diff_visc_nu = {} # implies Re = {}\n".format(
-              self.obj_sim_params.nu,
-              self.obj_sim_params.Re
-            ))
+            new_file.write("diff_visc_nu = {self.nu} # implies Re = {self.Re}\n")
           ## turn resistivity on
           elif param_name == "useMagneticResistivity":
             bool_switched_eta = True
@@ -157,11 +158,7 @@ class PrepSimJob():
           ## define eta
           elif param_name == "resistivity":
             bool_defined_eta = True
-            new_file.write("resistivity = {} # implies Rm = {} and Pm = {}\n".format(
-              self.obj_sim_params.eta,
-              self.obj_sim_params.Rm,
-              self.obj_sim_params.Pm
-            ))
+            new_file.write(f"resistivity = {self.eta} # implies Rm = {self.Rm} and Pm = {self.Pm}\n")
           ## define wall clock limit
           elif param_name == "wall_clock_time_limit":
             bool_defined_runtime = True
