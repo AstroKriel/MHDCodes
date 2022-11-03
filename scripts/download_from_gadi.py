@@ -74,6 +74,7 @@ def main():
           filepath_gadi_nres_vis = f"{filepath_gadi_sim}/{sim_res}/vis_folder/"
           ## check that the filepath exists (MAC)
           if not os.path.exists(filepath_mac_nres_vis): continue
+          print(f"Looking at Nres: {sim_res}...")
 
           ## DOWNLOAD FIT FIGURES FROM GADI
           ## ------------------------------
@@ -96,7 +97,8 @@ def main():
             )
             print(" ")
 
-    ## print empty space
+      ## print empty space
+      print(" ")
     print(" ")
 
 
@@ -108,16 +110,15 @@ BASEPATH_GADI            = "/scratch/ek9/nk7952"
 SONIC_REGIME             = "super_sonic"
 LIST_SUITE_FOLDER        = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER          = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES             = [ "18", "36", "72", "144", "288", "576" ]
-LIST_SIM_RES             = [ "72" ]
+LIST_SIM_RES             = [ "18", "36", "72", "144", "288", "576" ]
 ## animated spectra at a Nres
 BOOL_GET_VIDEOS_NRES     = 0
-FILENAME_VIDEOS_NRES     = "*fit*.mp4"
+FILENAME_VIDEOS_NRES     = "*.mp4"
 ## plots of simulations at a Nres
-BOOL_GET_PLOTS_NRES      = 1
+BOOL_GET_PLOTS_NRES      = 0
 FILENAME_PLOTS_NRES      = "*.png"
 ## plots of convergence data
-BOOL_GET_PLOTS_CONVERGED = 0
+BOOL_GET_PLOTS_CONVERGED = 1
 FILENAME_PLOTS_CONVERGED = "*.png"
 
 
