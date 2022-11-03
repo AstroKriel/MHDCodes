@@ -50,14 +50,14 @@ def reformatFlashData(field, num_blocks, num_procs):
 
 
 def loadPltData_3D(
-    filepath_data,
+    filepath_file,
     num_blocks      = [ 36, 36, 48 ],
     num_procs       = [ 8,  8,  6  ],
     str_field       = "mag",
     bool_print_info = False
   ):
   ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
-  with h5py.File(filepath_data, "r") as flash_file:
+  with h5py.File(filepath_file, "r") as flash_file:
     names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
     data_x, data_y, data_z = np.array([flash_file[i] for i in names])
     if bool_print_info: 
@@ -72,12 +72,12 @@ def loadPltData_3D(
 
 
 def loadPltData_slice(
-    filepath_data, num_blocks, num_procs, str_field,
+    filepath_file, num_blocks, num_procs, str_field,
     bool_rms_norm   = False,
     bool_print_info = False
   ):
   ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
-  with h5py.File(filepath_data, "r") as flash_file:
+  with h5py.File(filepath_file, "r") as flash_file:
     ## collect all variables to combine
     names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
     ## calculate the magnitude of the field
@@ -97,7 +97,7 @@ def loadPltData_slice(
 
 
 def loadAllPltData_slice(
-    filepath_data,
+    filepath,
     start_time       = 0,
     end_time         = np.inf,
     str_field        = "mag",
@@ -109,7 +109,7 @@ def loadAllPltData_slice(
   ):
   ## get all plt files in the directory
   filenames = WWFnF.getFilesFromFilepath(
-    filepath              = filepath_data,
+    filepath              = filepath,
     filename_contains     = "Turb_hdf5_plt_cnt_",
     filename_not_contains = "spect",
     loc_file_index        = -1,
@@ -126,7 +126,7 @@ def loadAllPltData_slice(
   for filename, _ in WWLists.loopListWithUpdates(filenames):
     ## load dataset
     field_mag = loadPltData_slice(
-      filepath_data = f"{filepath_data}/{filename}",
+      filepath_file = f"{filepath}/{filename}",
       num_blocks    = num_blocks,
       num_procs     = num_procs,
       str_field     = str_field
@@ -153,7 +153,7 @@ def loadAllPltData_slice(
 
 
 def loadTurbData(
-    filepath_data, var_y, t_turb,
+    filepath, var_y, t_turb,
     time_start = 1,
     time_end   = np.inf,
     bool_debug = False
@@ -165,8 +165,7 @@ def loadTurbData(
   ## initialise quantity to track data traversal
   prev_time = np.inf
   ## read data backwards
-  filepath_file = f"{filepath_data}/Turb.dat"
-  with open(filepath_file, "r") as fp:
+  with open(f"{filepath}/Turb.dat", "r") as fp:
     num_data_columns = len(fp.readline().split())
     for line in reversed(fp.readlines()):
       data_split = line.split()
@@ -198,8 +197,8 @@ def loadTurbData(
   return data_x_sub, data_y_sub
 
 
-def loadSpectraData(filepath_data, str_spectra_type):
-  with open(filepath_data, "r") as fp:
+def loadSpectraData(filepath_file, str_spectra_type):
+  with open(filepath_file, "r") as fp:
     data_file = fp.readlines() # load in data
     data      = np.array([x.strip().split() for x in data_file[6:]]) # store all data: [row, col]
     try:
@@ -219,7 +218,7 @@ def loadSpectraData(filepath_data, str_spectra_type):
 
 
 def loadAllSpectraData(
-    filepath_data, str_spectra_type, plots_per_eddy,
+    filepath, str_spectra_type, plots_per_eddy,
     file_start_time   = 2,
     file_end_time     = np.inf,
     read_every        = 1,
@@ -232,7 +231,7 @@ def loadAllSpectraData(
   list_failed_to_load = []
   ## filter for spectra data-files
   list_spectra_filenames = WWFnF.getFilesFromFilepath(
-    filepath          = filepath_data, 
+    filepath          = filepath, 
     filename_contains = "hdf5_plt_cnt",
     filename_endswith = "spect_" + str_spectra_type + "s.dat",
     loc_file_index    = -3,
@@ -243,7 +242,7 @@ def loadAllSpectraData(
   for filename, _ in WWLists.loopListWithUpdates(list_spectra_filenames[::read_every], bool_hide_updates):
     ## load data
     list_k, list_power, bool_failed_to_read = loadSpectraData(
-      filepath_data    = f"{filepath_data}/{filename}",
+      filepath_file    = f"{filepath}/{filename}",
       str_spectra_type = str_spectra_type
     )
     ## check if the data was read successfully
@@ -266,7 +265,7 @@ def loadAllSpectraData(
 
 
 def getPlotsPerEddy_fromTurbLog(
-    filepath_file,
+    filepath,
     num_t_turb        = 100,
     bool_hide_updates = False
   ):
@@ -278,7 +277,7 @@ def getPlotsPerEddy_fromTurbLog(
   ## search routine
   bool_tmax_found          = False
   bool_plot_interval_found = None
-  with open(f"{filepath_file}/Turb.log", "r") as fp:
+  with open(f"{filepath}/Turb.log", "r") as fp:
     for line in fp.readlines():
       if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
         tmax = float(getValue(line))
@@ -300,11 +299,11 @@ def getPlotsPerEddy_fromTurbLog(
   return None
 
 
-def getPlasmaNumbers_fromFlashPar(filepath_sim, rms_Mach, k_turb):
+def getPlasmaNumbers_fromFlashPar(filepath, rms_Mach, k_turb):
     bool_found_nu  = False
     bool_found_eta = False
     ## search through flash.par file for parameters
-    with open(f"{filepath_sim}/flash.par") as file_lines:
+    with open(f"{filepath}/flash.par") as file_lines:
       for line in file_lines:
         list_line_elems = line.split()
         ## ignore empty lines

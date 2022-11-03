@@ -22,7 +22,7 @@ os.system("clear")  # clear terminal window
 def processAllPltFiles(list_filenames_plt, num_proc):
   for filename_plt in list_filenames_plt:
     print(f"--------- Looking at: {filename_plt} -----------------------------------")
-    os.system(f"mpirun -np {num_proc} spectra_mpi {filename_plt} -vels_spect -mags_spect")
+    os.system(f"mpirun -np {num_proc} spectra_mpi {filename_plt} -types 1 2")
     print(" ")
 
 

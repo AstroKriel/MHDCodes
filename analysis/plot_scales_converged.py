@@ -49,7 +49,7 @@ def addLegend_Re(ax):
   ax.text(0.925, 0.225, r"Re $< 100$", color="blue", **args)
   ax.text(0.925, 0.1,   r"Re $> 100$", color="red",  **args)
 
-def plotDataNoAutoAxisScale(ax, x, y, c="k", ls=":"):
+def plotData_noAutoAxisScale(ax, x, y, c="k", ls=":"):
   col = LineCollection([ np.column_stack((x, y)) ], colors=c, linestyles=ls)
   ax.add_collection(col, autolim=False)
 
@@ -156,7 +156,7 @@ class PlotSimScales():
       )
     ## plot reference lines
     x = np.linspace(10**(-1), 10**(3), 10**4)
-    plotDataNoAutoAxisScale(ax, x, x / 2.5)
+    plotData_noAutoAxisScale(ax, x, x / 2.5)
     ## label figure
     addLegend_suites(ax)
     addLegend_Re(ax)
@@ -185,7 +185,7 @@ class PlotSimScales():
     ## plot reference lines
     x = np.linspace(10**(-2), 10**(4), 100)
     # ax.plot(x, x**(1/4), "k:")
-    plotDataNoAutoAxisScale(ax, x, 1.15*x**(1/4))
+    plotData_noAutoAxisScale(ax, x, 1.15*x**(1/4))
     ## label figure
     addLegend_suites(ax)
     addLegend_Re(ax)

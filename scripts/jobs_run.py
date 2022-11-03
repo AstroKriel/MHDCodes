@@ -68,8 +68,7 @@ SONIC_REGIME      = "super_sonic"
 JOB_NAME          = "job_calc_spect.sh"
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
-LIST_SIM_RES      = [ "72" ]
+LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 DATA_SUBFOLDER    = "plt"
 
 

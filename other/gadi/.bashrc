@@ -1,43 +1,29 @@
 ## ~/.bashrc
-# eval "echo 'Source: .bashrc...'"
 
 
 ## ======== SOURCE GLOBAL .BASHRC ========
 ## =======================================
 ## Source global definitions (Required for modules)
-if [ -f /etc/bashrc ]; then
-        source /etc/bashrc
-fi
+source /etc/bashrc
 
 
 ## ======== SOURCE ~/.ALIAS ========
 ## =================================
-if [ -f ~/.alias ]; then
-        source ~/.alias
-fi
+source ~/.alias
 
 
 ## ======== CONFIGURE WORKING SHELL ========
 ## =========================================
+
+# ## load modules
+# source ~/modules_flash
+# source ~/modules_quokka
 
 ## enable group read-ownership of files
 umask 027
 
 ## up/down arrows trace command history and ignore repeated entries
 HISTCONTROL=ignoredups
-
-
-## ======== LOAD MODULES ========
-## ==============================
-module load dot # adds the current directory to the end of your commands search path
-module load pbs
-module load intel-compiler/2019.3.199
-module load intel-python3/2019.3.075
-module load hdf5/1.10.5p
-module load szip/2.1.1
-module load fftw3/3.3.8
-module load openmpi/4.0.2
-module load ffmpeg
 
 
 ## ======== CHANGE DISPLAY NAME ========
@@ -69,7 +55,7 @@ export PATH=$PATH:/bin/gnuplot
 export PYTHONPATH=$HOME/PYTHON
 export PYTHONSTARTUP=$PYTHONPATH/python_startup.py
 export PATH=$PATH:$PYTHONPATH
-export PATH=$PATH:$HOME/.local/bin/
+export PATH=$PATH:$HOME/.local/bin
 export MATPLOTLIBRC=$PYTHONPATH/matplotlib/matplotlibrc
 export MPLCONFIGDIR=$PYTHONPATH/matplotlib
 

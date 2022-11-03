@@ -98,14 +98,18 @@ def createFolder(filepath, bool_hide_updates=False):
     print("Warning: Folder already exists:\n\t" + filepath + "\n")
 
 def createFilepath(list_filepath_folders):
-  return re.sub( '/+', '/', "/".join([
-    folder for folder in list_filepath_folders if not(folder == "")
-  ]) )
+  return re.sub("/+", "/", "/".join([
+    folder
+    for folder in list_filepath_folders
+    if not(folder == "")
+  ]))
 
 def createName(list_name_elems):
-  return re.sub( '_+', '_', "_".join([
-    elems for elems in list_name_elems if not(elems == "")
-  ]) )
+  return re.sub("_+", "_", "_".join([
+    elems
+    for elems in list_name_elems
+    if not(elems == "")
+  ]))
 
 def copyFileFromNTo(directory_from, directory_to, filename):
   ## copy the file and it's permissions

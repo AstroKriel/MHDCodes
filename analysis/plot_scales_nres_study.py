@@ -41,7 +41,6 @@ def plotErrorBar_1D(ax, x, array_y, color="k", marker="o"):
     markersize=7, elinewidth=2, linestyle="None", markeredgecolor="black", capsize=7.5, zorder=10
   )
 
-
 def fitScales(
     ax, list_res, list_scales_group_res,
     bounds = ( (0.01, 1, 0), (50, 1000, 3) )
@@ -64,20 +63,19 @@ def fitScales(
 
 
 ## ###############################################################
-## MEASURE, PLOT + SAVE CONVEREGED SCALES
+## OPERATOR CLASS: PLOT RESOLUTION STUDY
 ## ###############################################################
-class PlotSpectraConvergence():
+class PlotScaleConvergence():
   def __init__(
       self,
       filepath_sim, filepath_vis, sim_name
     ):
-    self.filepath_sim             = filepath_sim
-    self.filepath_vis             = filepath_vis
-    self.sim_name                 = sim_name
-    self.list_sim_res             = []
-    self.list_alpha_kin_group_res = []
-    self.list_k_nu_group_res      = []
-    self.list_k_p_group_res       = []
+    self.filepath_sim     = filepath_sim
+    self.filepath_vis     = filepath_vis
+    self.sim_name         = sim_name
+    self.list_sim_res     = []
+    self.k_nu_group_t_res = []
+    self.k_p_group_t_res  = []
 
   def readDataset(self):
     ## read in scales for each resolution run
@@ -85,18 +83,17 @@ class PlotSpectraConvergence():
       ## load json-file into a dictionary
       try:
         dict_sim_data = WWObjs.loadJsonFile2Dict(
-          filepath = f"{self.filepath_sim}/{sim_res}",
-          filename = f"{self.sim_name}_dataset.json",
-          bool_hide_updates = True
+          filepath = f"{self.filepath_sim}/{sim_res}/",
+          filename = f"sim_outputs.json",
+          bool_hide_updates = False
         )
       except: continue
-      ## pull out data
+      ## extract data
       self.list_sim_res.append(sim_res)
-      self.list_alpha_kin_group_res.append(dict_sim_data["list_alpha_kin"])
-      self.list_k_nu_group_res.append(dict_sim_data["list_k_nu"])
-      self.list_k_p_group_res.append(dict_sim_data["list_k_p"])
+      self.k_nu_group_t_res.append(dict_sim_data["k_nu_group_t"])
+      self.k_p_group_t_res.append(dict_sim_data["k_p_group_t"])
 
-  def createFigure(self):
+  def createFigure_scales(self):
     fig, fig_grid = PlotFuncs.createFigure_grid(
       fig_scale        = 1.0,
       fig_aspect_ratio = (5.0, 8.0),
@@ -106,15 +103,12 @@ class PlotSpectraConvergence():
     self.ax_k_nu = fig.add_subplot(fig_grid[0, 0])
     self.ax_k_p  = fig.add_subplot(fig_grid[1, 0])
     ## plot and fit data
-    self.__plotDataset()
+    self.__plotScales()
     # self.__fitDataset()
     self.__annotateFigure()
     ## save figure
-    filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_study.png"
-    plt.savefig(filepath_fig)
-    print("Saved figure:", filepath_fig)
-    ## close plot
-    plt.close(fig)
+    filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_scales.png"
+    PlotFuncs.saveFigure(fig, filepath_fig)
 
   # def createDataset(self):
   #   spectra_converged_obj = FitMHDScales.SpectraConvergedScales(
@@ -131,17 +125,17 @@ class PlotSpectraConvergence():
   #     filename = f"{self.sim_folder}_{FILENAME_CONVERGED}"
   #   )
 
-  def __plotDataset(self):
+  def __plotScales(self):
     for res_index, sim_res in enumerate(self.list_sim_res):
       plotErrorBar_1D(
         ax      = self.ax_k_nu,
         x       = int(sim_res),
-        array_y = self.list_k_nu_group_res[res_index]
+        array_y = self.k_nu_group_t_res[res_index]
       )
       plotErrorBar_1D(
         ax      = self.ax_k_p,
         x       = int(sim_res),
-        array_y = self.list_k_p_group_res[res_index]
+        array_y = self.k_p_group_t_res[res_index]
       )
 
   # def __fitDataset(self):
@@ -151,10 +145,12 @@ class PlotSpectraConvergence():
   def __annotateFigure(self):
     ## label k_nu
     self.ax_k_nu.set_ylabel(r"$k_\nu$")
+    self.ax_k_nu.set_xscale("log")
     self.ax_k_nu.set_yscale("log")
     ## label k_p
     self.ax_k_p.set_ylabel(r"$k_{\rm p}$")
     self.ax_k_p.set_xlabel(r"$N_{\rm res}$")
+    self.ax_k_p.set_xscale("log")
     self.ax_k_p.set_yscale("log")
 
 
@@ -169,7 +165,7 @@ def main():
 
     ## COMMUNICATE PROGRESS
     ## --------------------
-    str_message = f"Looking at suite: {suite_folder}"
+    str_message = f"Looking at suite: {suite_folder}, regime: {SONIC_REGIME}"
     print(str_message)
     print("=" * len(str_message))
     print(" ")
@@ -187,21 +183,17 @@ def main():
       ## CHECK THE NRES=288 DATASET EXISTS
       ## ---------------------------------
       ## check that the simulation data exists at Nres=288
-      if not os.path.isfile(WWFnF.createFilepath([ 
-          filepath_sim, "288", f"{sim_name}_dataset.json"
-        ])): continue
+      if not os.path.isfile(f"{filepath_sim}/288/sim_output.json"): continue
 
       ## MAKE SURE A VISUALISATION FOLDER EXISTS
       ## ---------------------------------------
       ## where plots/dataset of converged data will be stored
-      filepath_vis = WWFnF.createFilepath([ 
-        filepath_sim, "vis_folder"
-      ])
+      filepath_vis = f"{filepath_sim}/vis_folder/"
       WWFnF.createFolder(filepath_vis, bool_hide_updates=True)
 
       ## MEASURE HOW WELL SCALES ARE CONVERGED
       ## -------------------------------------
-      obj = PlotSpectraConvergence(filepath_sim, filepath_vis, sim_name)
+      obj = PlotScaleConvergence(filepath_sim, filepath_vis, sim_name)
       obj.readDataset()
       obj.createFigure()
       # obj.createDataset()
