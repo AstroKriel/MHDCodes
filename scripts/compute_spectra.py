@@ -39,13 +39,13 @@ class CalcSpectraFiles():
     self.file_start    = file_start
     self.file_end      = file_end
     ## perform routines
+    self.__getPltFiles()
     self.__processFiles()
     self.__checkAllFilesProcessed()
     self.__reprocessFiles()
     print("Finished running the spectra code")
 
-  def __processFiles(self):
-    ## loop over and compute spectra for plt-files in the data directory
+  def __getPltFiles(self):
     self.list_filenames_plt = WWFnF.getFilesFromFilepath(
       filepath              = self.filepath_data,
       filename_contains     = "plt",
@@ -54,10 +54,12 @@ class CalcSpectraFiles():
       file_start_index      = self.file_start,
       file_end_index        = self.file_end
     )
+
+  def __processFiles(self):
+    ## loop over and compute spectra for plt-files in the data directory
     print(f"There are {len(self.list_filenames_plt)} files to process")
     if len(self.list_filenames_plt) > 0:
-      print("\t> " + "\n\t> ".join(self.list_filenames_plt))
-      print(" ")
+      print("\t> " + "\n\t> ".join(self.list_filenames_plt), "\n")
       print("Processing plt-files...")
       processAllPltFiles(self.list_filenames_plt, self.num_proc)
 

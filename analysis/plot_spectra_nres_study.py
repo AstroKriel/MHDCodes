@@ -24,7 +24,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 ## HELPER FUNCTION
 ## ###############################################################
-def getAveSpectra(filepath_sim, str_field):
+def getAveSpectra(filepath_sim, str_field, bool_new_data):
   print(f"Reading in '{str_field}' data:", filepath_sim)
   ## load relevant data from simulation folder
   plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(filepath_sim, bool_hide_updates=True)
@@ -35,7 +35,7 @@ def getAveSpectra(filepath_sim, str_field):
   )
   ## load energy spectra
   list_k_group_t, list_power_group_t, _ = LoadFlashData.loadAllSpectraData(
-    filepath          = f"{filepath_sim}/spect/",
+    filepath          = f"{filepath_sim}/plt/" if bool_new_data else f"{filepath_sim}/spect/",
     str_spectra_type  = str_field,
     file_start_time   = dict_sim_data["time_growth_start"],
     file_end_time     = dict_sim_data["time_growth_end"],
@@ -49,6 +49,20 @@ def getAveSpectra(filepath_sim, str_field):
   ]
   list_power_ave = np.mean(list_power_norm_group_t, axis=0)
   return list_k_group_t[0], list_power_ave
+
+def plotAveSpectra(ax, filepath_sim, sim_res, str_field):
+  dict_plot_style = {
+    "18"  : "r--",
+    "36"  : "g--",
+    "72"  : "b--",
+    "144" : "r-",
+    "288" : "g-",
+    "576" : "b-"
+  }
+  list_k_new, list_spectra_ave_new = getAveSpectra(filepath_sim, str_field, False)
+  list_k_old, list_spectra_ave_old = getAveSpectra(filepath_sim, str_field, True)
+  list_spectra_ave_diff = np.array(list_spectra_ave_new) - np.array(list_spectra_ave_old)
+  ax.plot(list_k_new, list_spectra_ave_diff, dict_plot_style[sim_res], label=sim_res)
 
 
 ## ###############################################################
@@ -65,32 +79,25 @@ class PlotSpectraConvergence():
     self.sim_name     = sim_name
 
   def plotSpectra(self):
-    dict_plot_style = {
-      "18"  :  "r--",
-      "36"  :  "g--",
-      "72"  :  "b--",
-      "144" : "r-",
-      "288" : "g-",
-      "576" : "b-"
-    }
     fig, fig_grid = PlotFuncs.createFigure_grid(num_rows=2)
     ax_kin = fig.add_subplot(fig_grid[0])
     ax_mag = fig.add_subplot(fig_grid[1])
     for sim_res in LIST_SIM_RES:
       filepath_sim_res = f"{self.filepath_sim}/{sim_res}/"
       if not os.path.exists(f"{filepath_sim_res}/spect/"): continue
-      list_kin_k, list_kin_spectra_ave = getAveSpectra(filepath_sim_res, "vel")
-      list_mag_k, list_mag_spectra_ave = getAveSpectra(filepath_sim_res, "mag")
-      ax_kin.plot(list_kin_k, list_kin_spectra_ave, dict_plot_style[sim_res], label=sim_res, zorder=3)
-      ax_mag.plot(list_mag_k, list_mag_spectra_ave, dict_plot_style[sim_res], label=sim_res, zorder=3)
+      plotAveSpectra(ax_kin, filepath_sim_res, sim_res, "vel")
+      plotAveSpectra(ax_mag, filepath_sim_res, sim_res, "mag")
+    ## label kinetic energy spectra
     ax_kin.legend(loc="upper right")
     ax_kin.set_xscale("log")
-    ax_kin.set_yscale("log")
-    ax_kin.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$")
+    # ax_kin.set_yscale("log")
+    ax_kin.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$ diff")
+    ## label magnetic energy spectra
+    ax_mag.legend(loc="upper right")
     ax_mag.set_xscale("log")
-    ax_mag.set_yscale("log")
-    ax_mag.set_xlabel(r"$k$")
-    ax_mag.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k)$")
+    # ax_mag.set_yscale("log")
+    ax_mag.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k)$ diff")
+    ## save figure
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{self.sim_name}_nres_spectra.png")
 
 

@@ -60,6 +60,7 @@ class PlotTurbData():
     self.__plotMach()
     self.__plotEnergyRatio()
     self.__fitData()
+    self.bool_fitted = True
     self.__labelPlots()
 
   def getFittedParams(self):
@@ -84,27 +85,27 @@ class PlotTurbData():
     bool_format_new = "#01_time" in file_first_line.split() # new if #01_time else #00_time
     ## load kinetic energy
     _, data_kin_energy = LoadFlashData.loadTurbData(
-      filepath_data = self.filepath_data,
-      var_y         = 9 if bool_format_new else 6, # 9+1 (new), 6 (old)
-      t_turb        = self.t_turb,
-      time_start    = 0.1,
-      time_end      = np.inf
+      filepath   = self.filepath_data,
+      var_y      = 9 if bool_format_new else 6, # 9+1 (new), 6 (old)
+      t_turb     = self.t_turb,
+      time_start = 0.1,
+      time_end   = np.inf
     )
     ## load magnetic energy
     _, data_mag_energy = LoadFlashData.loadTurbData(
-      filepath_data = self.filepath_data,
-      var_y         = 11 if bool_format_new else 29, # 11+1 (new), 29 (old)
-      t_turb        = self.t_turb,
-      time_start    = 0.1,
-      time_end      = np.inf
+      filepath   = self.filepath_data,
+      var_y      = 11 if bool_format_new else 29, # 11+1 (new), 29 (old)
+      t_turb     = self.t_turb,
+      time_start = 0.1,
+      time_end   = np.inf
     )
     ## load Mach data
     data_time, data_Mach = LoadFlashData.loadTurbData(
-      filepath_data = self.filepath_data,
-      var_y         = 13 if bool_format_new else 8, # 13+1 (new), 8 (old)
-      t_turb        = self.t_turb,
-      time_start    = 0.1,
-      time_end      = np.inf
+      filepath   = self.filepath_data,
+      var_y      = 13 if bool_format_new else 8, # 13+1 (new), 8 (old)
+      t_turb     = self.t_turb,
+      time_start = 0.1,
+      time_end   = np.inf
     )
     ## Only relevant when loading data while a simulation is running
     ## (i.e., dealing w/ data synchronisation). So, only grab the portion
@@ -239,8 +240,6 @@ class PlotTurbData():
     ## store time range bounds corresponding with the exponential phase of the dynamo
     self.time_exp_start = self.data_time[index_start_fit]
     self.time_exp_end   = self.data_time[index_end_fit]
-    ## inidcate that fit occured successfully
-    self.bool_fitted = True
 
   def __labelPlots(self):
     ## annotate simulation parameters

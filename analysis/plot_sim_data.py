@@ -159,6 +159,7 @@ class PlotSpectra():
     print("Fitting energy spectra...")
     self.__fitKinSpectra()
     self.__fitMagSpectra()
+    self.bool_fitted = True
     self.__labelSpectraPlot()
     self.__labelScalesPlots()
     self.__labelSpectraRatioPlot()
@@ -195,7 +196,7 @@ class PlotSpectra():
       raise Exception("ERROR: failed to read number of plt-files per turn-over-time from 'Turb.log'!")
     ## load kinetic energy spectra
     list_kin_k_group_t, list_kin_power_group_t, self.list_kin_time = LoadFlashData.loadAllSpectraData(
-      filepath_data     = self.filepath_data,
+      filepath          = self.filepath_data,
       str_spectra_type  = "vel",
       file_start_time   = self.time_exp_start,
       file_end_time     = self.time_exp_end,
@@ -204,7 +205,7 @@ class PlotSpectra():
     )
     ## load magnetic energy spectra
     list_mag_k_group_t, list_mag_power_group_t, self.list_mag_time = LoadFlashData.loadAllSpectraData(
-      filepath_data     = self.filepath_data,
+      filepath          = self.filepath_data,
       str_spectra_type  = "mag",
       file_start_time   = self.time_exp_start,
       file_end_time     = self.time_exp_end,
@@ -473,7 +474,7 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
     axs_spectra      = [ ax_spect_kin, ax_spect_mag ],
     axs_scales       = [ ax_scales_time, ax_scales_pdf ],
     ax_spectra_ratio = ax_spectra_ratio,
-    filepath_data    = f"{filepath_sim}/spect",
+    filepath_data    = f"{filepath_sim}/spect/",
     time_exp_start   = dict_turb_params["time_growth_start"],
     time_exp_end     = dict_turb_params["time_growth_end"]
   )
@@ -543,12 +544,14 @@ def main():
 ## ###############################################################
 BOOL_DEBUG        = 0
 BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "super_sonic"
+SONIC_REGIME      = "sub_sonic"
 
-LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
-LIST_SIM_RES      = [ "72" ]
+
+LIST_SUITE_FOLDER = [ "Rm3000" ]
+LIST_SIM_RES      = [ "576" ]
 
 
 ## ###############################################################

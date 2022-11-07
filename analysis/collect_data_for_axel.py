@@ -9,7 +9,6 @@ from matplotlib.cm import ScalarMappable
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from TheUsefulModule import WWObjs
-from TheJobModule import SimInputParams
 from TheLoadingModule import LoadFlashData
 from ThePlottingModule import PlotFuncs
 
@@ -17,9 +16,13 @@ os.system("clear")
 
 
 ## OPPERATOR FUNCTIONS
-def getSimData(fig, ax, filepath_sim, sim_name, Re, Pm, bool_ref_plot=False):
+def getSimData(fig, ax, filepath_sim, sim_name, Re, Pm):
   print("Loading simulation data...")
   ## load sim outputs file
+  dict_sim_inputs = WWObjs.loadJsonFile2Dict(
+    filepath = filepath_sim,
+    filename = "sim_inputs.json"
+  )
   dict_sim_outputs = WWObjs.loadJsonFile2Dict(
     filepath = filepath_sim,
     filename = "sim_outputs.json"
@@ -28,11 +31,12 @@ def getSimData(fig, ax, filepath_sim, sim_name, Re, Pm, bool_ref_plot=False):
   Gamma             = dict_sim_outputs["Gamma"]
   time_growth_start = 5.0
   time_growth_end   = 10.0
+  sim_res           = dict_sim_inputs["sim_res"]
   list_k            = dict_sim_outputs["list_k"]
   plots_per_eddy    = dict_sim_outputs["plots_per_eddy"]
   ## load magnetic energy spectra
   _, list_mag_power_group_t, list_mag_time = LoadFlashData.loadAllSpectraData(
-      filepath_data     = f"{filepath_sim}/spect",
+      filepath          = f"{filepath_sim}/spect",
       str_spectra_type  = "mag",
       file_start_time   = time_growth_start,
       file_end_time     = time_growth_end,
@@ -70,19 +74,17 @@ def getSimData(fig, ax, filepath_sim, sim_name, Re, Pm, bool_ref_plot=False):
   fig.add_axes(cax)
   fig.colorbar(mappable=smap, cax=cax, ticks=list_ticks, orientation="horizontal")
   cax.xaxis.set_ticks_position("top")
-  if bool_ref_plot:
-    cax.set_title(r"$t = t_{\rm sim}/t_{\rm turb}$")
-  else: cax.set_title(r"$t$")
+  cax.set_title(r"$t = t_{\rm sim}/t_{\rm turb}$")
   ## annotate parameters
   PlotFuncs.addBoxOfLabels(
     fig, ax,
     box_alignment = (0.0, 0.0),
     xpos          = 0.05,
-    ypos          = 0.2 if bool_ref_plot else 0.05,
+    ypos          = 0.05,
     alpha         = 0.5,
     fontsize      = 18,
     list_labels   = [
-      r"${\rm N}_{\rm res} = $ " + "{:d}".format(288),
+      r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(sim_res)),
       r"${\rm Re} = $ "          + "{:d}".format(int(Re)),
       r"${\rm Rm} = $ "          + "{:d}".format(int(Re * Pm)),
       r"${\rm Pm} = $ "          + "{:d}".format(int(Pm)),
@@ -109,26 +111,17 @@ def getSimData(fig, ax, filepath_sim, sim_name, Re, Pm, bool_ref_plot=False):
 ## MAIN PROGRAM
 def main():
   ## Re3600Pm1, Re1700Pm2, Re600Pm5
-  filepath_Re3600Pm1 = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm1/288/"
-  filepath_Re1700Pm2 = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm2/288/"
-  filepath_Re600Pm5  = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm5/288/"
+  filepath_sim_1 = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm2/576/"
   ## initialise figure
-  fig, fig_grid = PlotFuncs.createFigure_grid(1, 3, fig_aspect_ratio=(5,4))
-  ax_Re3600Pm1 = fig.add_subplot(fig_grid[0])
-  ax_Re1700Pm2 = fig.add_subplot(fig_grid[1])
-  ax_Re600Pm5  = fig.add_subplot(fig_grid[2])
+  fig, fig_grid = PlotFuncs.createFigure_grid(1, 1, fig_aspect_ratio=(5,4), fig_scale=1.5)
+  ax_sim_1 = fig.add_subplot(fig_grid[0])
   ## load and plot data
-  getSimData(fig, ax_Re3600Pm1, filepath_Re3600Pm1, "Re3600Pm1", 3600, 1, True)
-  getSimData(fig, ax_Re1700Pm2, filepath_Re1700Pm2, "Re1700Pm2", 1700, 2)
-  getSimData(fig, ax_Re600Pm5,  filepath_Re600Pm5,  "Re600Pm5",  600,  5)
+  getSimData(fig, ax_sim_1, filepath_sim_1, "Re1700Pm2_576", 1700, 2)
+  ## label plot
+  ax_sim_1.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k, t) = \mathcal{P}_{\rm mag}(k, t) / \int{\rm d}k \mathcal{P}_{\rm mag}(k, t)$")
+  ax_sim_1.legend(loc="center left", fontsize=20)
   ## save figure
-  ax_Re3600Pm1.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k, t) = \mathcal{P}_{\rm mag}(k, t) / \int{\rm d}k \mathcal{P}_{\rm mag}(k, t)$")
-  ax_Re3600Pm1.legend(loc="lower left", fontsize=20)
-  print("Saving figure...")
-  filepath_fig = f"dataset_axel.png"
-  plt.savefig(filepath_fig)
-  plt.close()
-  print("Saved figure:", filepath_fig)
+  PlotFuncs.saveFigure(fig, "dataset_axel.png")
 
 
 ## PROGRAM ENTRY POINT

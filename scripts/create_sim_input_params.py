@@ -65,11 +65,14 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
-K_TURB            = 2.0
-DES_MACH          = 5.0
-LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+K_TURB            = 1.0
+DES_MACH          = 0.3
+# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+
+LIST_SUITE_FOLDER = [ "Rm3000" ]
+LIST_SIM_RES      = [ "576" ]
 
 
 ## ###############################################################

@@ -6,8 +6,8 @@ class CalcSpectraJob():
       filepath_plt, dict_sim_params
     ):
     self.filepath_plt = filepath_plt
-    self.max_hours    = int(8)
-    self.num_cpus     = int(4)
+    self.max_hours    = int(24)
+    self.num_cpus     = int(6)
     self.max_mem      = int(4 * self.num_cpus)
     self.program_name = "compute_spectra.py"
     self.job_name     = "job_calc_spect.sh"
