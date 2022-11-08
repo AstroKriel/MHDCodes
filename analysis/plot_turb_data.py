@@ -197,7 +197,7 @@ class PlotTurbData():
       ## get index range corresponding with kinematic phase of the dynamo
       index_E_lo = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-8))
       index_E_hi = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_sat_ratio/100)
-      index_start_fit = min([ index_E_lo, index_E_hi ])
+      index_start_fit = max([ t_start_index, min([ index_E_lo, index_E_hi ]) ])
       index_end_fit   = max([ index_E_lo, index_E_hi ])
       ## find growth rate of exponential
       self.Gamma = FitFuncs.fitExpFunc(

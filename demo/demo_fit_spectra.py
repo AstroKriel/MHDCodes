@@ -25,6 +25,10 @@ class MagSpectrum():
   def loge(k, **params):
     return np.log(MagSpectrum.linear(k, **params))
 
+class KinSpectrum():
+  def linear(k, A, alpha_1, alpha_2, k_nu):
+    return A * np.array(k)**(alpha_1) * np.exp( -(np.array(k) / k_nu)**(alpha_2) )
+
 
 ## ###############################################################
 ## HELPER FUNCTIONS

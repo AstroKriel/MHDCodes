@@ -146,12 +146,12 @@ class PlotScaleConvergence():
     ## label k_nu
     self.ax_k_nu.set_ylabel(r"$k_\nu$")
     self.ax_k_nu.set_xscale("log")
-    self.ax_k_nu.set_yscale("log")
+    # self.ax_k_nu.set_yscale("log")
     ## label k_p
     self.ax_k_p.set_ylabel(r"$k_{\rm p}$")
     self.ax_k_p.set_xlabel(r"$N_{\rm res}$")
     self.ax_k_p.set_xscale("log")
-    self.ax_k_p.set_yscale("log")
+    # self.ax_k_p.set_yscale("log")
 
 
 ## ###############################################################
@@ -183,7 +183,7 @@ def main():
       ## CHECK THE NRES=288 DATASET EXISTS
       ## ---------------------------------
       ## check that the simulation data exists at Nres=288
-      if not os.path.isfile(f"{filepath_sim}/288/sim_output.json"): continue
+      if not os.path.isfile(f"{filepath_sim}/288/sim_outputs.json"): continue
 
       ## MAKE SURE A VISUALISATION FOLDER EXISTS
       ## ---------------------------------------
@@ -195,7 +195,7 @@ def main():
       ## -------------------------------------
       obj = PlotScaleConvergence(filepath_sim, filepath_vis, sim_name)
       obj.readDataset()
-      obj.createFigure()
+      obj.createFigure_scales()
       # obj.createDataset()
 
       if BOOL_DEBUG: return

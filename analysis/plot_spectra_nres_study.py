@@ -24,7 +24,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 ## HELPER FUNCTION
 ## ###############################################################
-def getAveSpectra(filepath_sim, str_field, bool_new_data):
+def getAveSpectra(filepath_sim, str_field):
   print(f"Reading in '{str_field}' data:", filepath_sim)
   ## load relevant data from simulation folder
   plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(filepath_sim, bool_hide_updates=True)
@@ -33,22 +33,28 @@ def getAveSpectra(filepath_sim, str_field, bool_new_data):
     filename = f"sim_outputs.json",
     bool_hide_updates = True
   )
-  ## load energy spectra
-  list_k_group_t, list_power_group_t, _ = LoadFlashData.loadAllSpectraData(
-    filepath          = f"{filepath_sim}/plt/" if bool_new_data else f"{filepath_sim}/spect/",
-    str_spectra_type  = str_field,
-    file_start_time   = dict_sim_data["time_growth_start"],
-    file_end_time     = dict_sim_data["time_growth_end"],
-    plots_per_eddy    = plots_per_eddy,
-    bool_hide_updates = True
-  )
-  ## normalise and time-average energy spectra
-  list_power_norm_group_t = [
-    np.array(list_power) / sum(list_power)
-    for list_power in list_power_group_t
-  ]
-  list_power_ave = np.mean(list_power_norm_group_t, axis=0)
-  return list_k_group_t[0], list_power_ave
+  try:
+    list_k = dict_sim_data["list_k"]
+    if "v" in str_field:   list_power_ave = dict_sim_data[f"list_kin_power_ave"]
+    elif "m" in str_field: list_power_ave = dict_sim_data[f"list_mag_power_ave"]
+  except:
+    ## load energy spectra
+    list_k_group_t, list_power_group_t, _ = LoadFlashData.loadAllSpectraData(
+      filepath          = f"{filepath_sim}/spect/",
+      str_spectra_type  = str_field,
+      file_start_time   = dict_sim_data["time_growth_start"],
+      file_end_time     = dict_sim_data["time_growth_end"],
+      plots_per_eddy    = plots_per_eddy,
+      bool_hide_updates = True
+    )
+    list_k = list_k_group_t[0]
+    ## normalise and time-average energy spectra
+    list_power_norm_group_t = [
+      np.array(list_power) / sum(list_power)
+      for list_power in list_power_group_t
+    ]
+    list_power_ave = np.mean(list_power_norm_group_t, axis=0)
+  return list_k, list_power_ave
 
 def plotAveSpectra(ax, filepath_sim, sim_res, str_field):
   dict_plot_style = {
@@ -59,10 +65,8 @@ def plotAveSpectra(ax, filepath_sim, sim_res, str_field):
     "288" : "g-",
     "576" : "b-"
   }
-  list_k_new, list_spectra_ave_new = getAveSpectra(filepath_sim, str_field, False)
-  list_k_old, list_spectra_ave_old = getAveSpectra(filepath_sim, str_field, True)
-  list_spectra_ave_diff = np.array(list_spectra_ave_new) - np.array(list_spectra_ave_old)
-  ax.plot(list_k_new, list_spectra_ave_diff, dict_plot_style[sim_res], label=sim_res)
+  list_k, list_spectra_ave = getAveSpectra(filepath_sim, str_field)
+  ax.plot(list_k, list_spectra_ave, dict_plot_style[sim_res], label=sim_res)
 
 
 ## ###############################################################
@@ -90,13 +94,13 @@ class PlotSpectraConvergence():
     ## label kinetic energy spectra
     ax_kin.legend(loc="upper right")
     ax_kin.set_xscale("log")
-    # ax_kin.set_yscale("log")
-    ax_kin.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$ diff")
+    ax_kin.set_yscale("log")
+    ax_kin.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$")
     ## label magnetic energy spectra
     ax_mag.legend(loc="upper right")
     ax_mag.set_xscale("log")
-    # ax_mag.set_yscale("log")
-    ax_mag.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k)$ diff")
+    ax_mag.set_yscale("log")
+    ax_mag.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k)$")
     ## save figure
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{self.sim_name}_nres_spectra.png")
 

@@ -53,7 +53,7 @@ def fitKinSpectra(ax, list_k_data, list_power_data, bool_plot=True):
   my_model  = Model(FitMHDScales.SpectraModels.kinetic_loge)
   my_model.set_param_hint("A",     min = 10**(-3.0),  value = 10**(-1.0),  max = 10**(3.0))
   my_model.set_param_hint("alpha", min = -10.0,       value = -2.0,        max = -1.0)
-  my_model.set_param_hint("k_nu",  min = 0.1,         value = 5.0,         max = 50.0)
+  my_model.set_param_hint("k_nu",  min = 10**(-1.0),  value = 5.0,         max = 10**(3.0))
   input_params = my_model.make_params()
   fit_results  = my_model.fit(
     k      = list_k_data,
@@ -173,7 +173,7 @@ class PlotSpectra():
       "list_mag_power_ave" : self.list_mag_power_ave,
       ## measured quantities
       "plots_per_eddy"     : self.plots_per_eddy,
-      "list_growth_time"   : self.list_mag_time,
+      "list_time_growth"   : self.list_mag_time,
       "list_time_k_eq"     : self.list_time_k_eq,
       "alpha_kin_group_t"  : self.alpha_kin_group_t,
       "k_nu_group_t"       : self.k_nu_group_t,
@@ -313,7 +313,7 @@ class PlotSpectra():
         self.list_kin_power_norm_group_t[time_index],
         10**(-7)
       )
-      ## fit kinetic energy spectrum
+      ## fit kinetic energy spectrum at time-realisation
       params_kin = fitKinSpectra(
         self.axs_spectra[0],
         self.list_kin_k[1:end_index_kin],
@@ -336,7 +336,7 @@ class PlotSpectra():
     self.k_p_group_t   = []
     self.k_max_group_t = []
     for time_index in range(len(self.list_mag_time)):
-      ## extract interpolated and raw magnetic peak-scale
+      ## extract interpolated and raw magnetic peak-scale for time-realisation
       k_p, k_max = getMagSpectraPeak(
         self.axs_spectra[1],
         self.list_mag_k,
@@ -544,14 +544,14 @@ def main():
 ## ###############################################################
 BOOL_DEBUG        = 0
 BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "sub_sonic"
+SONIC_REGIME      = "super_sonic"
 
 # LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
 LIST_SUITE_FOLDER = [ "Rm3000" ]
-LIST_SIM_RES      = [ "576" ]
+LIST_SIM_FOLDER   = [ "Pm1" ]
 
 
 ## ###############################################################
