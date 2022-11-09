@@ -18,6 +18,7 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.lines import Line2D
 from matplotlib.gridspec import GridSpec
 from matplotlib.offsetbox import TextArea, VPacker, AnnotationBbox
+from matplotlib.collections import LineCollection
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 ## load user defined modules
@@ -70,6 +71,43 @@ def saveFigure(fig, filepath_fig):
 def createCmap(cmap_name, vmin=0.0, vmax=1.0):
   ## cmr cmaps span [0.0, 1.0], so pass (vmin, vmax) to subset the cmap
   return cmr.get_sub_cmap(cmap_name, vmin, vmax)
+
+
+## PLOT DATA
+def plotData_noAutoAxisScale(
+    ax, x, y,
+    color="k", ls=":", lw=1, label=None, zorder=1
+  ):
+  col = LineCollection(
+    [ np.column_stack((x, y)) ],
+    colors = color,
+    ls     = ls,
+    lw     = lw,
+    label  = label,
+    zorder = zorder
+  )
+  ax.add_collection(col, autolim=False)
+
+def plotErrorBar_1D(
+    ax, x, array_y,
+    color="k", marker="o", label=None
+  ):
+  y_median = np.percentile(array_y, 50)
+  y_p16    = np.percentile(array_y, 16)
+  y_p84    = np.percentile(array_y, 84)
+  y_1sig   = np.vstack([
+    y_median - y_p16,
+    y_p84 - y_median
+  ])
+  ax.errorbar(
+    x, y_median,
+    yerr  = y_1sig,
+    color = color,
+    fmt   = marker,
+    label = label,
+    markersize=7, markeredgecolor="black", capsize=7.5, elinewidth=2,
+    linestyle="None", zorder=10
+  )
 
 
 ## ###############################################################
