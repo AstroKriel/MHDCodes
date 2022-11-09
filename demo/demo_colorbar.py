@@ -18,10 +18,10 @@ def main():
   ## THIS IS THE STUFF YOU SHOULD CARE ABOUT
   ## ---------------------------------------
   ## trucated bounds in [0.0, 1.0]
-  vmin, vmax = 0.25, 0.6
+  vmin, vmax = 0.0, 0.4
   ## create the cmap object
   cmap = PlotFuncs.createCmap(
-    cmap_name   = "cmr.ember_r",
+    cmap_name   = "cmr.neutral_r",
     vmin        = vmin,
     vmax        = vmax
   )

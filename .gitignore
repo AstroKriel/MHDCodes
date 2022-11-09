@@ -6,6 +6,8 @@
 */*/__pycache__
 */*/.ipynb_checkpoints
 */*/.DS_STore
+*/*/*.png
+*/*/*.json
 
 */__pycache__
 */.ipynb_checkpoints

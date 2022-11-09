@@ -138,9 +138,9 @@ class PlotScaleConvergence():
         array_y = self.k_p_group_t_res[res_index]
       )
 
-  # def __fitDataset(self):
-  #   self.k_nu_converged, self.k_nu_std = fitScales(self.ax_k_nu, self.list_sim_res, self.list_k_nu_group_res)
-  #   self.k_p_converged, self.k_p_std   = fitScales(self.ax_k_p,  self.list_sim_res, self.list_k_p_group_res)
+  def __fitDataset(self):
+    self.k_nu_converged, self.k_nu_std = fitScales(self.ax_k_nu, self.list_sim_res, self.list_k_nu_group_res)
+    self.k_p_converged, self.k_p_std   = fitScales(self.ax_k_p,  self.list_sim_res, self.list_k_p_group_res)
 
   def __annotateFigure(self):
     ## label k_nu
@@ -183,7 +183,7 @@ def main():
       ## CHECK THE NRES=288 DATASET EXISTS
       ## ---------------------------------
       ## check that the simulation data exists at Nres=288
-      if not os.path.isfile(f"{filepath_sim}/288/sim_output.json"): continue
+      if not os.path.isfile(f"{filepath_sim}/288/sim_outputs.json"): continue
 
       ## MAKE SURE A VISUALISATION FOLDER EXISTS
       ## ---------------------------------------
@@ -195,7 +195,7 @@ def main():
       ## -------------------------------------
       obj = PlotScaleConvergence(filepath_sim, filepath_vis, sim_name)
       obj.readDataset()
-      obj.createFigure()
+      obj.createFigure_scales()
       # obj.createDataset()
 
       if BOOL_DEBUG: return

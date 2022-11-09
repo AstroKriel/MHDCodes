@@ -51,8 +51,10 @@ def countFiles(
     filename_contains     = filename_contains,
     filename_not_contains = filename_not_contains
   )
-  print(f"\t> There are {len(list_files_in_filepath)} '*_{filename_contains}*' files in:\n\t", filepath_files)
+  num_files = len(list_files_in_filepath)
+  print(f"\t> There are {num_files} '*_{filename_contains}*' files in:\n\t", filepath_files)
   print(" ")
+  return num_files
 
 
 ## ###############################################################
@@ -163,9 +165,9 @@ def main():
 
         ## evaluate function
         obj_sim_folder = ReorganiseSimFolder(filepath_sim_res)
-        obj_sim_folder.removeExtraFiles()
-        obj_sim_folder.movePltFiles()
-        obj_sim_folder.moveSpectFiles()
+        # obj_sim_folder.removeExtraFiles()
+        # obj_sim_folder.movePltFiles()
+        # obj_sim_folder.moveSpectFiles()
 
         ## create an empty line after each suite
         print(" ")
