@@ -54,7 +54,7 @@ def main():
       if BOOL_GET_PLOTS_CONVERGED:
         downloadFromGadiToMac(
           filepath_gadi = f"{filepath_gadi_sim}/vis_folder/",
-          ## group everything in the sonic regime (for comparing)
+          ## group everything into the sonic regime (for comparing)
           filepath_mac  = f"{filepath_mac_sim}/../",
           filename      = FILENAME_PLOTS_CONVERGED
         )
@@ -110,16 +110,17 @@ BASEPATH_GADI            = "/scratch/ek9/nk7952"
 SONIC_REGIME             = "super_sonic"
 LIST_SUITE_FOLDER        = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER          = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES             = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SIM_RES             = [ "18", "36", "72", "144", "288", "576" ]
+LIST_SIM_RES             = [ "288", "576" ]
 ## animated spectra at a Nres
 BOOL_GET_VIDEOS_NRES     = 0
 FILENAME_VIDEOS_NRES     = "*.mp4"
 ## plots of simulations at a Nres
 BOOL_GET_PLOTS_NRES      = 0
-FILENAME_PLOTS_NRES      = "*.png"
+FILENAME_PLOTS_NRES      = "*_dataset.png"
 ## plots of convergence data
 BOOL_GET_PLOTS_CONVERGED = 1
-FILENAME_PLOTS_CONVERGED = "*.png"
+FILENAME_PLOTS_CONVERGED = "*_nres_*.png"
 
 
 ## ###############################################################
