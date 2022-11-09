@@ -24,23 +24,24 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 ## HELPER FUNCTION
 ## ###############################################################
-def getAveSpectra(filepath_sim, str_field):
-  print(f"Reading in '{str_field}' data:", filepath_sim)
+def getAveSpectra(filepath_sim_res, str_field):
+  print(f"Reading in '{str_field}' data:", filepath_sim_res)
   ## load relevant data from simulation folder
-  plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(filepath_sim, bool_hide_updates=True)
   dict_sim_data = WWObjs.loadJsonFile2Dict(
-    filepath = filepath_sim,
+    filepath = filepath_sim_res,
     filename = f"sim_outputs.json",
     bool_hide_updates = True
   )
   try:
     list_k = dict_sim_data["list_k"]
-    if "v" in str_field:   list_power_ave = dict_sim_data[f"list_kin_power_ave"]
-    elif "m" in str_field: list_power_ave = dict_sim_data[f"list_mag_power_ave"]
+    if "v" in str_field:   list_power_ave = dict_sim_data["list_kin_power_ave"]
+    elif "m" in str_field: list_power_ave = dict_sim_data["list_mag_power_ave"]
   except:
+    ## number of plt/spect-files per eddy-turn-over-time
+    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(filepath_sim_res, bool_hide_updates=True)
     ## load energy spectra
     list_k_group_t, list_power_group_t, _ = LoadFlashData.loadAllSpectraData(
-      filepath          = f"{filepath_sim}/spect/",
+      filepath          = f"{filepath_sim_res}/spect/",
       str_spectra_type  = str_field,
       file_start_time   = dict_sim_data["time_growth_start"],
       file_end_time     = dict_sim_data["time_growth_end"],
@@ -56,7 +57,7 @@ def getAveSpectra(filepath_sim, str_field):
     list_power_ave = np.mean(list_power_norm_group_t, axis=0)
   return list_k, list_power_ave
 
-def plotAveSpectra(ax, filepath_sim, sim_res, str_field):
+def plotAveSpectra(ax, filepath_sim_res, sim_res, str_field):
   dict_plot_style = {
     "18"  : "r--",
     "36"  : "g--",
@@ -65,7 +66,7 @@ def plotAveSpectra(ax, filepath_sim, sim_res, str_field):
     "288" : "g-",
     "576" : "b-"
   }
-  list_k, list_spectra_ave = getAveSpectra(filepath_sim, str_field)
+  list_k, list_spectra_ave = getAveSpectra(filepath_sim_res, str_field)
   ax.plot(list_k, list_spectra_ave, dict_plot_style[sim_res], label=sim_res)
 
 
@@ -96,6 +97,7 @@ class PlotSpectraConvergence():
     ax_kin.set_xscale("log")
     ax_kin.set_yscale("log")
     ax_kin.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$")
+    # ax_kin.set_ylim(bottom=10**(-8))
     ## label magnetic energy spectra
     ax_mag.legend(loc="upper right")
     ax_mag.set_xscale("log")

@@ -87,67 +87,68 @@ class PlotSimScales():
     self.color_group     = []
     self.marker_group    = []
     ## measured quantities
-    self.list_alpha_kin_group = []
-    self.list_k_nu_group      = []
-    self.list_k_p_group       = []
-    self.list_k_eq_group      = []
+    self.list_k_nu_group = []
+    self.list_k_p_group  = []
     self.__loadAllSimulationData()
 
   def __loadAllSimulationData(self):
     ## loop over the simulation suites
     for suite_folder in LIST_SUITE_FOLDER:
       ## check the suite's figure folder exists
-      filepath_suite_output = WWFnF.createFilepath([ BASEPATH, suite_folder, SONIC_REGIME ])
+      filepath_suite_output = WWFnF.createFilepath([
+        BASEPATH, suite_folder, SONIC_REGIME
+      ])
       if not os.path.exists(filepath_suite_output):
-        print("{} does not exist.".format(filepath_suite_output))
+        print(f"{filepath_suite_output} does not exist.")
         continue
-      str_message = "Loading datasets from suite: {}".format(suite_folder)
+      str_message = f"Loading datasets from suite: {suite_folder}"
       print(str_message)
       print("=" * len(str_message))
       ## loop over the simulation folders
       for sim_folder in LIST_SIM_FOLDER:
         ## check that the fitted spectra data exists for the Nres=288 simulation setup
-        filepath_sim = WWFnF.createFilepath([
-          BASEPATH, suite_folder, STR_SIM_RES, SONIC_REGIME, sim_folder
+        filepath_sim_res = WWFnF.createFilepath([
+          BASEPATH, suite_folder, SONIC_REGIME, sim_folder, STR_SIM_RES
         ])
-        dataset_name = f"{suite_folder}_{sim_folder}_dataset.json"
-        filepath_dataset = f"{filepath_sim}/{dataset_name}"
-        if not os.path.isfile(filepath_dataset): continue
+        if not os.path.isfile(f"{filepath_sim_res}/sim_inputs.json"): continue
+        if not os.path.isfile(f"{filepath_sim_res}/sim_outputs.json"): continue
         ## load scales
         print(f"\t> Loading '{sim_folder}' dataset.")
-        if suite_folder == "Re10": self.marker_group.append("s")
-        elif suite_folder == "Re500": self.marker_group.append("D")
+        if suite_folder == "Re10":     self.marker_group.append("s")
+        elif suite_folder == "Re500":  self.marker_group.append("D")
         elif suite_folder == "Rm3000": self.marker_group.append("o")
-        self.__getParams(filepath_sim, dataset_name)
+        self.__getParams(filepath_sim_res)
       ## create empty space
       print(" ")
 
-  def __getParams(self, filepath_data, dataset_name):
+  def __getParams(self, filepath_data):
     ## load spectra-fit data as a dictionary
-    dict = WWObjs.loadJsonFile2Dict(
+    dict_sim_inputs = WWObjs.loadJsonFile2Dict(
       filepath = filepath_data,
-      filename = dataset_name,
+      filename = "sim_inputs.json",
+      bool_hide_updates = True
+    )
+    dict_sim_outputs = WWObjs.loadJsonFile2Dict(
+      filepath = filepath_data,
+      filename = "sim_outputs.json",
       bool_hide_updates = True
     )
     ## extract plasma Reynolds numbers
-    Re = int(dict["Re"])
-    Rm = int(dict["Rm"])
-    Pm = int(dict["Pm"])
+    Re = int(dict_sim_inputs["Re"])
+    Rm = int(dict_sim_inputs["Rm"])
+    Pm = int(dict_sim_inputs["Pm"])
     self.Re_group.append(Re)
     self.Rm_group.append(Rm)
     self.Pm_group.append(Pm)
     self.color_group.append( "cornflowerblue" if Re < 100 else "orangered" )
-    ## extract kinetic energy scales
-    self.list_alpha_kin_group.append(dict["list_alpha_kin"])
-    self.list_k_nu_group.append(dict["list_k_nu"])
-    ## extract magnetic energy scales
-    self.list_k_p_group.append(dict["list_k_p"])
-    self.list_k_eq_group.append(dict["list_k_eq"])
+    ## extract measured scales
+    self.list_k_nu_group.append(dict_sim_outputs["k_nu_group_t"])
+    self.list_k_p_group.append(dict_sim_outputs["k_p_group_t"])
 
   def plotDependance_knu(self):
     fig, ax = plt.subplots(1, 1, figsize=(7/1.1, 4/1.1))
     for sim_index in range(len(self.Pm_group)):
-      plotErrorBar_1D(
+      PlotFuncs.plotErrorBar_1D(
         ax,
         self.Re_group[sim_index]**(2/3),
         self.list_k_nu_group[sim_index],
@@ -156,7 +157,7 @@ class PlotSimScales():
       )
     ## plot reference lines
     x = np.linspace(10**(-1), 10**(3), 10**4)
-    plotData_noAutoAxisScale(ax, x, x / 2.5)
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, x / 2.5)
     ## label figure
     addLegend_suites(ax)
     addLegend_Re(ax)
@@ -167,15 +168,13 @@ class PlotSimScales():
     ax.set_yscale("log")
     ## save plot
     fig_name = f"fig_dependance_knu_{STR_SIM_RES}.png"
-    fig_filepath = WWFnF.createFilepath([ self.filepath_vis, fig_name ])
-    plt.savefig(fig_filepath)
-    plt.close(fig)
-    print("Saved figure:", fig_name)
+    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
+    print(" ")
 
   def plotDependance_kp(self):
     fig, ax = plt.subplots(1, 1, figsize=(7/1.1, 4/1.1))
     for sim_index in range(len(self.Pm_group)):
-      plotErrorBar_1D(
+      PlotFuncs.plotErrorBar_1D(
         ax,
         self.Re_group[sim_index]**(2/3) * self.Pm_group[sim_index],
         self.list_k_p_group[sim_index],
@@ -185,7 +184,7 @@ class PlotSimScales():
     ## plot reference lines
     x = np.linspace(10**(-2), 10**(4), 100)
     # ax.plot(x, x**(1/4), "k:")
-    plotData_noAutoAxisScale(ax, x, 1.15*x**(1/4))
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, 1.15*x**(1/4))
     ## label figure
     addLegend_suites(ax)
     addLegend_Re(ax)
@@ -196,10 +195,8 @@ class PlotSimScales():
     ax.set_yscale("log")
     ## save plot
     fig_name = f"fig_dependance_kp_{STR_SIM_RES}.png"
-    fig_filepath = WWFnF.createFilepath([ self.filepath_vis, fig_name ])
-    plt.savefig(fig_filepath)
-    plt.close(fig)
-    print("Saved figure:", fig_name)
+    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
+    print(" ")
 
 
 ## ###############################################################
@@ -228,5 +225,5 @@ if __name__ == "__main__":
   main()
   sys.exit()
 
- 
+
 ## END OF PROGRAM

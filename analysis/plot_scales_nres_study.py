@@ -138,20 +138,20 @@ class PlotScaleConvergence():
         array_y = self.k_p_group_t_res[res_index]
       )
 
-  # def __fitDataset(self):
-  #   self.k_nu_converged, self.k_nu_std = fitScales(self.ax_k_nu, self.list_sim_res, self.list_k_nu_group_res)
-  #   self.k_p_converged, self.k_p_std   = fitScales(self.ax_k_p,  self.list_sim_res, self.list_k_p_group_res)
+  def __fitDataset(self):
+    self.k_nu_converged, self.k_nu_std = fitScales(self.ax_k_nu, self.list_sim_res, self.list_k_nu_group_res)
+    self.k_p_converged, self.k_p_std   = fitScales(self.ax_k_p,  self.list_sim_res, self.list_k_p_group_res)
 
   def __annotateFigure(self):
     ## label k_nu
     self.ax_k_nu.set_ylabel(r"$k_\nu$")
     self.ax_k_nu.set_xscale("log")
-    # self.ax_k_nu.set_yscale("log")
+    self.ax_k_nu.set_yscale("log")
     ## label k_p
     self.ax_k_p.set_ylabel(r"$k_{\rm p}$")
     self.ax_k_p.set_xlabel(r"$N_{\rm res}$")
     self.ax_k_p.set_xscale("log")
-    # self.ax_k_p.set_yscale("log")
+    self.ax_k_p.set_yscale("log")
 
 
 ## ###############################################################

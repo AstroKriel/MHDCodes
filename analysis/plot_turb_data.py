@@ -164,7 +164,7 @@ class PlotTurbData():
     self.axs[1].set_xlim([ 0, self.max_time ])
     self.axs[1].set_ylim([ new_min_E_ratio, 10**(1) ])
     ## add log axis-ticks
-    PlotFuncs.addLogAxisTicks(
+    PlotFuncs.addAxisTicks_log10(
       self.axs[1],
       bool_major_ticks = True,
       num_major_ticks  = num_y_major_ticks

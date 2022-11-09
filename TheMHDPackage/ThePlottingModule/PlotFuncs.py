@@ -22,7 +22,6 @@ from matplotlib.collections import LineCollection
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 ## load user defined modules
-from TheUsefulModule import WWFnF
 from ThePlottingModule import TheMatplotlibStyler
 
 
@@ -53,7 +52,7 @@ def createFigure_grid(
     fig_aspect_ratio = (4,6)
   ):
   fig = plt.figure(
-    # constrained_layout = True,
+    constrained_layout = True,
     figsize            = (
       fig_scale * fig_aspect_ratio[1] * num_cols,
       fig_scale * fig_aspect_ratio[0] * num_rows
@@ -63,17 +62,30 @@ def createFigure_grid(
 
 def saveFigure(fig, filepath_fig):
   print("Saving figure...")
-  fig.set_tight_layout(True)
+  if not fig.get_constrained_layout():
+    fig.set_tight_layout(True)
   fig.savefig(filepath_fig)
   plt.close(fig)
   print("Saved figure:", filepath_fig)
 
-def createCmap(cmap_name, vmin=0.0, vmax=1.0):
-  ## cmr cmaps span [0.0, 1.0], so pass (vmin, vmax) to subset the cmap
-  return cmr.get_sub_cmap(cmap_name, vmin, vmax)
+def createNorm(vmin=0.0, vmax=1.0):
+  return colors.Normalize(vmin=vmin, vmax=vmax)
+
+def createCmap(
+    cmap_name,
+    cmin=0.0, cmax=1.0,
+    vmin=0.0, vmax=1.0
+  ):
+  ## cmaps span cmin=0.0 to cmax=1.0, so pass (cmin, cmax) to subset a cmap color-range
+  cmap = cmr.get_sub_cmap(cmap_name, cmin, cmax)
+  ## define value range of colorbar
+  norm = createNorm(vmin, vmax)
+  return cmap, norm
 
 
+## ###############################################################
 ## PLOT DATA
+## ###############################################################
 def plotData_noAutoAxisScale(
     ax, x, y,
     color="k", ls=":", lw=1, label=None, zorder=1
@@ -115,15 +127,16 @@ def plotErrorBar_1D(
 ## ###############################################################
 def addColorbar_fromCmap(
     fig, ax, cmap,
-    vmin=0.0, vmax=1.0, label=None, fontsize=16, orientation="horizontal"
+    norm=None, vmin=0.0, vmax=1.0,
+    label=None, fontsize=16, orientation="horizontal"
   ):
-  norm = colors.Normalize(vmin=vmin, vmax=vmax)
-  smap = ScalarMappable(cmap=cmap, norm=norm)
-  div  = make_axes_locatable(ax)
-  if "h" in orientation:   cax = div.new_vertical(size="5%", pad=0.1)
-  elif "v" in orientation: cax = div.new_horizontal(size="5%", pad=0.1)
+  if norm is None: norm = createNorm(vmin, vmax)
+  smap   = ScalarMappable(cmap=cmap, norm=norm)
+  ax_div = make_axes_locatable(ax)
+  if "h" in orientation:   cax = ax_div.append_axes(position="top", size="5%", pad="2%")
+  elif "v" in orientation: cax = ax_div.append_axes(position="right", size="5%", pad="2%")
   else: raise Exception(f"ERROR: '{orientation}' is not a supported orientation!")
-  fig.add_axes(cax)
+  # fig.add_axes(cax)
   cbar = fig.colorbar(mappable=smap, cax=cax, orientation=orientation)
   if "h" in orientation:
     cax.set_title(label, fontsize=fontsize)
@@ -143,7 +156,7 @@ def addColorbar_fromMappble(mappable, cbar_title=None):
   plt.sca(ax_old)
   return cbar
 
-def addLinearAxisTicks(
+def addAxisTicks_linear(
     ax,
     bool_minor_ticks = False,
     bool_major_ticks = False,
@@ -160,7 +173,7 @@ def addLinearAxisTicks(
     y_major = mpl.ticker.LinearLocator(numticks=num_major_ticks)
     ax.yaxis.set_major_locator(y_major)
 
-def addLogAxisTicks(
+def addAxisTicks_log10(
     ax,
     bool_minor_ticks = False,
     bool_major_ticks = False,
@@ -304,6 +317,7 @@ class MidpointNormalize(colors.Normalize):
   def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
     self.midpoint = midpoint
     colors.Normalize.__init__(self, vmin, vmax, clip)
+
   def __call__(self, value, clip=None):
     x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
     return np.ma.masked_array(np.interp(value, x, y))
@@ -355,102 +369,6 @@ def plot2DField(
     ## clear figure and axis
     fig.artists.clear()
     ax.clear()
-
-
-## ###############################################################
-## CREATE LABELS FOR STATISTICAL MODELS (TODO: update)
-## ###############################################################
-class CreateDistributionStatsLabel():
-  def coef(param_list, num_digits=3):
-    str_median = ("{0:."+str(num_digits)+"g}").format(np.percentile(param_list, 50))
-    num_decimals = 2
-    if "." in str_median:
-      num_decimals = len(str_median.split(".")[1])
-    str_low  = ("-{0:."+str(num_decimals)+"f}").format(np.percentile(param_list, 50) - np.percentile(param_list, 16))
-    str_high = ("+{0:."+str(num_decimals)+"f}").format(np.percentile(param_list, 84) - np.percentile(param_list, 50))
-    return r"${}_{}^{}$\;".format(
-      str_median,
-      "{" + str_low  + "}",
-      "{" + str_high + "}"
-    )
-
-  def exp(param_list, num_digits=3):
-    str_median = ("{0:."+str(num_digits)+"g}").format(np.percentile(param_list, 50))
-    num_decimals = 2
-    if "." in str_median:
-      num_decimals = len(str_median.split(".")[1])
-      if num_decimals < 2:
-        num_decimals = 2
-        str_median += "0"
-    else:
-      str_median += ".00"
-    str_low  = ("-{0:."+str(num_decimals)+"f}").format(np.percentile(param_list, 50) - np.percentile(param_list, 16))
-    str_high = ("+{0:."+str(num_decimals)+"f}").format(np.percentile(param_list, 84) - np.percentile(param_list, 50))
-    return r"$^{}$".format(
-      "{" + str_median +
-        "_{" + str_low  + "}" +
-        "^{" + str_high + "}" +
-      "}"
-    )
-
-  def offset(param_list, num_digits=3):
-    str_median = ("{0:."+str(num_digits)+"g}").format(np.percentile(param_list, 50))
-    num_decimals = 2
-    if "." in str_median:
-      num_decimals = len(str_median.split(".")[1])
-    str_low  = ("-{0:."+str(num_decimals)+"f}").format(np.percentile(param_list, 50) - np.percentile(param_list, 16))
-    str_high = ("+{0:."+str(num_decimals)+"f}").format(np.percentile(param_list, 84) - np.percentile(param_list, 50))
-    return r"${}_{}^{}$".format(
-      str_median,
-      "{" + str_low  + "}",
-      "{" + str_high + "}"
-    )
-
-class CreateFunctionLabel():
-  def __init__(
-      self,
-      list_params, func_label, var_str,
-      num_digits     = 3,
-      bool_hide_coef = False
-    ):
-    self.list_params    = list_params
-    self.num_digits     = num_digits
-    self.var_str        = var_str
-    self.label          = ""
-    self.bool_hide_coef = bool_hide_coef
-    if "PowerLawOffset".lower() in func_label.lower(): self.labelPowerLawOffset()
-    elif "PowerLaw".lower() in func_label.lower(): self.labelPowerLaw()
-    elif "LinearOffset".lower() in func_label.lower(): self.labelLinearOffset()
-    elif "Linear".lower() in func_label.lower(): self.labelLinear()
-    else: raise Exception(f"Undefined KDE function: can't create label for '{func_label}'")
-
-  def labelPowerLawOffset(self):
-    str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)
-    str_exp  = CreateDistributionStatsLabel.exp(self.list_params[1], self.num_digits)
-    str_off  = CreateDistributionStatsLabel.offset(self.list_params[2], self.num_digits)
-    if np.percentile(self.list_params[2], 50) > 0: str_sum_sep = r" $+$ "
-    else: str_sum_sep = r" $-$ "
-    if self.bool_hide_coef: self.label = self.var_str + str_exp + str_sum_sep + str_off
-    else: self.label = str_coef + self.var_str + str_exp + str_sum_sep + str_off
-
-  def labelPowerLaw(self):
-    str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)
-    str_exp  = CreateDistributionStatsLabel.exp(self.list_params[1], self.num_digits)
-    if self.bool_hide_coef: self.label = self.var_str + str_exp
-    else: self.label = str_coef + self.var_str + str_exp
-
-  def labelLinearOffset(self):
-    str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)
-    str_off  = CreateDistributionStatsLabel.offset(self.list_params[1], self.num_digits)
-    if np.percentile(self.list_params[1], 50) > 0: str_sum_sep = r" $+$ "
-    else: str_sum_sep = r" $-$ "
-    if self.bool_hide_coef: self.label = self.var_str + str_sum_sep + str_off
-    else: self.label = str_coef + self.var_str + str_sum_sep + str_off
-
-  def labelLinear(self):
-    str_coef = CreateDistributionStatsLabel.coef(self.list_params[0], self.num_digits)
-    if self.bool_hide_coef: self.label = self.var_str
-    else: self.label = str_coef + self.var_str
 
 
 ## END OF LIBRARY

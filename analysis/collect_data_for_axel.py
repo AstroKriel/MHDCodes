@@ -3,7 +3,6 @@ import os, sys
 import numpy as np
 import cmasher as cmr
 import matplotlib.colors as cols
-import matplotlib.pyplot as plt
 
 from matplotlib.cm import ScalarMappable
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -95,7 +94,7 @@ def getSimData(fig, ax, filepath_sim, sim_name, Re, Pm):
   ax.set_xlabel(r"$k$")
   ax.set_xscale("log")
   ax.set_yscale("log")
-  PlotFuncs.addLogAxisTicks(ax, bool_major_ticks=True, num_major_ticks=10)
+  PlotFuncs.addAxisTicks_log10(ax, bool_major_ticks=True, num_major_ticks=10)
   ## save dataset
   dict_params = {
     "Re"                      : Re,
