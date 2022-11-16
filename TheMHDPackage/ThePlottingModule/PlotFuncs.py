@@ -128,13 +128,13 @@ def plotErrorBar_1D(
 def addColorbar_fromCmap(
     fig, ax, cmap,
     norm=None, vmin=0.0, vmax=1.0,
-    label=None, fontsize=20, orientation="horizontal"
+    label=None, fontsize=16, orientation="horizontal", size=10
   ):
   if norm is None: norm = createNorm(vmin, vmax)
   smap   = ScalarMappable(cmap=cmap, norm=norm)
   ax_div = make_axes_locatable(ax)
-  if "h" in orientation:   cax = ax_div.append_axes(position="top", size="5%", pad="2%")
-  elif "v" in orientation: cax = ax_div.append_axes(position="right", size="5%", pad="2%")
+  if "h" in orientation:   cax = ax_div.append_axes(position="top",   size=f"{size:.1f}%", pad="2%")
+  elif "v" in orientation: cax = ax_div.append_axes(position="right", size=f"{size:.1f}%", pad="2%")
   else: raise Exception(f"ERROR: '{orientation}' is not a supported orientation!")
   # fig.add_axes(cax)
   cbar = fig.colorbar(mappable=smap, cax=cax, orientation=orientation)
@@ -143,14 +143,14 @@ def addColorbar_fromCmap(
     cax.xaxis.set_ticks_position("top")
   else: cbar.ax.set_ylabel(label, rotation=-90, va="bottom", fontsize=fontsize)
 
-def addColorbar_fromMappble(mappable, cbar_title=None):
+def addColorbar_fromMappble(mappable, cbar_title=None, size=10):
   ''' from: https://joseph-long.com/writing/colorbars/
   '''
   ax_old  = plt.gca()
   ax_new  = mappable.axes
   fig     = ax_new.figure
   div     = make_axes_locatable(ax_new)
-  ax_cbar = div.append_axes("right", size="5%", pad=0.1)
+  ax_cbar = div.append_axes("right", size=f"{size:.1f}%", pad="2%")
   cbar    = fig.colorbar(mappable, cax=ax_cbar)
   cbar.ax.set_ylabel(cbar_title, rotation=-90, va="bottom")
   plt.sca(ax_old)
