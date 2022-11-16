@@ -1,112 +1,177 @@
+#!/usr/bin/env python3
+
+## ###############################################################
+## MODULES
+## ###############################################################
 import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 
+## load user defined modules
+from ThePlottingModule import PlotFuncs
+
+
+## ###############################################################
+## PREPARE WORKSPACE
+## ###############################################################
 os.system("clear")
 
-def getVMag(v_array):
-  return np.sqrt(np.sum([
-    v**2 for v in list(v_array)]
-  ))
 
-def cross_3D(v_1, v_2):
-  ## cross_3D product of two vectors
+## ###############################################################
+## HELPER FUNCTIONS
+## ###############################################################
+def cross_sym(v_1, v_2):
+  print(f"{v_1} x {v_2}")
+  result = [
+    f"[ ({v_1[1]} {v_2[2]}) - ({v_1[2]} {v_2[1]}) ]",
+    f"[ ({v_1[2]} {v_2[0]}) - ({v_1[0]} {v_2[2]}) ]",
+    f"[ ({v_1[0]} {v_2[1]}) - ({v_1[1]} {v_2[0]}) ]"
+  ]
+  print("=\t", *result, sep="\n\t")
+  print(" ")
+  return result
+
+def cross(v_1, v_2):
   return np.array([
     v_1[1]*v_2[2] - v_1[2]*v_2[1],
     v_1[2]*v_2[0] - v_1[0]*v_2[2],
     v_1[0]*v_2[1] - v_1[1]*v_2[0]
   ])
 
-def getState(amplitude, omega, time, v_k, v_pos):
-  ## work with real component of the solution
-  return amplitude * np.real(np.exp(
-    1j * ( omega*time - np.dot(v_k, v_pos) )
+def getVMag(vec):
+  return np.sqrt(np.sum([
+    elem**2 for elem in list(vec)]
   ))
 
+def getVNorm(vec):
+  return np.array(vec) / getVMag(vec)
+
+def getCosAngle(v_1, v_2):
+  return np.dot(v_1, v_2) / (getVMag(v_1) * getVMag(v_2))
+
+def getState(amplitude, omega, time, v_k, v_pos):
+  ## real component of the solution
+  return amplitude * np.cos(
+    omega*time - np.dot(v_k, v_pos)
+  )
+
+def plotData(ax, data, label):
+  im = ax.imshow(data)
+  PlotFuncs.addColorbar_fromMappble(im, cbar_title=label)
+
+
+## ###############################################################
+## MAIN PROGRAM
+## ###############################################################
 def main():
   print("Initialising parameters...")
   ## ratio of specific heats
-  gamma         = -5/3
+  gamma         = 5/3
+  ## free parameters
+  rho_0         = 1.0
+  press_0       = 3/5
+  alpha_2       = 0.0
+  vel_1         = 1.0
+  v_k           = np.array([ 1, 1, 0 ])
+  v_mag_0       = np.array([ 1, 0, 0 ])
+  ## compute helper variables
+  k             = getVMag(v_k)
+  cos_theta     = getCosAngle(v_mag_0, v_k)
+  theta         = 180/np.pi * np.arccos(cos_theta)
+  print(f"angle between vec(k) and u-vec(n): {round(theta, 2)}")
   ## background state
-  rho_0         = 1.0 # choose
-  press_0       = 1.0 # choose
-  v_mag_dir_hat = np.array([1, 0, 0]) # choose
-  mag_strength  = 1.0 # choose
-  v_vel_0       = np.array([0, 0, 0])
-  v_mag_0       = mag_strength * v_mag_dir_hat
+  ## inputs: rho_0, press_0, vel_1, v_mag_0
+  v_vel_0       = np.zeros(3)
+  v_vel_1       = vel_1 * getVNorm(cross(v_k, v_mag_0))
+  v_mag_0_hat   = getVNorm(v_mag_0)
+  mag_0         = getVMag(v_mag_0)
   ## perturbed state
-  v_k           = np.array([0, 0, 1]) # choose: k_z =/= 0
-  alpha_1       = 1 # choose
-  alpha_2       = gamma * alpha_1
-  rho_1         = rho_0 * (1 + alpha_1)
-  press_1       = press_0 * (1 + alpha_2)
-  alfven_speed  = getVMag(v_mag_0)**2 / (4*np.pi * rho_0) # v_A^2
-  theta_mag_k   = np.dot(v_mag_0, v_k) / (getVMag(v_mag_0) * getVMag(v_k))
-  omega         = np.sqrt( alfven_speed**2 * getVMag(v_k) * np.cos(theta_mag_k)**2 )
-  v_vel_1       = np.array([0, 0, omega * alpha_1 / v_k[2]])
-  v_alpha_3     = 1 / omega * cross_3D(v_k, cross_3D(v_mag_dir_hat, v_vel_1))
-  v_mag_1       = mag_strength * (v_mag_dir_hat + v_alpha_3)
+  alpha_1       = alpha_2 / gamma # from continuity eqn
+  alfven_speed  = mag_0**2 / (4*np.pi * rho_0) # v_A^2
+  omega         = np.sqrt(alfven_speed) * k * cos_theta # dispersion relation
+  alpha_3_z     = -k / omega * cos_theta * v_vel_1[2]
+  v_alpha_3     = np.array([ 0, 0, alpha_3_z ])
+  check         = -np.dot(v_k, v_mag_0_hat) / omega * v_vel_1
+  if any(v_alpha_3 - check): raise Exception("Error: Something went wrong!")
   ## initialise figure
   print("Initialising figure...")
-  num_rows, num_cols = 4, 3
-  fig = plt.figure(figsize=( num_cols*5.0, num_rows*3.0 ))
-  fig_grid = GridSpec(num_rows, num_cols, figure=fig)
-  ax_rho   = fig.add_subplot(fig_grid[0,0])
-  ax_press = fig.add_subplot(fig_grid[1,0])
-  ax_vel_x = fig.add_subplot(fig_grid[2,0])
-  ax_vel_y = fig.add_subplot(fig_grid[2,1])
-  ax_vel_z = fig.add_subplot(fig_grid[2,2])
-  ax_mag_x = fig.add_subplot(fig_grid[3,0])
-  ax_mag_y = fig.add_subplot(fig_grid[3,1])
-  ax_mag_z = fig.add_subplot(fig_grid[3,2])
+  fig, axs = plt.subplots(
+    nrows              = 4,
+    ncols              = 3,
+    figsize            = (7*3, 4*4),
+    sharex             = True,
+    constrained_layout = True
+  )
   ## initialise solutions
-  num_x, num_y = 5, 5
-  data_pos_x = np.linspace(0, 10, num_x)
-  data_pos_y = np.linspace(0, 10, num_y)
-  data_rho   = np.zeros((num_x, num_y))
-  data_press = np.zeros((num_x, num_y))
-  data_vel_x = np.zeros((num_x, num_y))
-  data_vel_y = np.zeros((num_x, num_y))
-  data_vel_z = np.zeros((num_x, num_y))
-  data_mag_x = np.zeros((num_x, num_y))
-  data_mag_y = np.zeros((num_x, num_y))
-  data_mag_z = np.zeros((num_x, num_y))
-  ## create solution datasets
+  num_x = 100
+  num_y = 100
+  data_pos_x = np.linspace(-5, 5, num_x)
+  data_pos_y = np.linspace(-5, 5, num_y)
+  data_rho   = np.zeros(( num_x, num_y ))
+  data_press = np.zeros(( num_x, num_y ))
+  data_vel_x = np.zeros(( num_x, num_y ))
+  data_vel_y = np.zeros(( num_x, num_y ))
+  data_vel_z = np.zeros(( num_x, num_y ))
+  data_mag_x = np.zeros(( num_x, num_y ))
+  data_mag_y = np.zeros(( num_x, num_y ))
+  data_mag_z = np.zeros(( num_x, num_y ))
+  ## compute solutions
   print("Computing solutions...")
   time = 0.0
   for index_x in range(num_x):
     for index_y in range(num_y):
-      v_pos = np.array([data_pos_x[index_x], data_pos_y[index_y], 0])
+      v_pos = np.array([
+        data_pos_x[index_x],
+        data_pos_y[index_y],
+        0
+      ])
       dict_params = { "omega" : omega, "time" : time, "v_k" : v_k, "v_pos" : v_pos }
-      data_rho[index_x, index_y]   = getState(rho_1,      **dict_params)
-      data_press[index_x, index_y] = getState(press_1,    **dict_params)
-      data_vel_x[index_x, index_y] = getState(v_vel_1[0], **dict_params)
-      data_vel_y[index_x, index_y] = getState(v_vel_1[1], **dict_params)
-      data_vel_z[index_x, index_y] = getState(v_vel_1[2], **dict_params)
-      data_mag_x[index_x, index_y] = getState(v_mag_1[0], **dict_params)
-      data_mag_y[index_x, index_y] = getState(v_mag_1[1], **dict_params)
-      data_mag_z[index_x, index_y] = getState(v_mag_1[2], **dict_params)
-  ## plot data
+      data_rho[index_x, index_y]   = rho_0   * (1.0            + getState(alpha_1,      **dict_params))
+      data_press[index_x, index_y] = press_0 * (1.0            + getState(alpha_2,      **dict_params))
+      data_vel_x[index_x, index_y] =           (v_vel_0[0]     + getState(v_vel_1[0],   **dict_params))
+      data_vel_y[index_x, index_y] =           (v_vel_0[1]     + getState(v_vel_1[1],   **dict_params))
+      data_vel_z[index_x, index_y] =           (v_vel_0[2]     + getState(v_vel_1[2],   **dict_params))
+      data_mag_x[index_x, index_y] = mag_0   * (v_mag_0_hat[0] + getState(v_alpha_3[0], **dict_params))
+      data_mag_y[index_x, index_y] = mag_0   * (v_mag_0_hat[1] + getState(v_alpha_3[1], **dict_params))
+      data_mag_z[index_x, index_y] = mag_0   * (v_mag_0_hat[2] + getState(v_alpha_3[2], **dict_params))
+  ## plot solutions
   print("Plotting solutions...")
-  ax_rho.imshow(data_rho)
-  ax_press.imshow(data_press)
-  ax_vel_x.imshow(data_vel_x)
-  ax_vel_y.imshow(data_vel_y)
-  ax_vel_z.imshow(data_vel_z)
-  ax_mag_x.imshow(data_mag_x)
-  ax_mag_y.imshow(data_mag_y)
-  ax_mag_z.imshow(data_mag_z)
+  ## velocity field
+  data_vel_z_slice = data_vel_z[:, num_x//2]
+  axs[0,0].plot(data_vel_z_slice, "k-")
+  plotData(axs[1,0], data_vel_x, "vel-x")
+  plotData(axs[2,0], data_vel_y, "vel-y")
+  plotData(axs[3,0], data_vel_z, "vel-z")
+  axs[0,0].set_ylabel("vel-z (x-slice)")
+  axs[1,0].set_ylabel("y")
+  axs[2,0].set_ylabel("y")
+  axs[3,0].set_ylabel("y")
+  ## magnetic field
+  data_mag_z_slice = data_mag_z[:, num_x//2]
+  axs[0,1].plot(data_mag_z_slice, "k-")
+  plotData(axs[1,1], data_mag_x, "mag-x")
+  plotData(axs[2,1], data_mag_y, "mag-y")
+  plotData(axs[3,1], data_mag_z, "mag-z")
+  axs[0,1].set_ylabel("mag-z (x-slice)")
+  axs[3,0].set_xlabel("x")
+  axs[3,1].set_xlabel("x")
+  axs[3,2].set_xlabel("x")
+  ## density + pressure
+  plotData(axs[2,2], data_rho,   "density")
+  plotData(axs[3,2], data_press, "pressure")
+  ## remove axis
+  axs[0,2].axis("off")
+  axs[1,2].axis("off")
   ## save figure
-  print("Saving figure...")
-  filepath_fig = "fig_alfven_wave.png"
-  fig.set_tight_layout(True)
-  fig.savefig(filepath_fig)
-  plt.close(fig)
-  print("Saved figure:", filepath_fig)
+  PlotFuncs.saveFigure(fig, "fig_alfven_wave.png")
 
+
+## ###############################################################
+## RUN DEMO PROGRAM
+## ###############################################################
 if __name__ == "__main__":
   main()
   sys.exit()
+
 
 ## END OF DEMO PROGRAM
