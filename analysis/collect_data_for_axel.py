@@ -24,14 +24,18 @@ def getSimData(fig, ax, filepath_sim_res, sim_name, Re, Pm):
   time_growth_end   = 10.0
   plots_per_eddy    = dict_sim_outputs["plots_per_eddy"]
   ## load magnetic energy spectra
-  list_k_group_t, list_power_group_t, list_time = LoadFlashData.loadAllSpectraData(
-      filepath          = f"{filepath_sim_res}/spect",
-      str_spectra_type  = "vel",
-      file_start_time   = time_growth_start,
-      file_end_time     = time_growth_end,
-      plots_per_eddy    = plots_per_eddy,
-      bool_hide_updates = True
-    )
+  dict_spect_data = LoadFlashData.loadAllSpectraData(
+    filepath          = f"{filepath_sim_res}/spect",
+    spect_field       = "vel",
+    file_start_time   = time_growth_start,
+    file_end_time     = time_growth_end,
+    plots_per_eddy    = plots_per_eddy,
+    bool_hide_updates = True
+  )
+  ## extract spectra data
+  list_k_group_t     = dict_spect_data["list_k_group_t"]
+  list_power_group_t = dict_spect_data["list_power_group_t"]
+  list_time          = dict_spect_data["list_time"]
   ## plot spectra
   print("Plotting kintic energy spectra...")
   ## initialise colormap

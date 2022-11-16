@@ -39,15 +39,17 @@ def getAveSpectra(filepath_sim_res, str_field, bool_get_fit=False):
     ## number of plt/spect-files per eddy-turn-over-time
     plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(filepath_sim_res, bool_hide_updates=True)
     ## load energy spectra
-    list_k_group_t, list_power_group_t, _ = LoadFlashData.loadAllSpectraData(
+    dict_spect_data = LoadFlashData.loadAllSpectraData(
       filepath          = f"{filepath_sim_res}/spect/",
-      str_spectra_type  = str_field,
+      spect_field       = str_field,
       file_start_time   = dict_sim_outputs["time_growth_start"],
       file_end_time     = dict_sim_outputs["time_growth_end"],
       plots_per_eddy    = plots_per_eddy,
       bool_hide_updates = True
     )
-    list_k = list_k_group_t[0]
+    ## extract data
+    list_k             = dict_spect_data["list_k_group_t"][0]
+    list_power_group_t = dict_spect_data["list_power_group_t"]
     ## normalise and time-average energy spectra
     list_power_norm_group_t = [
       np.array(list_power) / sum(list_power)

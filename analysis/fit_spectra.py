@@ -72,13 +72,11 @@ class SpectraObject():
     ):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
     plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(f"{self.filepath_data}/../", bool_hide_updates=False)
-    if plots_per_eddy is None:
-      raise Exception("ERROR: failed to read number of plt-files per turn-over-time from 'Turb.log'!")
     ## load kinetic energy spectra
     print("Loading kinetic energy spectra...")
-    list_kin_k_group_t, list_kin_power_group_t, list_kin_list_sim_times = LoadFlashData.loadAllSpectraData(
+    dict_kin_spect_data = LoadFlashData.loadAllSpectraData(
       filepath_data     = self.filepath_data,
-      str_spectra_type  = "vel",
+      spect_field       = "vel",
       file_start_time   = 5,
       read_every        = 25 if self.bool_debug else 1,
       plots_per_eddy    = plots_per_eddy,
@@ -86,31 +84,21 @@ class SpectraObject():
     )
     ## load magnetic energy spectra
     print("Loading magnetic energy spectra...")
-    list_mag_k_group_t, list_mag_power_group_t, list_mag_list_sim_times = LoadFlashData.loadAllSpectraData(
+    dict_mag_spect_data = LoadFlashData.loadAllSpectraData(
       filepath_data     = self.filepath_data,
-      str_spectra_type  = "mag",
+      spect_field       = "mag",
       file_start_time   = 5,
       read_every        = 25 if self.bool_debug else 1,
       plots_per_eddy    = plots_per_eddy,
       bool_hide_updates = bool_hide_updates
     )
     print(" ")
-    ## fit magnetic energy spectra
-    print("Fitting magnetic energy spectra...")
-    mag_fit_obj = FitMHDScales.FitMagSpectra(
-      list_sim_times       = list_mag_list_sim_times,
-      list_k_group_t       = list_mag_k_group_t,
-      list_power_group_t   = list_mag_power_group_t,
-      bool_fit_fixed_model = mag_bool_fit_fixed_model,
-      k_index_fit_from     = 0,
-      bool_hide_updates    = bool_hide_updates
-    )
     ## fit kinetic energy spectra
     print("Fitting kinetic energy spectra...")
-    kin_fit_obj = FitMHDScales.FitKinSpectra(
-      list_sim_times       = list_kin_list_sim_times,
-      list_k_group_t       = list_kin_k_group_t,
-      list_power_group_t   = list_kin_power_group_t,
+    obj_kin_fit = FitMHDScales.FitKinSpectra(
+      list_sim_times       = dict_kin_spect_data["list_sim_times"],
+      list_k_group_t       = dict_kin_spect_data["list_k_group_t"],
+      list_power_group_t   = dict_kin_spect_data["list_power_group_t"],
       bool_fit_fixed_model = kin_bool_fit_fixed_model,
       k_index_fit_from     = 3, # exclude driving modes: k > 4
       k_index_break_from   = 5, # provide enough degrees of freedom
@@ -118,11 +106,21 @@ class SpectraObject():
       num_decades_to_fit   = kin_num_decades_to_fit,
       bool_hide_updates    = bool_hide_updates
     )
+    ## fit magnetic energy spectra
+    print("Fitting magnetic energy spectra...")
+    obj_mag_fit = FitMHDScales.FitMagSpectra(
+      list_sim_times       = dict_mag_spect_data["list_sim_times"],
+      list_k_group_t       = dict_mag_spect_data["list_k_group_t"],
+      list_power_group_t   = dict_mag_spect_data["list_power_group_t"],
+      bool_fit_fixed_model = mag_bool_fit_fixed_model,
+      k_index_fit_from     = 0,
+      bool_hide_updates    = bool_hide_updates
+    )
     ## extract spectra fit parameters
-    kin_fit_dict = kin_fit_obj.getFitDict()
-    mag_fit_dict = mag_fit_obj.getFitDict()
+    dict_kin_fit = obj_kin_fit.getFitDict()
+    dict_mag_fit = obj_mag_fit.getFitDict()
     ## store siulation parameters in a dictionary
-    sim_fit_dict = {
+    dict_sim_fit = {
       "sim_suite":          self.sim_suite,
       "sim_label":          self.sim_label,
       "sim_res":            self.sim_res,
@@ -136,9 +134,9 @@ class SpectraObject():
     }
     ## create spectra-object
     self.fits_obj = FitMHDScales.SpectraFit(
-      **sim_fit_dict,
-      **kin_fit_dict,
-      **mag_fit_dict
+      **dict_sim_fit,
+      **dict_kin_fit,
+      **dict_mag_fit
     )
     ## save spectra-fit data in a json-file
     WWObjs.saveObj2JsonFile(

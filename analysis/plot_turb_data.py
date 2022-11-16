@@ -290,16 +290,12 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
     filepath_data   = filepath_sim,
     dict_sim_inputs = dict_sim_inputs
   )
-  obj_plot_turb.saveFittedParams(filepath_sim)
   obj_plot_turb.performRoutines()
+  obj_plot_turb.saveFittedParams(filepath_sim)
   ## SAVE FIGURE
   ## -----------
-  print("Saving figure...")
   fig_name     = f"{sim_name}_time_evolution.png"
-  fig_filepath = f"{filepath_vis}/{fig_name}"
-  plt.savefig(fig_filepath)
-  plt.close()
-  print("Saved figure:", fig_filepath)
+  PlotFuncs.saveFigure(fig, f"{filepath_vis}/{fig_name}")
 
 
 ## ###############################################################
