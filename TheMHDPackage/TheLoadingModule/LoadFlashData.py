@@ -168,7 +168,7 @@ def loadTurbData(
   with open(f"{filepath}/Turb.dat", "r") as fp:
     num_data_columns = len(fp.readline().split())
     for line in reversed(fp.readlines()):
-      data_split = line.split()
+      data_split = line.replace("\n", "").split()
       ## only look at lines where there is data for each tracked quantity
       if len(data_split) == num_data_columns:
         ## don't look at the labels
@@ -204,11 +204,9 @@ def loadSpectraData(filepath_file, str_spectra_type):
     try:
       data_x = np.array(list(map(float, data[:, 1])))  # variable: wave number (k)
       data_y = np.array(list(map(float, data[:, 15]))) # variable: power spectrum
-      if "vel" in str_spectra_type:
-        data_y = data_y / 2
-      elif "mag" in str_spectra_type:
-        data_y = data_y / (8 * np.pi)
-      else: raise Exception(f"You have passed an invalid spectra type '{str_spectra_type}'.")
+      if "v" in str_spectra_type:   data_y = data_y / 2
+      elif "m" in str_spectra_type: data_y = data_y / (8 * np.pi)
+      else: raise Exception(f"You have passed an invalid spectra type: '{str_spectra_type}'.")
       bool_failed_to_read = False
     except:
       bool_failed_to_read = True
@@ -233,7 +231,7 @@ def loadAllSpectraData(
   list_spectra_filenames = WWFnF.getFilesFromFilepath(
     filepath          = filepath, 
     filename_contains = "hdf5_plt_cnt",
-    filename_endswith = "spect_" + str_spectra_type + "s.dat",
+    filename_endswith = f"spect_{str_spectra_type}s.dat",
     loc_file_index    = -3,
     file_start_index  = plots_per_eddy * file_start_time,
     file_end_index    = plots_per_eddy * file_end_time
@@ -358,13 +356,37 @@ def getPlasmaNumbers_fromInputs(Mach, k_turb, Re=None, Rm=None, Pm=None):
     Re  = round(Mach / (k_turb * nu))
   ## error
   else: raise Exception(f"You have not defined enough plasma Reynolds numbers: Re = {Re}, Rm = {Rm}, and Pm = {Rm}.")
-  return Re, Rm, Pm, nu, eta
+  return {
+    "nu"  : nu,
+    "eta" : eta,
+    "Re"  : Re,
+    "Rm"  : Rm,
+    "Pm"  : Pm
+  }
 
 
 def getPlasmaNumbers_fromName(name, name_ref):
   name_lower = name.lower()
   name_ref_lower = name_ref.lower()
   return float(name_lower.replace(name_ref_lower, "")) if name_ref_lower in name_lower else None
+
+
+def getReynoldsNumbers(Re=None, Rm=None, Pm=None):
+  ## Re and Pm have been defined
+  if (Re is not None) and (Pm is not None):
+    Rm = Re * Pm
+  ## Rm and Pm have been defined
+  elif (Rm is not None) and (Pm is not None):
+    Re = Rm / Pm
+  elif (Re is not None) and (Rm is not None):
+    Pm = Rm / Re
+  ## error
+  else: raise Exception(f"You have not defined enough plasma Reynolds numbers: Re = {Re}, Rm = {Rm}, and Pm = {Rm}.")
+  return {
+    "Re"  : Re,
+    "Rm"  : Rm,
+    "Pm"  : Pm
+  }
 
 
 ## END OF LIBRARY

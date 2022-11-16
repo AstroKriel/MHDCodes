@@ -7,10 +7,10 @@ import os, sys
 
 ## load user defined modules
 from TheUsefulModule import WWFnF
-from TheJobModule import SimInputParams
-from TheJobModule import PrepSimJob
-from TheJobModule import CalcSpectraJob
-from TheJobModule import PlotSpectraJob
+from TheSimModule import SimParams
+from TheSimModule import PrepSimJob
+from TheSimModule import CalcSpectraJob
+from TheSimModule import PlotSpectraJob
 
 
 ## ###############################################################
@@ -27,7 +27,7 @@ def main():
 
       ## CHECK THE SIMULATION EXISTS
       ## ---------------------------
-      sonic_regime = SimInputParams.getSonicRegime(DES_MACH)
+      sonic_regime = SimParams.getSonicRegime(DES_MACH)
       filepath_sim = WWFnF.createFilepath([
         BASEPATH, suite_folder, sonic_regime, sim_folder
       ])
@@ -49,8 +49,8 @@ def main():
         ## READ/CREATE SIMULATION INPUT REFERENCE FILE
         ## -------------------------------------------
         if os.path.isfile(f"{filepath_sim_res}/sim_inputs.json"):
-          obj_sim_params = SimInputParams.readSimInputParams(filepath_sim_res)
-        else: obj_sim_params = SimInputParams.makeSimInputParams(
+          obj_sim_params = SimParams.readSimInputParams(filepath_sim_res)
+        else: obj_sim_params = SimParams.createSimInputs(
           filepath_sim_res, suite_folder, sim_folder, sim_res, K_TURB, DES_MACH
         )
         dict_sim_params = obj_sim_params.getSimParams()
@@ -90,7 +90,6 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-## Simulation parameters
 EMAIL_ADDRESS      = "neco.kriel@anu.edu.au"
 BASEPATH           = "/scratch/ek9/nk7952/"
 DES_MACH           = 5.0

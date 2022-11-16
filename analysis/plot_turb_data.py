@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 ## load user defined modules
 from TheUsefulModule import WWLists, WWFnF, WWObjs
-from TheJobModule import SimInputParams
+from TheSimModule import SimParams
 from TheLoadingModule import LoadFlashData
 from ThePlottingModule import PlotFuncs
 from TheFittingModule import FitFuncs
@@ -35,17 +35,17 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 class PlotTurbData():
   def __init__(
       self,
-      fig, axs, filepath_data, dict_sim_params
+      fig, axs, filepath_data, dict_sim_inputs
     ):
     ## save input arguments
     self.fig            = fig
     self.axs            = axs
     self.filepath_data  = filepath_data
-    self.t_turb         = dict_sim_params["t_turb"]
-    self.N_res          = int(dict_sim_params["sim_res"])
-    self.Re             = dict_sim_params["Re"]
-    self.Rm             = dict_sim_params["Rm"]
-    self.Pm             = dict_sim_params["Pm"]
+    self.t_turb         = dict_sim_inputs["t_turb"]
+    self.N_res          = int(dict_sim_inputs["sim_res"])
+    self.Re             = dict_sim_inputs["Re"]
+    self.Rm             = dict_sim_inputs["Rm"]
+    self.Pm             = dict_sim_inputs["Pm"]
     ## initialise quantities to measure
     self.time_exp_start = None
     self.time_exp_end   = None
@@ -270,8 +270,7 @@ class PlotTurbData():
 def plotSimData(filepath_sim, filepath_vis, sim_name):
   ## GET SIMULATION PARAMETERS
   ## -------------------------
-  obj_sim_params  = SimInputParams.readSimInputParams(filepath_sim)
-  dict_sim_params = obj_sim_params.getSimParams()
+  dict_sim_inputs = SimParams.readSimInputs(filepath_sim)
   ## INITIALISE FIGURE
   ## -----------------
   print("Initialising figure...")
@@ -289,7 +288,7 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
     fig             = fig,
     axs             = [ ax_Mach, ax_E_ratio ],
     filepath_data   = filepath_sim,
-    dict_sim_params = dict_sim_params
+    dict_sim_inputs = dict_sim_inputs
   )
   obj_plot_turb.saveFittedParams(filepath_sim)
   obj_plot_turb.performRoutines()
@@ -345,6 +344,7 @@ def main():
         sim_name = f"{suite_folder}_{sim_folder}"
         plotSimData(filepath_sim_res, filepath_sim_res_plot, sim_name)
 
+        if BOOL_DEBUG: return
         ## create empty space
         print(" ")
       print(" ")
@@ -354,16 +354,17 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
+BOOL_DEBUG        = 1
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
 
-LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
-# LIST_SUITE_FOLDER = [ "Rm3000" ]
-# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm5" ]
-# LIST_SIM_RES      = [ "288" ]
+LIST_SUITE_FOLDER = [ "Rm3000" ]
+LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm5" ]
+LIST_SIM_RES      = [ "288" ]
 
 
 ## ###############################################################

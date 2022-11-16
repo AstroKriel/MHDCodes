@@ -13,9 +13,9 @@ os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
 
 ## load user defined modules
-from TheUsefulModule import WWArgparse, P2Term, WWFnF, WWLists
+from TheSimModule import SimParams
 from TheLoadingModule import LoadFlashData
-from ThePlottingModule import PlotSpectra
+from ThePlottingModule import PlotFuncs
 
 
 ## ##############################################################
@@ -25,97 +25,101 @@ os.system("clear") # clear terminal window
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
+def plotSpectra_timeEvolve(
+    fig, ax, list_sim_times, list_k_group_t, list_power_group_t, cmap_name
+  ):
+  cmap, norm = PlotFuncs.createCmap(
+    cmap_name = cmap_name,
+    vmin      = min(list_sim_times),
+    vmax      = max(list_sim_times)
+  )
+  for time_index, time_val in enumerate(list_sim_times):
+    ax.plot(
+      list_k_group_t[0],
+      list_power_group_t[time_index],
+      color=cmap(norm(time_val)), ls="-", alpha=0.25, zorder=1
+    )
+  PlotFuncs.addColorbar_fromCmap(
+    fig, ax, cmap, norm,
+    label = r"$t = t_{\rm sim} / t_{\rm turb}$"
+  )
+
+
+class PlotSpectra():
+  def __init__(self,
+      fig, axs, filepath_sim_res
+    ):
+    self.fig              = fig
+    self.axs              = axs
+    self.filepath_sim_res = filepath_sim_res
+  
+  def performRoutines(self):
+    self.__loadData()
+    self.__plotData()
+    self.__labelAxis()
+
+  def __loadData(self):
+    ## load simulation parameters
+    dict_sim_outputs = SimParams.readSimOutputs(self.filepath_sim_res)
+    plots_per_eddy  = dict_sim_outputs["plots_per_eddy"]
+    ## load energy spectra
+    print("Loading kinetic energy spectra...")
+    self.list_kin_k_group_t, self.list_kin_power_group_t, self.list_kin_sim_times = LoadFlashData.loadAllSpectraData(
+      filepath          = f"{self.filepath_sim_res}/spect/",
+      str_spectra_type  = "vel",
+      plots_per_eddy    = plots_per_eddy,
+      bool_hide_updates = True
+    )
+    print("Loading magnetic energy spectra...")
+    self.list_mag_k_group_t, self.list_mag_power_group_t, self.list_mag_sim_times = LoadFlashData.loadAllSpectraData(
+      filepath          = f"{self.filepath_sim_res}/spect/",
+      str_spectra_type  = "mag",
+      plots_per_eddy    = plots_per_eddy,
+      bool_hide_updates = True
+    )
+
+  def __plotData(self):
+    plotSpectra_timeEvolve(
+      fig                = self.fig,
+      ax                 = self.axs[0],
+      list_sim_times     = self.list_kin_sim_times,
+      list_k_group_t     = self.list_kin_k_group_t,
+      list_power_group_t = self.list_kin_power_group_t,
+      cmap_name          = "Blues"
+    )
+    plotSpectra_timeEvolve(
+      fig                = self.fig,
+      ax                 = self.axs[1],
+      list_sim_times     = self.list_mag_sim_times,
+      list_k_group_t     = self.list_mag_k_group_t,
+      list_power_group_t = self.list_mag_power_group_t,
+      cmap_name          = "Reds"
+    )
+
+  def __labelAxis(self):
+    for index_axs in range(len(self.axs)):
+      self.axs[index_axs].set_xlabel(r"$k$")
+      self.axs[index_axs].set_xscale("log")
+      self.axs[index_axs].set_yscale("log")
+      PlotFuncs.addAxisTicks_log10(
+        self.axs[index_axs],
+        bool_major_ticks = True,
+        num_major_ticks  = 10
+      )
+
+
 ## ##############################################################
 ## MAIN PROGRAM
 ## ##############################################################
 def main():
-  ## ############################
-  ## INPUT COMMAND LINE ARGUMENTS
-  ## ############################
-  parser = WWArgparse.MyParser(description="Plot kinetic and magnetic energy spectra.")
-  ## ------------------- DEFINE OPTIONAL ARGUMENTS
-  args_opt = parser.add_argument_group(description="Optional processing arguments:")
-  args_opt.add_argument("-v", "--verbose", **WWArgparse.opt_bool_arg)
-  args_opt.add_argument("-vis_folder",     **WWArgparse.opt_arg, type=str, default="vis_folder")
-  args_opt.add_argument("-data_folder",    **WWArgparse.opt_arg, type=str, default="spect")
-  ## ------------------- DEFINE REQUIRED ARGUMENTS
-  args_req = parser.add_argument_group(description="Required processing arguments:")
-  args_req.add_argument("-suite_path", type=str, required=True, help="type: %(type)s")
-  args_req.add_argument("-sim_folder", type=str, required=True, help="type: %(type)s")
-  ## ---------------------------- OPEN ARGUMENTS
-  args = vars(parser.parse_args())
-  ## ---------------------------- SAVE PARAMETERS
-  bool_hide_updates = not(args["verbose"])
-  filepath_suite    = args["suite_path"]
-  folder_sim        = args["sim_folder"]
-  folder_data       = args["data_folder"]
-  folder_vis        = args["vis_folder"]
-
-  ## #####################
-  ## PREPARING DIRECTORIES
-  ## #####################
-  ## filepath to where spectra data is stored
-  filepath_sim        = WWFnF.createFilepath([ filepath_suite, folder_sim ])
-  filepath_spect      = WWFnF.createFilepath([ filepath_sim,   folder_data ])
-  ## filepath to where visualisations will be saved
-  sub_folder_vis      = "plotSpectraData"
-  filepath_vis        = WWFnF.createFilepath([ filepath_suite, folder_vis ])
-  filepath_vis_frames = WWFnF.createFilepath([ filepath_vis,   sub_folder_vis ])
-  
-  ## ##############
-  ## CREATE FOLDERS
-  ## ##############
-  WWFnF.createFolder(filepath_vis)
-  WWFnF.createFolder(filepath_vis_frames)
-  
-  ## ######################################
-  ## PRINT SIMULATION PARAMETERS TO CONSOLE
-  ## ######################################
-  P2Term.printInfo("Base directory:", filepath_suite)
-  P2Term.printInfo("Data directory:", filepath_spect)
-  P2Term.printInfo("Vis. directory:", filepath_vis)
-  print(" ")
-
-  ## ############################
-  ## LOAD SIMULATION PLT PER EDDY
-  ## ############################
-  plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(filepath_sim, bool_hide_updates=False)
-  if plots_per_eddy is None:
-    raise Exception("ERROR: failed to read number of plt-files per turn-over-time from 'Turb.log'!")
-  
-  ## ##########################
-  ## LOAD AND PLOT SPECTRA DATA
-  ## ##########################
-  print("Loading kinetic energy spectra...")
-  kin_k, kin_power, kin_list_sim_times = LoadFlashData.loadAllSpectraData(
-    filepath_data     = filepath_spect,
-    str_spectra_type  = "vel",
-    plots_per_eddy    = plots_per_eddy,
-    bool_hide_updates = bool_hide_updates
-  )
-  print("Loading magnetic energy spectra...")
-  mag_k, mag_power, mag_list_sim_times = LoadFlashData.loadAllSpectraData(
-    filepath_data     = filepath_spect,
-    str_spectra_type  = "mag",
-    plots_per_eddy    = plots_per_eddy,
-    bool_hide_updates = bool_hide_updates
-  )
-  sim_times = WWLists.getCommonElements(kin_list_sim_times, mag_list_sim_times)
-  ## initialise plot object
-  plot_obj = PlotSpectra.PlotSpectra(
-    kin_k           = kin_k,
-    kin_power       = kin_power,
-    mag_k           = mag_k,
-    mag_power       = mag_power,
-    sim_times       = sim_times,
-    fig_name        = folder_sim,
-    filepath_frames = filepath_vis_frames,
-    filepath_movie  = filepath_vis
-  )
-  ## plot spectra data
-  print("Plotting energy spectra...")
-  plot_obj.plotSpectra(bool_hide_updates)
-  print(" ")
+  filepath_sim_res = "/scratch/ek9/nk7952/Re10/super_sonic/Pm25/288/"
+  fig, fig_grid = PlotFuncs.createFigure_grid(num_rows=1, num_cols=2)
+  ax00 = fig.add_subplot(fig_grid[0])
+  ax10 = fig.add_subplot(fig_grid[1])
+  axs = [ ax00, ax10 ]
+  obj_plot_spectra = PlotSpectra(fig, axs, filepath_sim_res)
+  obj_plot_spectra.performRoutines()
+  PlotFuncs.saveFigure(fig, "demo.png")
 
 
 ## ###############################################################

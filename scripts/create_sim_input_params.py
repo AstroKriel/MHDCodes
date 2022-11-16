@@ -8,7 +8,7 @@ import os, sys
 
 ## load user defined module
 from TheUsefulModule import WWFnF
-from TheJobModule import SimInputParams
+from TheSimModule import SimParams
 
 
 ## ###############################################################
@@ -31,7 +31,7 @@ def main():
 
       ## CHECK THE SIMULATION EXISTS
       ## ---------------------------
-      sonic_regime = SimInputParams.getSonicRegime(DES_MACH)
+      sonic_regime = SimParams.getSonicRegime(DES_MACH)
       filepath_sim = WWFnF.createFilepath([
         BASEPATH, suite_folder, sonic_regime, sim_folder
       ])
@@ -51,7 +51,7 @@ def main():
         if not os.path.exists(filepath_sim_res): continue
 
         ## create and save simulation input parameters file
-        SimInputParams.makeSimInputParams(
+        SimParams.makeSimInputParams(
           filepath_sim_res, suite_folder, sim_folder, sim_res, K_TURB, DES_MACH
         )
 

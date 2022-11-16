@@ -23,7 +23,7 @@ from plot_turb_data import PlotTurbData
 
 ## load user defined modules
 from TheUsefulModule import WWLists, WWFnF, WWObjs
-from TheJobModule import SimInputParams
+from TheSimModule import SimParams
 from TheLoadingModule import LoadFlashData
 from ThePlottingModule import PlotFuncs
 from TheFittingModule import FitMHDScales
@@ -527,8 +527,7 @@ class PlotSpectra():
 def plotSimData(filepath_sim, filepath_vis, sim_name):
   ## GET SIMULATION PARAMETERS
   ## -------------------------
-  obj_sim_params  = SimInputParams.readSimInputParams(filepath_sim)
-  dict_sim_params = obj_sim_params.getSimParams()
+  dict_sim_inputs = SimParams.readSimInputs(filepath_sim)
   ## INITIALISE FIGURE
   ## -----------------
   print("Initialising figure...")
@@ -554,7 +553,7 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
     fig             = fig,
     axs             = [ ax_Mach, ax_E_ratio ],
     filepath_data   = filepath_sim,
-    dict_sim_params = dict_sim_params
+    dict_sim_inputs = dict_sim_inputs
   )
   obj_plot_turb.performRoutines()
   obj_plot_turb.saveFittedParams(filepath_sim)

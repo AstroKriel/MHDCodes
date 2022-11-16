@@ -1,12 +1,8 @@
 ## IMPORT MODULES
 import os, sys
 import numpy as np
-import cmasher as cmr
-import matplotlib.colors as cols
 
-from matplotlib.cm import ScalarMappable
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
+from TheSimModule import SimParams
 from TheUsefulModule import WWObjs
 from TheLoadingModule import LoadFlashData
 from ThePlottingModule import PlotFuncs
@@ -15,65 +11,55 @@ os.system("clear")
 
 
 ## OPPERATOR FUNCTIONS
-def getSimData(fig, ax, filepath_sim, sim_name, Re, Pm):
+def getSimData(fig, ax, filepath_sim_res, sim_name, Re, Pm):
   print("Loading simulation data...")
   ## load sim outputs file
-  dict_sim_inputs = WWObjs.loadJsonFile2Dict(
-    filepath = filepath_sim,
-    filename = "sim_inputs.json"
-  )
-  dict_sim_outputs = WWObjs.loadJsonFile2Dict(
-    filepath = filepath_sim,
-    filename = "sim_outputs.json"
-  )
+  dict_sim_inputs  = SimParams.readSimInputs(filepath_sim_res)
+  dict_sim_outputs = SimParams.readSimOutputs(filepath_sim_res)
   ## extract simulation parameters
-  Gamma             = dict_sim_outputs["Gamma"]
+  sim_res           = dict_sim_inputs["sim_res"]
+  Rm                = Re * Pm
+  ## extract measured quantities
   time_growth_start = 5.0
   time_growth_end   = 10.0
-  sim_res           = dict_sim_inputs["sim_res"]
-  list_k            = dict_sim_outputs["list_k"]
   plots_per_eddy    = dict_sim_outputs["plots_per_eddy"]
   ## load magnetic energy spectra
-  _, list_mag_power_group_t, list_mag_time = LoadFlashData.loadAllSpectraData(
-      filepath          = f"{filepath_sim}/spect",
-      str_spectra_type  = "mag",
+  list_k_group_t, list_power_group_t, list_time = LoadFlashData.loadAllSpectraData(
+      filepath          = f"{filepath_sim_res}/spect",
+      str_spectra_type  = "vel",
       file_start_time   = time_growth_start,
       file_end_time     = time_growth_end,
       plots_per_eddy    = plots_per_eddy,
       bool_hide_updates = True
     )
   ## plot spectra
-  print("Plotting magnetic energy spectra...")
+  print("Plotting kintic energy spectra...")
   ## initialise colormap
-  cmap = cmr.ember_r
-  norm = cols.Normalize(vmin=time_growth_start, vmax=time_growth_end)
+  cmap, norm = PlotFuncs.createCmap(
+    cmap_name = "Blues",
+    vmin      = time_growth_start,
+    vmax      = time_growth_end
+  )
   ## plot each time realisation in the kinematic phase
-  list_mag_power_comp_group_t = []
-  for time_index, time_val in enumerate(list_mag_time):
-    list_mag_power_comp = np.array(list_mag_power_group_t[time_index]) / sum(list_mag_power_group_t[time_index])
+  for time_index, time_val in enumerate(list_time):
     ax.plot(
-      list_k,
-      list_mag_power_comp,
+      list_k_group_t[0],
+      list_power_group_t[time_index],
       color=cmap(norm(time_val)), ls="-", alpha=0.5, zorder=1
     )
-    list_mag_power_comp_group_t.append(list_mag_power_comp)
-  ## plot time-averaged, compensated spectrum
-  list_mag_power_comp_ave = np.mean(list_mag_power_comp_group_t, axis=0)
+  ## plot time-averaged spectrum
+  list_power_ave = np.mean(list_power_group_t, axis=0)
   ax.plot(
-    list_k,
-    list_mag_power_comp_ave,
-    label=r"$\langle \widehat{\mathcal{P}}_{\rm mag}(k, t) \rangle_{\forall t}$",
-    color="cornflowerblue", ls="-", lw=5, zorder=3
+    list_k_group_t[0],
+    list_power_ave,
+    label=r"$\langle \widehat{\mathcal{P}}_{\rm kin}(k, t) \rangle_{\forall t}$",
+    color="black", ls="-", lw=5, zorder=3
   )
   ## add colorbar
-  list_ticks = range(5, 11)
-  smap = ScalarMappable(cmap=cmap, norm=norm)
-  div  = make_axes_locatable(ax)
-  cax  = div.new_vertical(size="5%", pad=0.1)
-  fig.add_axes(cax)
-  fig.colorbar(mappable=smap, cax=cax, ticks=list_ticks, orientation="horizontal")
-  cax.xaxis.set_ticks_position("top")
-  cax.set_title(r"$t = t_{\rm sim}/t_{\rm turb}$")
+  PlotFuncs.addColorbar_fromCmap(
+    fig, ax, cmap, norm,
+    label = r"$t = t_{\rm sim} / t_{\rm turb}$"
+  )
   ## annotate parameters
   PlotFuncs.addBoxOfLabels(
     fig, ax,
@@ -85,42 +71,49 @@ def getSimData(fig, ax, filepath_sim, sim_name, Re, Pm):
     list_labels   = [
       r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(sim_res)),
       r"${\rm Re} = $ "          + "{:d}".format(int(Re)),
-      r"${\rm Rm} = $ "          + "{:d}".format(int(Re * Pm)),
-      r"${\rm Pm} = $ "          + "{:d}".format(int(Pm)),
-      r"$\Gamma = $ "            + "{:.1f}".format(float(Gamma)),
+      r"${\rm Rm} = $ "          + "{:d}".format(int(Rm)),
+      r"${\rm Pm} = $ "          + "{:d}".format(int(Pm))
     ]
   )
   ## label figure
   ax.set_xlabel(r"$k$")
   ax.set_xscale("log")
   ax.set_yscale("log")
-  PlotFuncs.addAxisTicks_log10(ax, bool_major_ticks=True, num_major_ticks=10)
-  ## save dataset
+  PlotFuncs.addAxisTicks_log10(
+    ax,
+    bool_major_ticks = True,
+    num_major_ticks  = 10
+  )
+  ## save axis
   dict_params = {
-    "Re"                      : Re,
-    "Rm"                      : Re * Pm,
-    "Pm"                      : Pm,
-    "Gamma"                   : Gamma,
-    "list_mag_power_comp_ave" : list_mag_power_comp_ave
+    "Re"                 : Re,
+    "Rm"                 : Rm,
+    "Pm"                 : Pm,
+    "list_k"             : list_k_group_t[0],
+    "list_kin_power_ave" : list_power_ave
   }
-  WWObjs.saveDict2JsonFile(f"dataset_axel_{sim_name}.json", dict_params)
+  # sim_name = f"Re{Re:.0f}Pm{Pm:.0f}_{sim_res}"
+  WWObjs.saveDict2JsonFile(f"{sim_name}_kin_spectra.json", dict_params)
   print(" ")
 
 
 ## MAIN PROGRAM
 def main():
   ## Re3600Pm1, Re1700Pm2, Re600Pm5
-  filepath_sim_1 = "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm2/576/"
   ## initialise figure
-  fig, fig_grid = PlotFuncs.createFigure_grid(1, 1, fig_aspect_ratio=(5,4), fig_scale=1.5)
-  ax_sim_1 = fig.add_subplot(fig_grid[0])
+  fig, fig_grid = PlotFuncs.createFigure_grid(num_cols=3, fig_aspect_ratio=(5,4), fig_scale=1.5)
+  ax0 = fig.add_subplot(fig_grid[0])
+  ax1 = fig.add_subplot(fig_grid[1])
+  ax2 = fig.add_subplot(fig_grid[2])
   ## load and plot data
-  getSimData(fig, ax_sim_1, filepath_sim_1, "Re1700Pm2_576", 1700, 2)
+  getSimData(fig, ax0, "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm1/288/", "Re3600Pm1", 3600, 1)
+  getSimData(fig, ax1, "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm2/288/", "Re1700Pm2", 1700, 2)
+  getSimData(fig, ax2, "/scratch/ek9/nk7952/Rm3000/sub_sonic/Pm5/288/", "Re600Pm5",  600,  5)
   ## label plot
-  ax_sim_1.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm mag}(k, t) = \mathcal{P}_{\rm mag}(k, t) / \int{\rm d}k \mathcal{P}_{\rm mag}(k, t)$")
-  ax_sim_1.legend(loc="center left", fontsize=20)
+  ax0.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k, t)$")
+  ax0.legend(loc="center left", fontsize=20)
   ## save figure
-  PlotFuncs.saveFigure(fig, "dataset_axel.png")
+  PlotFuncs.saveFigure(fig, "dataset_kin_spectra.png")
 
 
 ## PROGRAM ENTRY POINT

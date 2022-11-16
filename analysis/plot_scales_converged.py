@@ -12,10 +12,10 @@ import numpy as np
 import tempfile
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
 
 ## load user defined modules
-from TheUsefulModule import WWObjs, WWFnF
+from TheSimModule import SimParams
+from TheUsefulModule import WWFnF
 from ThePlottingModule import PlotFuncs
 
 
@@ -48,26 +48,6 @@ def addLegend_Re(ax):
   args = { "va":"bottom", "ha":"right", "transform":ax.transAxes, "fontsize":15 }
   ax.text(0.925, 0.225, r"Re $< 100$", color="blue", **args)
   ax.text(0.925, 0.1,   r"Re $> 100$", color="red",  **args)
-
-def plotData_noAutoAxisScale(ax, x, y, c="k", ls=":"):
-  col = LineCollection([ np.column_stack((x, y)) ], colors=c, linestyles=ls)
-  ax.add_collection(col, autolim=False)
-
-def plotErrorBar_1D(ax, x, array_y, color="k", marker="o"):
-  y_median = np.percentile(array_y, 50)
-  y_p16    = np.percentile(array_y, 16)
-  y_p84    = np.percentile(array_y, 84)
-  y_1sig   = np.vstack([
-    y_median - y_p16,
-    y_p84 - y_median
-  ])
-  ax.errorbar(
-    x, y_median,
-    yerr  = y_1sig,
-    color = color,
-    fmt   = marker,
-    markersize=7, elinewidth=2, linestyle="None", markeredgecolor="black", capsize=7.5, zorder=10
-  )
 
 
 ## ###############################################################
@@ -123,16 +103,8 @@ class PlotSimScales():
 
   def __getParams(self, filepath_data):
     ## load spectra-fit data as a dictionary
-    dict_sim_inputs = WWObjs.loadJsonFile2Dict(
-      filepath = filepath_data,
-      filename = "sim_inputs.json",
-      bool_hide_updates = True
-    )
-    dict_sim_outputs = WWObjs.loadJsonFile2Dict(
-      filepath = filepath_data,
-      filename = "sim_outputs.json",
-      bool_hide_updates = True
-    )
+    dict_sim_inputs  = SimParams.readSimInputs(filepath_data)
+    dict_sim_outputs = SimParams.readSimOutputs(filepath_data)
     ## extract plasma Reynolds numbers
     Re = int(dict_sim_inputs["Re"])
     Rm = int(dict_sim_inputs["Rm"])
@@ -183,7 +155,6 @@ class PlotSimScales():
       )
     ## plot reference lines
     x = np.linspace(10**(-2), 10**(4), 100)
-    # ax.plot(x, x**(1/4), "k:")
     PlotFuncs.plotData_noAutoAxisScale(ax, x, 1.15*x**(1/4))
     ## label figure
     addLegend_suites(ax)
