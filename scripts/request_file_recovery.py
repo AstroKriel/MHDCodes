@@ -72,8 +72,8 @@ class FileRecovery():
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  fr = FileRecovery()
-  fr.requestBatchRecovery()
+  obj_fr = FileRecovery()
+  obj_fr.requestBatchRecovery()
 
 
 ## ###############################################################

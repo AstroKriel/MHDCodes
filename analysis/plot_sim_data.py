@@ -23,7 +23,7 @@ from plot_turb_data import PlotTurbData
 
 ## load user defined modules
 from TheUsefulModule import WWLists, WWFnF, WWObjs
-from TheJobModule import SimInputParams
+from TheSimModule import SimParams
 from TheLoadingModule import LoadFlashData
 from ThePlottingModule import PlotFuncs
 from TheFittingModule import FitMHDScales
@@ -204,7 +204,7 @@ class PlotSpectra():
     self.list_kin_power_ave = None
     self.list_mag_power_ave = None
     self.plots_per_eddy     = None
-    self.list_mag_time      = None
+    self.list_mag_times      = None
     self.list_time_k_eq     = None
     self.alpha_kin_group_t  = None
     self.k_nu_group_t       = None
@@ -234,7 +234,7 @@ class PlotSpectra():
       "list_mag_power_ave" : self.list_mag_power_ave,
       ## measured quantities
       "plots_per_eddy"     : self.plots_per_eddy,
-      "list_time_growth"   : self.list_mag_time,
+      "list_time_growth"   : self.list_mag_times,
       "list_time_k_eq"     : self.list_time_k_eq,
       "alpha_kin_group_t"  : self.alpha_kin_group_t,
       "k_nu_group_t"       : self.k_nu_group_t,
@@ -254,39 +254,39 @@ class PlotSpectra():
       f"{self.filepath_data}/../",
       bool_hide_updates = True
     )
-    if self.plots_per_eddy is None:
-      raise Exception("ERROR: failed to read number of plt-files per turn-over-time from 'Turb.log'!")
     ## load kinetic energy spectra
-    list_kin_k_group_t, list_kin_power_group_t, self.list_kin_time = LoadFlashData.loadAllSpectraData(
+    dict_kin_spect_data = LoadFlashData.loadAllSpectraData(
       filepath          = self.filepath_data,
-      str_spectra_type  = "vel",
+      spect_field       = "vel",
       file_start_time   = self.time_exp_start,
       file_end_time     = self.time_exp_end,
       plots_per_eddy    = self.plots_per_eddy,
       bool_hide_updates = True
     )
     ## load magnetic energy spectra
-    list_mag_k_group_t, list_mag_power_group_t, self.list_mag_time = LoadFlashData.loadAllSpectraData(
+    dict_mag_spect_data = LoadFlashData.loadAllSpectraData(
       filepath          = self.filepath_data,
-      str_spectra_type  = "mag",
+      spect_field       = "mag",
       file_start_time   = self.time_exp_start,
       file_end_time     = self.time_exp_end,
       plots_per_eddy    = self.plots_per_eddy,
       bool_hide_updates = True
     )
     ## store time-evolving energy spectra
-    self.list_kin_power_group_t = list_kin_power_group_t
-    self.list_mag_power_group_t = list_mag_power_group_t
-    self.list_kin_k             = list_kin_k_group_t[0]
-    self.list_mag_k             = list_mag_k_group_t[0]
+    self.list_kin_power_group_t = dict_kin_spect_data["list_power_group_t"]
+    self.list_mag_power_group_t = dict_mag_spect_data["list_power_group_t"]
+    self.list_kin_k             = dict_kin_spect_data["list_k_group_t"][0]
+    self.list_mag_k             = dict_mag_spect_data["list_k_group_t"][0]
+    self.list_kin_times         = dict_kin_spect_data["list_sim_times"]
+    self.list_mag_times         = dict_mag_spect_data["list_sim_times"]
     ## store normalised energy spectra
     self.list_kin_power_norm_group_t = [
       np.array(list_power) / sum(list_power)
-      for list_power in list_kin_power_group_t
+      for list_power in self.list_kin_power_group_t
     ]
     self.list_mag_power_norm_group_t = [
       np.array(list_power) / sum(list_power)
-      for list_power in list_mag_power_group_t
+      for list_power in self.list_mag_power_group_t
     ]
     ## store normalised, and time-averaged energy spectra
     self.list_kin_power_ave = np.mean(self.list_kin_power_norm_group_t, axis=0)
@@ -312,24 +312,24 @@ class PlotSpectra():
     cmap_kin, norm_kin = PlotFuncs.createCmap(
       cmap_name = "Greens",
       cmin      = 0.35,
-      vmin      = min(self.list_kin_time),
-      vmax      = max(self.list_kin_time)
+      vmin      = min(self.list_kin_times),
+      vmax      = max(self.list_kin_times)
     )
     cmap_mag, norm_mag = PlotFuncs.createCmap(
       cmap_name = "Reds",
       cmin      = 0.35,
-      vmin      = min(self.list_mag_time),
-      vmax      = max(self.list_mag_time)
+      vmin      = min(self.list_mag_times),
+      vmax      = max(self.list_mag_times)
     )
     ## plot each time realisation of the normalised kinetic energy spectrum
-    for time_index, time_val in enumerate(self.list_kin_time):
+    for time_index, time_val in enumerate(self.list_kin_times):
       self.axs_spectra[0].plot(
         self.list_kin_k,
         self.list_kin_power_norm_group_t[time_index],
         color = cmap_kin(norm_kin(time_val)), **args_plot_time
       )
     ## plot each time realisation of the normalised magnetic energy spectrum
-    for time_index, time_val in enumerate(self.list_mag_time):
+    for time_index, time_val in enumerate(self.list_mag_times):
       self.axs_spectra[1].plot(
         self.list_mag_k,
         self.list_mag_power_norm_group_t[time_index],
@@ -341,7 +341,7 @@ class PlotSpectra():
     self.k_eq_group_t   = []
     self.list_time_k_eq = []
     ## plot each time realisation
-    for time_index in range(len(self.list_mag_time)):
+    for time_index in range(len(self.list_mag_times)):
       ## calculate energy ratio spectrum
       E_ratio_group_k = [
         mag_power / kin_power
@@ -378,7 +378,7 @@ class PlotSpectra():
         k_eq       = self.list_mag_k[index_k_eq]
         k_eq_power = E_ratio_group_k[index_k_eq]
         self.k_eq_group_t.append(k_eq)
-        self.list_time_k_eq.append(self.list_mag_time[time_index])
+        self.list_time_k_eq.append(self.list_mag_times[time_index])
         self.ax_spectra_ratio.plot(k_eq, k_eq_power, "ko")
     ## plot time-evolution of measured scales
     self.axs_scales[0].plot(
@@ -391,7 +391,7 @@ class PlotSpectra():
     self.A_kin_group_t     = []
     self.alpha_kin_group_t = []
     self.k_nu_group_t      = []
-    for time_index in range(len(self.list_kin_time)):
+    for time_index in range(len(self.list_kin_times)):
       ## fit kinetic energy spectrum at time-realisation
       fit_params_kin = fitKinSpectra(
         ax_fit     = self.axs_spectra[0],
@@ -413,7 +413,7 @@ class PlotSpectra():
     )
     ## plot time-evolution of measured scales
     self.axs_scales[0].plot(
-      self.list_kin_time,
+      self.list_kin_times,
       self.k_nu_group_t,
       color="green", ls="-", label=r"$k_\nu$"
     )
@@ -422,7 +422,7 @@ class PlotSpectra():
   def __fitMagSpectra(self):
     self.k_p_group_t   = []
     self.k_max_group_t = []
-    for time_index in range(len(self.list_mag_time)):
+    for time_index in range(len(self.list_mag_times)):
       ## extract interpolated and raw magnetic peak-scale for time-realisation
       k_p, k_max = getMagSpectraPeak(
         self.axs_spectra[1],
@@ -435,7 +435,7 @@ class PlotSpectra():
       self.k_max_group_t.append(k_max)
     ## plot time-evolution of measured scales
     self.axs_scales[0].plot(
-      self.list_mag_time,
+      self.list_mag_times,
       self.k_p_group_t,
       color="black", ls="-", label=r"$k_{\rm p}$"
     )
@@ -527,8 +527,7 @@ class PlotSpectra():
 def plotSimData(filepath_sim, filepath_vis, sim_name):
   ## GET SIMULATION PARAMETERS
   ## -------------------------
-  obj_sim_params  = SimInputParams.readSimInputParams(filepath_sim)
-  dict_sim_params = obj_sim_params.getSimParams()
+  dict_sim_inputs = SimParams.readSimInputs(filepath_sim)
   ## INITIALISE FIGURE
   ## -----------------
   print("Initialising figure...")
@@ -554,7 +553,7 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
     fig             = fig,
     axs             = [ ax_Mach, ax_E_ratio ],
     filepath_data   = filepath_sim,
-    dict_sim_params = dict_sim_params
+    dict_sim_inputs = dict_sim_inputs
   )
   obj_plot_turb.performRoutines()
   obj_plot_turb.saveFittedParams(filepath_sim)

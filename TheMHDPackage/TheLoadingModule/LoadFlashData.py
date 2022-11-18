@@ -57,23 +57,28 @@ def loadPltData_3D(
     bool_print_info = False
   ):
   ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
-  with h5py.File(filepath_file, "r") as flash_file:
-    names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
-    data_x, data_y, data_z = np.array([flash_file[i] for i in names])
+  with h5py.File(filepath_file, "r") as h5file:
+    list_keys = [
+      key
+      for key in list(h5file.keys())
+      if key.startswith(str_field)
+    ]
+    data_x, data_y, data_z = np.array([ h5file[index_key] for index_key in list_keys ])
     if bool_print_info: 
-      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys())))
-      print("--------- All the keys that were used: " + str(names))
-    flash_file.close() # close the file stream
+      print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(h5file.keys())))
+      print("--------- All the keys that were used: " + str(list_keys))
+    h5file.close() # close the file stream
     ## reformat data
     data_sorted_x = reformatFlashData(data_x, num_blocks, num_procs)
     data_sorted_y = reformatFlashData(data_y, num_blocks, num_procs)
     data_sorted_z = reformatFlashData(data_z, num_blocks, num_procs)
-    return data_sorted_x, data_sorted_y, data_sorted_z
+  ## return data
+  return data_sorted_x, data_sorted_y, data_sorted_z
 
 
 def loadPltData_slice(
     filepath_file, num_blocks, num_procs, str_field,
-    bool_rms_norm   = False,
+    bool_norm       = False,
     bool_print_info = False
   ):
   ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
@@ -89,23 +94,20 @@ def loadPltData_slice(
     ## reformat data
     data_sorted = reformatFlashData(data, num_blocks, num_procs)
     data_slice = data_sorted[ :, :, len(data_sorted[0,0,:])//2 ]
-    ## return data normalised by rms value
-    if bool_rms_norm:
-      return data_slice**2 / np.sqrt(np.mean(data_slice**2))**2
-    ## return data
-    else: return data_slice
+    ## return rms-normalised data
+    if bool_norm: return data_slice**2 / np.sqrt(np.mean(data_slice**2))**2
+    return data_slice
 
 
 def loadAllPltData_slice(
     filepath,
-    start_time       = 0,
-    end_time         = np.inf,
-    str_field        = "mag",
-    num_blocks       = [36, 36, 48],
-    num_procs        = [8, 8, 6],
-    plots_per_eddy   = 10,
-    plot_every_index = 1,
-    bool_debug       = False
+    start_time     = 0,
+    end_time       = np.inf,
+    str_field      = "mag",
+    num_blocks     = [36, 36, 48],
+    num_procs      = [8, 8, 6],
+    plots_per_eddy = 10,
+    bool_debug     = False
   ):
   ## get all plt files in the directory
   filenames = WWFnF.getFilesFromFilepath(
@@ -122,7 +124,6 @@ def loadAllPltData_slice(
   ## save field slices and simulation times
   list_field_mags = []
   list_sim_times  = []
-  # plot_file_indices = range(len(filenames))[::plot_every_index]
   for filename, _ in WWLists.loopListWithUpdates(filenames):
     ## load dataset
     field_mag = loadPltData_slice(
@@ -168,28 +169,25 @@ def loadTurbData(
   with open(f"{filepath}/Turb.dat", "r") as fp:
     num_data_columns = len(fp.readline().split())
     for line in reversed(fp.readlines()):
-      data_split = line.split()
-      ## only look at lines where there is data for each tracked quantity
+      data_split = line.replace("\n", "").split()
+      ## only look at lines where there is data is defined for every quantity
       if len(data_split) == num_data_columns:
-        ## don't look at the labels
         if not("#" in data_split[var_x][0]) and not("#" in data_split[var_y][0]):
-          ## calculate the normalised time
+          ## calculate the simulation time
           cur_time = float(data_split[var_x]) / t_turb # normalise by eddy turnover time
           ## if the simulation has been restarted, only read the progressed data
-          if cur_time < prev_time: # walking backwards
+          if cur_time < prev_time: # walk backwards
             cur_val = float(data_split[var_y])
             if cur_val == 0.0:
-              if bool_debug:
-                raise Exception(f"Error: encountered 0-value in quantity index {var_y} in 'Turb.dat' at time = {cur_time}")
-              ## ignore time point
+              if bool_debug: raise Exception(f"Error: encountered 0-value in quantity index {var_y} in 'Turb.dat' at time = {cur_time}")
               continue
             data_x.append(cur_time)
             data_y.append(cur_val)
             prev_time = cur_time
-  ## reorder the data
+  ## re-order the data
   data_x = data_x[::-1]
   data_y = data_y[::-1]
-  ## subset data based on time
+  ## subset data based on time bounds
   index_start = WWLists.getIndexClosestValue(data_x, time_start)
   index_end   = WWLists.getIndexClosestValue(data_x, time_end)
   data_x_sub = data_x[index_start : index_end]
@@ -197,71 +195,70 @@ def loadTurbData(
   return data_x_sub, data_y_sub
 
 
-def loadSpectraData(filepath_file, str_spectra_type):
+def loadSpectraData(filepath_file, spect_field, spect_quantity="total"):
   with open(filepath_file, "r") as fp:
-    data_file = fp.readlines() # load in data
-    data      = np.array([x.strip().split() for x in data_file[6:]]) # store all data: [row, col]
+    data_file = fp.readlines()
+    ## store data in [row, col] (only read in the main dataset: line 6 onwards)
+    data  = np.array([x.strip().split() for x in data_file[6:]])
+    var_x = 1
+    if   "tot" in spect_quantity.lower(): var_y = 15 # total
+    elif "lgt" in spect_quantity.lower(): var_y = 11 # longitudinal
+    elif "trv" in spect_quantity.lower(): var_y = 13 # transverse
+    else: raise Exception(f"You have passed an invalid spectra quantity: '{spect_quantity}'.")
     try:
-      data_x = np.array(list(map(float, data[:, 1])))  # variable: wave number (k)
-      data_y = np.array(list(map(float, data[:, 15]))) # variable: power spectrum
-      if "vel" in str_spectra_type:
-        data_y = data_y / 2
-      elif "mag" in str_spectra_type:
-        data_y = data_y / (8 * np.pi)
-      else: raise Exception(f"You have passed an invalid spectra type '{str_spectra_type}'.")
-      bool_failed_to_read = False
-    except:
-      bool_failed_to_read = True
-      data_x = []
-      data_y = []
-    return data_x, data_y, bool_failed_to_read
+      data_x = np.array(list(map(float, data[:, var_x]))) 
+      data_y = np.array(list(map(float, data[:, var_y])))
+      if   "v" in spect_field.lower(): data_y = data_y / 2
+      elif "m" in spect_field.lower(): data_y = data_y / (8 * np.pi)
+      else: raise Exception(f"You have passed an invalid spectra field: '{spect_field}'.")
+    except: raise Exception("Error: Failed to read spectra-file:", filepath_file)
+    return data_x, data_y
 
 
 def loadAllSpectraData(
-    filepath, str_spectra_type, plots_per_eddy,
+    filepath, spect_field, plots_per_eddy,
+    spect_quantity    = "total",
     file_start_time   = 2,
     file_end_time     = np.inf,
     read_every        = 1,
-    bool_hide_updates = False
+    bool_hide_updates = True
   ):
-  ## initialise list of spectra data
-  list_k_group_t      = []
-  list_power_group_t  = []
-  list_sim_times      = []
-  list_failed_to_load = []
-  ## filter for spectra data-files
+  ## get list of spect-filenames in directory
   list_spectra_filenames = WWFnF.getFilesFromFilepath(
     filepath          = filepath, 
     filename_contains = "hdf5_plt_cnt",
-    filename_endswith = "spect_" + str_spectra_type + "s.dat",
+    filename_endswith = f"spect_{spect_field}s.dat",
     loc_file_index    = -3,
     file_start_index  = plots_per_eddy * file_start_time,
     file_end_index    = plots_per_eddy * file_end_time
   )
+  ## initialise list of spectra data
+  list_k_group_t     = []
+  list_power_group_t = []
+  list_sim_times     = []
   ## loop over each of the spectra file names
-  for filename, _ in WWLists.loopListWithUpdates(list_spectra_filenames[::read_every], bool_hide_updates):
+  for filename, _ in WWLists.loopListWithUpdates(
+      list_spectra_filenames[::read_every],
+      bool_hide_updates
+    ):
+    ## convert file index to simulation time
+    file_sim_time = float(filename.split("_")[-3]) / plots_per_eddy
     ## load data
-    list_k, list_power, bool_failed_to_read = loadSpectraData(
-      filepath_file    = f"{filepath}/{filename}",
-      str_spectra_type = str_spectra_type
+    list_k, list_power = loadSpectraData(
+      filepath_file  = f"{filepath}/{filename}",
+      spect_field    = spect_field,
+      spect_quantity = spect_quantity
     )
-    ## check if the data was read successfully
-    if bool_failed_to_read:
-      list_failed_to_load.append(filename)
-      continue
     ## store data
     list_k_group_t.append(list_k)
     list_power_group_t.append(list_power)
-    list_sim_times.append(
-      float(filename.split("_")[-3]) / plots_per_eddy
-    )
-  ## list those files that failed to load
-  if len(list_failed_to_load) > 0:
-    print("\tFailed to read in the following files:", "\n\t\t> ".join(
-      [" "] + list_failed_to_load
-    ))
+    list_sim_times.append(file_sim_time)
   ## return spectra data
-  return list_k_group_t, list_power_group_t, list_sim_times
+  return {
+    "list_k_group_t"     : list_k_group_t,
+    "list_power_group_t" : list_power_group_t,
+    "list_sim_times"     : list_sim_times
+  }
 
 
 def getPlotsPerEddy_fromTurbLog(
@@ -296,7 +293,7 @@ def getPlotsPerEddy_fromTurbLog(
           print(" ")
         return plots_per_eddy
   ## failed to read quantity
-  return None
+  raise Exception("Error: failed to read plots_per_eddy from Turb.log file.")
 
 
 def getPlasmaNumbers_fromFlashPar(filepath, rms_Mach, k_turb):
@@ -307,8 +304,7 @@ def getPlasmaNumbers_fromFlashPar(filepath, rms_Mach, k_turb):
       for line in file_lines:
         list_line_elems = line.split()
         ## ignore empty lines
-        if len(list_line_elems) == 0:
-          continue
+        if len(list_line_elems) == 0: continue
         ## read value for 'diff_visc_nu'
         if list_line_elems[0] == "diff_visc_nu":
           nu = float(list_line_elems[2])
@@ -318,8 +314,7 @@ def getPlasmaNumbers_fromFlashPar(filepath, rms_Mach, k_turb):
           eta = float(list_line_elems[2])
           bool_found_eta = True
         ## stop searching if both parameters have been identified
-        if bool_found_nu and bool_found_eta:
-          break
+        if bool_found_nu and bool_found_eta: break
     ## compute plasma numbers
     if bool_found_nu and bool_found_eta:
       nu  = nu
@@ -358,13 +353,37 @@ def getPlasmaNumbers_fromInputs(Mach, k_turb, Re=None, Rm=None, Pm=None):
     Re  = round(Mach / (k_turb * nu))
   ## error
   else: raise Exception(f"You have not defined enough plasma Reynolds numbers: Re = {Re}, Rm = {Rm}, and Pm = {Rm}.")
-  return Re, Rm, Pm, nu, eta
+  return {
+    "nu"  : nu,
+    "eta" : eta,
+    "Re"  : Re,
+    "Rm"  : Rm,
+    "Pm"  : Pm
+  }
 
 
 def getPlasmaNumbers_fromName(name, name_ref):
-  name_lower = name.lower()
+  name_lower     = name.lower()
   name_ref_lower = name_ref.lower()
   return float(name_lower.replace(name_ref_lower, "")) if name_ref_lower in name_lower else None
+
+
+def getReynoldsNumbers(Re=None, Rm=None, Pm=None):
+  ## Re and Pm have been defined
+  if (Re is not None) and (Pm is not None):
+    Rm = Re * Pm
+  ## Rm and Pm have been defined
+  elif (Rm is not None) and (Pm is not None):
+    Re = Rm / Pm
+  elif (Re is not None) and (Rm is not None):
+    Pm = Rm / Re
+  ## error
+  else: raise Exception(f"You have not defined enough plasma Reynolds numbers: Re = {Re}, Rm = {Rm}, and Pm = {Rm}.")
+  return {
+    "Re"  : Re,
+    "Rm"  : Rm,
+    "Pm"  : Pm
+  }
 
 
 ## END OF LIBRARY

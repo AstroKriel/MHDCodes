@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 ## load user defined modules
-from TheUsefulModule import WWFnF, WWObjs
+from TheSimModule import SimParams
+from TheUsefulModule import WWFnF
 from TheFittingModule import UserModels
 from ThePlottingModule import PlotFuncs
 
@@ -82,16 +83,12 @@ class PlotScaleConvergence():
     for sim_res in LIST_SIM_RES:
       ## load json-file into a dictionary
       try:
-        dict_sim_data = WWObjs.loadJsonFile2Dict(
-          filepath = f"{self.filepath_sim}/{sim_res}/",
-          filename = f"sim_outputs.json",
-          bool_hide_updates = False
-        )
+        dict_sim_outputs = SimParams.readSimOutputs(f"{self.filepath_sim}/{sim_res}/")
       except: continue
       ## extract data
       self.list_sim_res.append(sim_res)
-      self.k_nu_group_t_res.append(dict_sim_data["k_nu_group_t"])
-      self.k_p_group_t_res.append(dict_sim_data["k_p_group_t"])
+      self.k_nu_group_t_res.append(dict_sim_outputs["k_nu_group_t"])
+      self.k_p_group_t_res.append(dict_sim_outputs["k_p_group_t"])
 
   def createFigure_scales(self):
     fig, fig_grid = PlotFuncs.createFigure_grid(
@@ -104,7 +101,7 @@ class PlotScaleConvergence():
     self.ax_k_p  = fig.add_subplot(fig_grid[1, 0])
     ## plot and fit data
     self.__plotScales()
-    # self.__fitDataset()
+    self.__fitDataset()
     self.__annotateFigure()
     ## save figure
     filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_scales.png"
@@ -139,8 +136,8 @@ class PlotScaleConvergence():
       )
 
   def __fitDataset(self):
-    self.k_nu_converged, self.k_nu_std = fitScales(self.ax_k_nu, self.list_sim_res, self.list_k_nu_group_res)
-    self.k_p_converged, self.k_p_std   = fitScales(self.ax_k_p,  self.list_sim_res, self.list_k_p_group_res)
+    self.k_nu_converged, self.k_nu_std = fitScales(self.ax_k_nu, self.list_sim_res, self.k_nu_group_t_res)
+    self.k_p_converged,  self.k_p_std  = fitScales(self.ax_k_p,  self.list_sim_res, self.k_p_group_t_res)
 
   def __annotateFigure(self):
     ## label k_nu

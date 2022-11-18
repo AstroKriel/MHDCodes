@@ -15,22 +15,28 @@ def getSonicRegime(Mach):
   if sonic_regime == "trans_sonic": raise Exception("ERROR: 'trans-sonic' sim. is not implemented yet.")
   return sonic_regime
 
-def saveSimInputParams(obj_sim_params, filepath):
+def saveSimInputs(obj_sim_params, filepath):
   WWObjs.saveObj2JsonFile(
     obj      = obj_sim_params,
     filepath = filepath,
     filename = "sim_inputs.json"
   )
 
-def readSimInputParams(filepath):
-  dict_input_params = WWObjs.loadJsonFile2Dict(
+def readSimInputs(filepath):
+  dict_sim_input = WWObjs.loadJsonFile2Dict(
     filepath = filepath,
     filename = "sim_inputs.json"
   )
-  obj_input_params = SimInputParams(**dict_input_params)
-  return obj_input_params
+  return dict_sim_input
 
-def makeSimInputParams(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, des_mach):
+def readSimOutputs(filepath):
+  dict_sim_outputs = WWObjs.loadJsonFile2Dict(
+    filepath = filepath,
+    filename = "sim_outputs.json"
+  )
+  return dict_sim_outputs
+
+def createSimInputs(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, des_mach):
   ## number of cells per block that the flash4-exe was compiled with
   if sim_res in [ "144", "288", "576" ]:
     num_blocks = [ 36, 36, 48 ]
@@ -52,7 +58,7 @@ def makeSimInputParams(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, 
     Pm           = LoadFlashData.getPlasmaNumbers_fromName(sim_folder,   "Pm")
   )
   ## write input file
-  saveSimInputParams(obj_sim_params, filepath_sim)
+  saveSimInputs(obj_sim_params, filepath_sim)
   return obj_sim_params
 
 
@@ -228,8 +234,8 @@ def tests():
   print(obj_sim_params.__dict__)
   print(" ")
   ## save and read obj
-  saveSimInputParams(obj_sim_params, filepath_demo)
-  obj_read_params = readSimInputParams(filepath_demo)
+  saveSimInputs(obj_sim_params, filepath_demo)
+  obj_read_params = readSimInputs(filepath_demo)
   print(" ")
   print("Printing params stored (in read obj)...")
   print(obj_read_params.__dict__)
