@@ -51,6 +51,7 @@ def saveDict2JsonFile(filepath_file, input_dict):
   else: createJsonFile(filepath_file, input_dict)
 
 def createJsonFile(filepath_file, dict2save):
+  filepath_file = filepath_file.replace("//", "/")
   with open(filepath_file, "w") as fp:
     json.dump(
       obj       = dict2save,
@@ -78,7 +79,7 @@ def appendDict2JsonFile(filepath_file, dict2append):
     )
   print("Updated json-file:", filepath_file)
 
-def loadJsonFile2Dict(filepath, filename, bool_hide_updates=False):
+def readJsonFile2Dict(filepath, filename, bool_hide_updates=False):
   filepath_file = f"{filepath}/{filename}"
   ## read file if it exists
   if os.path.isfile(filepath_file):

@@ -6,10 +6,38 @@
 ## ###############################################################
 from TheUsefulModule import WWVariables, WWObjs
 from TheLoadingModule import LoadFlashData
+from ThePlottingModule import PlotFuncs
 
 ## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
+def addLabel_simInputs(
+    filepath_sim_res,
+    fig, ax,
+    bbox          = (0,0),
+    vpos          = (0.05, 0.05),
+    bool_show_res = True
+  ):
+  ## load simulation parameters
+  dict_sim_inputs = readSimInputs(filepath_sim_res)
+  label_res = ""
+  if bool_show_res: label_res = r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(dict_sim_inputs["sim_res"]))
+  ## annotate simulation parameters
+  PlotFuncs.addBoxOfLabels(
+    fig, ax,
+    box_alignment = bbox,
+    xpos          = vpos[0],
+    ypos          = vpos[1],
+    alpha         = 0.5,
+    fontsize      = 18,
+    list_labels   = [
+      label_res,
+      r"${\rm Re} = $ " + "{:d}".format(int(dict_sim_inputs["Re"])),
+      r"${\rm Rm} = $ " + "{:d}".format(int(dict_sim_inputs["Rm"])),
+      r"${\rm Pm} = $ " + "{:d}".format(int(dict_sim_inputs["Pm"])),
+    ]
+  )
+
 def getSonicRegime(Mach):
   sonic_regime = "super_sonic" if Mach > 1 else "sub_sonic" if Mach < 1 else "trans_sonic"
   if sonic_regime == "trans_sonic": raise Exception("ERROR: 'trans-sonic' sim. is not implemented yet.")
@@ -22,17 +50,19 @@ def saveSimInputs(obj_sim_params, filepath):
     filename = "sim_inputs.json"
   )
 
-def readSimInputs(filepath):
-  dict_sim_input = WWObjs.loadJsonFile2Dict(
-    filepath = filepath,
-    filename = "sim_inputs.json"
+def readSimInputs(filepath, bool_hide_updates=False):
+  dict_sim_input = WWObjs.readJsonFile2Dict(
+    filepath          = filepath,
+    filename          = "sim_inputs.json",
+    bool_hide_updates = bool_hide_updates
   )
   return dict_sim_input
 
-def readSimOutputs(filepath):
-  dict_sim_outputs = WWObjs.loadJsonFile2Dict(
-    filepath = filepath,
-    filename = "sim_outputs.json"
+def readSimOutputs(filepath, bool_hide_updates=False):
+  dict_sim_outputs = WWObjs.readJsonFile2Dict(
+    filepath          = filepath,
+    filename          = "sim_outputs.json",
+    bool_hide_updates = bool_hide_updates
   )
   return dict_sim_outputs
 

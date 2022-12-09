@@ -152,7 +152,7 @@ class SpectraObject():
     ):
     ## load spectra-fit data as a dictionary
     try:
-      fits_dict = WWObjs.loadJsonFile2Dict(
+      fits_dict = WWObjs.readJsonFile2Dict(
         filepath = self.filepath_data,
         filename = self.filename_spectra_fits
       )

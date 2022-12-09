@@ -35,25 +35,26 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 class PlotTurbData():
   def __init__(
       self,
-      fig, axs, filepath_data, dict_sim_inputs
+      fig, axs, filepath_sim_res, dict_sim_inputs
     ):
     ## save input arguments
-    self.fig            = fig
-    self.axs            = axs
-    self.filepath_data  = filepath_data
-    self.t_turb         = dict_sim_inputs["t_turb"]
-    self.N_res          = int(dict_sim_inputs["sim_res"])
-    self.Re             = dict_sim_inputs["Re"]
-    self.Rm             = dict_sim_inputs["Rm"]
-    self.Pm             = dict_sim_inputs["Pm"]
+    self.fig              = fig
+    self.axs              = axs
+    self.filepath_sim_res = filepath_sim_res
+    self.t_turb           = dict_sim_inputs["t_turb"]
+    self.N_res            = int(dict_sim_inputs["sim_res"])
+    self.Re               = dict_sim_inputs["Re"]
+    self.Rm               = dict_sim_inputs["Rm"]
+    self.Pm               = dict_sim_inputs["Pm"]
     ## initialise quantities to measure
-    self.time_exp_start = None
-    self.time_exp_end   = None
-    self.rms_Mach       = None
-    self.Gamma          = None
-    self.E_sat_ratio    = None
+    self.plots_per_eddy   = None
+    self.time_exp_start   = None
+    self.time_exp_end     = None
+    self.rms_Mach         = None
+    self.Gamma            = None
+    self.E_sat_ratio      = None
     ## flag to check that quantities have been measured
-    self.bool_fitted    = False
+    self.bool_fitted      = False
 
   def performRoutines(self):
     self.__loadData()
@@ -66,6 +67,7 @@ class PlotTurbData():
   def getFittedParams(self):
     if not self.bool_fitted: self.performRoutines()
     return {
+      "plots_per_eddy"    : self.plots_per_eddy,
       "time_growth_start" : self.time_exp_start,
       "time_growth_end"   : self.time_exp_end,
       "rms_Mach"          : self.rms_Mach,
@@ -78,14 +80,19 @@ class PlotTurbData():
     WWObjs.saveDict2JsonFile(f"{filepath_sim}/sim_outputs.json", dict_params)
 
   def __loadData(self):
+    ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
+    self.plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(
+      self.filepath_sim_res,
+      bool_hide_updates = True
+    )
     print("Loading volume integrated data...")
     ## check if the Turb.dat file is formatted
-    with open(f"{self.filepath_data}/Turb.dat") as fp:
+    with open(f"{self.filepath_sim_res}/Turb.dat") as fp:
       file_first_line = fp.readline()
     bool_format_new = "#01_time" in file_first_line.split() # new if #01_time else #00_time
     ## load kinetic energy
     _, data_kin_energy = LoadFlashData.loadTurbData(
-      filepath   = self.filepath_data,
+      filepath   = self.filepath_sim_res,
       var_y      = 9 if bool_format_new else 6, # 9+1 (new), 6 (old)
       t_turb     = self.t_turb,
       time_start = 0.1,
@@ -93,7 +100,7 @@ class PlotTurbData():
     )
     ## load magnetic energy
     _, data_mag_energy = LoadFlashData.loadTurbData(
-      filepath   = self.filepath_data,
+      filepath   = self.filepath_sim_res,
       var_y      = 11 if bool_format_new else 29, # 11+1 (new), 29 (old)
       t_turb     = self.t_turb,
       time_start = 0.1,
@@ -101,7 +108,7 @@ class PlotTurbData():
     )
     ## load Mach data
     data_time, data_Mach = LoadFlashData.loadTurbData(
-      filepath   = self.filepath_data,
+      filepath   = self.filepath_sim_res,
       var_y      = 13 if bool_format_new else 8, # 13+1 (new), 8 (old)
       t_turb     = self.t_turb,
       time_start = 0.1,
@@ -267,10 +274,10 @@ class PlotTurbData():
 ## ###############################################################
 ## HANDLING PLOT CALLS
 ## ###############################################################
-def plotSimData(filepath_sim, filepath_vis, sim_name):
+def plotSimData(filepath_sim_res, filepath_vis, sim_name):
   ## GET SIMULATION PARAMETERS
   ## -------------------------
-  dict_sim_inputs = SimParams.readSimInputs(filepath_sim)
+  dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res)
   ## INITIALISE FIGURE
   ## -----------------
   print("Initialising figure...")
@@ -285,13 +292,13 @@ def plotSimData(filepath_sim, filepath_vis, sim_name):
   ## LOAD AND PLOT INTEGRATED QUANTITIES
   ## -----------------------------------
   obj_plot_turb = PlotTurbData(
-    fig             = fig,
-    axs             = [ ax_Mach, ax_E_ratio ],
-    filepath_data   = filepath_sim,
-    dict_sim_inputs = dict_sim_inputs
+    fig              = fig,
+    axs              = [ ax_Mach, ax_E_ratio ],
+    filepath_sim_res = filepath_sim_res,
+    dict_sim_inputs  = dict_sim_inputs
   )
   obj_plot_turb.performRoutines()
-  obj_plot_turb.saveFittedParams(filepath_sim)
+  obj_plot_turb.saveFittedParams(filepath_sim_res)
   ## SAVE FIGURE
   ## -----------
   fig_name     = f"{sim_name}_time_evolution.png"
@@ -350,17 +357,17 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BOOL_DEBUG        = 1
+BOOL_DEBUG        = 0
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
 
-# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
-LIST_SUITE_FOLDER = [ "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm5" ]
-LIST_SIM_RES      = [ "288" ]
+# LIST_SUITE_FOLDER = [ "Rm3000" ]
+# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm5" ]
+# LIST_SIM_RES      = [ "288" ]
 
 
 ## ###############################################################

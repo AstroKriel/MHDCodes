@@ -165,7 +165,7 @@ class SpectraFit():
 ## CLASS OF USEFUL SPECTRA MODELS
 ## ###############################################################
 import warnings
-warnings.filterwarnings('error')
+warnings.filterwarnings("error")
 class SpectraModels():
   ## ######################
   ## KINETIC SPECTRA MODELS

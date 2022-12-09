@@ -34,7 +34,7 @@ class MagSpectrum():
 ## HELPER FUNCTIONS
 ## ###############################################################
 def getAveSpectra(filepath_sim_res):
-  dict_sim_data = WWObjs.loadJsonFile2Dict(
+  dict_sim_data = WWObjs.readJsonFile2Dict(
     filepath = filepath_sim_res,
     filename = f"sim_outputs.json",
     bool_hide_updates = False
