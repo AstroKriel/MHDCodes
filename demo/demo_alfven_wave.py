@@ -72,8 +72,8 @@ def main():
   press_0       = 3/5
   alpha_2       = 0.0
   vel_1         = 1.0
-  v_k           = np.array([ 1, 1, 0 ])
-  v_mag_0       = np.array([ 1, 0, 0 ])
+  v_k           = 0.25 * np.array([ 3.0, 2.0, 1.0 ])
+  v_mag_0       = np.array([ 0.5, 1.0, 1.5 ])
   ## compute helper variables
   k             = getVMag(v_k)
   cos_theta     = getCosAngle(v_mag_0, v_k)
@@ -82,17 +82,20 @@ def main():
   ## background state
   ## inputs: rho_0, press_0, vel_1, v_mag_0
   v_vel_0       = np.zeros(3)
-  v_vel_1       = vel_1 * getVNorm(cross(v_k, v_mag_0))
+  v_perp        = cross(v_k, v_mag_0)
+  if np.sum(abs(v_perp)) == 0: v_perp = np.array([ 0, 0, 1 ])
+  v_vel_1       = vel_1 * getVNorm(v_perp)
   v_mag_0_hat   = getVNorm(v_mag_0)
   mag_0         = getVMag(v_mag_0)
   ## perturbed state
   alpha_1       = alpha_2 / gamma # from continuity eqn
   alfven_speed  = mag_0**2 / (4*np.pi * rho_0) # v_A^2
   omega         = np.sqrt(alfven_speed) * k * cos_theta # dispersion relation
-  alpha_3_z     = -k / omega * cos_theta * v_vel_1[2]
-  v_alpha_3     = np.array([ 0, 0, alpha_3_z ])
+  # alpha_3_z     = -k / omega * cos_theta * v_vel_1[2]
+  # v_alpha_3     = np.array([ 0, 0, alpha_3_z ])
   check         = -np.dot(v_k, v_mag_0_hat) / omega * v_vel_1
-  if any(v_alpha_3 - check): raise Exception("Error: Something went wrong!")
+  # if any(v_alpha_3 - check): raise Exception("Error: Something went wrong!")
+  v_alpha_3     = check
   ## initialise figure
   print("Initialising figure...")
   fig, axs = plt.subplots(
@@ -117,7 +120,7 @@ def main():
   data_mag_z = np.zeros(( num_x, num_y ))
   ## compute solutions
   print("Computing solutions...")
-  time = 0.0
+  time = 0.3
   for index_x in range(num_x):
     for index_y in range(num_y):
       v_pos = np.array([
