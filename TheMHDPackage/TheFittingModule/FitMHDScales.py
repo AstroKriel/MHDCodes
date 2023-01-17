@@ -125,13 +125,14 @@ def fitKinSpectrum(
   ## define model to fit
   func_loge   = SpectraModels.kinetic_loge
   func_linear = SpectraModels.kinetic_linear
-  my_model = Model(func_loge)
+  my_model = Model(func_loge) # fit in log-log space
   my_model.set_param_hint("A",     min = 10**(-3.0),  value = 10**(1.0), max = 10**(3.0))
   my_model.set_param_hint("alpha", min = -10.0,       value = -2.0,      max = -1.0)
   my_model.set_param_hint("k_nu",  min = 10**(-1.0),  value = 5.0,       max = 10**(2.0))
   ## find k-index to stop fitting kinetic energy spectrum
   fit_index_start = 3
-  fit_index_end   = WWLists.getIndexClosestValue(list_power, 10**(-9))
+  # fit_index_end   = len(list_power) - 1 
+  fit_index_end   =  WWLists.getIndexClosestValue(list_power, 10**(-10))
   ## fit kinetic energy model (in log-linear domain) to subset of data
   fit_results  = my_model.fit(
     k      = list_k[           fit_index_start : fit_index_end],
@@ -185,35 +186,59 @@ def getMagSpectrumPeak(list_k, list_power):
   return k_p, k_max
 
 
-def getScale_keq(list_time_growth, list_k, list_mag_power_tot_group_t, list_kin_power_tot_group_t, tol=1e-1):
-  ## for each time realisation
+def getScale_keq(
+    list_sim_time, list_k, list_mag_power_group_t, list_kin_power_group_t,
+    tol        = 1e-1,
+    ax_spectra = None,
+    ax_scales  = None,
+    color      = "black",
+    label      = r"$k_{\rm eq}$"
+  ):
+  ## store data for each time realisation where k_eq is defined
   k_eq_group_t       = []
   k_eq_power_group_t = []
   list_time_k_eq     = []
-  ## plot each time realisation
-  for time_index in range(len(list_time_growth)):
-    ## calculate energy ratio spectrum
-    list_spectra_ratio = \
-      np.array(list_mag_power_tot_group_t[time_index]) / \
-      np.array(list_kin_power_tot_group_t[time_index])
-    list_index_peaks, _ = find_peaks(list_spectra_ratio)
+  ## loop through each time realisation
+  for time_index in range(len(list_sim_time)):
+    ## calculate energy spectrum ratio
+    list_power_ratio = \
+      np.array(list_mag_power_group_t[time_index]) / \
+      np.array(list_kin_power_group_t[time_index])
+    ## plot spectrum ratio
+    if ax_spectra is not None:
+      ax_spectra.plot(
+        list_k,
+        list_power_ratio,
+        color=color, ls="-", alpha=0.1
+      )
+    ## calculate where to cutoff spectrum ratio
+    ## ignore second point where spectrum ratio peaks
+    list_index_peaks, _ = find_peaks(list_power_ratio)
     if len(list_index_peaks) > 0:
-      index_ratio_end = min(list_index_peaks)
-    else: index_ratio_end = len(list_spectra_ratio) - 1
-    ## measure k_eq
+      index_cutoff = min(list_index_peaks)
+    else: index_cutoff = len(list_power_ratio) - 1
+    ## find points where the spectrum ratio is close to unity
     list_index_k_eq = [
       k_index
-      for k_index, E_ratio in enumerate(list_spectra_ratio[:index_ratio_end])
+      for k_index, E_ratio in enumerate(list_power_ratio[:index_cutoff])
       if abs(E_ratio - 1) <= tol
     ]
+    ## measure the first point where the spectrum ratio gets close to unity
     if len(list_index_k_eq) > 0:
       index_k_eq = list_index_k_eq[0]
       k_eq       = list_k[index_k_eq]
-      k_eq_power = list_spectra_ratio[index_k_eq]
+      k_eq_power = list_power_ratio[index_k_eq]
       k_eq_group_t.append(k_eq)
       k_eq_power_group_t.append(k_eq_power)
-      list_time_k_eq.append(list_time_growth[time_index])
-  ## return measured equipartition scales
+      list_time_k_eq.append(list_sim_time[time_index])
+  ## plot measured equipartition scale
+  if (len(k_eq_group_t) > 0) and (ax_scales is not None):
+    ax_scales.plot(
+      list_time_k_eq,
+      k_eq_group_t,
+      label=label, color=color, ls="-"
+    )
+  ## return equipartition scale measured for each time realisation
   return k_eq_group_t, k_eq_power_group_t, list_time_k_eq
 
 

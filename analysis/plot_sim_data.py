@@ -48,26 +48,26 @@ def getLabel_mag(k_p_group_t, k_max_group_t):
   return r"$k_{\rm p} = $ " + label_k_p + r", $k_{\rm max} = $ " + label_k_max
 
 def plotMeasuredScale(
-    ax_time, ax_spectrum,
+    ax_spectra, ax_scales,
     list_t, scale_group_t, scale_ave,
     color       = "black",
     label       = ""
   ):
   ## plot average scale to spectrum
-  ax_spectrum.axvline(
+  ax_spectra.axvline(
     x=scale_ave,
     color=color, ls="--", lw=1.5, zorder=7
   )
   ## plot time evolution of scale
-  ax_time.plot(
+  ax_scales.plot(
     list_t,
     [ scale_ave ] * len(list_t),
-    color=color, ls="--", lw=1.5
+    color=color, ls="--"
   )
-  ax_time.plot(
+  ax_scales.plot(
     list_t,
     scale_group_t,
-    color=color, ls="-", lw=1.5, label=label
+    color=color, ls="-", label=label
   )
 
 def plotSpectra(ax, list_k, list_power_group_t, color, cmap_name, list_times):
@@ -106,7 +106,7 @@ class PlotSpectra():
     ## save input arguments
     self.fig              = fig
     self.axs_spectra      = dict_axs["axs_spectra"]
-    self.ax_scales        = dict_axs["ax_scales"]
+    self.axs_scales       = dict_axs["axs_scales"]
     self.ax_residuals     = dict_axs["ax_residuals"]
     self.ax_spectra_ratio = dict_axs["ax_spectra_ratio"]
     self.filepath_spect   = filepath_spect
@@ -114,6 +114,8 @@ class PlotSpectra():
     self.time_exp_end     = time_exp_end
     ## initialise spectra labels
     self.__initialiseQuantities()
+    self.color_kin_spect_fit = "orange"
+    self.color_k_eq = "blue"
     self.dict_plot_kin_trv = {
       "color"       : "darkgreen",
       "cmap_name"   : "Greens",
@@ -128,22 +130,22 @@ class PlotSpectra():
     }
 
   def performRoutines(self):
-    self.__loadData()
-    self.__plotSpectra()
-    # self.__plotSpectraRatio()
+    self.__loadSpectra_kinematicPhase()
+    self.__plotSpectra_kinematicPhase()
+    self.__plotSpectraRatio()
     print("Fitting energy spectra...")
     self.__fitKinSpectra()
     self.__fitMagSpectra()
     self.bool_fitted = True
     self.__labelSpectra()
     self.__labelResiduals()
-    # self.__labelSpectraRatio()
+    self.__labelSpectraRatio()
     self.__labelScales()
 
   def getFittedParams(self):
-    # list_quantities_undefined = self.__checkAnyQuantitiesNotMeasured()
-    # if not self.bool_fitted: self.performRoutines()
-    # if len(list_quantities_undefined) > 0: raise Exception("Error: failed to define quantity:", list_quantities_undefined)
+    list_quantities_undefined = self.__checkAnyQuantitiesNotMeasured()
+    if not self.bool_fitted: self.performRoutines()
+    if len(list_quantities_undefined) > 0: raise Exception("Error: the following quantities were not measured:", list_quantities_undefined)
     return {
       ## time-averaged energy spectra
       "list_k"                     : self.list_k,
@@ -155,8 +157,8 @@ class PlotSpectra():
       "plots_per_eddy"             : self.plots_per_eddy,
       "list_time_growth"           : self.list_time_growth,
       "list_time_k_eq"             : self.list_time_k_eq,
-      "k_p_group_t"                : self.k_p_group_t,
       "k_eq_group_t"               : self.k_eq_group_t,
+      "k_p_group_t"                : self.k_p_group_t,
       "fit_params_kin_trv_group_t" : self.fit_params_kin_trv_group_t,
       "fit_params_kin_trv_ave"     : self.fit_params_kin_trv_ave
     }
@@ -177,8 +179,8 @@ class PlotSpectra():
     self.plots_per_eddy             = None
     self.list_time_growth           = None
     self.list_time_k_eq             = None
-    self.k_p_group_t                = None
     self.k_eq_group_t               = None
+    self.k_p_group_t                = None
     self.fit_params_kin_trv_group_t = None
     self.fit_params_kin_trv_ave     = None
 
@@ -192,8 +194,8 @@ class PlotSpectra():
       self.plots_per_eddy,
       self.list_time_growth,
       self.list_time_k_eq,
-      self.k_p_group_t,
       self.k_eq_group_t,
+      self.k_p_group_t,
       self.fit_params_kin_trv_group_t,
       self.fit_params_kin_trv_ave
     ]
@@ -203,13 +205,14 @@ class PlotSpectra():
       if quantity is None
     ]
 
-  def __loadData(self):
+  def __loadSpectra_kinematicPhase(self):
     print("Loading energy spectra...")
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
     self.plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(
       f"{self.filepath_spect}/../",
       bool_hide_updates = True
     )
+    ## load spectra data within the growth phase of the dynamo
     ## load total kinetic energy spectra
     dict_kin_spect_tot_data = LoadFlashData.loadAllSpectraData(
       filepath          = self.filepath_spect,
@@ -258,7 +261,7 @@ class PlotSpectra():
     self.list_k                     = dict_mag_spect_tot_data["list_k_group_t"][0]
     self.list_time_growth           = dict_mag_spect_tot_data["list_sim_times"]
 
-  def __plotSpectra(self):
+  def __plotSpectra_kinematicPhase(self):
     plotSpectra(
       ax                 = self.axs_spectra[0],
       list_k             = self.list_k,
@@ -276,8 +279,38 @@ class PlotSpectra():
       list_times         = self.list_time_growth
     )
 
-  # def __plotSpectraRatio(self):
-  #   bla
+  def __plotSpectraRatio(self):
+    ## load spectra data again, this time for the full duration of the simulation
+    ## load total kinetic energy spectra
+    dict_kin_spect_tot_data = LoadFlashData.loadAllSpectraData(
+      filepath          = self.filepath_spect,
+      spect_field       = "vel",
+      spect_quantity    = "tot",
+      file_start_time   = self.time_exp_start,
+      file_end_time     = np.inf,
+      plots_per_eddy    = self.plots_per_eddy,
+      bool_hide_updates = True
+    )
+    ## load total magnetic energy spectra
+    dict_mag_spect_tot_data = LoadFlashData.loadAllSpectraData(
+      filepath          = self.filepath_spect,
+      spect_field       = "mag",
+      spect_quantity    = "tot",
+      file_start_time   = self.time_exp_start,
+      file_end_time     = np.inf,
+      plots_per_eddy    = self.plots_per_eddy,
+      bool_hide_updates = True
+    )
+    ## measure + plot evolving equipartition scale
+    self.k_eq_group_t, self.k_eq_power_group_t, self.list_time_k_eq = FitMHDScales.getScale_keq(
+      ax_spectra             = self.ax_spectra_ratio,
+      ax_scales              = self.axs_scales[1],
+      list_sim_time          = dict_mag_spect_tot_data["list_sim_times"],
+      list_k                 = dict_mag_spect_tot_data["list_k_group_t"][0],
+      list_mag_power_group_t = dict_mag_spect_tot_data["list_power_group_t"],
+      list_kin_power_group_t = dict_kin_spect_tot_data["list_power_group_t"],
+      color                  = self.color_k_eq
+    )
 
   def __fitKinSpectra(self):
     ## define helper function
@@ -303,13 +336,13 @@ class PlotSpectra():
         ax_residuals  = ax_residuals,
         list_k        = list_k,
         list_power    = WWSpectra.aveSpectra(list_power_group_t, bool_norm=True),
-        color         = "royalblue",
+        color         = self.color_kin_spect_fit,
         label_spect   = label_spect
       )
       ## plot time-evolution of measured scale
       plotMeasuredScale(
-        ax_spectrum   = ax_fit,
-        ax_time       = ax_scales,
+        ax_spectra    = ax_fit,
+        ax_scales     = ax_scales,
         list_t        = list_time_growth,
         scale_group_t = WWLists.getElemFromLoL(fit_params_group_t, 2),
         scale_ave     = fit_params_ave[2],
@@ -321,7 +354,7 @@ class PlotSpectra():
     self.fit_params_kin_trv_group_t, self.fit_params_kin_trv_ave = fitKinSpectra(
       ax_fit             = self.axs_spectra[0],
       ax_residuals       = self.ax_residuals,
-      ax_scales          = self.ax_scales,
+      ax_scales          = self.axs_scales[0],
       list_k             = self.list_k,
       list_power_group_t = self.list_kin_power_trv_group_t,
       list_time_growth   = self.list_time_growth,
@@ -350,8 +383,8 @@ class PlotSpectra():
     )
     ## plot time-evolution of measured scale
     plotMeasuredScale(
-      ax_spectrum   = self.axs_spectra[1],
-      ax_time       = self.ax_scales,
+      ax_spectra    = self.axs_spectra[1],
+      ax_scales     = self.axs_scales[0],
       list_t        = self.list_time_growth,
       scale_group_t = self.k_p_group_t,
       scale_ave     = np.mean(self.k_p_group_t),
@@ -367,7 +400,7 @@ class PlotSpectra():
   def __labelSpectra(self):
     self.__adjustAxis(self.axs_spectra[0])
     self.__adjustAxis(self.axs_spectra[1])
-    PlotFuncs.labelDualAxis(
+    PlotFuncs.labelDualAxis_sharedX(
       axs         = self.axs_spectra,
       label_left  = self.dict_plot_kin_trv["label_spect"],
       label_right = self.dict_plot_mag_tot["label_spect"],
@@ -382,14 +415,11 @@ class PlotSpectra():
       ypos          = 0.05,
       alpha         = 0.85,
       fontsize      = 18,
+      list_colors   = [ "black", "black" ],
       list_labels   = [
         getLabel_kin(self.fit_params_kin_trv_group_t),
         getLabel_mag(self.k_p_group_t, self.k_max_group_t)
       ],
-      list_colors   = [
-        self.dict_plot_kin_trv["color"],
-        self.dict_plot_mag_tot["color"]
-      ]
     )
 
   def __labelResiduals(self):
@@ -415,13 +445,19 @@ class PlotSpectra():
     )
 
   def __labelScales(self):
-    self.ax_scales.set_yscale("log")
-    self.ax_scales.set_xlabel(r"$t/t_{\rm turb}$")
-    self.ax_scales.set_ylabel(r"$k$")
-    PlotFuncs.addLegend_withBox(
-      ax   = self.ax_scales,
-      loc  = "lower left",
-      bbox = (0.0, 1.0)
+    self.axs_scales[0].set_yscale("log")
+    self.axs_scales[0].set_ylabel(r"$k$")
+    PlotFuncs.labelDualAxis_sharedY(
+      axs          = self.axs_scales,
+      label_bottom = r"$t_{\rm growth} \in t/t_{\rm turb}$",
+      label_top    = r"$t_{\rm eq} \in t/t_{\rm turb}$",
+      color_bottom = "black",
+      color_top    = self.color_k_eq
+    )
+    PlotFuncs.addLegend_joinedAxis(
+      axs      = self.axs_scales,
+      loc      = "upper right",
+      bbox     = (1.0, 1.0)
     )
 
 
@@ -433,7 +469,7 @@ def plotSimData(filepath_sim_res, filepath_vis, sim_name):
   ## -----------------
   print("Initialising figure...")
   fig, fig_grid = PlotFuncs.createFigure_grid(
-    fig_scale        = 0.45,
+    fig_scale        = 0.4,
     fig_aspect_ratio = (10.0, 8.0),
     num_rows         = 3,
     num_cols         = 6
@@ -442,10 +478,18 @@ def plotSimData(filepath_sim_res, filepath_vis, sim_name):
   ax_Mach          = fig.add_subplot(fig_grid[0, 0:2])
   ax_energy_ratio  = fig.add_subplot(fig_grid[1, 0:2])
   ## spectra data
-  ax_residuals     = fig.add_subplot(fig_grid[2, 0:3])
-  axs_spectra      = PlotFuncs.addSubplot_secondAxis(fig, fig_grid[:2, 2:4])
+  ax_residuals = fig.add_subplot(fig_grid[2, 0:3])
+  axs_spectra = PlotFuncs.addSubplot_secondAxis(
+    fig         = fig,
+    grid_elem   = fig_grid[:2, 2:4],
+    shared_axis = "x"
+  )
   ax_spectra_ratio = fig.add_subplot(fig_grid[0:2, 4:6])
-  ax_scales        = fig.add_subplot(fig_grid[  2, 3:6])
+  axs_scales = PlotFuncs.addSubplot_secondAxis(
+    fig         = fig,
+    grid_elem   = fig.add_subplot(fig_grid[  2, 3:6]),
+    shared_axis = "y"
+  )
   ## PLOT INTEGRATED QUANTITIES
   ## --------------------------
   obj_plot_turb = PlotTurbData(
@@ -463,7 +507,7 @@ def plotSimData(filepath_sim_res, filepath_vis, sim_name):
     fig              = fig,
     dict_axs         = {
       "axs_spectra"      : axs_spectra,
-      "ax_scales"        : ax_scales,
+      "axs_scales"       : axs_scales,
       "ax_residuals"     : ax_residuals,
       "ax_spectra_ratio" : ax_spectra_ratio,
     },

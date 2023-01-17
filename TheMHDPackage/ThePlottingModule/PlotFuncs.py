@@ -133,9 +133,13 @@ def plotPDF(ax, list_data, color):
 ## ###############################################################
 ## ADD TO PLOTS
 ## ###############################################################
-def addSubplot_secondAxis(fig, grid_elem):
+def addSubplot_secondAxis(fig, grid_elem, shared_axis):
   ax0 = fig.add_subplot(grid_elem)
-  ax1 = ax0.twinx()
+  if "x" in shared_axis.lower():
+    ax1 = ax0.twinx()
+  elif "y" in shared_axis.lower():
+    ax1 = ax0.twiny()
+  else: raise Exception("Error: user has not indicated which axis (x or y) should be shared:", shared_axis.lower())
   ax0.set_zorder(1) # default zorder is 0 for ax0 and ax1
   ax0.set_frame_on(False) # prevents ax0 from hiding ax1
   return [ ax0, ax1 ]
@@ -351,7 +355,13 @@ def addLegend(
   ## draw legend
   ax.add_artist(legend)
 
-def labelDualAxis(axs, label_left, label_right, color_left, color_right):
+def labelDualAxis_sharedX(
+    axs,
+    label_left  = r"",
+    label_right = r"",
+    color_left  = "black",
+    color_right = "black"
+  ):
   axs[0].set_ylabel(label_left,  color=color_left)
   axs[1].set_ylabel(label_right, color=color_right, rotation=-90, labelpad=40)
   ## colour left/right axis-splines
@@ -359,6 +369,21 @@ def labelDualAxis(axs, label_left, label_right, color_left, color_right):
   axs[1].tick_params(axis="y", colors=color_right)
   axs[1].spines["left" ].set_color(color_left)
   axs[1].spines["right"].set_color(color_right)
+
+def labelDualAxis_sharedY(
+    axs,
+    label_bottom = r"",
+    label_top    = r"",
+    color_bottom = "black",
+    color_top    = "black"
+  ):
+  axs[0].set_xlabel(label_bottom, color=color_bottom)
+  axs[1].set_xlabel(label_top,    color=color_top, labelpad=20)
+  ## colour bottom/top axis-splines
+  axs[0].tick_params(axis="x", colors=color_bottom)
+  axs[1].tick_params(axis="x", colors=color_top)
+  axs[1].spines["bottom"].set_color(color_bottom)
+  axs[1].spines["top"   ].set_color(color_top)
 
 
 ## ###############################################################
