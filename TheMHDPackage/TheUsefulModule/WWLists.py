@@ -29,7 +29,7 @@ def getIndexClosestValue(input_vals, target_value):
 def ensureListLength(list_input, list_ref):
   if len(list_input) < len(list_ref):
     list_input.extend(
-      list_input[0] * ( len(list_ref) - len(list_input) )
+      [ list_input[0] ] * int( len(list_ref) - len(list_input) )
     )
 
 def flattenList(list_elems):

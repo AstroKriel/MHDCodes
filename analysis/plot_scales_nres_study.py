@@ -63,6 +63,7 @@ def createLabel_fromModes(input_val, input_std):
 def fitScales(
     ax, list_res, list_scales_group_res,
     color  = "black",
+    ls     = ":",
     bounds = ( (0.01, 1, 0), (500, 5000, 5) )
   ):
   ## check if measured scales increase or decrease with resolution
@@ -79,7 +80,7 @@ def fitScales(
   fit_std = np.sqrt(np.diag(fit_cov))[0] # confidence in fit
   data_x  = np.logspace(np.log10(1), np.log10(10**4), 100)
   data_y  = func(data_x, *fit_params)
-  ax.plot(data_x, data_y, color=color, ls=":", lw=1.5)
+  ax.plot(data_x, data_y, color=color, ls=ls, lw=1.5)
   return data_y[-1], fit_std
 
 def getScaleFromParams_knu(fit_params_group_t):
@@ -104,19 +105,25 @@ class PlotScaleConvergence():
 
   def __initialiseDatasets(self):
     ## initialise input datasets
-    self.list_sim_res         = []
-    self.k_nu_lgt_group_t_res = []
-    self.k_nu_trv_group_t_res = []
-    self.k_p_tot_group_t_res  = []
+    self.list_sim_res            = []
+    self.k_nu_lgt_group_t_res    = []
+    self.k_nu_trv_group_t_res_p5 = []
+    self.k_nu_trv_group_t_res_1  = []
+    self.k_nu_trv_group_t_res_2  = []
+    self.k_p_tot_group_t_res     = []
     ## initialise output datasets
-    self.k_nu_tot_converged = None
-    self.k_nu_lgt_converged = None
-    self.k_nu_trv_converged = None
-    self.k_p_tot_converged  = None
-    self.k_nu_tot_std       = None
-    self.k_nu_lgt_std       = None
-    self.k_nu_trv_std       = None
-    self.k_p_tot_std        = None
+    self.k_nu_tot_converged    = None
+    self.k_nu_lgt_converged    = None
+    self.k_nu_trv_converged_p5 = None
+    self.k_nu_trv_converged_1  = None
+    self.k_nu_trv_converged_2  = None
+    self.k_p_tot_converged     = None
+    self.k_nu_tot_std          = None
+    self.k_nu_lgt_std          = None
+    self.k_nu_trv_std_p5       = None
+    self.k_nu_trv_std_1        = None
+    self.k_nu_trv_std_2        = None
+    self.k_p_tot_std           = None
 
   def readDataset(self):
     ## read in scales for each resolution run
@@ -128,7 +135,9 @@ class PlotScaleConvergence():
       ## extract data
       self.list_sim_res.append(sim_res)
       self.k_nu_lgt_group_t_res.append(dict_sim_outputs["k_nu_lgt_group_t"])
-      self.k_nu_trv_group_t_res.append(dict_sim_outputs["k_nu_trv_group_t"])
+      self.k_nu_trv_group_t_res_p5.append(dict_sim_outputs["k_nu_trv_group_t_p5"])
+      self.k_nu_trv_group_t_res_1.append(dict_sim_outputs["k_nu_trv_group_t_1"])
+      self.k_nu_trv_group_t_res_2.append(dict_sim_outputs["k_nu_trv_group_t_2"])
       self.k_p_tot_group_t_res.append( dict_sim_outputs["k_p_tot_group_t"])
 
   def createFigure_scales(self):
@@ -150,14 +159,18 @@ class PlotScaleConvergence():
 
   def createDataset(self):
     dict_converged_scales = {
-      "k_nu_tot_converged" : self.k_nu_tot_converged,
-      "k_nu_lgt_converged" : self.k_nu_lgt_converged,
-      "k_nu_trv_converged" : self.k_nu_trv_converged,
-      "k_p_tot_converged"  : self.k_p_tot_converged,
-      "k_nu_tot_std"       : self.k_nu_tot_std,
-      "k_nu_lgt_std"       : self.k_nu_lgt_std,
-      "k_nu_trv_std"       : self.k_nu_trv_std,
-      "k_p_tot_std"        : self.k_p_tot_std
+      "k_p_tot_converged"     : self.k_p_tot_converged,
+      "k_nu_tot_converged"    : self.k_nu_tot_converged,
+      "k_nu_lgt_converged"    : self.k_nu_lgt_converged,
+      "k_nu_trv_converged_p5" : self.k_nu_trv_converged_p5,
+      "k_nu_trv_converged_1"  : self.k_nu_trv_converged_1,
+      "k_nu_trv_converged_2"  : self.k_nu_trv_converged_2,
+      "k_p_tot_std"           : self.k_p_tot_std,
+      "k_nu_tot_std"          : self.k_nu_tot_std,
+      "k_nu_lgt_std"          : self.k_nu_lgt_std,
+      "k_nu_trv_std_p5"       : self.k_nu_trv_std_p5,
+      "k_nu_trv_std_1"        : self.k_nu_trv_std_1,
+      "k_nu_trv_std_2"        : self.k_nu_trv_std_2,
     }
     WWObjs.saveDict2JsonFile(
       filepath_file = f"{self.filepath_sim}/scales.json",
@@ -175,8 +188,23 @@ class PlotScaleConvergence():
       PlotFuncs.plotErrorBar_1D(
         ax      = self.ax_k_nu,
         x       = int(sim_res),
-        array_y = self.k_nu_trv_group_t_res[res_index],
-        color   = "darkviolet"
+        array_y = self.k_nu_trv_group_t_res_p5[res_index],
+        color   = "darkviolet",
+        # marker  = "s"
+      )
+      PlotFuncs.plotErrorBar_1D(
+        ax      = self.ax_k_nu,
+        x       = int(sim_res),
+        array_y = self.k_nu_trv_group_t_res_1[res_index],
+        color   = "darkviolet",
+        # marker  = "o"
+      )
+      PlotFuncs.plotErrorBar_1D(
+        ax      = self.ax_k_nu,
+        x       = int(sim_res),
+        array_y = self.k_nu_trv_group_t_res_2[res_index],
+        color   = "darkviolet",
+        # marker  = "D"
       )
       PlotFuncs.plotErrorBar_1D(
         ax      = self.ax_k_p,
@@ -192,11 +220,26 @@ class PlotScaleConvergence():
       list_scales_group_res = self.k_nu_lgt_group_t_res,
       color                 = "blue"
     )
-    self.k_nu_trv_converged, self.k_nu_trv_std = fitScales(
+    self.k_nu_trv_converged_p5, self.k_nu_trv_std_p5 = fitScales(
       ax                    = self.ax_k_nu,
       list_res              = self.list_sim_res,
-      list_scales_group_res = self.k_nu_trv_group_t_res,
-      color                 = "darkviolet"
+      list_scales_group_res = self.k_nu_trv_group_t_res_p5,
+      color                 = "darkviolet",
+      ls                    = ":"
+    )
+    self.k_nu_trv_converged_1, self.k_nu_trv_std_1 = fitScales(
+      ax                    = self.ax_k_nu,
+      list_res              = self.list_sim_res,
+      list_scales_group_res = self.k_nu_trv_group_t_res_1,
+      color                 = "darkviolet",
+      ls                    = "-"
+    )
+    self.k_nu_trv_converged_2, self.k_nu_trv_std_2 = fitScales(
+      ax                    = self.ax_k_nu,
+      list_res              = self.list_sim_res,
+      list_scales_group_res = self.k_nu_trv_group_t_res_2,
+      color                 = "darkviolet",
+      ls                    = "-."
     )
     self.k_p_tot_converged,  self.k_p_tot_std = fitScales(
       ax                    = self.ax_k_p,
@@ -230,11 +273,16 @@ class PlotScaleConvergence():
       alpha         = 0.85,
       fontsize      = 20,
       list_labels   = [
-        r"$k_{\nu, \parallel} =$ " + createLabel_fromModes(self.k_nu_lgt_converged, self.k_nu_lgt_std),
-        r"$k_{\nu, \perp} =$ "     + createLabel_fromModes(self.k_nu_trv_converged, self.k_nu_trv_std)
+        r"$k_{\nu, \parallel} =$ "  + createLabel_fromModes(self.k_nu_lgt_converged, self.k_nu_lgt_std),
+        r"$k_{\nu, \perp, 0.5} =$ " + createLabel_fromModes(self.k_nu_trv_converged_p5, self.k_nu_trv_std_p5),
+        r"$k_{\nu, \perp, 1} =$ "   + createLabel_fromModes(self.k_nu_trv_converged_1, self.k_nu_trv_std_1),
+        r"$k_{\nu, \perp, 2} =$ "   + createLabel_fromModes(self.k_nu_trv_converged_2, self.k_nu_trv_std_2),
       ],
       list_colors   = [
-        "blue", "darkviolet"
+        "blue",
+        "darkviolet",
+        "darkviolet",
+        "darkviolet"
       ]
     )
     ## label k_p
@@ -318,11 +366,11 @@ BOOL_DEBUG        = 0
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
 
-# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
-LIST_SUITE_FOLDER = [ "Rm3000" ]
+# LIST_SUITE_FOLDER = [ "Rm3000" ]
 # LIST_SIM_RES      = [ "144", "288", "576" ]
 
 

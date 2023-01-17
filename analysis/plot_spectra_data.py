@@ -160,9 +160,11 @@ class PlotSpectra():
     self.filepath_sim_res_plot = filepath_sim_res_plot
     self.sim_name              = sim_name
     ## initialise output data
-    self.k_nu_lgt_group_t = None
-    self.k_nu_trv_group_t = None
-    self.k_p_tot_group_t  = None
+    self.k_p_tot_group_t     = None
+    self.k_nu_lgt_group_t    = None
+    self.k_nu_trv_group_t_p5 = None
+    self.k_nu_trv_group_t_1  = None
+    self.k_nu_trv_group_t_2  = None
 
   def performRoutines(self):
     self.ax_nrows = 4
@@ -182,14 +184,16 @@ class PlotSpectra():
     PlotFuncs.saveFigure(self.fig, f"{self.filepath_sim_res_plot}/{fig_name}")
 
   def __saveScales(self):
-    if (self.k_nu_lgt_group_t is None) or\
-       (self.k_nu_trv_group_t is None) or\
-       (self.k_p_tot_group_t  is None):
-      raise Exception("Error: scales have not been computed yet/correctly.")
+    # if (self.k_nu_lgt_group_t is None) or\
+    #    (self.k_nu_trv_group_t is None) or\
+    #    (self.k_p_tot_group_t  is None):
+    #   raise Exception("Error: scales have not been computed yet/correctly.")
     dict_scales = {
-      "k_nu_lgt_group_t" : self.k_nu_lgt_group_t,
-      "k_nu_trv_group_t" : self.k_nu_trv_group_t,
-      "k_p_tot_group_t"  : self.k_p_tot_group_t
+      "k_p_tot_group_t"     : self.k_p_tot_group_t,
+      "k_nu_lgt_group_t"    : self.k_nu_lgt_group_t,
+      "k_nu_trv_group_t_p5" : self.k_nu_trv_group_t_p5,
+      "k_nu_trv_group_t_1"  : self.k_nu_trv_group_t_1,
+      "k_nu_trv_group_t_2"  : self.k_nu_trv_group_t_2,
     }
     WWObjs.saveDict2JsonFile(f"{self.filepath_sim_res}/sim_outputs.json", dict_scales)
 
@@ -372,15 +376,6 @@ class PlotSpectra():
       list_power_2_group_t = self.list_kin_power_tot_group_t,
       cmap_name            = "Greens"
     )
-    measureScales_trv(
-      ax                 = self.axs[2,1],
-      target_value       = 0.5,
-      list_k             = self.list_k[:index_end_k_nu_trv],
-      list_power_group_t = getSpectraRatio_grouped(
-        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_trv_group_t ],
-        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_tot_group_t ]
-      )
-    )
     ## plot spectra component compared
     self.axs[3,1].set_ylabel(PlotLatex.addLabel_frac(label_kin_trv, label_kin_lgt))
     plotSpectra_ratio(
@@ -391,9 +386,27 @@ class PlotSpectra():
       list_power_2_group_t = self.list_kin_power_lgt_group_t,
       cmap_name            = "Greens"
     )
-    self.k_nu_trv_group_t = measureScales_trv(
+    self.k_nu_trv_group_t_p5 = measureScales_trv(
+      ax                 = self.axs[3,1],
+      target_value       = 0.5,
+      list_k             = self.list_k[:index_end_k_nu_trv],
+      list_power_group_t = getSpectraRatio_grouped(
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_trv_group_t ],
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_lgt_group_t ]
+      )
+    )
+    self.k_nu_trv_group_t_1 = measureScales_trv(
       ax                 = self.axs[3,1],
       target_value       = 1.0,
+      list_k             = self.list_k[:index_end_k_nu_trv],
+      list_power_group_t = getSpectraRatio_grouped(
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_trv_group_t ],
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_lgt_group_t ]
+      )
+    )
+    self.k_nu_trv_group_t_2 = measureScales_trv(
+      ax                 = self.axs[3,1],
+      target_value       = 2.0,
       list_k             = self.list_k[:index_end_k_nu_trv],
       list_power_group_t = getSpectraRatio_grouped(
         [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_trv_group_t ],

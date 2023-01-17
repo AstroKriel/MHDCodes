@@ -287,13 +287,13 @@ def plotSimData(filepath_sim_res, filepath_vis, sim_name):
     num_rows         = 2,
     num_cols         = 2
   )
-  ax_Mach    = fig.add_subplot(fig_grid[0, 0])
-  ax_E_ratio = fig.add_subplot(fig_grid[1, 0])
+  ax_Mach         = fig.add_subplot(fig_grid[0, 0])
+  ax_energy_ratio = fig.add_subplot(fig_grid[1, 0])
   ## LOAD AND PLOT INTEGRATED QUANTITIES
   ## -----------------------------------
   obj_plot_turb = PlotTurbData(
     fig              = fig,
-    axs              = [ ax_Mach, ax_E_ratio ],
+    axs              = [ ax_Mach, ax_energy_ratio ],
     filepath_sim_res = filepath_sim_res,
     dict_sim_inputs  = dict_sim_inputs
   )
