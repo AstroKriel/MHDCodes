@@ -5,7 +5,8 @@ from TheUsefulModule import WWFnF
 class PrepSimJob():
   def __init__(
       self,
-      filepath_ref, filepath_sim, dict_sim_params
+      filepath_ref, filepath_sim, dict_sim_params,
+      bool_verbose = True
     ):
     self.filepath_ref = filepath_ref
     self.filepath_sim = filepath_sim
@@ -22,6 +23,7 @@ class PrepSimJob():
     self.Re           = dict_sim_params["Re"]
     self.Rm           = dict_sim_params["Rm"]
     self.Pm           = dict_sim_params["Pm"]
+    self.bool_verbose = bool_verbose
     self.__calcJobParams()
 
   def fromLowerNres(self, filepath_ref_sim):
@@ -106,9 +108,10 @@ class PrepSimJob():
       job_file.write(". ~/modules_flash\n")
       job_file.write(f"mpirun ./{self.filename_flash_exe} 1>shell_sim.out00 2>&1\n")
     ## indicate progress
-    print(f"Created PBS job:")
-    print(f"\t> Filename: {self.job_name}")
-    print(f"\t> Directory: {self.filepath_sim}")
+    if self.bool_verbose:
+      print(f"Created PBS job:")
+      print(f"\t> Filename: {self.job_name}")
+      print(f"\t> Directory: {self.filepath_sim}")
 
   def __modifyFlashParamFile(self, filepath_ref):
     bool_switched_nu     = False
@@ -221,7 +224,7 @@ class PrepSimJob():
       bool_reset_plt_num
     ]
     if not (False in list_bool):
-      print("> Successfully modified 'flash.par'")
-    else: raise Exception("ERROR: 'flash.par' failed to write:", list_bool)
+      if self.bool_verbose: print("> Successfully modified 'flash.par'")
+    else: raise Exception("Error: 'flash.par' failed to write:", list_bool)
 
 ## END OF LIBRARY

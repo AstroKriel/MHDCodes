@@ -68,10 +68,10 @@ class SpectraObject():
       mag_bool_fit_fixed_model = False,
       bool_kin_fit_sub_y_range = False,
       kin_num_decades_to_fit   = 6,
-      bool_hide_updates        = False
+      bool_verbose        = False
     ):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(f"{self.filepath_data}/../", bool_hide_updates=False)
+    plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(f"{self.filepath_data}/../", bool_verbose=False)
     ## load kinetic energy spectra
     print("Loading kinetic energy spectra...")
     dict_kin_spect_data = LoadFlashData.loadAllSpectraData(
@@ -80,7 +80,7 @@ class SpectraObject():
       file_start_time   = 5,
       read_every        = 25 if self.bool_debug else 1,
       plots_per_eddy    = plots_per_eddy,
-      bool_hide_updates = bool_hide_updates
+      bool_verbose = bool_verbose
     )
     ## load magnetic energy spectra
     print("Loading magnetic energy spectra...")
@@ -90,7 +90,7 @@ class SpectraObject():
       file_start_time   = 5,
       read_every        = 25 if self.bool_debug else 1,
       plots_per_eddy    = plots_per_eddy,
-      bool_hide_updates = bool_hide_updates
+      bool_verbose = bool_verbose
     )
     print(" ")
     ## fit kinetic energy spectra
@@ -104,7 +104,7 @@ class SpectraObject():
       k_index_break_from   = 5, # provide enough degrees of freedom
       bool_fit_sub_y_range = bool_kin_fit_sub_y_range,
       num_decades_to_fit   = kin_num_decades_to_fit,
-      bool_hide_updates    = bool_hide_updates
+      bool_verbose    = bool_verbose
     )
     ## fit magnetic energy spectra
     print("Fitting magnetic energy spectra...")
@@ -114,7 +114,7 @@ class SpectraObject():
       list_power_group_t   = dict_mag_spect_data["list_power_group_t"],
       bool_fit_fixed_model = mag_bool_fit_fixed_model,
       k_index_fit_from     = 0,
-      bool_hide_updates    = bool_hide_updates
+      bool_verbose    = bool_verbose
     )
     ## extract spectra fit parameters
     dict_kin_fit = obj_kin_fit.getFitDict()
@@ -230,7 +230,7 @@ class SpectraObject():
       filepath_vis_frames,
       plot_spectra_from  = 1,
       plot_spectra_every = 1,
-      bool_hide_updates  = False
+      bool_verbose  = False
     ):
     print("Plotting energy spectra...")
     ## create plotting object looking at simulation fit
@@ -254,7 +254,7 @@ class SpectraObject():
       bool_plot_kin          = True,
       bool_plot_mag          = True,
       bool_adjust_y_axis     = True,
-      bool_hide_updates      = bool_hide_updates
+      bool_verbose      = bool_verbose
     )
     ## plot magnetic energy spectra only
     print("\t> Plotting magnetic energy spectra only...")
@@ -266,7 +266,7 @@ class SpectraObject():
       bool_plot_kin          = False,
       bool_plot_mag          = True,
       bool_adjust_y_axis     = False,
-      bool_hide_updates      = bool_hide_updates
+      bool_verbose      = bool_verbose
     )
     ## plot magnetic energy spectra only
     print("\t> Plotting kinetic energy spectra only...")
@@ -278,7 +278,7 @@ class SpectraObject():
       bool_plot_kin          = True,
       bool_plot_mag          = False,
       bool_adjust_y_axis     = False,
-      bool_hide_updates      = bool_hide_updates
+      bool_verbose      = bool_verbose
     )
 
 
@@ -333,7 +333,7 @@ def main():
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
   ## (boolean) workflow parameters
-  bool_hide_updates        = not(args["verbose"])
+  bool_verbose        = not(args["verbose"])
   bool_debug               = args["debug"]
   bool_show_obj_attrs      = args["show_obj_attrs"]
   bool_fit_spectra         = args["fit_spectra"]
@@ -380,7 +380,7 @@ def main():
   )
   if bool_fit_spectra or not(bool_missing_plasma_numbers):
     if bool_missing_plasma_numbers:
-      raise Exception("ERROR: Undefined plasma-Reynolds numbers. Need to define two of the following: 'Re', 'Rm', and 'Pm'.")
+      raise Exception("Error: Undefined plasma-Reynolds numbers. Need to define two of the following: 'Re', 'Rm', and 'Pm'.")
     if Re == None: Re = Rm / Pm
     if Rm == None: Rm = Re * Pm
     if Pm == None: Pm = Rm / Re
@@ -449,7 +449,7 @@ def main():
       mag_bool_fit_fixed_model = mag_bool_fit_fixed_model,
       bool_kin_fit_sub_y_range = bool_kin_fit_sub_y_range,
       kin_num_decades_to_fit   = kin_num_decades_to_fit,
-      bool_hide_updates        = bool_hide_updates
+      bool_verbose        = bool_verbose
     )
   ## read in already fitted spectra
   else: spec_obj.loadSpectraFitsObj(bool_show_obj_attrs)
@@ -463,12 +463,12 @@ def main():
       filepath_vis_frames = filepath_vis_frames,
       plot_spectra_from   = plot_spectra_from,
       plot_spectra_every  = plot_spectra_every,
-      bool_hide_updates   = bool_hide_updates
+      bool_verbose   = bool_verbose
     )
 
 
 ## ###############################################################
-## RUN PROGRAM
+## PROGRAM ENTRY POINT
 ## ###############################################################
 if __name__ == "__main__":
   main()

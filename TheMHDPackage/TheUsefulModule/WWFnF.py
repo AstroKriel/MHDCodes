@@ -89,13 +89,11 @@ def readLineFromFile(filepath, des_str, bool_case_sensitive=True):
         return line
   return None
 
-def createFolder(filepath, bool_hide_updates=False):
+def createFolder(filepath, bool_verbose=True):
   if not(os.path.exists(filepath)):
     os.makedirs(filepath)
-    if not(bool_hide_updates):
-      print("Success: Created folder:\n\t" + filepath + "\n")
-  elif not(bool_hide_updates):
-    print("Warning: Folder already exists:\n\t" + filepath + "\n")
+    if bool_verbose: print("Success: Created folder:\n\t" + filepath + "\n")
+  elif bool_verbose: print("Warning: Folder already exists:\n\t" + filepath + "\n")
 
 def createFilepath(list_filepath_folders):
   return re.sub("/+", "/", "/".join([
@@ -111,16 +109,17 @@ def createName(list_name_elems):
     if not(elems == "")
   ]))
 
-def copyFileFromNTo(directory_from, directory_to, filename):
+def copyFileFromNTo(directory_from, directory_to, filename, bool_verbose=True):
   ## copy the file and it's permissions
   shutil.copy(
     f"{directory_from}/{filename}",
     f"{directory_to}/{filename}"
   )
-  print(f"> Coppied:")
-  print(f"\t File: {filename}")
-  print(f"\t From: {directory_from}")
-  print(f"\t To:   {directory_to}")
+  if bool_verbose:
+    print(f"> Coppied:")
+    print(f"\t File: {filename}")
+    print(f"\t From: {directory_from}")
+    print(f"\t To:   {directory_to}")
 
 
 ## END OF LIBRARY

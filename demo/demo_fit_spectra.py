@@ -37,7 +37,7 @@ def getAveSpectra(filepath_sim_res):
   dict_sim_data = WWObjs.readJsonFile2Dict(
     filepath = filepath_sim_res,
     filename = f"sim_outputs.json",
-    bool_hide_updates = False
+    bool_verbose = False
   )
   list_k         = dict_sim_data["list_k"]
   list_power_ave = dict_sim_data["list_kin_power_ave"]
@@ -74,7 +74,7 @@ def main():
 
 
 ## ###############################################################
-## RUN PROGRAM
+## PROGRAM ENTRY POINT
 ## ###############################################################
 if __name__ == "__main__":
   main()

@@ -418,12 +418,12 @@ class PlotSpectra():
     ## annotate simulation parameters
     PlotFuncs.addBoxOfLabels(
       self.fig, self.axs[0,0],
-      box_alignment = (0.0, 0.0),
-      xpos          = 0.05,
-      ypos          = 0.05,
-      alpha         = 0.5,
-      fontsize      = 16,
-      list_labels   = [
+      bbox        = (0.0, 0.0),
+      xpos        = 0.05,
+      ypos        = 0.05,
+      alpha       = 0.5,
+      fontsize    = 16,
+      list_labels = [
         r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(self.sim_res)),
         r"${\rm Re} = $ "          + "{:d}".format(int(self.Re)),
         r"${\rm Rm} = $ "          + "{:d}".format(int(self.Rm)),
@@ -482,7 +482,7 @@ def main():
         ## MAKE SURE A VISUALISATION FOLDER EXISTS
         ## ---------------------------------------
         filepath_sim_res_plot = f"{filepath_sim_res}/vis_folder/"
-        WWFnF.createFolder(filepath_sim_res_plot, bool_hide_updates=True)
+        WWFnF.createFolder(filepath_sim_res_plot, bool_verbose=True)
 
         ## PLOT SIMULATION DATA
         ## --------------------
@@ -517,7 +517,7 @@ LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
 
 ## ###############################################################
-## RUN PROGRAM
+## PROGRAM ENTRY POINT
 ## ###############################################################
 if __name__ == "__main__":
   main()

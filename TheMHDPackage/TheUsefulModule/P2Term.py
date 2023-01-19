@@ -27,7 +27,7 @@ def printInfo(str_to_justify, input_info, num_char_spacing=15):
       print(str_to_justify.ljust(num_char_spacing), input_info)
     ## otherwise assume its a list of numbers (i.e. int, float)
     else: print(str_to_justify.ljust(num_char_spacing), [ str(elem) for elem in input_info ])
-  else: raise Exception(f"ERROR: Handling variable type '{type(input_info)}' is not implemented yet.")
+  else: raise Exception(f"Error: Handling variable type '{type(input_info)}' is not implemented yet.")
 
 
 ## END OF LIBRARY

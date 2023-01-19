@@ -54,7 +54,7 @@ def plotSpectra_res(axs, filepath_sim_res, sim_res):
   }
   ## load relevant data
   print(f"Reading in data:", filepath_sim_res)
-  dict_sim_outputs = SimParams.readSimOutputs(filepath_sim_res, bool_hide_updates=True)
+  dict_sim_outputs = SimParams.readSimOutputs(filepath_sim_res, bool_verbose=True)
   ## read in time-averaged spectra
   list_k_data            = dict_sim_outputs["list_k"]
   list_mag_power_tot     = dict_sim_outputs["list_mag_power_tot_ave"]
@@ -188,7 +188,7 @@ def main():
       ## ---------------------------------------
       ## where plots/dataset of converged data will be stored
       filepath_vis = f"{filepath_sim}/vis_folder/"
-      WWFnF.createFolder(filepath_vis, bool_hide_updates=True)
+      WWFnF.createFolder(filepath_vis, bool_verbose=True)
 
       ## MEASURE HOW WELL SCALES ARE CONVERGED
       ## -------------------------------------
@@ -216,7 +216,7 @@ LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
 
 ## ###############################################################
-## RUN PROGRAM
+## PROGRAM ENTRY POINT
 ## ###############################################################
 if __name__ == "__main__":
   main()

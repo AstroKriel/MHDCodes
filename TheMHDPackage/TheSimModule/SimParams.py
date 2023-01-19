@@ -25,12 +25,12 @@ def addLabel_simInputs(
   ## annotate simulation parameters
   PlotFuncs.addBoxOfLabels(
     fig, ax,
-    box_alignment = bbox,
-    xpos          = vpos[0],
-    ypos          = vpos[1],
-    alpha         = 0.5,
-    fontsize      = 18,
-    list_labels   = [
+    bbox        = bbox,
+    xpos        = vpos[0],
+    ypos        = vpos[1],
+    alpha       = 0.5,
+    fontsize    = 18,
+    list_labels = [
       label_res,
       r"${\rm Re} = $ " + "{:d}".format(int(dict_sim_inputs["Re"])),
       r"${\rm Rm} = $ " + "{:d}".format(int(dict_sim_inputs["Rm"])),
@@ -40,7 +40,7 @@ def addLabel_simInputs(
 
 def getSonicRegime(Mach):
   sonic_regime = "super_sonic" if Mach > 1 else "sub_sonic" if Mach < 1 else "trans_sonic"
-  if sonic_regime == "trans_sonic": raise Exception("ERROR: 'trans-sonic' sim. is not implemented yet.")
+  if sonic_regime == "trans_sonic": raise Exception("Error: 'trans-sonic' sim. is not implemented yet.")
   return sonic_regime
 
 def saveSimInputs(obj_sim_params, filepath):
@@ -50,19 +50,19 @@ def saveSimInputs(obj_sim_params, filepath):
     filename = "sim_inputs.json"
   )
 
-def readSimInputs(filepath, bool_hide_updates=False):
+def readSimInputs(filepath, bool_verbose=True):
   dict_sim_input = WWObjs.readJsonFile2Dict(
     filepath          = filepath,
     filename          = "sim_inputs.json",
-    bool_hide_updates = bool_hide_updates
+    bool_verbose = bool_verbose
   )
   return dict_sim_input
 
-def readSimOutputs(filepath, bool_hide_updates=False):
+def readSimOutputs(filepath, bool_verbose=True):
   dict_sim_outputs = WWObjs.readJsonFile2Dict(
     filepath          = filepath,
     filename          = "sim_outputs.json",
-    bool_hide_updates = bool_hide_updates
+    bool_verbose = bool_verbose
   )
   return dict_sim_outputs
 
@@ -216,7 +216,7 @@ class SimInputParams():
       if len(param_name) > 0
     ]
     if len(list_params_not_defined) > 0:
-      raise Exception(f"ERROR: You have not defined the following parameter(s):", list_params_not_defined)
+      raise Exception(f"Error: You have not defined the following parameter(s):", list_params_not_defined)
 
   def __roundParams(self, num_decimals=5):
     ## round numeric parameter values

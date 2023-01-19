@@ -5,11 +5,11 @@
 ## MODULES
 ## ###############################################################
 import numpy as np
+import lmfit
 
 # import warnings
 # warnings.filterwarnings("error")
 
-from lmfit import Model
 from scipy.signal import find_peaks
 
 # ## not required anymore
@@ -28,18 +28,50 @@ from ThePlottingModule import PlotFuncs
 ## ###############################################################
 ## CLASS OF USEFUL SPECTRA MODELS
 ## ###############################################################
-class SpectraModels():
+class KineticSpectraModels():
   ## ######################
   ## KINETIC SPECTRA MODELS
   ## ######################
-  def kinetic_linear(k, A, alpha, k_nu):
+  def simple_linear(k, A, alpha, k_nu):
     ''' exponential + powerlaw in linear-domain:
         y = A * k^alpha * exp(- k / k_nu)
     '''
-    return A * np.array(k)**(alpha) * np.exp(-(np.array(k) / k_nu))
+    k = np.array(k)
+    return A * k**(alpha) * np.exp(-(k / k_nu))
 
-  def kinetic_loge(k, A, alpha, k_nu):
-    return np.log(A) + alpha * np.log(k) - (np.array(k) / k_nu)
+  def simple_loge(k, A, alpha, k_nu):
+    k = np.array(k)
+    return np.log(A) + alpha * np.log(k) - (k / k_nu)
+
+
+  def turnover_linear(k, A, alpha_cas, alpha_dis, k_nu):
+    k = np.array(k)
+    return A * k**(alpha_cas) * np.exp(-(k / k_nu)**alpha_dis)
+
+  def turnover_loge(k, A, alpha_cas, alpha_dis, k_nu):
+    k = np.array(k)
+    return np.log(A) + alpha_cas * np.log(k) - (k / k_nu)**alpha_dis
+
+
+  def bottleneck_linear(k, A, alpha_cas, alpha_bot, alpha_dis, k_nu_bot, k_nu_dis):
+    k = np.array(k)
+    return A * k**alpha_cas * (1 + (k / k_nu_bot)**alpha_bot) * np.exp(-(k / k_nu_dis)**alpha_dis)
+
+  def bottleneck_loge(k, A, alpha_cas, alpha_bot, alpha_dis, k_nu_bot, k_nu_dis):
+    return np.log(A) + alpha_cas * np.log(k) + np.log(1 + (k / k_nu_bot)**alpha_bot) - (k / k_nu_dis)**alpha_dis
+
+# class SpectraModels():
+#   ## ######################
+#   ## KINETIC SPECTRA MODELS
+#   ## ######################
+#   def kinetic_linear(k, A, alpha, k_nu):
+#     ''' exponential + powerlaw in linear-domain:
+#         y = A * k^alpha * exp(- k / k_nu)
+#     '''
+#     return A * np.array(k)**(alpha) * np.exp(-(np.array(k) / k_nu))
+
+#   def kinetic_loge(k, A, alpha, k_nu):
+#     return np.log(A) + alpha * np.log(k) - (np.array(k) / k_nu)
 
   # ## #######################
   # ## MAGNETIC SPECTRA MODELS
@@ -62,7 +94,7 @@ class SpectraModels():
   #     )
   #   except Warning:
   #     print("Bounds of input arguments:", np.min(arg), np.max(arg))
-  #     raise Exception("ERROR: failed to fit modified bessel function.")
+  #     raise Exception("Error: failed to fit modified bessel function.")
   #   return np.log(A) + alpha_1 * np.log(k) + log_bessel
   #   # return np.log(A) + alpha_1 * np.log(k) + np.log(k0( (np.array(k) / k_eta)**(alpha_2) ))
 
@@ -109,10 +141,11 @@ class SpectraModels():
 ## ###############################################################
 def fitKinSpectrum(
     list_k, list_power,
-    ax_fit        = None,
-    ax_residuals  = None,
-    color         = "black",
-    label_spect   = ""
+    ax_fit           = None,
+    ax_residuals     = None,
+    color            = "black",
+    label_spect      = "",
+    bool_fix_cascade = False
   ):
   ## define helper function
   def plotFitResiduals(ax, data_x, data_y, fit_params, func, color="black", label_spect=""):
@@ -123,36 +156,36 @@ def fitKinSpectrum(
       label=label_spect, ls="-", marker="o", ms=8, color=color, markeredgecolor="black"
     )
   ## define model to fit
-  func_loge   = SpectraModels.kinetic_loge
-  func_linear = SpectraModels.kinetic_linear
-  my_model = Model(func_loge) # fit in log-log space
-  my_model.set_param_hint("A",     min = 10**(-3.0),  value = 10**(1.0), max = 10**(3.0))
-  my_model.set_param_hint("alpha", min = -10.0,       value = -2.0,      max = -1.0)
-  my_model.set_param_hint("k_nu",  min = 10**(-1.0),  value = 5.0,       max = 10**(2.0))
+  func_loge   = KineticSpectraModels.turnover_loge
+  func_linear = KineticSpectraModels.turnover_linear
+  my_model    = lmfit.Model(func_loge) # fit in log(e)-log(e) space
+  my_model.set_param_hint("A",         min =  10**(-2.0), value =  10**(-1.0), max =  10**(2.0))
+  my_model.set_param_hint("alpha_cas", min = -8.0,        value = -2.0,        max = -1.0, vary=not(bool_fix_cascade))
+  my_model.set_param_hint("alpha_dis", min =  0.1,        value =  1.0,        max =  2.0)
+  my_model.set_param_hint("k_nu",      min =  0.1,        value =  5.0,        max =  100)
   ## find k-index to stop fitting kinetic energy spectrum
-  fit_index_start = 3
-  # fit_index_end   = len(list_power) - 1 
-  fit_index_end   =  WWLists.getIndexClosestValue(list_power, 10**(-10))
+  fit_index_start = 2
+  fit_index_end   = WWLists.getIndexClosestValue(list_power, 10**(-8))
   ## fit kinetic energy model (in log-linear domain) to subset of data
   fit_results  = my_model.fit(
-    k      = list_k[           fit_index_start : fit_index_end],
-    data   = np.log(list_power[fit_index_start : fit_index_end]),
-    params = my_model.make_params()
+    k       = list_k[           fit_index_start : fit_index_end],
+    data    = np.log(list_power[fit_index_start : fit_index_end]),
+    params  = my_model.make_params(),
   )
   ## extract fitted parameters
-  fit_params = [
-    fit_results.params["A"].value,
-    fit_results.params["alpha"].value,
-    fit_results.params["k_nu"].value
-  ]
+  fit_params = []
+  fit_params.append(fit_results.params["A"].value)
+  fit_params.append(fit_results.params["alpha_cas"].value)
+  fit_params.append(fit_results.params["alpha_dis"].value)
+  fit_params.append(fit_results.params["k_nu"].value)
   ## plot fitted spectrum
   if ax_fit is not None:
-    array_k_fit     = np.logspace(-1, 3, 1000)
+    array_k_fit     = np.logspace(-3, 3, 1000)
     array_power_fit = func_linear(array_k_fit, *fit_params)
     PlotFuncs.plotData_noAutoAxisScale(
       ax = ax_fit,
-      x  = array_k_fit,
-      y  = array_power_fit,
+      x = array_k_fit,
+      y = array_power_fit,
       color=color, ls="-", lw=6, alpha=0.65, zorder=10
     )
   ## plot residuals of fit
@@ -169,7 +202,7 @@ def fitKinSpectrum(
   ## return fitted parameters
   return fit_params
 
-def getMagSpectrumPeak(list_k, list_power):
+def getScale_kp(list_k, list_power):
   array_k_interp = np.logspace(
     start = np.log10(min(list_k)),
     stop  = np.log10(max(list_k)),
@@ -376,7 +409,7 @@ def getScale_keq(
 #   bool_fit_sub_y_range = False
 #   num_decades_to_fit   = 6
 
-#   def __init__(self, bool_hide_updates=False):
+#   def __init__(self, bool_verbose=False):
 #     ## initialise fitted spectra
 #     self.list_fit_k_group_t             = []
 #     self.list_fit_power_group_t         = []
@@ -388,7 +421,7 @@ def getScale_keq(
 #     self.list_fit_k_index_range_group_t = [] # range of k-modes fitted to
 #     self.list_fit_2norm_group_t         = [] # 2-norm evaluated for all possible k break points
 #     ## for each time realisation try fitting a range of k-modes
-#     for _, time_index in WWLists.loopListWithUpdates(self.list_sim_times, bool_hide_updates):
+#     for _, time_index in WWLists.loopListWithUpdates(self.list_sim_times, bool_verbose):
 #       ## extract the spectra data at a particular time point
 #       data_k     = self.list_k_group_t[time_index]
 #       data_power = self.list_power_group_t[time_index]
@@ -604,7 +637,7 @@ def getScale_keq(
 #       k_index_break_step   = 1,
 #       bool_fit_sub_y_range = False,
 #       num_decades_to_fit   = 6,
-#       bool_hide_updates    = False
+#       bool_verbose    = False
 #     ):
 #     ## store input data
 #     self.list_sim_times       = list_sim_times
@@ -619,7 +652,7 @@ def getScale_keq(
 #     self.bool_fit_sub_y_range = bool_fit_sub_y_range
 #     self.num_decades_to_fit   = num_decades_to_fit
 #     ## call parent class and pass fitting instructions
-#     FitSpectra.__init__(self, bool_hide_updates)
+#     FitSpectra.__init__(self, bool_verbose)
 
 #   def auxFitSpectraGuess(
 #       self,
@@ -684,7 +717,7 @@ def getScale_keq(
 #       k_index_fit_from     = 1,
 #       k_index_break_from   = None,
 #       k_index_break_step   = 1,
-#       bool_hide_updates    = False
+#       bool_verbose    = False
 #     ):
 #     ## store input data
 #     self.list_sim_times       = list_sim_times
@@ -705,7 +738,7 @@ def getScale_keq(
 #     self.k_p_group_t          = [] # fitted peak scale
 #     self.k_max_group_t        = [] # measured (raw) peak scale
 #     ## call parent class and pass fitting instructions
-#     FitSpectra.__init__(self, bool_hide_updates)
+#     FitSpectra.__init__(self, bool_verbose)
 
 #   def auxFitSpectraGuess(
 #       self,

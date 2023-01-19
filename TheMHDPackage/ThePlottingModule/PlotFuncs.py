@@ -22,7 +22,7 @@ from matplotlib.collections import LineCollection
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 ## load user defined modules
-from ThePlottingModule import TheMatplotlibStyler
+from ThePlottingModule.TheMatplotlibStyler import *
 from TheUsefulModule import WWLists
 
 
@@ -61,13 +61,13 @@ def createFigure_grid(
   fig_grid = GridSpec(num_rows, num_cols, figure=fig)
   return fig, fig_grid
 
-def saveFigure(fig, filepath_fig):
-  print("Saving figure...")
+def saveFigure(fig, filepath_fig, bool_verbose=True):
+  if bool_verbose: print("Saving figure...")
   if not fig.get_constrained_layout():
     fig.set_tight_layout(True)
   fig.savefig(filepath_fig)
   plt.close(fig)
-  print("Saved figure:", filepath_fig)
+  if bool_verbose: print("Saved figure:", filepath_fig)
 
 def createNorm(vmin=0.0, vmax=1.0):
   return colors.Normalize(vmin=vmin, vmax=vmax)
@@ -186,7 +186,7 @@ def addColorbar_fromCmap(
   ax_div = make_axes_locatable(ax)
   if   "h" in orientation: cax = ax_div.append_axes(position="top",   size=f"{size:.1f}%", pad="2%")
   elif "v" in orientation: cax = ax_div.append_axes(position="right", size=f"{size:.1f}%", pad="2%")
-  else: raise Exception(f"ERROR: '{orientation}' is not a supported orientation!")
+  else: raise Exception(f"Error: '{orientation}' is not a supported orientation!")
   # fig.add_axes(cax)
   cbar = fig.colorbar(mappable=smap, cax=cax, orientation=orientation)
   if "h" in orientation:
@@ -250,12 +250,12 @@ def addAxisTicks_log10(
 
 def addBoxOfLabels(
     fig, ax, list_labels,
-    list_colors   = [ "k" ],
-    xpos          = 0.05,
-    ypos          = 0.95,
-    box_alignment = (0.0, 1.0),
-    alpha         = 0.5,
-    fontsize      = 16,
+    list_colors = [ "k" ],
+    xpos        = 0.05,
+    ypos        = 0.95,
+    bbox        = (0.0, 1.0),
+    alpha       = 0.5,
+    fontsize    = 16,
   ):
   if len(list_labels) == 0: return
   WWLists.ensureListLength(list_colors, list_labels)
@@ -277,7 +277,7 @@ def addBoxOfLabels(
     fontsize      = fontsize,
     xy            = (xpos, ypos),
     xycoords      = ax.transAxes,
-    box_alignment = box_alignment,
+    box_alignment = bbox,
     bboxprops     = dict(color="grey", facecolor="white", boxstyle="round", alpha=alpha, zorder=10)
   )
   abox.set_figure(fig)
@@ -334,7 +334,7 @@ def addLegend(
         Line2D([0], [0], linestyle=artist, color=marker_color, linewidth=lw)
       )
     ## otherwise throw an error
-    else: raise Exception(f"ERROR: '{artist}' is not a valid valid.")
+    else: raise Exception(f"Error: '{artist}' is not a valid valid.")
   ## create legend
   legend = ax.legend(
     list_legend_artists,

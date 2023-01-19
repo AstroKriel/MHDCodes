@@ -41,12 +41,12 @@ def addLabel_simInputs(
   ## annotate simulation parameters
   PlotFuncs.addBoxOfLabels(
     fig, ax,
-    box_alignment = bbox,
-    xpos          = vpos[0],
-    ypos          = vpos[1],
-    alpha         = 0.5,
-    fontsize      = 18,
-    list_labels   = [
+    bbox        = bbox,
+    xpos        = vpos[0],
+    ypos        = vpos[1],
+    alpha       = 0.5,
+    fontsize    = 18,
+    list_labels = [
       label_res,
       r"${\rm Re} = $ " + "{:d}".format(int(dict_sim_inputs["Re"])),
       r"${\rm Rm} = $ " + "{:d}".format(int(dict_sim_inputs["Rm"])),
@@ -54,10 +54,10 @@ def addLabel_simInputs(
     ]
   )
 
-def createLabel_fromModes(input_val, input_std):
+def createLabel_fromStats(stats):
   return r"${} \pm {}$\;".format(
-    str(round(input_val, 2)),
-    str(round(input_std, 2))
+    str(round(stats[0], 2)),
+    str(round(stats[1], 2))
   )
 
 def fitScales(
@@ -105,40 +105,26 @@ class PlotScaleConvergence():
 
   def __initialiseDatasets(self):
     ## initialise input datasets
-    self.list_sim_res            = []
-    self.k_nu_lgt_group_t_res    = []
-    self.k_nu_trv_group_t_res_p5 = []
-    self.k_nu_trv_group_t_res_1  = []
-    self.k_nu_trv_group_t_res_2  = []
-    self.k_p_tot_group_t_res     = []
+    self.list_sim_res                   = []
+    self.k_nu_adj_trv_group_t_res       = []
+    self.k_nu_adj_trv_group_t_res_fixed = []
+    self.k_p_group_t_res                = []
     ## initialise output datasets
-    self.k_nu_tot_converged    = None
-    self.k_nu_lgt_converged    = None
-    self.k_nu_trv_converged_p5 = None
-    self.k_nu_trv_converged_1  = None
-    self.k_nu_trv_converged_2  = None
-    self.k_p_tot_converged     = None
-    self.k_nu_tot_std          = None
-    self.k_nu_lgt_std          = None
-    self.k_nu_trv_std_p5       = None
-    self.k_nu_trv_std_1        = None
-    self.k_nu_trv_std_2        = None
-    self.k_p_tot_std           = None
+    self.k_nu_adj_trv_stats       = None
+    self.k_nu_adj_trv_stats_fixed = None
+    self.k_p_stats                = None
 
   def readDataset(self):
     ## read in scales for each resolution run
     for sim_res in LIST_SIM_RES:
       ## load json-file into a dictionary
-      try:
-        dict_sim_outputs = SimParams.readSimOutputs(f"{self.filepath_sim}/{sim_res}/")
+      try: dict_sim_outputs = SimParams.readSimOutputs(f"{self.filepath_sim}/{sim_res}/")
       except: continue
       ## extract data
       self.list_sim_res.append(sim_res)
-      self.k_nu_lgt_group_t_res.append(dict_sim_outputs["k_nu_lgt_group_t"])
-      self.k_nu_trv_group_t_res_p5.append(dict_sim_outputs["k_nu_trv_group_t_p5"])
-      self.k_nu_trv_group_t_res_1.append(dict_sim_outputs["k_nu_trv_group_t_1"])
-      self.k_nu_trv_group_t_res_2.append(dict_sim_outputs["k_nu_trv_group_t_2"])
-      self.k_p_tot_group_t_res.append( dict_sim_outputs["k_p_tot_group_t"])
+      self.k_nu_adj_trv_group_t_res.append(dict_sim_outputs["k_nu_adj_trv_group_t"])
+      self.k_nu_adj_trv_group_t_res_fixed.append(dict_sim_outputs["k_nu_adj_trv_group_t_fixed"])
+      self.k_p_group_t_res.append(dict_sim_outputs["k_p_group_t"])
 
   def createFigure_scales(self):
     self.fig, fig_grid = PlotFuncs.createFigure_grid(
@@ -152,25 +138,16 @@ class PlotScaleConvergence():
     ## plot and fit data
     self.__plotScales()
     self.__fitDataset()
-    self.__annotateFigure()
+    self.__labelAxis()
     ## save figure
     filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_scales.png"
     PlotFuncs.saveFigure(self.fig, filepath_fig)
 
   def createDataset(self):
     dict_converged_scales = {
-      "k_p_tot_converged"     : self.k_p_tot_converged,
-      "k_nu_tot_converged"    : self.k_nu_tot_converged,
-      "k_nu_lgt_converged"    : self.k_nu_lgt_converged,
-      "k_nu_trv_converged_p5" : self.k_nu_trv_converged_p5,
-      "k_nu_trv_converged_1"  : self.k_nu_trv_converged_1,
-      "k_nu_trv_converged_2"  : self.k_nu_trv_converged_2,
-      "k_p_tot_std"           : self.k_p_tot_std,
-      "k_nu_tot_std"          : self.k_nu_tot_std,
-      "k_nu_lgt_std"          : self.k_nu_lgt_std,
-      "k_nu_trv_std_p5"       : self.k_nu_trv_std_p5,
-      "k_nu_trv_std_1"        : self.k_nu_trv_std_1,
-      "k_nu_trv_std_2"        : self.k_nu_trv_std_2,
+      "k_nu_adj_trv_stats"       : self.k_nu_adj_trv_stats,
+      "k_nu_adj_trv_stats_fixed" : self.k_nu_adj_trv_stats_fixed,
+      "k_p_stats"                : self.k_p_stats,
     }
     WWObjs.saveDict2JsonFile(
       filepath_file = f"{self.filepath_sim}/scales.json",
@@ -182,124 +159,88 @@ class PlotScaleConvergence():
       PlotFuncs.plotErrorBar_1D(
         ax      = self.ax_k_nu,
         x       = int(sim_res),
-        array_y = self.k_nu_lgt_group_t_res[res_index],
+        array_y = self.k_nu_adj_trv_group_t_res[res_index],
+        color   = "orange"
+      )
+      PlotFuncs.plotErrorBar_1D(
+        ax      = self.ax_k_nu,
+        x       = int(sim_res),
+        array_y = self.k_nu_adj_trv_group_t_res_fixed[res_index],
         color   = "blue"
-      )
-      PlotFuncs.plotErrorBar_1D(
-        ax      = self.ax_k_nu,
-        x       = int(sim_res),
-        array_y = self.k_nu_trv_group_t_res_p5[res_index],
-        color   = "darkviolet",
-        # marker  = "s"
-      )
-      PlotFuncs.plotErrorBar_1D(
-        ax      = self.ax_k_nu,
-        x       = int(sim_res),
-        array_y = self.k_nu_trv_group_t_res_1[res_index],
-        color   = "darkviolet",
-        # marker  = "o"
-      )
-      PlotFuncs.plotErrorBar_1D(
-        ax      = self.ax_k_nu,
-        x       = int(sim_res),
-        array_y = self.k_nu_trv_group_t_res_2[res_index],
-        color   = "darkviolet",
-        # marker  = "D"
       )
       PlotFuncs.plotErrorBar_1D(
         ax      = self.ax_k_p,
         x       = int(sim_res),
-        array_y = self.k_p_tot_group_t_res[res_index],
+        array_y = self.k_p_group_t_res[res_index],
         color   = "black"
       )
 
   def __fitDataset(self):
-    self.k_nu_lgt_converged, self.k_nu_lgt_std = fitScales(
+    self.k_nu_adj_trv_stats = fitScales(
       ax                    = self.ax_k_nu,
       list_res              = self.list_sim_res,
-      list_scales_group_res = self.k_nu_lgt_group_t_res,
-      color                 = "blue"
-    )
-    self.k_nu_trv_converged_p5, self.k_nu_trv_std_p5 = fitScales(
-      ax                    = self.ax_k_nu,
-      list_res              = self.list_sim_res,
-      list_scales_group_res = self.k_nu_trv_group_t_res_p5,
-      color                 = "darkviolet",
+      list_scales_group_res = self.k_nu_adj_trv_group_t_res,
+      color                 = "orange",
       ls                    = ":"
     )
-    self.k_nu_trv_converged_1, self.k_nu_trv_std_1 = fitScales(
+    self.k_nu_adj_trv_stats_fixed = fitScales(
       ax                    = self.ax_k_nu,
       list_res              = self.list_sim_res,
-      list_scales_group_res = self.k_nu_trv_group_t_res_1,
-      color                 = "darkviolet",
-      ls                    = "-"
+      list_scales_group_res = self.k_nu_adj_trv_group_t_res_fixed,
+      color                 = "blue",
+      ls                    = ":"
     )
-    self.k_nu_trv_converged_2, self.k_nu_trv_std_2 = fitScales(
-      ax                    = self.ax_k_nu,
-      list_res              = self.list_sim_res,
-      list_scales_group_res = self.k_nu_trv_group_t_res_2,
-      color                 = "darkviolet",
-      ls                    = "-."
-    )
-    self.k_p_tot_converged,  self.k_p_tot_std = fitScales(
+    self.k_p_stats = fitScales(
       ax                    = self.ax_k_p,
       list_res              = self.list_sim_res,
-      list_scales_group_res = self.k_p_tot_group_t_res,
-      color                 = "black"
+      list_scales_group_res = self.k_p_group_t_res,
+      color                 = "black",
+      ls                    = ":"
     )
 
-  def __annotateFigure(self):
+  def __labelAxis(self):
     bounds_nres = [ 10, 10**4 ]
     ## label k_nu
     self.ax_k_nu.set_xscale("log")
     self.ax_k_nu.set_yscale("log")
     self.ax_k_nu.set_xlim(bounds_nres)
-    self.ax_k_nu.set_ylim(bottom=0.5)
+    # self.ax_k_nu.set_ylim(bottom=0.5)
     self.ax_k_nu.set_ylabel(r"$k_\nu$")
+    PlotFuncs.addBoxOfLabels(
+      fig         = self.fig,
+      ax          = self.ax_k_nu,
+      bbox        = (1.0, 0.0),
+      xpos        = 0.95,
+      ypos        = 0.05,
+      alpha       = 0.85,
+      fontsize    = 20,
+      list_labels = [
+        r"$k_{\nu, \perp} =$ "              + createLabel_fromStats(self.k_nu_adj_trv_stats),
+        r"$k_{\nu, \perp, {\rm fixed}} =$ " + createLabel_fromStats(self.k_nu_adj_trv_stats_fixed)
+      ],
+      list_colors = [ "orange", "blue" ]
+    )
+    ## label k_p
     addLabel_simInputs(
       filepath_sim_res = f"{self.filepath_sim}/288/",
       fig           = self.fig,
-      ax            = self.ax_k_nu,
+      ax            = self.ax_k_p,
       bbox          = (1.0, 0.0),
       vpos          = (0.95, 0.05),
       bool_show_res = False
     )
     PlotFuncs.addBoxOfLabels(
-      fig           = self.fig,
-      ax            = self.ax_k_nu,
-      box_alignment = (0.0, 1.0),
-      xpos          = 0.05,
-      ypos          = 0.95,
-      alpha         = 0.85,
-      fontsize      = 20,
-      list_labels   = [
-        r"$k_{\nu, \parallel} =$ "  + createLabel_fromModes(self.k_nu_lgt_converged, self.k_nu_lgt_std),
-        r"$k_{\nu, \perp, 0.5} =$ " + createLabel_fromModes(self.k_nu_trv_converged_p5, self.k_nu_trv_std_p5),
-        r"$k_{\nu, \perp, 1} =$ "   + createLabel_fromModes(self.k_nu_trv_converged_1, self.k_nu_trv_std_1),
-        r"$k_{\nu, \perp, 2} =$ "   + createLabel_fromModes(self.k_nu_trv_converged_2, self.k_nu_trv_std_2),
+      fig         = self.fig,
+      ax          = self.ax_k_p,
+      bbox        = (0.0, 1.0),
+      xpos        = 0.05,
+      ypos        = 0.95,
+      alpha       = 0.85,
+      fontsize    = 20,
+      list_labels = [
+        r"$k_{\rm p, tot} =$ " + createLabel_fromStats(self.k_p_stats)
       ],
-      list_colors   = [
-        "blue",
-        "darkviolet",
-        "darkviolet",
-        "darkviolet"
-      ]
-    )
-    ## label k_p
-    PlotFuncs.addBoxOfLabels(
-      fig           = self.fig,
-      ax            = self.ax_k_p,
-      box_alignment = (0.0, 1.0),
-      xpos          = 0.05,
-      ypos          = 0.95,
-      alpha         = 0.85,
-      fontsize      = 20,
-      list_labels   = [
-        r"$k_{\rm p, tot} =$ " + createLabel_fromModes(self.k_p_tot_converged, self.k_p_tot_std)
-      ],
-      list_colors   = [
-        "black"
-      ]
+      list_colors = [ "black" ]
     )
     self.ax_k_p.set_xscale("log")
     self.ax_k_p.set_yscale("log")
@@ -344,7 +285,7 @@ def main():
       ## ---------------------------------------
       ## where plots/dataset of converged data will be stored
       filepath_vis = f"{filepath_sim}/vis_folder/"
-      WWFnF.createFolder(filepath_vis, bool_hide_updates=True)
+      WWFnF.createFolder(filepath_vis, bool_verbose=False)
 
       ## MEASURE HOW WELL SCALES ARE CONVERGED
       ## -------------------------------------
@@ -375,7 +316,7 @@ LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
 
 ## ###############################################################
-## RUN PROGRAM
+## PROGRAM ENTRY POINT
 ## ###############################################################
 if __name__ == "__main__":
   main()

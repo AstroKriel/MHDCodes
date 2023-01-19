@@ -4,8 +4,10 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys
+import os, sys, functools
 import numpy as np
+import multiprocessing as mproc
+import concurrent.futures as cfut
 
 ## 'tmpfile' needs to be loaded before any 'matplotlib' libraries,
 ## so matplotlib stores its cache in a temporary directory.
@@ -35,7 +37,8 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 class PlotTurbData():
   def __init__(
       self,
-      fig, axs, filepath_sim_res, dict_sim_inputs
+      fig, axs, filepath_sim_res, dict_sim_inputs,
+      bool_verbose = True
     ):
     ## save input arguments
     self.fig              = fig
@@ -46,17 +49,10 @@ class PlotTurbData():
     self.Re               = dict_sim_inputs["Re"]
     self.Rm               = dict_sim_inputs["Rm"]
     self.Pm               = dict_sim_inputs["Pm"]
-    ## initialise quantities to measure
-    self.plots_per_eddy   = None
-    self.time_exp_start   = None
-    self.time_exp_end     = None
-    self.rms_Mach         = None
-    self.Gamma            = None
-    self.E_sat_ratio      = None
-    ## flag to check that quantities have been measured
-    self.bool_fitted      = False
+    self.bool_verbose     = bool_verbose
 
   def performRoutines(self):
+    self.__initialiseQuantities()
     self.__loadData()
     self.__plotMach()
     self.__plotEnergyRatio()
@@ -65,6 +61,7 @@ class PlotTurbData():
     self.__labelPlots()
 
   def getFittedParams(self):
+    self.__checkAnyQuantitiesNotMeasured()
     if not self.bool_fitted: self.performRoutines()
     return {
       "plots_per_eddy"    : self.plots_per_eddy,
@@ -77,15 +74,41 @@ class PlotTurbData():
 
   def saveFittedParams(self, filepath_sim):
     dict_params = self.getFittedParams()
-    WWObjs.saveDict2JsonFile(f"{filepath_sim}/sim_outputs.json", dict_params)
+    WWObjs.saveDict2JsonFile(f"{filepath_sim}/sim_outputs.json", dict_params, self.bool_verbose)
+
+  def __initialiseQuantities(self):
+    ## flag to check that all required quantities have been measured
+    self.bool_fitted    = False
+    ## initialise quantities to measure
+    self.plots_per_eddy = None
+    self.time_exp_start = None
+    self.time_exp_end   = None
+    self.rms_Mach       = None
+    self.Gamma          = None
+    self.E_sat_ratio    = None
+
+  def __checkAnyQuantitiesNotMeasured(self):
+    ## no need to check growth rate and saturated ratio
+    list_quantities_check = [
+      self.plots_per_eddy,
+      self.time_exp_start,
+      self.time_exp_end,
+      self.rms_Mach
+    ]
+    list_quantities_undefined = [ 
+      index_quantity
+      for index_quantity, quantity in enumerate(list_quantities_check)
+      if quantity is None
+    ]
+    if len(list_quantities_undefined) > 0: raise Exception("Error: the following quantities were not measured:", list_quantities_undefined)
 
   def __loadData(self):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
     self.plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(
-      self.filepath_sim_res,
-      bool_hide_updates = True
+      filepath     = self.filepath_sim_res,
+      bool_verbose = self.bool_verbose
     )
-    print("Loading volume integrated data...")
+    if self.bool_verbose: print("Loading volume integrated data...")
     ## check if the Turb.dat file is formatted
     with open(f"{self.filepath_sim_res}/Turb.dat") as fp:
       file_first_line = fp.readline()
@@ -252,12 +275,12 @@ class PlotTurbData():
     ## annotate simulation parameters
     PlotFuncs.addBoxOfLabels(
       self.fig, self.axs[0],
-      box_alignment = (1.0, 0.0),
-      xpos          = 0.95,
-      ypos          = 0.05,
-      alpha         = 0.5,
-      fontsize      = 18,
-      list_labels   = [
+      bbox        = (1.0, 0.0),
+      xpos        = 0.95,
+      ypos        = 0.05,
+      alpha       = 0.5,
+      fontsize    = 18,
+      list_labels = [
         r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(self.N_res)),
         r"${\rm Re} = $ "          + "{:d}".format(int(self.Re)),
         r"${\rm Rm} = $ "          + "{:d}".format(int(self.Rm)),
@@ -274,13 +297,17 @@ class PlotTurbData():
 ## ###############################################################
 ## HANDLING PLOT CALLS
 ## ###############################################################
-def plotSimData(filepath_sim_res, filepath_vis, sim_name):
+def plotSimData(
+    filepath_sim_res, filepath_vis, sim_name,
+    lock         = None,
+    bool_verbose = True
+  ):
   ## GET SIMULATION PARAMETERS
   ## -------------------------
-  dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res)
+  dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res, bool_verbose)
   ## INITIALISE FIGURE
   ## -----------------
-  print("Initialising figure...")
+  if bool_verbose: print("Initialising figure...")
   fig, fig_grid = PlotFuncs.createFigure_grid(
     fig_scale        = 1.0,
     fig_aspect_ratio = (5.0, 8.0),
@@ -295,69 +322,90 @@ def plotSimData(filepath_sim_res, filepath_vis, sim_name):
     fig              = fig,
     axs              = [ ax_Mach, ax_energy_ratio ],
     filepath_sim_res = filepath_sim_res,
-    dict_sim_inputs  = dict_sim_inputs
+    dict_sim_inputs  = dict_sim_inputs,
+    bool_verbose     = bool_verbose
   )
   obj_plot_turb.performRoutines()
+  ## SAVE FIGURE + DATASET
+  ## ---------------------
+  if lock is not None: lock.acquire()
   obj_plot_turb.saveFittedParams(filepath_sim_res)
-  ## SAVE FIGURE
-  ## -----------
-  fig_name     = f"{sim_name}_time_evolution.png"
-  PlotFuncs.saveFigure(fig, f"{filepath_vis}/{fig_name}")
+  fig_name = f"{sim_name}_time_evolution.png"
+  PlotFuncs.saveFigure(fig, f"{filepath_vis}/{fig_name}", bool_verbose)
+  if lock is not None: lock.release()
+
+
+## ###############################################################
+## HANDLE LOOPING OVER SIMULATION SUITES AND RESOLUTIONS
+## ###############################################################
+def loopOverSuitesNres(sim_folder, lock=None, bool_verbose=True):
+  ## LOOK AT EACH SIMULATION SUITE
+  ## -----------------------------
+  ## loop over the simulation suites
+  for suite_folder in LIST_SUITE_FOLDER:
+    ## CHECK THE SIMULATION EXISTS IN THE SUITE
+    ## ----------------------------------------
+    filepath_sim = WWFnF.createFilepath([
+      BASEPATH, suite_folder, SONIC_REGIME, sim_folder
+    ])
+    if not os.path.exists(filepath_sim): continue
+    str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}, regime: {SONIC_REGIME}"
+    if bool_verbose:
+      print(str_message)
+      print("=" * len(str_message))
+      print(" ")
+    ## loop over the different resolution runs
+    for sim_res in LIST_SIM_RES:
+      ## CHECK THE RESOLUTION RUN EXISTS
+      ## -------------------------------
+      filepath_sim_res = f"{filepath_sim}/{sim_res}/"
+      ## check that the filepath exists
+      if not os.path.exists(filepath_sim_res): continue
+      if BOOL_MPROC: print(str_message + f", res: {sim_res}")
+      ## MAKE SURE A VISUALISATION FOLDER EXISTS
+      ## ---------------------------------------
+      filepath_sim_res_plot = f"{filepath_sim_res}/vis_folder"
+      WWFnF.createFolder(filepath_sim_res_plot, bool_verbose=False)
+      ## PLOT SIMULATION DATA AND SAVE MEASURED QUANTITIES
+      ## -------------------------------------------------
+      sim_name = f"{suite_folder}_{sim_folder}"
+      plotSimData(filepath_sim_res, filepath_sim_res_plot, sim_name, lock, bool_verbose)
+      ## create trailing empty space
+      if bool_verbose: print(" ")
+    if bool_verbose: print(" ")
+  return sim_folder
 
 
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  ## LOOK AT EACH SIMULATION
-  ## -----------------------
-  ## loop over each simulation suite
-  for suite_folder in LIST_SUITE_FOLDER:
-
-    ## loop over each simulation folder
-    for sim_folder in LIST_SIM_FOLDER:
-
-      ## CHECK THE SIMULATION EXISTS
-      ## ---------------------------
-      filepath_sim = WWFnF.createFilepath([
-        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
-      ])
-      if not os.path.exists(filepath_sim): continue
-      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}, regime: {SONIC_REGIME}"
-      print(str_message)
-      print("=" * len(str_message))
-      print(" ")
-
-      ## loop over each resolution
-      for sim_res in LIST_SIM_RES:
-
-        ## CHECK THE RESOLUTION RUN EXISTS
-        ## -------------------------------
-        filepath_sim_res = f"{filepath_sim}/{sim_res}/"
-        ## check that the filepath exists
-        if not os.path.exists(filepath_sim_res): continue
-
-        ## MAKE SURE A VISUALISATION FOLDER EXISTS
-        ## ---------------------------------------
-        filepath_sim_res_plot = f"{filepath_sim_res}/vis_folder/"
-        WWFnF.createFolder(filepath_sim_res_plot, bool_hide_updates=True)
-
-        ## PLOT SIMULATION DATA
-        ## --------------------
-        sim_name = f"{suite_folder}_{sim_folder}"
-        plotSimData(filepath_sim_res, filepath_sim_res_plot, sim_name)
-
-        if BOOL_DEBUG: return
-        ## create empty space
-        print(" ")
-      print(" ")
-    print(" ")
+  if BOOL_MPROC:
+    with cfut.ProcessPoolExecutor() as executor:
+      manager = mproc.Manager()
+      lock = manager.Lock()
+      ## loop over all simulation folders
+      futures = [
+        executor.submit(
+          functools.partial(loopOverSuitesNres, bool_verbose=False),
+          sim_folder, lock
+        ) for sim_folder in LIST_SIM_FOLDER
+      ]
+      ## wait to ensure that all scheduled and running tasks have completed
+      cfut.wait(futures)
+      ## check if any tasks failed
+      for future in cfut.as_completed(futures):
+        future.result()
+  else: [
+    loopOverSuitesNres(sim_folder, bool_verbose=True)
+    for sim_folder in LIST_SIM_FOLDER
+  ]
 
 
 ## ###############################################################
-## PROGRAM PARAMETERS
+## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_DEBUG        = 0
+BOOL_MPROC        = 1
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
 
@@ -366,12 +414,12 @@ LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125
 LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
 # LIST_SUITE_FOLDER = [ "Rm3000" ]
-# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm5" ]
-# LIST_SIM_RES      = [ "288" ]
+# LIST_SIM_FOLDER   = [ "Pm5", "Pm25", "Pm125" ]
+# LIST_SIM_RES      = [ "18", "36" ]
 
 
 ## ###############################################################
-## RUN PROGRAM
+## PROGRAM ENTRY POINT
 ## ###############################################################
 if __name__ == "__main__":
   main()

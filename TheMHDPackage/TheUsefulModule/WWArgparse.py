@@ -30,7 +30,7 @@ def str2bool(v):
   if isinstance(v, bool): return v
   elif v.lower() in ("yes", "true", "t", "y", "1"): return True
   elif v.lower() in ("no", "false", "f", "n", "0"): return False
-  else: raise argparse.ArgumentTypeError("ERROR: Boolean value expected.")
+  else: raise argparse.ArgumentTypeError("Error: Boolean value expected.")
 
 class MyHelpFormatter(argparse.RawDescriptionHelpFormatter):
   def _format_action(self, action):
@@ -46,7 +46,7 @@ class MyParser(argparse.ArgumentParser):
       formatter_class = lambda prog: MyHelpFormatter(prog, max_help_position=50),
     )
   def error(self, message):
-    sys.stderr.write("ERROR: {}\n\n".format(message))
+    sys.stderr.write("Error: {}\n\n".format(message))
     self.print_help()
     sys.exit(2)
 
