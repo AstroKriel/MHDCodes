@@ -204,24 +204,24 @@ def loadSpectraData(filepath_file, spect_field, spect_quantity="total"):
     if   "tot" in spect_quantity.lower(): var_y = 15 # total
     elif "lgt" in spect_quantity.lower(): var_y = 11 # longitudinal
     elif "trv" in spect_quantity.lower(): var_y = 13 # transverse
-    else: raise Exception(f"You have passed an invalid spectra quantity: '{spect_quantity}'.")
+    else: raise Exception(f"Error: You have passed an invalid spectra quantity: '{spect_quantity}'.")
     try:
       data_x = np.array(list(map(float, data[:, var_x]))) 
       data_y = np.array(list(map(float, data[:, var_y])))
       if   "v" in spect_field.lower(): data_y = data_y / 2
       elif "m" in spect_field.lower(): data_y = data_y / (8 * np.pi)
-      else: raise Exception(f"You have passed an invalid spectra field: '{spect_field}'.")
+      else: raise Exception(f"Error: You have passed an invalid spectra field: '{spect_field}'.")
     except: raise Exception("Error: Failed to read spectra-file:", filepath_file)
     return data_x, data_y
 
 
 def loadAllSpectraData(
     filepath, spect_field, plots_per_eddy,
-    spect_quantity    = "total",
-    file_start_time   = 2,
-    file_end_time     = np.inf,
-    read_every        = 1,
-    bool_hide_updates = True
+    spect_quantity  = "total",
+    file_start_time = 2,
+    file_end_time   = np.inf,
+    read_every      = 1,
+    bool_verbose    = True
   ):
   ## get list of spect-filenames in directory
   list_spectra_filenames = WWFnF.getFilesFromFilepath(
@@ -239,7 +239,7 @@ def loadAllSpectraData(
   ## loop over each of the spectra file names
   for filename, _ in WWLists.loopListWithUpdates(
       list_spectra_filenames[::read_every],
-      bool_hide_updates
+      bool_verbose
     ):
     ## convert file index to simulation time
     file_sim_time = float(filename.split("_")[-3]) / plots_per_eddy
@@ -263,8 +263,8 @@ def loadAllSpectraData(
 
 def getPlotsPerEddy_fromTurbLog(
     filepath,
-    num_t_turb        = 100,
-    bool_hide_updates = False
+    num_t_turb   = 100,
+    bool_verbose = True
   ):
   ## helper functions
   def getName(line):
@@ -284,7 +284,7 @@ def getPlotsPerEddy_fromTurbLog(
         bool_plot_interval_found = True
       if bool_tmax_found and bool_plot_interval_found:
         plots_per_eddy = tmax / plot_file_interval / num_t_turb
-        if not(bool_hide_updates):
+        if bool_verbose:
           print("The following has been read from 'Turb.log':")
           print("\t> 'tmax'".ljust(25),                 "=", tmax)
           print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
@@ -332,7 +332,7 @@ def getPlasmaNumbers_fromFlashPar(filepath, rms_Mach, k_turb):
       }
     else:
       bool_found_neither = (not bool_found_nu) and (not bool_found_eta)
-      raise Exception("ERROR:\t> ERROR: Could not find {}{}{}{}.".format(
+      raise Exception("Error:\t> Error: Could not find {}{}{}{}.".format(
         "either " if bool_found_neither else "",
         "nu"   if not bool_found_nu  else "",
         " or " if bool_found_neither else "",

@@ -30,7 +30,7 @@ def getSimData(fig, ax, filepath_sim_res, sim_name, Re, Pm):
     file_start_time   = time_growth_start,
     file_end_time     = time_growth_end,
     plots_per_eddy    = plots_per_eddy,
-    bool_hide_updates = True
+    bool_verbose = True
   )
   ## extract spectra data
   list_k_group_t     = dict_spect_data["list_k_group_t"]
@@ -67,12 +67,12 @@ def getSimData(fig, ax, filepath_sim_res, sim_name, Re, Pm):
   ## annotate parameters
   PlotFuncs.addBoxOfLabels(
     fig, ax,
-    box_alignment = (0.0, 0.0),
-    xpos          = 0.05,
-    ypos          = 0.05,
-    alpha         = 0.5,
-    fontsize      = 18,
-    list_labels   = [
+    bbox        = (0.0, 0.0),
+    xpos        = 0.05,
+    ypos        = 0.05,
+    alpha       = 0.5,
+    fontsize    = 18,
+    list_labels = [
       r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(sim_res)),
       r"${\rm Re} = $ "          + "{:d}".format(int(Re)),
       r"${\rm Rm} = $ "          + "{:d}".format(int(Rm)),

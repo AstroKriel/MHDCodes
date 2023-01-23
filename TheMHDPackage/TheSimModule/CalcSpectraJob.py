@@ -3,9 +3,11 @@
 class CalcSpectraJob():
   def __init__(
       self,
-      filepath_plt, dict_sim_params
+      filepath_plt, dict_sim_params,
+      bool_verbose = True
     ):
     self.filepath_plt = filepath_plt
+    self.bool_verbose = bool_verbose
     self.max_hours    = int(24)
     self.num_cpus     = int(6)
     self.max_mem      = int(4 * self.num_cpus)
@@ -40,8 +42,9 @@ class CalcSpectraJob():
       job_file.write(". ~/modules_flash\n")
       job_file.write(f"{self.program_name} -data_path {self.filepath_plt} -num_proc {self.num_cpus} 1>shell_calc_spect.out00 2>&1\n")
     ## indicate progress
-    print(f"Created PBS job:")
-    print(f"\t> Filename: {self.job_name}")
-    print(f"\t> Directory: {self.filepath_plt}")
+    if self.bool_verbose:
+      print(f"Created PBS job:")
+      print(f"\t> Filename: {self.job_name}")
+      print(f"\t> Directory: {self.filepath_plt}")
 
 ## END OF LIBRARY

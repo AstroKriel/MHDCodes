@@ -18,7 +18,7 @@ class NumpyEncoder(json.JSONEncoder):
     elif isinstance(obj, np.ndarray):  return obj.tolist()
     return json.JSONEncoder.default(self, obj)
 
-def saveObj2JsonFile(obj, filepath, filename):
+def saveObj2JsonFile(obj, filepath, filename, bool_verbose=True):
   ## create filepath where object will be saved
   filepath_file = f"{filepath}/{filename}"
   ## save object to file
@@ -31,7 +31,7 @@ def saveObj2JsonFile(obj, filepath, filename):
       indent    = 2
     )
   ## indicate success
-  print("Saved json-file:", filepath_file)
+  if bool_verbose: print("Saved json-file:", filepath_file)
 
 ## ###############################################################
 ## WORKING WITH DICTIONARIES
@@ -43,14 +43,15 @@ def getDictWithoutKeys(input_dict, list_keys):
     if k not in list_keys
   }
 
-def saveDict2JsonFile(filepath_file, input_dict):
+def saveDict2JsonFile(filepath_file, input_dict, bool_verbose=True):
   ## if json-file already exists, then append dictionary
   if os.path.isfile(filepath_file):
-    appendDict2JsonFile(filepath_file, input_dict)
+    appendDict2JsonFile(filepath_file, input_dict, bool_verbose)
   ## create json-file with dictionary
-  else: createJsonFile(filepath_file, input_dict)
+  else: createJsonFile(filepath_file, input_dict, bool_verbose)
 
-def createJsonFile(filepath_file, dict2save):
+def createJsonFile(filepath_file, dict2save, bool_verbose=True):
+  filepath_file = filepath_file.replace("//", "/")
   with open(filepath_file, "w") as fp:
     json.dump(
       obj       = dict2save,
@@ -59,9 +60,9 @@ def createJsonFile(filepath_file, dict2save):
       sort_keys = True,
       indent    = 2
     )
-  print("Saved json-file:", filepath_file)
+  if bool_verbose: print("Saved json-file:", filepath_file)
 
-def appendDict2JsonFile(filepath_file, dict2append):
+def appendDict2JsonFile(filepath_file, dict2append, bool_verbose=True):
   ## read json-file into dict
   with open(filepath_file, "r") as fp_r:
     dict_old = json.load(fp_r)
@@ -76,18 +77,17 @@ def appendDict2JsonFile(filepath_file, dict2append):
       sort_keys = True,
       indent    = 2
     )
-  print("Updated json-file:", filepath_file)
+  if bool_verbose: print("Updated json-file:", filepath_file)
 
-def loadJsonFile2Dict(filepath, filename, bool_hide_updates=False):
+def readJsonFile2Dict(filepath, filename, bool_verbose=True):
   filepath_file = f"{filepath}/{filename}"
   ## read file if it exists
   if os.path.isfile(filepath_file):
-    if not(bool_hide_updates):
-      print("Reading in json-file:", filepath_file)
+    if bool_verbose: print("Reading in json-file:", filepath_file)
     with open(filepath_file, "r") as input:
       return json.load(input)
   ## indicate the file was not found
-  else: raise Exception(f"ERROR: No json-file found: {filepath_file}.")
+  else: raise Exception(f"Error: No json-file found: {filepath_file}.")
 
 
 ## ###############################################################

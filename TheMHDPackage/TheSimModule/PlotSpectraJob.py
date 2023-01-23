@@ -4,7 +4,8 @@ import os
 class PlotSpectraJob():
   def __init__(
       self,
-      filepath_sim, dict_sim_params
+      filepath_sim, dict_sim_params,
+      bool_verbose = True
     ):
     self.filepath_sim   = filepath_sim
     self.filepath_plt   = f"{self.filepath_sim}/plt"
@@ -13,11 +14,12 @@ class PlotSpectraJob():
     self.sonic_regime   = dict_sim_params["sonic_regime"]
     self.sim_folder     = dict_sim_params["sim_folder"]
     self.sim_res        = dict_sim_params["sim_res"]
+    self.bool_verbose   = bool_verbose
     if not os.path.exists(self.filepath_plt):
-      print(self.filepath_plt, "does not exist.")
+      if self.bool_verbose: print(self.filepath_plt, "does not exist.")
       return
     if not os.path.exists(self.filepath_spect):
-      print(self.filepath_spect, "does not exist.")
+      if self.bool_verbose: print(self.filepath_spect, "does not exist.")
       return
     self.max_hours    = int(3)
     self.num_cpus     = int(1)
@@ -53,8 +55,9 @@ class PlotSpectraJob():
       job_file.write(". ~/modules_flash\n")
       job_file.write(f"{self.program_name} -suite_path {self.filepath_sim}/.. -sim_folder {self.sim_folder} 1>shell_plot_spect.out00 2>&1\n")
     ## indicate progress
-    print(f"Created PBS job:")
-    print(f"\t> Filename: {self.job_name}")
-    print(f"\t> Directory: {self.filepath_spect}")
+    if self.bool_verbose:
+      print(f"Created PBS job:")
+      print(f"\t> Filename: {self.job_name}")
+      print(f"\t> Directory: {self.filepath_spect}")
 
 ## END OF LIBRARY

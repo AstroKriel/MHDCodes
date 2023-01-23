@@ -22,7 +22,8 @@ from matplotlib.collections import LineCollection
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 ## load user defined modules
-from ThePlottingModule import TheMatplotlibStyler
+from ThePlottingModule.TheMatplotlibStyler import *
+from TheUsefulModule import WWLists
 
 
 ## ###############################################################
@@ -49,7 +50,7 @@ def createFigure_grid(
     num_rows         = 1,
     num_cols         = 1,
     fig_scale        = 1.0,
-    fig_aspect_ratio = (4,6)
+    fig_aspect_ratio = (4, 6)
   ):
   fig = plt.figure(
     constrained_layout = True,
@@ -60,13 +61,13 @@ def createFigure_grid(
   fig_grid = GridSpec(num_rows, num_cols, figure=fig)
   return fig, fig_grid
 
-def saveFigure(fig, filepath_fig):
-  print("Saving figure...")
+def saveFigure(fig, filepath_fig, bool_verbose=True):
+  if bool_verbose: print("Saving figure...")
   if not fig.get_constrained_layout():
     fig.set_tight_layout(True)
   fig.savefig(filepath_fig)
   plt.close(fig)
-  print("Saved figure:", filepath_fig)
+  if bool_verbose: print("Saved figure:", filepath_fig)
 
 def createNorm(vmin=0.0, vmax=1.0):
   return colors.Normalize(vmin=vmin, vmax=vmax)
@@ -88,7 +89,7 @@ def createCmap(
 ## ###############################################################
 def plotData_noAutoAxisScale(
     ax, x, y,
-    color="k", ls=":", lw=1, label=None, zorder=1
+    color="k", ls=":", lw=1, label=None, alpha=1.0, zorder=1
   ):
   col = LineCollection(
     [ np.column_stack((x, y)) ],
@@ -96,6 +97,7 @@ def plotData_noAutoAxisScale(
     ls     = ls,
     lw     = lw,
     label  = label,
+    alpha  = alpha,
     zorder = zorder
   )
   ax.add_collection(col, autolim=False)
@@ -104,15 +106,15 @@ def plotErrorBar_1D(
     ax, x, array_y,
     color="k", marker="o", label=None
   ):
-  y_median = np.percentile(array_y, 50)
-  y_p16    = np.percentile(array_y, 16)
-  y_p84    = np.percentile(array_y, 84)
-  y_1sig   = np.vstack([
-    y_median - y_p16,
-    y_p84 - y_median
+  y_p16  = np.percentile(array_y, 16)
+  y_p50  = np.percentile(array_y, 50)
+  y_p84  = np.percentile(array_y, 84)
+  y_1sig = np.vstack([
+    y_p50 - y_p16,
+    y_p84 - y_p50
   ])
   ax.errorbar(
-    x, y_median,
+    x, y_p50,
     yerr  = y_1sig,
     color = color,
     fmt   = marker,
@@ -121,10 +123,59 @@ def plotErrorBar_1D(
     linestyle="None", zorder=10
   )
 
+def plotPDF(ax, list_data, color):
+  list_dens, list_bin_edges = np.histogram(list_data, bins=10, density=True)
+  list_dens_norm = np.append(0, list_dens / list_dens.sum())
+  ax.fill_between(list_bin_edges, list_dens_norm, step="pre", alpha=0.2, color=color)
+  ax.plot(list_bin_edges, list_dens_norm, drawstyle="steps", color=color)
+
 
 ## ###############################################################
 ## ADD TO PLOTS
 ## ###############################################################
+def addSubplot_secondAxis(fig, grid_elem, shared_axis):
+  ax0 = fig.add_subplot(grid_elem)
+  if "x" in shared_axis.lower():
+    ax1 = ax0.twinx()
+  elif "y" in shared_axis.lower():
+    ax1 = ax0.twiny()
+  else: raise Exception("Error: user has not indicated which axis (x or y) should be shared:", shared_axis.lower())
+  ax0.set_zorder(1) # default zorder is 0 for ax0 and ax1
+  ax0.set_frame_on(False) # prevents ax0 from hiding ax1
+  return [ ax0, ax1 ]
+
+def addLegend_joinedAxis(
+    axs,
+    loc      = "upper right",
+    bbox     = (0.99, 0.99),
+    fontsize = 20,
+    zorder   = 10
+  ):
+  list_lines_ax0, list_labels_ax0 = axs[0].get_legend_handles_labels()
+  list_lines_ax1, list_labels_ax1 = axs[1].get_legend_handles_labels()
+  list_lines  = list_lines_ax0  + list_lines_ax1
+  list_labels = list_labels_ax0 + list_labels_ax1
+  axs[1].legend(
+    list_lines,
+    list_labels,
+    loc=loc, bbox_to_anchor=bbox, fontsize=fontsize,
+    frameon=True, facecolor="white", edgecolor="grey", framealpha=0.85
+  ).set_zorder(zorder)
+
+def addLegend_withBox(
+    ax,
+    loc      = "upper right",
+    bbox     = (1.0, 1.0),
+    ncol     = 1,
+    alpha    = 0.85,
+    fontsize = 20,
+    zorder   = 10
+  ):
+  ax.legend(
+    loc=loc, bbox_to_anchor=bbox, ncol=ncol, framealpha=alpha, fontsize=fontsize,
+    frameon=True, facecolor="white", edgecolor="grey"
+  ).set_zorder(zorder)
+
 def addColorbar_fromCmap(
     fig, ax, cmap,
     norm=None, vmin=0.0, vmax=1.0,
@@ -133,9 +184,9 @@ def addColorbar_fromCmap(
   if norm is None: norm = createNorm(vmin, vmax)
   smap   = ScalarMappable(cmap=cmap, norm=norm)
   ax_div = make_axes_locatable(ax)
-  if "h" in orientation:   cax = ax_div.append_axes(position="top",   size=f"{size:.1f}%", pad="2%")
+  if   "h" in orientation: cax = ax_div.append_axes(position="top",   size=f"{size:.1f}%", pad="2%")
   elif "v" in orientation: cax = ax_div.append_axes(position="right", size=f"{size:.1f}%", pad="2%")
-  else: raise Exception(f"ERROR: '{orientation}' is not a supported orientation!")
+  else: raise Exception(f"Error: '{orientation}' is not a supported orientation!")
   # fig.add_axes(cax)
   cbar = fig.colorbar(mappable=smap, cax=cax, orientation=orientation)
   if "h" in orientation:
@@ -199,17 +250,22 @@ def addAxisTicks_log10(
 
 def addBoxOfLabels(
     fig, ax, list_labels,
-    ## default: (left, upper)
-    xpos          = 0.05,
-    ypos          = 0.95,
-    box_alignment = (0.0, 1.0),
-    alpha         = 0.5,
-    fontsize      = 16
+    list_colors = [ "k" ],
+    xpos        = 0.05,
+    ypos        = 0.95,
+    bbox        = (0.0, 1.0),
+    alpha       = 0.5,
+    fontsize    = 16,
   ):
   if len(list_labels) == 0: return
+  WWLists.ensureListLength(list_colors, list_labels)
   list_text_areas = [
-    TextArea(label, textprops={"fontsize" : fontsize})
-    for label in list_labels
+    TextArea(label, textprops={
+      "fontsize" : fontsize,
+      "color"    : list_colors[index_label]
+    })
+    for index_label, label in enumerate(list_labels)
+    if label is not None
   ]
   texts_vbox = VPacker(
     children = list_text_areas,
@@ -221,7 +277,7 @@ def addBoxOfLabels(
     fontsize      = fontsize,
     xy            = (xpos, ypos),
     xycoords      = ax.transAxes,
-    box_alignment = box_alignment,
+    box_alignment = bbox,
     bboxprops     = dict(color="grey", facecolor="white", boxstyle="round", alpha=alpha, zorder=10)
   )
   abox.set_figure(fig)
@@ -258,24 +314,14 @@ def addLegend(
     cspacing    = 0.5,
     fontsize    = 16,
   ):
-  ## helper function
-  def checkListLength(list_input, list_ref):
-    if len(list_input) < len(list_ref):
-      list_input.extend( list_input[0] * (len(list_ref)-len(list_input)) )
   ## check that the inputs are the correct length
-  checkListLength(list_artists,       list_legend_labels)
-  checkListLength(list_marker_colors, list_legend_labels)
+  WWLists.ensureListLength(list_artists,       list_legend_labels)
+  WWLists.ensureListLength(list_marker_colors, list_legend_labels)
   ## iniialise list of artists to draw
   list_legend_artists = []
   ## lists of artists the user can choose from
   list_markers = [ ".", "o", "s", "D", "^", "v" ]
-  list_lines   = [
-    "-", "--", "-.", ":",
-    (0, (5, 1.5)),
-    (0, (2, 1.5)),
-    (0, (7, 3, 4, 3, 4, 3)),
-    (0, (6, 3, 1, 3, 1, 3, 1, 3))
-  ]
+  list_lines   = [ "-", "--", "-.", ":" ]
   for artist, marker_color in zip(list_artists, list_marker_colors):
     ## if the artist is a marker
     if artist in list_markers:
@@ -288,7 +334,7 @@ def addLegend(
         Line2D([0], [0], linestyle=artist, color=marker_color, linewidth=lw)
       )
     ## otherwise throw an error
-    else: raise Exception(f"ERROR: '{artist}' is not a valid valid.")
+    else: raise Exception(f"Error: '{artist}' is not a valid valid.")
   ## create legend
   legend = ax.legend(
     list_legend_artists,
@@ -308,6 +354,36 @@ def addLegend(
   )
   ## draw legend
   ax.add_artist(legend)
+
+def labelDualAxis_sharedX(
+    axs,
+    label_left  = r"",
+    label_right = r"",
+    color_left  = "black",
+    color_right = "black"
+  ):
+  axs[0].set_ylabel(label_left,  color=color_left)
+  axs[1].set_ylabel(label_right, color=color_right, rotation=-90, labelpad=40)
+  ## colour left/right axis-splines
+  axs[0].tick_params(axis="y", colors=color_left)
+  axs[1].tick_params(axis="y", colors=color_right)
+  axs[1].spines["left" ].set_color(color_left)
+  axs[1].spines["right"].set_color(color_right)
+
+def labelDualAxis_sharedY(
+    axs,
+    label_bottom = r"",
+    label_top    = r"",
+    color_bottom = "black",
+    color_top    = "black"
+  ):
+  axs[0].set_xlabel(label_bottom, color=color_bottom)
+  axs[1].set_xlabel(label_top,    color=color_top, labelpad=20)
+  ## colour bottom/top axis-splines
+  axs[0].tick_params(axis="x", colors=color_bottom)
+  axs[1].tick_params(axis="x", colors=color_top)
+  axs[1].spines["bottom"].set_color(color_bottom)
+  axs[1].spines["top"   ].set_color(color_top)
 
 
 ## ###############################################################
