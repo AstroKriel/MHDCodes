@@ -3,13 +3,13 @@ from matplotlib import rcParams
 ## uncomment to see all options
 # rcParams.keys()
 
-## enable latex font
-rcParams["text.usetex"]         = True
-# rcParams["text.latex.preamble"] = r"\usepackage{bm, amsmath, mathrsfs, amssymb, url, xfrac}"
-rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
+# ## enable latex font
+# rcParams["text.usetex"]         = True
+# # rcParams["text.latex.preamble"] = r"\usepackage{bm, amsmath, mathrsfs, amssymb, url, xfrac}"
+# rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
 
-## set default font characteristics
-rcParams["font.family"] = "DejaVu Sans"
+# ## set default font characteristics
+# rcParams["font.family"] = "DejaVu Sans"
 
 SMALL_SIZE  = 16
 MEDIUM_SIZE = 20

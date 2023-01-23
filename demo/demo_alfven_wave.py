@@ -168,12 +168,34 @@ def main():
   ## save figure
   PlotFuncs.saveFigure(fig, "fig_alfven_wave.png")
 
+def checkAthenaFastWave(gamma, P, rho, v_b):
+  bx, by, bz = v_b
+  gp     = gamma * P
+  bx_sq  = bx*bx
+  byz_sq = by*by + bz*bz
+  b_sq   = bx_sq + byz_sq
+  gpb_p  = b_sq + gp
+  gpb_m  = b_sq - gp
+  output_paper  = np.sqrt(0.5 * (gpb_p + np.sqrt(gpb_p*gpb_p - 4.0*gp*bx_sq))  / rho)
+  output_athena = np.sqrt(0.5 * (gpb_p + np.sqrt(gpb_m*gpb_m + 4.0*gp*byz_sq)) / rho)
+  print(output_paper)
+  print(output_athena)
+  print(abs(output_paper - output_athena))
+
 
 ## ###############################################################
 ## RUN DEMO PROGRAM
 ## ###############################################################
 if __name__ == "__main__":
-  main()
+  # main()
+  checkAthenaFastWave(
+    gamma = 5/3,
+    P     = 1e-3,
+    rho   = 3.0,
+    v_b   = [
+      1.0, 0.0, 4.0
+    ]
+  )
   sys.exit()
 
 
