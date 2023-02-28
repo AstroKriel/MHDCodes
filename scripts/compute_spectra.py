@@ -32,15 +32,17 @@ def processAllPltFiles(list_filenames_plt, num_proc):
 class CalcSpectraFiles():
   def __init__(
       self,
-      filepath_data, num_proc, file_start, file_end
+      filepath_data, num_proc, file_start, file_end, bool_check_only
     ):
-    self.filepath_data = filepath_data
-    self.num_proc      = num_proc
-    self.file_start    = file_start
-    self.file_end      = file_end
-    ## perform routines
+    self.filepath_data   = filepath_data
+    self.num_proc        = num_proc
+    self.file_start      = file_start
+    self.file_end        = file_end
+    self.bool_check_only = bool_check_only
+    
+  def performRoutines(self):
     self.__getPltFiles()
-    self.__processFiles()
+    if not(self.bool_check_only): self.__processFiles()
     self.__checkAllFilesProcessed()
     self.__reprocessFiles()
     print("Finished running the spectra code")
@@ -82,7 +84,7 @@ class CalcSpectraFiles():
       file_end_index    = self.file_end
     )
     ## initialise list of files to (re)process
-    self.list_filenames_to_redo = []
+    self.list_filenames_to_process = []
     ## check if there are any files that were not been processed
     for filename_plt in self.list_filenames_plt:
       bool_mags_exists = False
@@ -93,32 +95,30 @@ class CalcSpectraFiles():
         bool_vels_exists = True
       ## (re)process plt-file if either spectra files are missing
       if not(bool_mags_exists) or not(bool_vels_exists):
-        self.list_filenames_to_redo.append(filename_plt)
+        self.list_filenames_to_process.append(filename_plt)
 
   def __reprocessFiles(self):
     ## if there are any plt-files to (re)process
-    if len(self.list_filenames_to_redo) > 0:
-      print(f"There are {len(self.list_filenames_to_redo)} plt-files to (re)process:")
-      print("\t" + "\n\t> ".join(self.list_filenames_to_redo)) # print file names
+    if len(self.list_filenames_to_process) > 0:
+      print(f"There are {len(self.list_filenames_to_process)} plt-files to (re)process:")
+      print("\t" + "\n\t> ".join(self.list_filenames_to_process)) # print file names
       print(" ")
       ## loop over processes plt-files
       print("(Re)processing plt-files...")
-      processAllPltFiles(self.list_filenames_to_redo, self.num_proc)
+      processAllPltFiles(self.list_filenames_to_process, self.num_proc)
     else: print("There are no more plt-files to process.")
     print(" ")
 
 
-## ###############################################################
-## MAIN PROGRAM
-## ###############################################################
-def main():
-  ## ###########################
-  ## COMMAND LINE ARGUMENT INPUT
-  ## ###########################
+## ################################
+## GET COMMAND LINE INPUT ARGUMENTS
+## ################################
+def getInputArgs():
   parser = WWArgparse.MyParser(description="Calculate kinetic and magnetic energy spectra.")
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
   args_opt = parser.add_argument_group(description="Optional processing arguments:")
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
+  args_opt.add_argument("-check_only", **WWArgparse.opt_bool_arg, default=False)
   args_opt.add_argument("-file_start", **WWArgparse.opt_arg, type=int, default=0)
   args_opt.add_argument("-file_end",   **WWArgparse.opt_arg, type=int, default=np.inf)
   args_opt.add_argument("-num_proc",   **WWArgparse.opt_arg, type=int, default=8)
@@ -128,21 +128,32 @@ def main():
   ## ---------------------------- OPEN ARGUMENTS
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
-  filepath_data = args["data_path"]
-  file_start    = args["file_start"]
-  file_end      = args["file_end"]
-  num_proc      = args["num_proc"]
+  filepath_data   = args["data_path"]
+  file_start      = args["file_start"]
+  file_end        = args["file_end"]
+  num_proc        = args["num_proc"]
+  bool_check_only = args["check_only"]
   ## ---------------------------- START CODE
   print("Began running the spectra code in folder: " + filepath_data)
   print("First file index to process: "              + str(file_start))
   print("Last file index to process: "               + str(file_end))
   print("Number of processors: "                     + str(num_proc))
+  print("Only process unprocessed files: "           + str(bool_check_only))
   print(" ")
+  ## ---------------------------- RETURN ARGS
+  return filepath_data, file_start, file_end, num_proc, bool_check_only
 
+
+## ###############################################################
+## MAIN PROGRAM
+## ###############################################################
+def main():
+  filepath_data, file_start, file_end, num_proc, bool_check_only = getInputArgs()
   ## #################
   ## CALCULATE SPECTRA
   ## #################
-  CalcSpectraFiles(filepath_data, num_proc, file_start, file_end)
+  obj_calc_spectra = CalcSpectraFiles(filepath_data, num_proc, file_start, file_end, bool_check_only)
+  obj_calc_spectra.performRoutines()
 
 
 ## ###############################################################

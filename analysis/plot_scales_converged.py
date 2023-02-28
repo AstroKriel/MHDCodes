@@ -62,9 +62,10 @@ class PlotSimScales():
     self.color_group  = []
     self.marker_group = []
     ## measured quantities
-    self.k_nu_adj_trv_stats_group_sim       = []
-    self.k_nu_adj_trv_stats_group_sim_fixed = []
-    self.k_p_stats_group_sim                = []
+    self.k_p_stats_group_sim      = []
+    self.k_eta_stats_group_sim    = []
+    self.k_nu_lgt_stats_group_sim = []
+    self.k_nu_trv_stats_group_sim = []
     self.__loadAllSimulationData()
 
   def __loadAllSimulationData(self):
@@ -81,7 +82,7 @@ class PlotSimScales():
         ])
         if not os.path.isfile(f"{filepath_sim}/scales.json"): continue
         ## load scales
-        print(f"\t> Loading '{sim_folder}' dataset.")
+        print(f"\t> Loading '{sim_folder}' dataset")
         bool_skip = self.__getParams(filepath_sim)
         if bool_skip: continue
         if suite_folder == "Re10":     self.marker_group.append("s")
@@ -111,35 +112,31 @@ class PlotSimScales():
     self.Pm_group.append(Pm)
     self.color_group.append( "cornflowerblue" if Re < 100 else "orangered" )
     ## extract measured scales
-    self.k_nu_adj_trv_stats_group_sim.append(dict_scales["k_nu_adj_trv_stats"])
-    self.k_nu_adj_trv_stats_group_sim_fixed.append(dict_scales["k_nu_adj_trv_stats_fixed"])
-    self.k_p_stats_group_sim.append(dict_scales["k_p_stats"])
+    self.k_p_stats_group_sim.append(dict_scales["k_p_stats_converge"])
+    self.k_eta_stats_group_sim.append(dict_scales["k_eta_stats_converge"])
+    self.k_nu_lgt_stats_group_sim.append(dict_scales["k_nu_lgt_stats_converge"])
+    self.k_nu_trv_stats_group_sim.append(dict_scales["k_nu_trv_stats_converge"])
     return False
 
   def plotDependance_knu(self):
     fig, ax = plt.subplots(1, 1, figsize=(7, 4), sharex=True)
     for sim_index in range(len(self.Pm_group)):
-      # plotScale(
-      #   ax       = ax,
-      #   x        = self.Re_group[sim_index],
-      #   y_median = self.k_nu_adj_trv_stats_group_sim[sim_index][0],
-      #   y_1sig   = self.k_nu_adj_trv_stats_group_sim[sim_index][1],
-      #   color    = "orange", # self.color_group[sim_index],
-      #   marker   = self.marker_group[sim_index]
-      # )
+      if "super" in SONIC_REGIME:
+        knu_theory = self.Re_group[sim_index]**(2/3)
+      else: knu_theory = self.Re_group[sim_index]**(3/4)
       plotScale(
         ax       = ax,
-        x        = self.Re_group[sim_index],
-        y_median = self.k_nu_adj_trv_stats_group_sim_fixed[sim_index][0],
-        y_1sig   = self.k_nu_adj_trv_stats_group_sim_fixed[sim_index][1],
-        color    = "blue", # self.color_group[sim_index],
+        x        = knu_theory,
+        y_median = self.k_nu_trv_stats_group_sim[sim_index][0],
+        y_1sig   = self.k_nu_trv_stats_group_sim[sim_index][1],
+        color    = self.color_group[sim_index],
         marker   = self.marker_group[sim_index]
       )
     ## plot reference lines
-    x = np.linspace(10**(-1), 10**(5), 10**4)
-    PlotFuncs.plotData_noAutoAxisScale(ax, x, 1.5*x**(1/3),  ls=":")
-    PlotFuncs.plotData_noAutoAxisScale(ax, x, 3*x**(1/3),    ls=":")
-    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.25*x**(2/3), ls="--")
+    x = np.linspace(10**(-3), 10**(5), 10**4)
+    if "super" in SONIC_REGIME:
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, x, ls=":")
+    else: PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.025*x, ls=":")
     ## label figure
     PlotFuncs.addLegend(
       ax,
@@ -151,27 +148,82 @@ class PlotSimScales():
       ],
       list_marker_colors = [ "k" ],
       label_color        = "black",
-      loc                = "lower right",
-      bbox               = (1.0, 0.0)
+      loc                = "upper left",
+      bbox               = (0.0, 1.0)
     )
     # addLegend_Re(ax)
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_ylim([ 10**(-3), 10**(2) ])
-    ax.set_ylabel(r"$k_{\nu, \perp}^{1 / \alpha}$", fontsize=20)
-    ax.set_xlabel(r"$\mathrm{Re}$", fontsize=20)
+    # ax.set_xlim(left=10**(0))
+    # ax.set_ylim([ 10**(-3), 10**(3) ])
+    ax.set_ylabel(r"$k_{\nu, \perp}$", fontsize=20)
+    if "super" in SONIC_REGIME:
+      ax.set_xlabel(r"$\mathrm{Re}^{2/3}$", fontsize=20)
+    else: ax.set_xlabel(r"$\mathrm{Re}^{3/4}$", fontsize=20)
     ## adjust axis
     ## save plot
-    fig_name = f"fig_dependance_knu.png"
+    fig_name = f"fig_dependance_{SONIC_REGIME}_knu.png"
+    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
+    print(" ")
+
+  def plotDependance_keta(self):
+    fig, ax = plt.subplots(1, 1, figsize=(7, 4), sharex=True)
+    for sim_index in range(len(self.Pm_group)):
+      if "super" in SONIC_REGIME:
+        keta_theory = self.Re_group[sim_index]**(2/3) * self.Pm_group[sim_index]**(1/4)
+      else: keta_theory = self.Re_group[sim_index]**(3/4) * self.Pm_group[sim_index]**(1/4)
+      plotScale(
+        ax       = ax,
+        x        = keta_theory,
+        y_median = self.k_eta_stats_group_sim[sim_index][0],
+        y_1sig   = self.k_eta_stats_group_sim[sim_index][1],
+        color    = self.color_group[sim_index],
+        marker   = self.marker_group[sim_index]
+      )
+    ## plot reference lines
+    x = np.linspace(10**(-3), 10**(5), 10**4)
+    if "super" in SONIC_REGIME:
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, x, ls=":")
+    else: PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.15*x, ls=":")
+    ## label figure
+    PlotFuncs.addLegend(
+      ax,
+      list_artists       = [ "s", "D", "o" ],
+      list_legend_labels = [
+        r"$\mathrm{Re} = 10$",
+        r"$\mathrm{Re} = 500$",
+        r"$\mathrm{Rm} = 3000$",
+      ],
+      list_marker_colors = [ "k" ],
+      label_color        = "black",
+      loc                = "upper left",
+      bbox               = (0.0, 1.0)
+    )
+    # addLegend_Re(ax)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    # ax.set_xlim(left=10**(0))
+    # ax.set_ylim([ 10**(-3), 10**(3) ])
+    ax.set_ylabel(r"$k_\eta$", fontsize=20)
+    if "super" in SONIC_REGIME:
+      ax.set_xlabel(r"${\rm Re}^{2/3} {\rm Pm}^{1/4}$", fontsize=20)
+    else: ax.set_xlabel(r"${\rm Re}^{3/4} {\rm Pm}^{1/4}$", fontsize=20)
+    # ax.set_xlabel(r"$\mathrm{Re}^{2/3} \, {\rm Pm}^{1/4}$", fontsize=20)
+    ## adjust axis
+    ## save plot
+    fig_name = f"fig_dependance_{SONIC_REGIME}_keta.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
     print(" ")
 
   def plotDependance_kp(self):
     fig, ax = plt.subplots(1, 1, figsize=(7, 4))
     for sim_index in range(len(self.Pm_group)):
+      if "super" in SONIC_REGIME:
+        keta_theory = self.Re_group[sim_index]**(2/3) * self.Pm_group[sim_index]**(1/2)
+      else: keta_theory = self.Re_group[sim_index]**(3/4) * self.Pm_group[sim_index]**(1/2)
       plotScale(
         ax       = ax,
-        x        = self.Re_group[sim_index]**(2/3) * self.Pm_group[sim_index],
+        x        = keta_theory,
         y_median = self.k_p_stats_group_sim[sim_index][0],
         y_1sig   = self.k_p_stats_group_sim[sim_index][1],
         color    = self.color_group[sim_index],
@@ -179,7 +231,13 @@ class PlotSimScales():
       )
     ## plot reference lines
     x = np.linspace(10**(-2), 10**(4), 100)
-    PlotFuncs.plotData_noAutoAxisScale(ax, x, 1.15*x**(1/4))
+    if "super" in SONIC_REGIME:
+      mean_kp = np.mean([
+        self.k_p_stats_group_sim[sim_index][0]
+        for sim_index in range(len(self.Pm_group))
+      ])
+      ax.axhline(y=mean_kp, ls=":", c="black")
+    else: PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.025*x, ls=":")
     ## label figure
     PlotFuncs.addLegend(
       ax,
@@ -196,13 +254,15 @@ class PlotSimScales():
     )
     # addLegend_Re(ax)
     ax.set_ylim([ 1, 30 ])
-    ax.set_xlabel(r"$\mathrm{Re}^{2/3}\, \mathrm{Pm}$", fontsize=20)
+    if "super" in SONIC_REGIME:
+      ax.set_xlabel(r"${\rm Re}^{2/3} {\rm Pm}^{1/2}$", fontsize=20)
+    else: ax.set_xlabel(r"${\rm Re}^{3/4} {\rm Pm}^{1/2}$", fontsize=20)
     ax.set_ylabel(r"$k_{\rm p}$", fontsize=20)
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
     ## save plot
-    fig_name = f"fig_dependance_kp.png"
+    fig_name = f"fig_dependance_{SONIC_REGIME}_kp.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
     print(" ")
 
@@ -212,7 +272,8 @@ class PlotSimScales():
 ## ###############################################################
 def main():
   plot_obj = PlotSimScales(BASEPATH)
-  plot_obj.plotDependance_knu()
+  # plot_obj.plotDependance_knu()
+  # plot_obj.plotDependance_keta()
   plot_obj.plotDependance_kp()
 
 
@@ -220,7 +281,8 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "super_sonic"
+SONIC_REGIME      = "sub_sonic"
+
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]

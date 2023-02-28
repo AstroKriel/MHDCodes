@@ -48,7 +48,6 @@ def reformatFlashData(field, num_blocks, num_procs):
         ] = field[j + (i * iprocs) + (k * jprocs * jprocs)]
   return field_sorted
 
-
 def loadPltData_3D(
     filepath_file,
     num_blocks      = [ 36, 36, 48 ],
@@ -75,8 +74,28 @@ def loadPltData_3D(
   ## return data
   return data_sorted_x, data_sorted_y, data_sorted_z
 
+def loadPltData_slice_field(filepath_file, num_blocks, num_procs, str_field):
+  ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
+  with h5py.File(filepath_file, "r") as flash_file:
+    ## collect all variables to combine
+    list_keys = [
+      key
+      for key in list(flash_file.keys())
+      if key.startswith(str_field)
+    ]
+    ## calculate the magnitude of the field
+    list_data = []
+    for data in [
+        np.array(flash_file[key])
+        for key in list_keys[:2]
+      ]:
+      ## reformat data
+      data_sorted = reformatFlashData(data, num_blocks, num_procs)
+      data_slice = data_sorted[ :, :, len(data_sorted[0,0,:])//2 ]
+      list_data.append(data_slice)
+    return list_data
 
-def loadPltData_slice(
+def loadPltData_slice_magnitude(
     filepath_file, num_blocks, num_procs, str_field,
     bool_norm       = False,
     bool_print_info = False
@@ -84,20 +103,26 @@ def loadPltData_slice(
   ## open hdf5 file stream: [iProc*jProc*kProc, nzb, nyb, nxb]
   with h5py.File(filepath_file, "r") as flash_file:
     ## collect all variables to combine
-    names = [s for s in list(flash_file.keys()) if s.startswith(str_field)]
+    list_keys = [
+      key
+      for key in list(flash_file.keys())
+      if key.startswith(str_field)
+    ]
     ## calculate the magnitude of the field
-    data = np.sqrt(sum(np.array(flash_file[i])**2 for i in names))
+    data_magnitude = np.sqrt(sum(
+      np.array(flash_file[key])**2
+      for key in list_keys
+    ))
     if bool_print_info: 
       print("--------- All the keys stored in the FLASH file:\n\t" + "\n\t".join(list(flash_file.keys())))
-      print("--------- All the keys that were used: " + str(names))
+      print("--------- All the keys that were used: " + str(list_keys))
     flash_file.close() # close the file stream
     ## reformat data
-    data_sorted = reformatFlashData(data, num_blocks, num_procs)
+    data_sorted = reformatFlashData(data_magnitude, num_blocks, num_procs)
     data_slice = data_sorted[ :, :, len(data_sorted[0,0,:])//2 ]
     ## return rms-normalised data
-    if bool_norm: return data_slice**2 / np.sqrt(np.mean(data_slice**2))**2
+    if bool_norm: return data_slice / np.sqrt(np.mean(data_slice**2))**2
     return data_slice
-
 
 def loadAllPltData_slice(
     filepath,
@@ -126,7 +151,7 @@ def loadAllPltData_slice(
   list_sim_times  = []
   for filename, _ in WWLists.loopListWithUpdates(filenames):
     ## load dataset
-    field_mag = loadPltData_slice(
+    field_magnitude = loadPltData_slice_magnitude(
       filepath_file = f"{filepath}/{filename}",
       num_blocks    = num_blocks,
       num_procs     = num_procs,
@@ -134,24 +159,23 @@ def loadAllPltData_slice(
     )
     ## check the dimensions of the 2D slice
     if bool_debug:
-      print( len(field_mag) )
-      print( len(field_mag[0]) )
+      print( len(field_magnitude) )
+      print( len(field_magnitude[0]) )
     ## append slice of field magnitude
-    list_field_mags.append( field_mag[:,:] )
+    list_field_mags.append( field_magnitude[:,:] )
     ## append the simulation time
     list_sim_times.append( float(filename.split("_")[-1]) / plots_per_eddy )
     ## find data magnitude bounds
     col_min_val = np.nanmin([
-      np.nanmin(field_mag[:,:]),
+      np.nanmin(field_magnitude[:,:]),
       col_min_val
     ])
     col_max_val = np.nanmax([
-      np.nanmax(field_mag[:,:]),
+      np.nanmax(field_magnitude[:,:]),
       col_max_val
     ])
   print(" ")
   return col_min_val, col_max_val, list_field_mags, list_sim_times
-
 
 def loadTurbData(
     filepath, var_y, t_turb,
@@ -194,7 +218,6 @@ def loadTurbData(
   data_y_sub = data_y[index_start : index_end]
   return data_x_sub, data_y_sub
 
-
 def loadSpectraData(filepath_file, spect_field, spect_quantity="total"):
   with open(filepath_file, "r") as fp:
     data_file = fp.readlines()
@@ -208,12 +231,12 @@ def loadSpectraData(filepath_file, spect_field, spect_quantity="total"):
     try:
       data_x = np.array(list(map(float, data[:, var_x]))) 
       data_y = np.array(list(map(float, data[:, var_y])))
-      if   "v" in spect_field.lower(): data_y = data_y / 2
-      elif "m" in spect_field.lower(): data_y = data_y / (8 * np.pi)
+      if   "vel" in spect_field.lower(): data_y = data_y
+      elif "kin" in spect_field.lower(): data_y = data_y / 2
+      elif "mag" in spect_field.lower(): data_y = data_y / (8 * np.pi)
       else: raise Exception(f"Error: You have passed an invalid spectra field: '{spect_field}'.")
     except: raise Exception("Error: Failed to read spectra-file:", filepath_file)
     return data_x, data_y
-
 
 def loadAllSpectraData(
     filepath, spect_field, plots_per_eddy,
@@ -224,10 +247,15 @@ def loadAllSpectraData(
     bool_verbose    = True
   ):
   ## get list of spect-filenames in directory
+  if ("vel" in spect_field.lower()) or ("kin" in spect_field.lower()):
+    file_end_str = "spect_vels.dat"
+  elif "mag" in spect_field.lower():
+    file_end_str = "spect_mags.dat"
+  else: raise Exception("Error: received an unexpected spectra filename:", spect_field)
   list_spectra_filenames = WWFnF.getFilesFromFilepath(
     filepath          = filepath, 
     filename_contains = "hdf5_plt_cnt",
-    filename_endswith = f"spect_{spect_field}s.dat",
+    filename_endswith = file_end_str,
     loc_file_index    = -3,
     file_start_index  = plots_per_eddy * file_start_time,
     file_end_index    = plots_per_eddy * file_end_time
@@ -259,7 +287,6 @@ def loadAllSpectraData(
     "list_power_group_t" : list_power_group_t,
     "list_sim_times"     : list_sim_times
   }
-
 
 def getPlotsPerEddy_fromTurbLog(
     filepath,
@@ -294,7 +321,6 @@ def getPlotsPerEddy_fromTurbLog(
         return plots_per_eddy
   ## failed to read quantity
   raise Exception("Error: failed to read plots_per_eddy from Turb.log file.")
-
 
 def getPlasmaNumbers_fromFlashPar(filepath, rms_Mach, k_turb):
     bool_found_nu  = False
@@ -339,7 +365,6 @@ def getPlasmaNumbers_fromFlashPar(filepath, rms_Mach, k_turb):
         "eta"  if not bool_found_eta else ""
       ))
 
-
 def getPlasmaNumbers_fromInputs(Mach, k_turb, Re=None, Rm=None, Pm=None):
   ## Re and Pm have been defined
   if (Re is not None) and (Pm is not None):
@@ -361,12 +386,10 @@ def getPlasmaNumbers_fromInputs(Mach, k_turb, Re=None, Rm=None, Pm=None):
     "Pm"  : Pm
   }
 
-
 def getPlasmaNumbers_fromName(name, name_ref):
   name_lower     = name.lower()
   name_ref_lower = name_ref.lower()
   return float(name_lower.replace(name_ref_lower, "")) if name_ref_lower in name_lower else None
-
 
 def getReynoldsNumbers(Re=None, Rm=None, Pm=None):
   ## Re and Pm have been defined

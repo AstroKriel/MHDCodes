@@ -12,16 +12,14 @@ from ThePlottingModule import PlotFuncs
 ## HELPER FUNCTIONS
 ## ###############################################################
 def addLabel_simInputs(
-    filepath_sim_res,
     fig, ax,
+    filepath_sim_res,
     bbox          = (0,0),
     vpos          = (0.05, 0.05),
     bool_show_res = True
   ):
   ## load simulation parameters
   dict_sim_inputs = readSimInputs(filepath_sim_res)
-  label_res = ""
-  if bool_show_res: label_res = r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(dict_sim_inputs["sim_res"]))
   ## annotate simulation parameters
   PlotFuncs.addBoxOfLabels(
     fig, ax,
@@ -31,7 +29,7 @@ def addLabel_simInputs(
     alpha       = 0.5,
     fontsize    = 18,
     list_labels = [
-      label_res,
+      r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(dict_sim_inputs["sim_res"])) if bool_show_res else "",
       r"${\rm Re} = $ " + "{:d}".format(int(dict_sim_inputs["Re"])),
       r"${\rm Rm} = $ " + "{:d}".format(int(dict_sim_inputs["Rm"])),
       r"${\rm Pm} = $ " + "{:d}".format(int(dict_sim_inputs["Pm"])),
@@ -74,6 +72,10 @@ def createSimInputs(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, des
     num_blocks = [ 12, 12, 18 ]
   elif sim_res in [ "18" ]:
     num_blocks = [ 6, 6, 6 ]
+  num_procs = [
+    float(sim_res) / num_blocks_in_dir
+    for num_blocks_in_dir in num_blocks
+  ]
   ## create object to define simulation input parameters
   obj_sim_params = SimInputParams()
   obj_sim_params.defineParams(
@@ -81,6 +83,7 @@ def createSimInputs(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, des
     sim_folder   = sim_folder,
     sim_res      = sim_res,
     num_blocks   = num_blocks,
+    num_procs    = num_procs,
     k_turb       = k_turb,
     desired_Mach = des_mach,
     Re           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Re"),
@@ -149,7 +152,7 @@ class SimInputParams():
   def defineParams(
       self,
       suite_folder, sim_folder, sim_res,
-      num_blocks, k_turb, desired_Mach,
+      num_blocks, num_procs, k_turb, desired_Mach,
       Re=None, Rm=None, Pm=None
     ):
     ## check input parameters are of the right type
@@ -157,6 +160,7 @@ class SimInputParams():
     WWVariables.assertType("sim_folder",   sim_folder,   str)
     WWVariables.assertType("sim_res",      sim_res,      str)
     WWVariables.assertType("num_blocks",   num_blocks,   list)
+    WWVariables.assertType("num_procs",    num_procs,    list)
     WWVariables.assertType("k_turb",       k_turb,       (int, float))
     WWVariables.assertType("Mach",         desired_Mach, (int, float))
     ## save input parameters
@@ -164,6 +168,7 @@ class SimInputParams():
     self.sim_folder   = sim_folder
     self.sim_res      = sim_res
     self.num_blocks   = num_blocks
+    self.num_procs    = num_procs
     self.k_turb       = k_turb
     self.desired_Mach = desired_Mach
     ## save (optional) input parameters

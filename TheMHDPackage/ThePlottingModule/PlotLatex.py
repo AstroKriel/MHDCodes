@@ -18,13 +18,16 @@ class GetLabel():
     )
 
   def percentiles(list_vals, num_sig_digits=1):
+    def getString(diff_):
+      if diff_ < 1.0: return ("{:."+str(num_sig_digits)+"g}").format(diff_)
+      else: return str(round(diff_lo))
     perc_16 = np.percentile(list_vals, 16)
     perc_50 = np.percentile(list_vals, 50)
     perc_84 = np.percentile(list_vals, 84)
     diff_lo = perc_50 - perc_16
     diff_hi = perc_84 - perc_50
-    str_minus = ("-{:."+str(num_sig_digits)+"g}").format(diff_lo)
-    str_plus  = ("+{:."+str(num_sig_digits)+"g}").format(diff_hi)
+    str_minus = "-" + getString(diff_lo)
+    str_plus  = "+" + getString(diff_hi)
     num_decimals_minus = 0
     num_decimals_plus  = 0
     if "." in str_minus: num_decimals_minus = len(str_minus.split(".")[1])

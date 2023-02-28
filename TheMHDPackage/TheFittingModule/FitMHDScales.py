@@ -32,18 +32,6 @@ class KineticSpectraModels():
   ## ######################
   ## KINETIC SPECTRA MODELS
   ## ######################
-  def simple_linear(k, A, alpha, k_nu):
-    ''' exponential + powerlaw in linear-domain:
-        y = A * k^alpha * exp(- k / k_nu)
-    '''
-    k = np.array(k)
-    return A * k**(alpha) * np.exp(-(k / k_nu))
-
-  def simple_loge(k, A, alpha, k_nu):
-    k = np.array(k)
-    return np.log(A) + alpha * np.log(k) - (k / k_nu)
-
-
   def turnover_linear(k, A, alpha_cas, alpha_dis, k_nu):
     k = np.array(k)
     return A * k**(alpha_cas) * np.exp(-(k / k_nu)**alpha_dis)
@@ -51,7 +39,6 @@ class KineticSpectraModels():
   def turnover_loge(k, A, alpha_cas, alpha_dis, k_nu):
     k = np.array(k)
     return np.log(A) + alpha_cas * np.log(k) - (k / k_nu)**alpha_dis
-
 
   def bottleneck_linear(k, A, alpha_cas, alpha_bot, alpha_dis, k_nu_bot, k_nu_dis):
     k = np.array(k)
@@ -141,66 +128,85 @@ class KineticSpectraModels():
 ## ###############################################################
 def fitKinSpectrum(
     list_k, list_power,
+    list_power_std   = None,
     ax_fit           = None,
     ax_residuals     = None,
     color            = "black",
     label_spect      = "",
-    bool_fix_cascade = False
+    bool_fix_params = False
   ):
   ## define helper function
-  def plotFitResiduals(ax, data_x, data_y, fit_params, func, color="black", label_spect=""):
-    data_y_fit = func(data_x, *fit_params)
+  def plotFitResiduals(ax, list_x, list_y, fit_params, func, color="black", label_spect=""):
+    list_y_fit = func(list_x, *fit_params)
     ax.plot(
-      data_x,
-      np.array(data_y_fit) / np.array(data_y),
+      list_x,
+      np.log10(list_y_fit) / np.log10(list_y),
       label=label_spect, ls="-", marker="o", ms=8, color=color, markeredgecolor="black"
     )
   ## define model to fit
-  func_loge   = KineticSpectraModels.turnover_loge
-  func_linear = KineticSpectraModels.turnover_linear
-  my_model    = lmfit.Model(func_loge) # fit in log(e)-log(e) space
-  my_model.set_param_hint("A",         min =  10**(-2.0), value =  10**(-1.0), max =  10**(2.0))
-  my_model.set_param_hint("alpha_cas", min = -8.0,        value = -2.0,        max = -1.0, vary=not(bool_fix_cascade))
-  my_model.set_param_hint("alpha_dis", min =  0.1,        value =  1.0,        max =  2.0)
-  my_model.set_param_hint("k_nu",      min =  0.1,        value =  5.0,        max =  100)
+  fitFuncLoge   = KineticSpectraModels.turnover_loge
+  fitFuncLinear = KineticSpectraModels.turnover_linear
+  fit_model     = lmfit.Model(fitFuncLoge) # fit in log-log domain
+  fit_model.set_param_hint("A",         min =  10**(-2.0), value =  10**(-1.0), max =  10**(2.0))
+  fit_model.set_param_hint("alpha_cas", min = -8.0,        value = -2.0,        max = -0.1, vary=bool_fix_params)
+  fit_model.set_param_hint("alpha_dis", min =  0.1,        value =  1.0,        max =  2.0, vary=not(bool_fix_params))
+  fit_model.set_param_hint("k_nu",      min =  0.1,        value =  5.0,        max =  100)
   ## find k-index to stop fitting kinetic energy spectrum
-  fit_index_start = 2
-  fit_index_end   = WWLists.getIndexClosestValue(list_power, 10**(-8))
+  fit_index_start  = 2
+  if min(list_power) - min(list_power) < 10**(-5):
+    min_power_offset  = 10**(np.log10(min(list_power)) + 1)
+    min_power_target  = max([ 10**(-8), min_power_offset ])
+    fit_index_end     = WWLists.getIndexClosestValue(list_power, min_power_target)
+  else: fit_index_end = len(list_power) - 1
   ## fit kinetic energy model (in log-linear domain) to subset of data
-  fit_results  = my_model.fit(
-    k       = list_k[           fit_index_start : fit_index_end],
-    data    = np.log(list_power[fit_index_start : fit_index_end]),
-    params  = my_model.make_params(),
+  fit_results  = fit_model.fit(
+    k      = list_k[           fit_index_start : fit_index_end],
+    data   = np.log(list_power[fit_index_start : fit_index_end]),
+    params = fit_model.make_params(),
   )
   ## extract fitted parameters
-  fit_params = []
-  fit_params.append(fit_results.params["A"].value)
-  fit_params.append(fit_results.params["alpha_cas"].value)
-  fit_params.append(fit_results.params["alpha_dis"].value)
-  fit_params.append(fit_results.params["k_nu"].value)
+  fit_params_values = []
+  fit_params_values.append(fit_results.params["A"].value)
+  fit_params_values.append(fit_results.params["alpha_cas"].value)
+  fit_params_values.append(fit_results.params["alpha_dis"].value)
+  fit_params_values.append(fit_results.params["k_nu"].value)
+  ## extract uncertainty in fitted parameters
+  fit_params_errors = []
+  fit_params_errors.append(fit_results.params["A"].stderr)
+  fit_params_errors.append(fit_results.params["alpha_cas"].stderr)
+  fit_params_errors.append(fit_results.params["alpha_dis"].stderr)
+  fit_params_errors.append(fit_results.params["k_nu"].stderr)
+  ## compute reduced chi-squared
+  list_power_fit = fitFuncLinear(list_k, *fit_params_values)
+  num_dof  = 3
+  if list_power_std is not None:
+    fit_rcs = sum(
+      (np.log(list_power) - np.log(list_power_fit))**2 / list_power_std
+    ) / num_dof
+  else: fit_rcs = None
   ## plot fitted spectrum
   if ax_fit is not None:
     array_k_fit     = np.logspace(-3, 3, 1000)
-    array_power_fit = func_linear(array_k_fit, *fit_params)
+    array_power_fit = fitFuncLinear(array_k_fit, *fit_params_values)
     PlotFuncs.plotData_noAutoAxisScale(
       ax = ax_fit,
-      x = array_k_fit,
-      y = array_power_fit,
+      x  = array_k_fit,
+      y  = array_power_fit,
       color=color, ls="-", lw=6, alpha=0.65, zorder=10
     )
   ## plot residuals of fit
   if ax_residuals is not None:
     plotFitResiduals(
       ax          = ax_residuals,
-      data_x      = list_k[    fit_index_start : fit_index_end],
-      data_y      = list_power[fit_index_start : fit_index_end],
-      fit_params  = fit_params,
-      func        = func_linear,
+      list_x      = list_k[    fit_index_start : fit_index_end],
+      list_y      = list_power[fit_index_start : fit_index_end],
+      fit_params  = fit_params_values,
+      func        = fitFuncLinear,
       color       = color,
       label_spect = label_spect
     )
   ## return fitted parameters
-  return fit_params
+  return fit_params_values, fit_params_errors, fit_rcs
 
 def getScale_kp(list_k, list_power):
   array_k_interp = np.logspace(

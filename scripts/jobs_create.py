@@ -50,9 +50,7 @@ def main():
         ## -------------------------------------------
         if os.path.isfile(f"{filepath_sim_res}/sim_inputs.json"):
           obj_sim_params = SimParams.readSimInputParams(filepath_sim_res)
-        else: obj_sim_params = SimParams.createSimInputs(
-          filepath_sim_res, suite_folder, sim_folder, sim_res, K_TURB, DES_MACH
-        )
+        else: obj_sim_params = SimParams.createSimInputs(filepath_sim_res, suite_folder, sim_folder, sim_res, K_TURB, DES_MACH)
         dict_sim_params = obj_sim_params.getSimParams()
 
         ## CREATE JOB FILE TO RUN SIMULATION

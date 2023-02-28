@@ -88,7 +88,7 @@ class PlotTurbData():
     self.E_sat_ratio    = None
 
   def __checkAnyQuantitiesNotMeasured(self):
-    ## no need to check growth rate and saturated ratio
+    ## no need to check growth rate (Gamma) and saturated ratio (E_sat_ratio)
     list_quantities_check = [
       self.plots_per_eddy,
       self.time_exp_start,
@@ -104,10 +104,7 @@ class PlotTurbData():
 
   def __loadData(self):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    self.plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(
-      filepath     = self.filepath_sim_res,
-      bool_verbose = self.bool_verbose
-    )
+    self.plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromTurbLog(filepath=self.filepath_sim_res, bool_verbose=False)
     if self.bool_verbose: print("Loading volume integrated data...")
     ## check if the Turb.dat file is formatted
     with open(f"{self.filepath_sim_res}/Turb.dat") as fp:
@@ -409,13 +406,13 @@ BOOL_MPROC        = 1
 BASEPATH          = "/scratch/ek9/nk7952/"
 SONIC_REGIME      = "super_sonic"
 
-LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
-# LIST_SUITE_FOLDER = [ "Rm3000" ]
-# LIST_SIM_FOLDER   = [ "Pm5", "Pm25", "Pm125" ]
-# LIST_SIM_RES      = [ "18", "36" ]
+LIST_SUITE_FOLDER = [ "Rm3000" ]
+LIST_SIM_FOLDER   = [ "Pm25", "Pm50" ]
+LIST_SIM_RES      = [ "576" ]
 
 
 ## ###############################################################

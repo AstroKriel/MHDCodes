@@ -16,9 +16,15 @@ from TheUsefulModule import WWLists
 ## ###############################################################
 ## FUNCTIONS THAT INTERPOLATE AND FIT
 ## ###############################################################
-def interpLogLogData(x, y, x_interp, interp_kind="cubic"):
+def interpData(x, y, x_interp, interp_kind="cubic"):
+  interpolator = interpolate.interp1d(x, y, kind=interp_kind)
+  return interpolator(x_interp)
+
+def interpLogLogData(x, y, x_interp, interp_kind="cubic", ax=None):
   interpolator = interpolate.interp1d(np.log10(x), np.log10(y), kind=interp_kind)
-  return np.power(10.0, interpolator(np.log10(x_interp)))
+  y_interp = np.power(10.0, interpolator(np.log10(x_interp)))
+  
+  return y_interp
 
 def fitExpFunc(
     ax, data_x, data_y, index_start_fit, index_end_fit,

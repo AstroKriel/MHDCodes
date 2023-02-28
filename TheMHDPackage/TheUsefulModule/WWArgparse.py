@@ -11,7 +11,7 @@ import sys, argparse
 ## USEFUL DICTIONARIES
 ## ###############################################################
 opt_bool_arg = {
-  "required":False, "default":False, "action":"store_true",
+  "required":False, "action":"store_true",
   "help":"type: bool, default: %(default)s"
 }
 opt_arg = {

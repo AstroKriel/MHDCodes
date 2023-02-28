@@ -62,7 +62,6 @@ def createFigure_grid(
   return fig, fig_grid
 
 def saveFigure(fig, filepath_fig, bool_verbose=True):
-  if bool_verbose: print("Saving figure...")
   if not fig.get_constrained_layout():
     fig.set_tight_layout(True)
   fig.savefig(filepath_fig)
@@ -106,9 +105,11 @@ def plotErrorBar_1D(
     ax, x, array_y,
     color="k", marker="o", label=None
   ):
-  y_p16  = np.percentile(array_y, 16)
-  y_p50  = np.percentile(array_y, 50)
-  y_p84  = np.percentile(array_y, 84)
+  array_y = [ elem for elem in array_y if elem is not None ]
+  if len(array_y) < 5: return
+  y_p16  = np.nanpercentile(array_y, 16)
+  y_p50  = np.nanpercentile(array_y, 50)
+  y_p84  = np.nanpercentile(array_y, 84)
   y_1sig = np.vstack([
     y_p50 - y_p16,
     y_p84 - y_p50
@@ -148,18 +149,20 @@ def addLegend_joinedAxis(
     axs,
     loc      = "upper right",
     bbox     = (0.99, 0.99),
+    ncol     = 1,
     fontsize = 20,
+    alpha    = 0.85,
     zorder   = 10
   ):
   list_lines_ax0, list_labels_ax0 = axs[0].get_legend_handles_labels()
   list_lines_ax1, list_labels_ax1 = axs[1].get_legend_handles_labels()
   list_lines  = list_lines_ax0  + list_lines_ax1
   list_labels = list_labels_ax0 + list_labels_ax1
-  axs[1].legend(
+  axs[0].legend(
     list_lines,
     list_labels,
-    loc=loc, bbox_to_anchor=bbox, fontsize=fontsize,
-    frameon=True, facecolor="white", edgecolor="grey", framealpha=0.85
+    ncol=ncol, loc=loc, bbox_to_anchor=bbox, fontsize=fontsize,
+    frameon=True, facecolor="white", edgecolor="grey", framealpha=alpha
   ).set_zorder(zorder)
 
 def addLegend_withBox(
@@ -194,7 +197,7 @@ def addColorbar_fromCmap(
     cax.xaxis.set_ticks_position("top")
   else: cbar.ax.set_ylabel(label, rotation=-90, va="bottom", fontsize=fontsize)
 
-def addColorbar_fromMappble(mappable, cbar_title=None, size=10):
+def addColorbar_fromMappble(mappable, cbar_title=None, size=7.5):
   ''' from: https://joseph-long.com/writing/colorbars/
   '''
   ax_old  = plt.gca()
@@ -399,48 +402,41 @@ class MidpointNormalize(colors.Normalize):
     return np.ma.masked_array(np.interp(value, x, y))
 
 def plot2DField(
-    field, filepath_fig,
+    data,
     fig              = None,
     ax               = None,
-    bool_save        = False,
-    bool_colorbar    = True,
+    filepath_fig     = None,
     cmap_str         = "cmr.arctic",
     cbar_title       = None,
-    cbar_lims        = None,
-    bool_mid_norm    = False,
-    mid_norm         = 0,
-    list_labels      = None,
-    bool_hide_labels = False
+    cbar_bounds      = None,
+    bool_colorbar    = True,
+    bool_label       = True
   ):
   ## check that a figure object has been passed
   if (fig is None) or (ax is None):
     fig, ax = fig, ax = plt.subplots(constrained_layout=True)
   ## plot slice
   im_obj = ax.imshow(
-    field,
-    extent = [-1,1,-1,1],
+    data,
+    extent = [-1.0, 1.0, -1.0, 1.0],
     cmap   = plt.get_cmap(cmap_str),
-    clim   = cbar_lims if (cbar_lims is not None) else None,
-    norm   = MidpointNormalize(
-      midpoint = mid_norm,
-      vmin = cbar_lims[0] if (cbar_lims is not None) else None,
-      vmax = cbar_lims[1] if (cbar_lims is not None) else None
-    ) if bool_mid_norm else None
+    norm   = colors.LogNorm(
+      vmin = 0.9*np.min(data) if cbar_bounds is None else cbar_bounds[0],
+      vmax = 1.1*np.max(data) if cbar_bounds is None else cbar_bounds[1]
+    )
   )
   ## add colorbar
   if bool_colorbar:
     addColorbar_fromMappble(im_obj, cbar_title)
-  ## add labels
-  if list_labels is not None:
-    addBoxOfLabels(fig, ax, list_labels)
   ## add axis labels
-  if not bool_hide_labels:
+  if bool_label:
     ax.set_xticks([-1, -0.5, 0, 0.5, 1])
     ax.set_yticks([-1, -0.5, 0, 0.5, 1])
     ax.set_xticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
     ax.set_yticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
+  else: ax.set_axis_off()
   ## save figure
-  if bool_save:
+  if filepath_fig is not None:
     plt.savefig(filepath_fig)
     ## clear figure and axis
     fig.artists.clear()

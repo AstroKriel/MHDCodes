@@ -325,7 +325,6 @@ def main():
   args_req = parser.add_argument_group(description="Required processing arguments:")
   args_req.add_argument("-suite_path", type=str, required=True, help="type: %(type)s")
   args_req.add_argument("-sim_folder", type=str, required=True, help="type: %(type)s")
-
   ## #########################
   ## INTERPRET INPUT ARGUMENTS
   ## #########################
@@ -363,7 +362,6 @@ def main():
   Re                       = args["Re"]
   Rm                       = args["Rm"]
   Pm                       = args["Pm"]
-
   ## ######################
   ## INITIALISING VARIABLES
   ## ######################
@@ -384,7 +382,6 @@ def main():
     if Re == None: Re = Rm / Pm
     if Rm == None: Rm = Re * Pm
     if Pm == None: Pm = Rm / Re
-
   ## #####################
   ## PREPARING DIRECTORIES
   ## #####################
@@ -394,14 +391,12 @@ def main():
   filepath_vis = WWFnF.createFilepath([ filepath_suite, folder_vis ])
   ## folder where spectra plots will be saved
   filepath_vis_frames = WWFnF.createFilepath([ filepath_vis, "plotSpectraFits" ])
-
   ## ##############
   ## CREATE FOLDERS
   ## ##############
   if bool_plot_spectra:
     WWFnF.createFolder(filepath_vis)
     WWFnF.createFolder(filepath_vis_frames)
-
   ## ######################################
   ## PRINT SIMULATION PARAMETERS TO CONSOLE
   ## ######################################
@@ -423,7 +418,6 @@ def main():
       "fixed" if mag_bool_fit_fixed_model else "full"
     ))
   print(" ")
-
   ## #########################
   ## LOAD FITTED / FIT SPECTRA
   ## #########################
@@ -453,7 +447,6 @@ def main():
     )
   ## read in already fitted spectra
   else: spec_obj.loadSpectraFitsObj(bool_show_obj_attrs)
-
   ## #############################
   ## PLOT EVOLUTION OF THE SPECTRA
   ## #############################
