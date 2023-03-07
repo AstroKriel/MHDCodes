@@ -37,8 +37,9 @@ def addLabel_simInputs(
   )
 
 def getSonicRegime(Mach):
-  sonic_regime = "super_sonic" if Mach > 1 else "sub_sonic" if Mach < 1 else "trans_sonic"
-  if sonic_regime == "trans_sonic": raise Exception("Error: 'trans-sonic' sim. is not implemented yet.")
+  if   Mach > 1.0: sonic_regime = "super_sonic"
+  elif Mach < 1.0: sonic_regime = "sub_sonic"
+  else:            sonic_regime = "trans_sonic"
   return sonic_regime
 
 def saveSimInputs(obj_sim_params, filepath):
@@ -49,12 +50,12 @@ def saveSimInputs(obj_sim_params, filepath):
   )
 
 def readSimInputs(filepath, bool_verbose=True):
-  dict_sim_input = WWObjs.readJsonFile2Dict(
+  dict_sim_inputs = WWObjs.readJsonFile2Dict(
     filepath          = filepath,
     filename          = "sim_inputs.json",
     bool_verbose = bool_verbose
   )
-  return dict_sim_input
+  return dict_sim_inputs
 
 def readSimOutputs(filepath, bool_verbose=True):
   dict_sim_outputs = WWObjs.readJsonFile2Dict(
@@ -64,7 +65,12 @@ def readSimOutputs(filepath, bool_verbose=True):
   )
   return dict_sim_outputs
 
-def createSimInputs(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, des_mach):
+def createSimInputs(
+    filepath_sim_res, suite_folder, sim_folder, sim_res, k_turb, des_mach,
+    Re = None,
+    Rm = None,
+    Pm = None
+  ):
   ## number of cells per block that the flash4-exe was compiled with
   if sim_res in [ "144", "288", "576" ]:
     num_blocks = [ 36, 36, 48 ]
@@ -77,8 +83,7 @@ def createSimInputs(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, des
     for num_blocks_in_dir in num_blocks
   ]
   ## create object to define simulation input parameters
-  obj_sim_params = SimInputParams()
-  obj_sim_params.defineParams(
+  obj_sim_params = SimInputParams(
     suite_folder = suite_folder,
     sim_folder   = sim_folder,
     sim_res      = sim_res,
@@ -86,12 +91,13 @@ def createSimInputs(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, des
     num_procs    = num_procs,
     k_turb       = k_turb,
     desired_Mach = des_mach,
-    Re           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Re"),
-    Rm           = LoadFlashData.getPlasmaNumbers_fromName(suite_folder, "Rm"),
-    Pm           = LoadFlashData.getPlasmaNumbers_fromName(sim_folder,   "Pm")
+    Re           = Re,
+    Rm           = Rm,
+    Pm           = Pm
   )
-  ## write input file
-  saveSimInputs(obj_sim_params, filepath_sim)
+  obj_sim_params.defineParams()
+  ## save input file
+  saveSimInputs(obj_sim_params, filepath_sim_res)
   return obj_sim_params
 
 
@@ -101,12 +107,7 @@ def createSimInputs(filepath_sim, suite_folder, sim_folder, sim_res, k_turb, des
 class SimInputParams():
   def __init__(
       self,
-      suite_folder = None,
-      sim_folder   = None,
-      sim_res      = None,
-      num_blocks   = None,
-      k_turb       = None,
-      desired_Mach = None,
+      suite_folder, sim_folder, sim_res, num_blocks, num_procs, k_turb, desired_Mach,
       sonic_regime = None,
       t_turb       = None,
       Re           = None,
@@ -116,14 +117,15 @@ class SimInputParams():
       eta          = None,
       **kwargs # unused arguments
     ):
-    ## parameters that should be provided
+    ## required parameters
     self.suite_folder  = suite_folder
     self.sim_folder    = sim_folder
     self.sim_res       = sim_res
     self.num_blocks    = num_blocks
+    self.num_procs     = num_procs
     self.k_turb        = k_turb
     self.desired_Mach  = desired_Mach
-    ## parameters that will need to be computed
+    ## parameters that (may) need to be computed
     self.sonic_regime  = sonic_regime
     self.t_turb        = t_turb
     self.Re            = Re
@@ -149,32 +151,14 @@ class SimInputParams():
       "eta"          : self.eta
     }
 
-  def defineParams(
-      self,
-      suite_folder, sim_folder, sim_res,
-      num_blocks, num_procs, k_turb, desired_Mach,
-      Re=None, Rm=None, Pm=None
-    ):
+  def defineParams(self):
     ## check input parameters are of the right type
-    WWVariables.assertType("suite_folder", suite_folder, str)
-    WWVariables.assertType("sim_folder",   sim_folder,   str)
-    WWVariables.assertType("sim_res",      sim_res,      str)
-    WWVariables.assertType("num_blocks",   num_blocks,   list)
-    WWVariables.assertType("num_procs",    num_procs,    list)
-    WWVariables.assertType("k_turb",       k_turb,       (int, float))
-    WWVariables.assertType("Mach",         desired_Mach, (int, float))
-    ## save input parameters
-    self.suite_folder = suite_folder
-    self.sim_folder   = sim_folder
-    self.sim_res      = sim_res
-    self.num_blocks   = num_blocks
-    self.num_procs    = num_procs
-    self.k_turb       = k_turb
-    self.desired_Mach = desired_Mach
-    ## save (optional) input parameters
-    self.Re           = Re
-    self.Rm           = Rm
-    self.Pm           = Pm
+    WWVariables.assertType("suite_folder", self.suite_folder, str)
+    WWVariables.assertType("sim_folder",   self.sim_folder,   str)
+    WWVariables.assertType("sim_res",      self.sim_res,      str)
+    WWVariables.assertType("num_blocks",   self.num_blocks,   list)
+    WWVariables.assertType("k_turb",       self.k_turb,       (int, float))
+    WWVariables.assertType("Mach",         self.desired_Mach, (int, float))
     ## perform routines
     self.__defineSonicRegime()
     self.__definePlasmaParameters()
@@ -187,32 +171,28 @@ class SimInputParams():
     self.sonic_regime = getSonicRegime(self.desired_Mach)
 
   def __definePlasmaParameters(self):
-    ## Re and Pm have been defined
-    if (self.Re is not None) and (self.Pm is not None):
-      self.nu  = self.desired_Mach / (self.k_turb * self.Re)
-      self.eta = self.nu / self.Pm
-      self.Rm  = self.desired_Mach / (self.k_turb * self.eta)
-    ## Rm and Pm have been defined
-    elif (self.Rm is not None) and (self.Pm is not None):
-      self.eta = self.desired_Mach / (self.k_turb * self.Rm)
-      self.nu  = self.eta * self.Pm
-      self.Re  = self.desired_Mach / (self.k_turb * self.nu)
-    ## Re and Rm have been defined
-    elif (self.Re is not None) and (self.Rm is not None):
-      self.nu  = self.desired_Mach / (self.k_turb * self.Re)
-      self.eta = self.desired_Mach / (self.k_turb * self.Rm)
-      self.Pm  = self.Rm / self.Re
-    ## error
-    else: raise Exception(f"You have not defined enough plasma Reynolds numbers: Re = {self.Re}, Rm = {self.Rm}, and Pm = {self.Rm}.")
+    dict_params = LoadFlashData.getPlasmaNumbers_fromInputs(
+      Mach   = self.desired_Mach,
+      k_turb = self.k_turb,
+      Re     = self.Re,
+      Rm     = self.Rm,
+      Pm     = self.Pm
+    )
+    self.nu  = dict_params["nu"]
+    self.eta = dict_params["eta"]
+    self.Re  = dict_params["Re"]
+    self.Rm  = dict_params["Rm"]
+    self.Pm  = dict_params["Pm"]
 
   def __checkSimParamsDefined(self):
     list_check_params_defined = [
       "sonic_regime" if self.sonic_regime is None else "",
-      "Re"  if self.Re  is None else "",
-      "Rm"  if self.Rm  is None else "",
-      "Pm"  if self.Pm  is None else "",
-      "nu"  if self.nu  is None else "",
-      "eta" if self.eta is None else ""
+      "t_turb"       if self.t_turb       is None else "",
+      "Re"           if self.Re           is None else "",
+      "Rm"           if self.Rm           is None else "",
+      "Pm"           if self.Pm           is None else "",
+      "nu"           if self.nu           is None else "",
+      "eta"          if self.eta          is None else ""
     ]
     list_params_not_defined = [
       param_name

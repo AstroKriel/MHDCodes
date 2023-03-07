@@ -129,29 +129,26 @@ def getInputArgs():
   args = vars(parser.parse_args())
   ## ---------------------------- SAVE PARAMETERS
   filepath_data   = args["data_path"]
+  num_proc        = args["num_proc"]
   file_start      = args["file_start"]
   file_end        = args["file_end"]
-  num_proc        = args["num_proc"]
   bool_check_only = args["check_only"]
   ## ---------------------------- START CODE
-  print("Began running the spectra code in folder: " + filepath_data)
-  print("First file index to process: "              + str(file_start))
-  print("Last file index to process: "               + str(file_end))
-  print("Number of processors: "                     + str(num_proc))
-  print("Only process unprocessed files: "           + str(bool_check_only))
+  print("Running spectra code in folder: "                    + filepath_data)
+  print("First file index to process: "                       + str(file_start))
+  print("Last file index to process: "                        + str(file_end))
+  print("Number of processors: "                              + str(num_proc))
+  print("Should the program only process unprocessed files: " + str(bool_check_only))
   print(" ")
   ## ---------------------------- RETURN ARGS
-  return filepath_data, file_start, file_end, num_proc, bool_check_only
+  return filepath_data, num_proc, file_start, file_end, bool_check_only
 
 
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  filepath_data, file_start, file_end, num_proc, bool_check_only = getInputArgs()
-  ## #################
-  ## CALCULATE SPECTRA
-  ## #################
+  filepath_data, num_proc, file_start, file_end, bool_check_only = getInputArgs()
   obj_calc_spectra = CalcSpectraFiles(filepath_data, num_proc, file_start, file_end, bool_check_only)
   obj_calc_spectra.performRoutines()
 

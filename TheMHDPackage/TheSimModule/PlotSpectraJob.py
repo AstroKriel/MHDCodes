@@ -4,16 +4,16 @@ import os
 class PlotSpectraJob():
   def __init__(
       self,
-      filepath_sim, dict_sim_params,
+      filepath_sim, dict_sim_inputs,
       bool_verbose = True
     ):
     self.filepath_sim   = filepath_sim
     self.filepath_plt   = f"{self.filepath_sim}/plt"
     self.filepath_spect = f"{self.filepath_sim}/spect"
-    self.suite_folder   = dict_sim_params["suite_folder"]
-    self.sonic_regime   = dict_sim_params["sonic_regime"]
-    self.sim_folder     = dict_sim_params["sim_folder"]
-    self.sim_res        = dict_sim_params["sim_res"]
+    self.suite_folder   = dict_sim_inputs["suite_folder"]
+    self.sonic_regime   = dict_sim_inputs["sonic_regime"]
+    self.sim_folder     = dict_sim_inputs["sim_folder"]
+    self.sim_res        = dict_sim_inputs["sim_res"]
     self.bool_verbose   = bool_verbose
     if not os.path.exists(self.filepath_plt):
       if self.bool_verbose: print(self.filepath_plt, "does not exist.")
@@ -57,7 +57,7 @@ class PlotSpectraJob():
     ## indicate progress
     if self.bool_verbose:
       print(f"Created PBS job:")
-      print(f"\t> Filename: {self.job_name}")
+      print(f"\t> Job name: {self.job_name}")
       print(f"\t> Directory: {self.filepath_spect}")
 
 ## END OF LIBRARY

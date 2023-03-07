@@ -119,11 +119,11 @@ def test_loadData():
     filepath_file = f"{filepath_plt}/{filename}",
     num_blocks    = [ 36, 36, 48 ],
     num_procs     = num_procs,
-    str_field     = "vel"
+    str_field     = "mag"
   )
   ## calculating LIC
   if bool_lic:
-    len_pix = 5*2
+    len_pix = 3
     print("Calculating LIC...")
     vector_field = np.stack((data_mag_vecs[0], data_mag_vecs[1]), axis=2)
     data_lic = lic_flow(
@@ -131,12 +131,12 @@ def test_loadData():
       scalar_field = data_vel_scalar,
       len_pix = len_pix
     )
-    for _ in range(3):
-      data_lic = lic_flow(
-        vector_field = vector_field,
-        scalar_field = data_lic,
-        len_pix = len_pix
-      )
+    # for _ in range(2):
+    #   data_lic = lic_flow(
+    #     vector_field = vector_field,
+    #     scalar_field = data_lic,
+    #     len_pix = len_pix
+    #   )
   ## plot data
   print("Plotting data...")
   fig, ax = plt.subplots(figsize=(6,6))
@@ -164,16 +164,16 @@ def test_loadData():
     # data_vecs_y_tmp = np.concatenate((data_mag_vecs[1], data_mag_vecs[1], data_mag_vecs[1]), axis=1)
     # data_vecs_x     = np.concatenate((data_vecs_x_tmp,  data_vecs_x_tmp),  axis=0)
     # data_vecs_y     = np.concatenate((data_vecs_y_tmp,  data_vecs_y_tmp),  axis=0)
-  step = 3*2
-  data_vecs_x = data_mag_vecs[0][::step, ::step]
-  data_vecs_y = data_mag_vecs[1][::step, ::step]
-  x = np.linspace(-1.0, 1.0, len(data_vecs_x[0,:]))
-  y = np.linspace(-1.0, 1.0, len(data_vecs_x[:,0]))
-  X, Y = np.meshgrid(x, -y)
-  norm = np.sqrt(data_vecs_x[::step]**2 + data_vecs_y[::step]**2)
-  # norm = 1.0
-  ax.quiver(X, Y, data_vecs_x / norm , data_vecs_y / norm, width=2.5e-3, color="red")
-  # ax.quiver(X, Y, data_vecs_x, data_vecs_y, width=2.5e-4, color="red", alpha=0.5)
+  # step = 2*3
+  # data_vecs_x = data_mag_vecs[0][::step, ::step]
+  # data_vecs_y = data_mag_vecs[1][::step, ::step]
+  # x = np.linspace(-1.0, 1.0, len(data_vecs_x[0,:]))
+  # y = np.linspace(-1.0, 1.0, len(data_vecs_x[:,0]))
+  # X, Y = np.meshgrid(x, -y)
+  # norm = np.sqrt(data_vecs_x**2 + data_vecs_y**2)
+  # # norm = 1.0
+  # ax.quiver(X, Y, data_vecs_x / norm , data_vecs_y / norm, width=5e-3, color="red")
+  # # ax.quiver(X, Y, data_vecs_x, data_vecs_y, width=2.5e-4, color="red", alpha=0.5)
   ## save figure
   fig.savefig("lic_flash_data.png")
   plt.close(fig)

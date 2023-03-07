@@ -116,7 +116,7 @@ def copyFileFromNTo(directory_from, directory_to, filename, bool_verbose=True):
     f"{directory_to}/{filename}"
   )
   if bool_verbose:
-    print(f"> Coppied:")
+    print(f"Coppied:")
     print(f"\t File: {filename}")
     print(f"\t From: {directory_from}")
     print(f"\t To:   {directory_to}")

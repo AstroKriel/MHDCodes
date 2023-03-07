@@ -3,7 +3,7 @@
 class CalcSpectraJob():
   def __init__(
       self,
-      filepath_plt, dict_sim_params,
+      filepath_plt, dict_sim_inputs,
       bool_verbose = True
     ):
     self.filepath_plt = filepath_plt
@@ -14,10 +14,10 @@ class CalcSpectraJob():
     self.program_name = "compute_spectra.py"
     self.job_name     = "job_calc_spect.sh"
     self.job_tagname  = "{}{}{}sim{}".format(
-      dict_sim_params["sonic_regime"].split("_")[0],
-      dict_sim_params["suite_folder"],
-      dict_sim_params["sim_folder"],
-      dict_sim_params["sim_res"]
+      dict_sim_inputs["sonic_regime"].split("_")[0],
+      dict_sim_inputs["suite_folder"],
+      dict_sim_inputs["sim_folder"],
+      dict_sim_inputs["sim_res"]
     )
     ## perform routine
     self.__createJob()
@@ -44,7 +44,7 @@ class CalcSpectraJob():
     ## indicate progress
     if self.bool_verbose:
       print(f"Created PBS job:")
-      print(f"\t> Filename: {self.job_name}")
+      print(f"\t> Job name: {self.job_name}")
       print(f"\t> Directory: {self.filepath_plt}")
 
 ## END OF LIBRARY

@@ -7,8 +7,9 @@
 import os, sys
 
 ## load user defined module
-from TheUsefulModule import WWFnF
 from TheSimModule import SimParams
+from TheUsefulModule import WWFnF
+from TheLoadingModule import LoadFlashData
 
 
 ## ###############################################################
@@ -18,61 +19,89 @@ os.system("clear")
 
 
 ## ###############################################################
-## MAIN PROGRAM
+## CREATE LIST OF SIMULATION DIRECTORIES TO ANALYSE
 ## ###############################################################
-def main():
-  ## LOOK AT EACH SIMULATION
-  ## -----------------------
-  ## loop over each simulation suite
+def getSimInputDetails_allSims():
+  dicts_grouped_sim = []
+  ## LOOK AT EACH SIMULATION SUITE
+  ## -----------------------------
   for suite_folder in LIST_SUITE_FOLDER:
-
-    ## loop over each simulation folder
+    ## LOOK AT EACH SIMULATION FOLDER
+    ## -----------------------------
     for sim_folder in LIST_SIM_FOLDER:
-
-      ## CHECK THE SIMULATION EXISTS
-      ## ---------------------------
+      ## CHECK THE SUITE + SIMULATION CONFIG EXISTS
+      ## ------------------------------------------
       sonic_regime = SimParams.getSonicRegime(DES_MACH)
       filepath_sim = WWFnF.createFilepath([
         BASEPATH, suite_folder, sonic_regime, sim_folder
       ])
       if not os.path.exists(filepath_sim): continue
-      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}, regime: {sonic_regime}"
-      print(str_message)
-      print("=" * len(str_message))
-      print(" ")
-
-      ## loop over each resolution
+      ## loop over the different resolution runs
       for sim_res in LIST_SIM_RES:
-
         ## CHECK THE RESOLUTION RUN EXISTS
         ## -------------------------------
         filepath_sim_res = f"{filepath_sim}/{sim_res}/"
-        ## check that the filepath exists
         if not os.path.exists(filepath_sim_res): continue
+        dict_sim = {
+          "filepath_sim_res" : filepath_sim_res,
+          "suite_folder"     : suite_folder,
+          "sim_folder"       : sim_folder,
+          "sim_res"          : sim_res
+        }
+        dicts_grouped_sim.append(dict_sim)
+  ## return all simulation parameters
+  return dicts_grouped_sim
 
-        ## create and save simulation input parameters file
-        SimParams.makeSimInputParams(
-          filepath_sim_res, suite_folder, sim_folder, sim_res, K_TURB, DES_MACH
-        )
 
-        ## create empty space
-        print(" ")
-      print(" ")
-    print(" ")
+## ###############################################################
+## LOOP OVER MAIN SET OF SIMULATIONS
+## ###############################################################
+def loopOverMainSimulations():
+  for dict_sim in getSimInputDetails_allSims():
+    ## create and save simulation input parameters
+    SimParams.createSimInputs(
+      filepath_sim_res = dict_sim["filepath_sim_res"],
+      suite_folder     = dict_sim["suite_folder"],
+      sim_folder       = dict_sim["sim_folder"],
+      sim_res          = dict_sim["sim_res"],
+      k_turb           = K_TURB,
+      des_mach         = DES_MACH,
+      Re               = LoadFlashData.getPlasmaNumbers_fromName(dict_sim["suite_folder"], "Re"),
+      Rm               = LoadFlashData.getPlasmaNumbers_fromName(dict_sim["suite_folder"], "Rm"),
+      Pm               = LoadFlashData.getPlasmaNumbers_fromName(dict_sim["sim_folder"],   "Pm")
+    )
+
+
+## ###############################################################
+## MAIN PROGRAM
+## ###############################################################
+def main():
+  ## create and save simulation input parameters
+  for des_mach in [ 0.3, 1, 10]:
+    sim_folder = str(des_mach)
+    for sim_res in [ "144", "288" ]:
+      SimParams.createSimInputs(
+        filepath_sim_res = f"/scratch/ek9/nk7952/Mach/{sim_folder}/{sim_res}",
+        suite_folder     = "Mach",
+        sim_folder       = sim_folder,
+        sim_res          = sim_res,
+        k_turb           = 2.0,
+        des_mach         = des_mach,
+        Re               = 300,
+        Pm               = 4
+      )
 
 
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
-K_TURB            = 1.0
-DES_MACH          = 0.3
-# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+K_TURB            = 2.0
+DES_MACH          = 5.0
 
-LIST_SUITE_FOLDER = [ "Rm3000" ]
-LIST_SIM_RES      = [ "576" ]
+LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
+LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
 
 
 ## ###############################################################

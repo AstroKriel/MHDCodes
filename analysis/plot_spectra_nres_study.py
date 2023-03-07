@@ -246,7 +246,7 @@ def plotSpectra(filepath_sim, bool_verbose=True):
 ## ###############################################################
 ## CREATE LIST OF SIMULATION DIRECTORIES TO ANALYSE
 ## ###############################################################
-def getListSimFolders():
+def getListOfSimFolders():
   list_sim_filepaths = []
   ## LOOK AT EACH SIMULATION SUITE
   ## -----------------------------
@@ -274,7 +274,7 @@ def getListSimFolders():
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  list_sim_filepaths = getListSimFolders()
+  list_sim_filepaths = getListOfSimFolders()
   if BOOL_MPROC:
     with cfut.ProcessPoolExecutor() as executor:
       ## loop over all simulation folders

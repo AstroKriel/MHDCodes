@@ -169,23 +169,37 @@ class PlotSimScales():
   def plotDependance_keta(self):
     fig, ax = plt.subplots(1, 1, figsize=(7, 4), sharex=True)
     for sim_index in range(len(self.Pm_group)):
-      if "super" in SONIC_REGIME:
-        keta_theory = self.Re_group[sim_index]**(2/3) * self.Pm_group[sim_index]**(1/4)
-      else: keta_theory = self.Re_group[sim_index]**(3/4) * self.Pm_group[sim_index]**(1/4)
+      # if "super" in SONIC_REGIME:
+      #   keta_theory = self.Re_group[sim_index]**(2/3) * self.Pm_group[sim_index]**(1/4)
+      # else: keta_theory = self.Re_group[sim_index]**(3/4) * self.Pm_group[sim_index]**(1/4)
       plotScale(
         ax       = ax,
-        x        = keta_theory,
-        y_median = self.k_eta_stats_group_sim[sim_index][0],
-        y_1sig   = self.k_eta_stats_group_sim[sim_index][1],
+        x        = self.Pm_group[sim_index], # keta_theory,
+        y_median = self.k_eta_stats_group_sim[sim_index][0] / self.Re_group[sim_index]**(2/3),
+        y_1sig   = self.k_eta_stats_group_sim[sim_index][1] / self.Re_group[sim_index]**(2/3),
         color    = self.color_group[sim_index],
         marker   = self.marker_group[sim_index]
       )
     ## plot reference lines
     x = np.linspace(10**(-3), 10**(5), 10**4)
     if "super" in SONIC_REGIME:
-      PlotFuncs.plotData_noAutoAxisScale(ax, x, x, ls=":")
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.5*x**(1/2), ls="-")
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.75*x**(1/4), ls=":")
     else: PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.15*x, ls=":")
     ## label figure
+    PlotFuncs.addLegend(
+      ax,
+      list_artists       = [ "-", ":" ],
+      list_legend_labels = [
+        r"Pm$^{1/2}$",
+        r"Pm$^{1/4}$",
+      ],
+      list_marker_colors = [ "k" ],
+      label_color        = "black",
+      loc                = "lower right",
+      bbox               = (1.0, 0.0),
+      lw                 = 1
+    )
     PlotFuncs.addLegend(
       ax,
       list_artists       = [ "s", "D", "o" ],
@@ -204,12 +218,11 @@ class PlotSimScales():
     ax.set_yscale("log")
     # ax.set_xlim(left=10**(0))
     # ax.set_ylim([ 10**(-3), 10**(3) ])
-    ax.set_ylabel(r"$k_\eta$", fontsize=20)
-    if "super" in SONIC_REGIME:
-      ax.set_xlabel(r"${\rm Re}^{2/3} {\rm Pm}^{1/4}$", fontsize=20)
-    else: ax.set_xlabel(r"${\rm Re}^{3/4} {\rm Pm}^{1/4}$", fontsize=20)
-    # ax.set_xlabel(r"$\mathrm{Re}^{2/3} \, {\rm Pm}^{1/4}$", fontsize=20)
-    ## adjust axis
+    ax.set_ylabel(r"$k_\eta / {\rm Re}^{2/3}$", fontsize=20)
+    ax.set_xlabel(r"${\rm Pm}$", fontsize=20)
+    # if "super" in SONIC_REGIME:
+    #   ax.set_xlabel(r"${\rm Re}^{2/3} {\rm Pm}^{1/4}$", fontsize=20)
+    # else: ax.set_xlabel(r"${\rm Re}^{3/4} {\rm Pm}^{1/4}$", fontsize=20)
     ## save plot
     fig_name = f"fig_dependance_{SONIC_REGIME}_keta.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
@@ -273,15 +286,15 @@ class PlotSimScales():
 def main():
   plot_obj = PlotSimScales(BASEPATH)
   # plot_obj.plotDependance_knu()
-  # plot_obj.plotDependance_keta()
-  plot_obj.plotDependance_kp()
+  plot_obj.plotDependance_keta()
+  # plot_obj.plotDependance_kp()
 
 
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "sub_sonic"
+SONIC_REGIME      = "super_sonic"
 
 LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]

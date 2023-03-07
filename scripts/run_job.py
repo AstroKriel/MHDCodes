@@ -46,7 +46,7 @@ def main():
         ## CHECK THE JOB FILE EXISTS
         ## -------------------------
         if not os.path.isfile(f"{filepath_sim_res}/{JOB_NAME}"):
-          print(f"\t> {JOB_NAME} does not exist in:\n\t", filepath_sim_res)
+          print(f"ERROR: {JOB_NAME} does not exist in:\n\t", filepath_sim_res)
           continue
         ## indicate which folder is being worked on
         print("Looking at:", filepath_sim_res)
