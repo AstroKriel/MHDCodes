@@ -14,7 +14,7 @@ import concurrent.futures as cfut
 from TheSimModule import SimParams
 from TheUsefulModule import WWFnF, WWObjs
 from TheFittingModule import FitFuncs
-from TheLoadingModule import LoadFlashData
+from TheLoadingModule import LoadFlashData, FileNames
 from TheAnalysisModule import WWSpectra
 from ThePlottingModule import PlotFuncs
 
@@ -81,7 +81,7 @@ def plotSpectra_res(axs, filepath_sim_res, sim_res, bool_verbose=True):
   plots_per_eddy     = dict_sim_outputs["plots_per_eddy"]
   time_growth_start  = dict_sim_outputs["time_growth_start"]
   time_growth_end    = dict_sim_outputs["time_growth_end"]
-  dict_mag_spect_tot_data = LoadFlashData.loadAllSpectraData(
+  dict_mag_spect_tot_data = LoadFlashData.loadAllSpectra(
     filepath        = filepath_spect,
     spect_field     = "mag",
     spect_quantity  = "tot",
@@ -90,7 +90,7 @@ def plotSpectra_res(axs, filepath_sim_res, sim_res, bool_verbose=True):
     plots_per_eddy  = plots_per_eddy,
     bool_verbose    = False
   )
-  dict_kin_spect_tot_data = LoadFlashData.loadAllSpectraData(
+  dict_kin_spect_tot_data = LoadFlashData.loadAllSpectra(
     filepath        = filepath_spect,
     spect_field     = "vel",
     spect_quantity  = "tot",
@@ -99,7 +99,7 @@ def plotSpectra_res(axs, filepath_sim_res, sim_res, bool_verbose=True):
     plots_per_eddy  = plots_per_eddy,
     bool_verbose    = False
   )
-  dict_kin_spect_trv_data = LoadFlashData.loadAllSpectraData(
+  dict_kin_spect_trv_data = LoadFlashData.loadAllSpectra(
     filepath        = filepath_spect,
     spect_field     = "vel",
     spect_quantity  = "trv",
@@ -108,7 +108,7 @@ def plotSpectra_res(axs, filepath_sim_res, sim_res, bool_verbose=True):
     plots_per_eddy  = plots_per_eddy,
     bool_verbose    = False
   )
-  dict_kin_spect_lgt_data = LoadFlashData.loadAllSpectraData(
+  dict_kin_spect_lgt_data = LoadFlashData.loadAllSpectra(
     filepath        = filepath_spect,
     spect_field     = "vel",
     spect_quantity  = "lgt",
@@ -202,7 +202,7 @@ def plotSpectra(filepath_sim, bool_verbose=True):
     })
   ## save measured scales
   if bool_verbose: print("Saving measured scales...")
-  WWObjs.saveDict2JsonFile(f"{filepath_sim}/sim_scales.json", dict_scales, bool_verbose=True)
+  WWObjs.saveDict2JsonFile(f"{filepath_sim}/{FileNames.FILENAME_SIM_SCALES}", dict_scales, bool_verbose=True)
   ## adjust figure axis
   for row_index in range(len(axs)):
     for col_index in range(len(axs[0])):
@@ -229,9 +229,9 @@ def plotSpectra(filepath_sim, bool_verbose=True):
   for col_index in range(len(axs[0])):
     axs[-1][col_index].set_xlabel(r"$k$")
   SimParams.addLabel_simInputs(
-    fig              = fig,
-    ax               = axs[0][0],
-    filepath_sim_res = f"{filepath_sim}/288/",
+    fig      = fig,
+    ax       = axs[0][0],
+    filepath = f"{filepath_sim}/288/",
   )
   ## save figure
   dict_sim_inputs = SimParams.readSimInputs(f"{filepath_sim}/288/", bool_verbose=False)

@@ -5,21 +5,21 @@
 ## MODULES
 ## ###############################################################
 from TheUsefulModule import WWVariables, WWObjs
-from TheLoadingModule import LoadFlashData
+from TheLoadingModule import LoadFlashData, FileNames
 from ThePlottingModule import PlotFuncs
+
 
 ## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
 def addLabel_simInputs(
-    fig, ax,
-    filepath_sim_res,
+    fig, ax, filepath,
     bbox          = (0,0),
     vpos          = (0.05, 0.05),
     bool_show_res = True
   ):
   ## load simulation parameters
-  dict_sim_inputs = readSimInputs(filepath_sim_res)
+  dict_sim_inputs = readSimInputs(filepath)
   ## annotate simulation parameters
   PlotFuncs.addBoxOfLabels(
     fig, ax,
@@ -46,27 +46,27 @@ def saveSimInputs(obj_sim_params, filepath):
   WWObjs.saveObj2JsonFile(
     obj      = obj_sim_params,
     filepath = filepath,
-    filename = "sim_inputs.json"
+    filename = FileNames.FILENAME_SIM_INPUTS
   )
 
 def readSimInputs(filepath, bool_verbose=True):
   dict_sim_inputs = WWObjs.readJsonFile2Dict(
-    filepath          = filepath,
-    filename          = "sim_inputs.json",
+    filepath     = filepath,
+    filename     = FileNames.FILENAME_SIM_INPUTS,
     bool_verbose = bool_verbose
   )
   return dict_sim_inputs
 
 def readSimOutputs(filepath, bool_verbose=True):
   dict_sim_outputs = WWObjs.readJsonFile2Dict(
-    filepath          = filepath,
-    filename          = "sim_outputs.json",
+    filepath     = filepath,
+    filename     = FileNames.FILENAME_SIM_OUTPUTS,
     bool_verbose = bool_verbose
   )
   return dict_sim_outputs
 
 def createSimInputs(
-    filepath_sim_res, suite_folder, sim_folder, sim_res, k_turb, des_mach,
+    filepath, suite_folder, sim_folder, sim_res, k_turb, desired_Mach,
     Re = None,
     Rm = None,
     Pm = None
@@ -90,14 +90,14 @@ def createSimInputs(
     num_blocks   = num_blocks,
     num_procs    = num_procs,
     k_turb       = k_turb,
-    desired_Mach = des_mach,
+    desired_Mach = desired_Mach,
     Re           = Re,
     Rm           = Rm,
     Pm           = Pm
   )
   obj_sim_params.defineParams()
   ## save input file
-  saveSimInputs(obj_sim_params, filepath_sim_res)
+  saveSimInputs(obj_sim_params, filepath)
   return obj_sim_params
 
 
@@ -171,7 +171,7 @@ class SimInputParams():
     self.sonic_regime = getSonicRegime(self.desired_Mach)
 
   def __definePlasmaParameters(self):
-    dict_params = LoadFlashData.getPlasmaNumbers_fromInputs(
+    dict_params = LoadFlashData.computeDissipationConstants(
       Mach   = self.desired_Mach,
       k_turb = self.k_turb,
       Re     = self.Re,
@@ -213,61 +213,6 @@ class SimInputParams():
     self.Pm           = round(self.Pm,           num_decimals)
     self.nu           = round(self.nu,           num_decimals)
     self.eta          = round(self.eta,          num_decimals)
-
-
-## ###############################################################
-## TEST SUITE
-## ###############################################################
-class OtherClass():
-  def __init__(self):
-    self.a = 10
-
-def checkAssert(obj_sim_params : SimInputParams):
-  WWVariables.assertType("obj_sim_params", obj_sim_params, SimInputParams)
-  a = 10
-
-def tests():
-  print("Running tests...")
-  filepath_demo  = "/scratch/ek9/nk7952/"
-  ## create input istance
-  print("Creating input-params obj...")
-  obj_sim_params = SimInputParams()
-  obj_sim_params.defineParams(
-    suite_folder = "Re10",
-    sim_folder   = "Pm3",
-    sim_res      = "288",
-    num_blocks   = [ 36, 36, 48 ],
-    k_turb       = 2.0,
-    desired_Mach = 5.0,
-    Re           = 25,
-    Rm           = 100,
-    # Pm           = 4
-  )
-  print(" ")
-  ## check what parameters are stored in the obj
-  print("Printing params stored (for reference)...")
-  print(obj_sim_params.__dict__)
-  print(" ")
-  ## save and read obj
-  saveSimInputs(obj_sim_params, filepath_demo)
-  obj_read_params = readSimInputs(filepath_demo)
-  print(" ")
-  print("Printing params stored (in read obj)...")
-  print(obj_read_params.__dict__)
-  print(" ")
-  # ## check type can be asserted
-  # obj_other_class = OtherClass()
-  # checkAssert(obj_sim_params)
-  # checkAssert(obj_other_class)
-  ## success
-  print("all tests passed...")
-
-
-## ###############################################################
-## RUN TEST SUITE
-## ###############################################################
-if __name__ == "__main__":
-  tests()
 
 
 ## END OF LIBRARY

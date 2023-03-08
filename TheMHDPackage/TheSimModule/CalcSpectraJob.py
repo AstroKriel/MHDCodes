@@ -1,5 +1,7 @@
 ## START OF LIBRARY
 
+from TheLoadingModule import FileNames
+
 class CalcSpectraJob():
   def __init__(
       self,
@@ -12,7 +14,7 @@ class CalcSpectraJob():
     self.num_cpus     = int(6)
     self.max_mem      = int(4 * self.num_cpus)
     self.program_name = "compute_spectra.py"
-    self.job_name     = "job_calc_spect.sh"
+    self.job_name     = FileNames.FILENAME_JOB_CALC_SPECT
     self.job_tagname  = "{}{}{}sim{}".format(
       dict_sim_inputs["sonic_regime"].split("_")[0],
       dict_sim_inputs["suite_folder"],
@@ -44,7 +46,7 @@ class CalcSpectraJob():
     ## indicate progress
     if self.bool_verbose:
       print(f"Created PBS job:")
-      print(f"\t> Job name: {self.job_name}")
-      print(f"\t> Directory: {self.filepath_plt}")
+      print(f"\t> Job name:", self.job_name)
+      print(f"\t> Directory:", self.filepath_plt)
 
 ## END OF LIBRARY

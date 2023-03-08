@@ -22,7 +22,7 @@ from plot_turb_data import PlotTurbData
 ## load user defined modules
 from TheSimModule import SimParams
 from TheUsefulModule import WWFnF, WWObjs
-from TheLoadingModule import LoadFlashData
+from TheLoadingModule import LoadFlashData, FileNames
 from TheFittingModule import FitMHDScales, FitFuncs
 from TheAnalysisModule import WWSpectra
 from ThePlottingModule import PlotFuncs, PlotLatex
@@ -180,7 +180,7 @@ class PlotSpectra():
 
   def saveFittedParams(self, filepath_sim):
     dict_params = self.getFittedParams()
-    WWObjs.saveDict2JsonFile(f"{filepath_sim}/sim_outputs.json", dict_params, self.bool_verbose)
+    WWObjs.saveDict2JsonFile(f"{filepath_sim}/{FileNames.FILENAME_SIM_OUTPUTS}", dict_params, self.bool_verbose)
 
   def __initialiseQuantities(self):
     ## flag to check that all required quantities have been measured
@@ -225,7 +225,7 @@ class PlotSpectra():
     if self.bool_verbose: print("Loading energy spectra...")
     ## load spectra data within the growth phase of the dynamo
     ## load total magnetic energy spectra
-    dict_mag_spect_tot_data = LoadFlashData.loadAllSpectraData(
+    dict_mag_spect_tot_data = LoadFlashData.loadAllSpectra(
       filepath        = self.filepath_spect,
       spect_field     = "mag",
       spect_quantity  = "tot",
@@ -235,7 +235,7 @@ class PlotSpectra():
       bool_verbose    = False
     )
     ## load total kinetic energy spectra
-    dict_vel_spect_tot_data = LoadFlashData.loadAllSpectraData(
+    dict_vel_spect_tot_data = LoadFlashData.loadAllSpectra(
       filepath        = self.filepath_spect,
       spect_field     = "vel",
       spect_quantity  = "tot",
@@ -245,7 +245,7 @@ class PlotSpectra():
       bool_verbose    = False
     )
     ## load longitudinal kinetic energy spectra
-    dict_vel_spect_lgt_data = LoadFlashData.loadAllSpectraData(
+    dict_vel_spect_lgt_data = LoadFlashData.loadAllSpectra(
       filepath        = self.filepath_spect,
       spect_field     = "vel",
       spect_quantity  = "lgt",
@@ -255,7 +255,7 @@ class PlotSpectra():
       bool_verbose    = False
     )
     ## load transverse kinetic energy spectra
-    dict_vel_spect_trv_data = LoadFlashData.loadAllSpectraData(
+    dict_vel_spect_trv_data = LoadFlashData.loadAllSpectra(
       filepath        = self.filepath_spect,
       spect_field     = "vel",
       spect_quantity  = "trv",
@@ -358,7 +358,7 @@ class PlotSpectra():
   def __plotSpectraRatio(self):
     ## load spectra data again, this time for the full duration of the simulation
     ## load total kinetic energy spectra TODO: use kinetic energy spectrum for this
-    dict_vel_spect_tot_data = LoadFlashData.loadAllSpectraData(
+    dict_vel_spect_tot_data = LoadFlashData.loadAllSpectra(
       filepath        = self.filepath_spect,
       spect_field     = "vel",
       spect_quantity  = "tot",
@@ -368,7 +368,7 @@ class PlotSpectra():
       bool_verbose    = False
     )
     ## load total magnetic energy spectra
-    dict_mag_spect_tot_data = LoadFlashData.loadAllSpectraData(
+    dict_mag_spect_tot_data = LoadFlashData.loadAllSpectra(
       filepath        = self.filepath_spect,
       spect_field     = "mag",
       spect_quantity  = "tot",
@@ -670,7 +670,7 @@ def plotSimData(
 ## ###############################################################
 ## CREATE LIST OF SIMULATION DIRECTORIES TO ANALYSE
 ## ###############################################################
-def getListOfSimFolders():
+def getListOfSimFilepaths():
   list_sim_filepaths = []
   ## LOOK AT EACH SIMULATION SUITE
   ## -----------------------------
@@ -701,7 +701,7 @@ def getListOfSimFolders():
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  list_sim_filepaths = getListOfSimFolders()
+  list_sim_filepaths = getListOfSimFilepaths_plasmaSet()
   if BOOL_MPROC:
     with cfut.ProcessPoolExecutor() as executor:
       manager = mproc.Manager()

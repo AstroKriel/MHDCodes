@@ -12,6 +12,7 @@ from scipy.optimize import curve_fit
 ## load user defined modules
 from TheSimModule import SimParams
 from TheUsefulModule import WWFnF, WWObjs
+from TheLoadingModule import FileNames
 from TheFittingModule import UserModels
 from ThePlottingModule import PlotFuncs
 
@@ -31,34 +32,6 @@ def convertNone2Nan(list_elems):
 
 def removeNones(list_elems):
   return [ elem for elem in list_elems if elem is not None ]
-
-def addLabel_simInputs(
-    filepath_sim_res,
-    fig, ax,
-    bbox          = (0.0, 0.0),
-    vpos          = (0.05, 0.05),
-    bool_show_res = True
-  ):
-  ## load simulation parameters
-  dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res)
-  if bool_show_res:
-    label_res = r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(dict_sim_inputs["sim_res"]))
-  else: label_res = None
-  ## annotate simulation parameters
-  PlotFuncs.addBoxOfLabels(
-    fig, ax,
-    bbox        = bbox,
-    xpos        = vpos[0],
-    ypos        = vpos[1],
-    alpha       = 0.5,
-    fontsize    = 18,
-    list_labels = [
-      label_res,
-      r"${\rm Re} = $ " + "{:d}".format(int(dict_sim_inputs["Re"])),
-      r"${\rm Rm} = $ " + "{:d}".format(int(dict_sim_inputs["Rm"])),
-      r"${\rm Pm} = $ " + "{:d}".format(int(dict_sim_inputs["Pm"])),
-    ]
-  )
 
 def createLabel_fromStats_converge(stats):
   return r"${} \pm {}$\;".format(
@@ -176,7 +149,7 @@ class PlotScaleConvergence():
       "k_nu_trv_stats_converge" : self.k_nu_trv_stats_converge,
     }
     WWObjs.saveDict2JsonFile(
-      filepath_file = f"{self.filepath_sim}/scales.json",
+      filepath_file = f"{self.filepath_sim}/{FileNames.FILENAME_SIM_SCALES}",
       input_dict    = dict_converged_scales
     )
     return
@@ -293,8 +266,8 @@ class PlotScaleConvergence():
     axs[0][1].set_ylabel(r"$k_{\nu, \parallel}$")
     axs[1][1].set_ylabel(r"$k_{\nu, \perp}$")
     ## annotate simulation parameters
-    addLabel_simInputs(
-      filepath_sim_res = f"{self.filepath_sim}/288/",
+    SimParams.addLabel_simInputs(
+      filepath      = f"{self.filepath_sim}/288/",
       fig           = self.fig,
       ax            = axs[0][0],
       bbox          = (0.0, 1.0),
@@ -333,7 +306,7 @@ def main():
       ## CHECK THE NRES=288 DATASET EXISTS
       ## ---------------------------------
       ## check that the simulation data exists at Nres=288
-      if not os.path.isfile(f"{filepath_sim}/288/sim_outputs.json"): continue
+      if not os.path.isfile(f"{filepath_sim}/288/{FileNames.FILENAME_SIM_OUTPUTS}"): continue
       ## MAKE SURE A VISUALISATION FOLDER EXISTS
       ## ---------------------------------------
       ## where plots/dataset of converged data will be stored

@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 
 ## load user defined modules
-from TheUsefulModule import WWFnF, WWLists, WWObjs
 from TheSimModule import SimParams
-from TheLoadingModule import LoadFlashData
+from TheUsefulModule import WWFnF, WWLists, WWObjs
+from TheLoadingModule import LoadFlashData, FileNames
 from ThePlottingModule import PlotFuncs, PlotLatex
 
 ## ##############################################################
@@ -195,7 +195,7 @@ class PlotSpectra():
       "k_nu_trv_group_t_1"  : self.k_nu_trv_group_t_1,
       "k_nu_trv_group_t_2"  : self.k_nu_trv_group_t_2,
     }
-    WWObjs.saveDict2JsonFile(f"{self.filepath_sim_res}/sim_outputs.json", dict_scales)
+    WWObjs.saveDict2JsonFile(f"{self.filepath_sim_res}/{FileNames.FILENAME_SIM_SCALES}", dict_scales)
 
   def __loadData(self):
     ## load simulation parameters
@@ -210,7 +210,7 @@ class PlotSpectra():
     self.Pm           = dict_sim_inputs["Pm"]
     ## load energy spectra
     print("Loading kinetic energy spectra...")
-    dict_kin_spect_tot = LoadFlashData.loadAllSpectraData(
+    dict_kin_spect_tot = LoadFlashData.loadAllSpectra(
       filepath        = f"{self.filepath_sim_res}/spect/",
       spect_field     = "vel",
       spect_quantity  = "tot",
@@ -218,7 +218,7 @@ class PlotSpectra():
       file_end_time   = time_growth_end,
       plots_per_eddy  = plots_per_eddy
     )
-    dict_kin_spect_lgt = LoadFlashData.loadAllSpectraData(
+    dict_kin_spect_lgt = LoadFlashData.loadAllSpectra(
       filepath        = f"{self.filepath_sim_res}/spect/",
       spect_field     = "vel",
       spect_quantity  = "lgt",
@@ -226,7 +226,7 @@ class PlotSpectra():
       file_end_time   = time_growth_end,
       plots_per_eddy  = plots_per_eddy
     )
-    dict_kin_spect_trv = LoadFlashData.loadAllSpectraData(
+    dict_kin_spect_trv = LoadFlashData.loadAllSpectra(
       filepath        = f"{self.filepath_sim_res}/spect/",
       spect_field     = "vel",
       spect_quantity  = "trv",
@@ -235,7 +235,7 @@ class PlotSpectra():
       plots_per_eddy  = plots_per_eddy
     )
     print("Loading magnetic energy spectra...")
-    dict_mag_spect_tot = LoadFlashData.loadAllSpectraData(
+    dict_mag_spect_tot = LoadFlashData.loadAllSpectra(
       filepath        = f"{self.filepath_sim_res}/spect/",
       spect_field     = "mag",
       spect_quantity  = "tot",

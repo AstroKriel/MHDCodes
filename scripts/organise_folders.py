@@ -18,9 +18,9 @@ def removeFiles(filepath_files, file_name_starts_with):
     filename_startswith = file_name_starts_with
   )
   if len(list_files_in_filepath) > 0:
-    os.system(f"rm {filepath_files}/{file_name_starts_with}_*")
-    print(f"\t> Removed {len(list_files_in_filepath)} '{file_name_starts_with}_*' files.")
-  else: print(f"\t> There are no '{file_name_starts_with}_*' files in:\n\t", filepath_files)
+    os.system(f"rm {filepath_files}/{file_name_starts_with}*")
+    print(f"\t> Removed {len(list_files_in_filepath)} '{file_name_starts_with}*' files.")
+  else: print(f"\t> There are no '{file_name_starts_with}*' files in:\n\t", filepath_files)
   print(" ")
 
 def moveFiles(
@@ -69,9 +69,9 @@ class ReorganiseSimFolder():
   def removeExtraFiles(self):
     print("Removing extraneous files...")
     ## remove extraneous files
-    removeFiles(self.filepath_sim, "core.flash4_nxb")
-    removeFiles(self.filepath_sim, "Turb_proj")
-    removeFiles(self.filepath_sim, "Turb_slice")
+    removeFiles(self.filepath_sim, "core.flash4_nxb_")
+    removeFiles(self.filepath_sim, "Turb_proj_")
+    removeFiles(self.filepath_sim, "Turb_slice_")
     ## count number of chk-files
     list_chk_files = WWFnF.getFilesFromFilepath(
       filepath            = self.filepath_sim,

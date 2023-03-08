@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 ## load user defined modules
 from TheSimModule import SimParams
 from TheUsefulModule import WWFnF, WWObjs
+from TheLoadingModule import FileNames
 from ThePlottingModule import PlotFuncs
 
 
@@ -80,7 +81,7 @@ class PlotSimScales():
         filepath_sim = WWFnF.createFilepath([
           BASEPATH, suite_folder, SONIC_REGIME, sim_folder
         ])
-        if not os.path.isfile(f"{filepath_sim}/scales.json"): continue
+        if not os.path.isfile(f"{filepath_sim}/{FileNames.FILENAME_SIM_SCALES}"): continue
         ## load scales
         print(f"\t> Loading '{sim_folder}' dataset")
         bool_skip = self.__getParams(filepath_sim)
@@ -99,7 +100,7 @@ class PlotSimScales():
     )
     dict_scales = WWObjs.readJsonFile2Dict(
       filepath     = filepath_data,
-      filename     = "scales.json",
+      filename     = FileNames.FILENAME_SIM_SCALES,
       bool_verbose = False
     )
     ## extract plasma Reynolds numbers

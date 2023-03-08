@@ -5,6 +5,7 @@
 ## MODULES
 ## ###############################################################
 from TheUsefulModule import WWFnF
+from TheLoadingModule import FileNames
 
 
 ## ###############################################################
@@ -19,7 +20,7 @@ def createParamFileLine(
   def numSpaces(num_spaces, string):
     return " " * ( num_spaces - len(string) )
   ## create variable assignment
-  str_variable_assign = "{}{}={}".format(
+  str_variable_assign = "{}{}= {}".format(
     str_variable,
     numSpaces(num_spaces_assign, str_variable),
     str_value
@@ -32,34 +33,33 @@ def createParamFileLine(
   )
 
 
-FILENAME_TURB_PAR = "turbulence_generator.inp"
 ## ###############################################################
 ## FUNCTION: write turbulence driving generator file
 ## ###############################################################
-def writeTurbGenFile(
+def writeTurbDrivingFile(
     filepath_ref, filepath_to,
     des_velocity         = 5.0,
-    des_ampl_coeff       = 0.1,
+    des_ampl_factor       = 0.1,
     des_k_driv           = 2.0,
     des_k_min            = 1.0,
     des_k_max            = 3.0,
     des_sol_weight       = 1.0, # solenoidal driving
     des_spect_form       = 1.0, # paraboloid profile
-    des_nsteps_per_teddy = 10
+    des_nsteps_per_t_turb = 10
   ):
   ## initialise flags
-  bool_set_velocity         = False
-  bool_set_ampl_coeff       = False
-  bool_set_k_driv           = False
-  bool_set_k_min            = False
-  bool_set_k_max            = False
-  bool_set_sol_weight       = False
-  bool_set_spect_form       = False
-  bool_set_nsteps_per_teddy = False
+  bool_set_velocity          = False
+  bool_set_ampl_factor       = False
+  bool_set_k_driv            = False
+  bool_set_k_min             = False
+  bool_set_k_max             = False
+  bool_set_sol_weight        = False
+  bool_set_spect_form        = False
+  bool_set_nsteps_per_t_turb = False
   ## define turbulence generator input parameters
   args_spaces = {
-    "num_spaces_assign"  : 25,
-    "num_spaces_comment" : 40
+    "num_spaces_assign"  : 18,
+    "num_spaces_comment" : 28
   }
   str_velocity = createParamFileLine(
     str_variable = "velocity",
@@ -67,9 +67,9 @@ def writeTurbGenFile(
     str_comment  = "Target turbulent velocity dispersion",
     **args_spaces
   )
-  str_ampl_coeff = createParamFileLine(
-    str_variable = "ampl_coeff",
-    str_value    = f"{des_ampl_coeff:.5f}",
+  str_ampl_factor = createParamFileLine(
+    str_variable = "ampl_factor",
+    str_value    = f"{des_ampl_factor:.5f}",
     str_comment  = "Used to achieve a target velocity dispersion; scales with velocity/velocity_measured",
     **args_spaces
   )
@@ -103,16 +103,16 @@ def writeTurbGenFile(
     str_comment  = "0: band/rectangle/constant, 1: paraboloid, 2: power law",
     **args_spaces
   )
-  str_nsteps_per_teddy = createParamFileLine(
-    str_variable = "nsteps_per_turnover_time",
-    str_value    = f"{des_nsteps_per_teddy:d}",
+  str_nsteps_per_t_turb = createParamFileLine(
+    str_variable = "nsteps_per_t_turb",
+    str_value    = f"{des_nsteps_per_t_turb:d}",
     str_comment  = "Number of turbulence driving pattern updates per turnover time",
     **args_spaces
   )
   ## open new file
-  with open(f"{filepath_to}/{FILENAME_TURB_PAR}", "w") as new_file:
+  with open(f"{filepath_to}/{FileNames.FILENAME_DRIVING_INPUT}", "w") as new_file:
     ## open refernce file
-    with open(f"{filepath_ref}/{FILENAME_TURB_PAR}", "r") as ref_file_lines:
+    with open(f"{filepath_ref}/{FileNames.FILENAME_DRIVING_INPUT}", "r") as ref_file_lines:
       ## loop over lines in reference file
       for ref_line in ref_file_lines:
         list_ref_line_elems = ref_line.split()
@@ -126,9 +126,9 @@ def writeTurbGenFile(
         elif list_ref_line_elems[0] == "velocity":
           new_file.write(str_velocity)
           bool_set_velocity = True
-        elif list_ref_line_elems[0] == "ampl_coeff":
-          new_file.write(str_ampl_coeff)
-          bool_set_ampl_coeff = True
+        elif list_ref_line_elems[0] == "ampl_factor":
+          new_file.write(str_ampl_factor)
+          bool_set_ampl_factor = True
         ## setting driving profile
         ## -----------------------
         elif list_ref_line_elems[0] == "k_driv":
@@ -146,14 +146,14 @@ def writeTurbGenFile(
         elif list_ref_line_elems[0] == "spect_form":
           new_file.write(str_spect_form)
           bool_set_spect_form = True
-        elif list_ref_line_elems[0] == "nsteps_per_turnover_time":
-          new_file.write(str_nsteps_per_teddy)
-          bool_set_nsteps_per_teddy = True
+        elif list_ref_line_elems[0] == "nsteps_per_t_turb":
+          new_file.write(str_nsteps_per_t_turb)
+          bool_set_nsteps_per_t_turb = True
         ## found line where comment overflows
         ## ----------------------------------
         elif (list_ref_line_elems[0] == "#") and ("*" not in list_ref_line_elems[1]):
           new_file.write("{}# {}\n".format(
-            " " * 40,
+            " " * args_spaces["num_spaces_comment"],
             " ".join(list_ref_line_elems[1:])
           ))
         ## otherwise write line contents
@@ -161,20 +161,19 @@ def writeTurbGenFile(
   ## check that all parameters have been defined
   list_bools = [
     bool_set_velocity,
-    bool_set_ampl_coeff,
+    bool_set_ampl_factor,
     bool_set_k_driv,
     bool_set_k_min,
     bool_set_k_max,
     bool_set_sol_weight,
     bool_set_spect_form,
-    bool_set_nsteps_per_teddy
+    bool_set_nsteps_per_t_turb
   ]
   if all(list_bools):
     print(f"Successfully modified turbulence generator in:", filepath_to)
   else: raise Exception("ERROR: failed to write turbulence generator in:", filepath_to, list_bools)
 
 
-FILENAME_FLASH_PAR = "flash.par"
 ## ###############################################################
 ## FUNCTION: write flash input parameter file
 ## ###############################################################
@@ -186,6 +185,7 @@ def writeFlashParamFile(
   ):
   max_wall_time_sec = max_hours * 60 * 60 - 1000 # [seconds]
   ## initialise flags
+  bool_set_driving       = False
   bool_use_visc          = False
   bool_use_resis         = False
   bool_set_nu            = False
@@ -201,6 +201,7 @@ def writeFlashParamFile(
   bool_set_max_sim_time  = False
   bool_set_max_wall_time = False
   ## define flash input parameters
+  str_set_driving        = f"st_infilename = {FileNames.FILENAME_DRIVING_INPUT}\n"
   str_use_visc           = "useViscosity = .true.\n"
   str_use_resis          = "useMagneticResistivity = .true.\n"
   str_set_nu             = f"diff_visc_nu = {nu} # implies Re = {Re} with Mach = {Mach}\n"
@@ -216,12 +217,12 @@ def writeFlashParamFile(
   str_set_max_sim_time   = f"tmax = {100 * t_turb} # 100 t_turb\n"
   str_set_max_wall_time  = f"wall_clock_time_limit = {max_wall_time_sec} # closes sim and saves state\n"
   ## open new file
-  with open(f"{filepath_to}/{FILENAME_FLASH_PAR}", "w") as new_file:
+  with open(f"{filepath_to}/{FileNames.FILENAME_FLASH_INPUT}", "w") as new_file:
     ## open reference file
-    with open(f"{filepath_ref}/{FILENAME_FLASH_PAR}", "r") as ref_file_lines:
+    with open(f"{filepath_ref}/{FileNames.FILENAME_FLASH_INPUT}", "r") as ref_file_lines:
       ## set cfl condition sufficiently low to resolve low Re dynamics
       if (Re < 50): new_file.write("hy_diffuse_cfl = 0.2\n\n")
-      ## loop over lines in reference 'flash.par'
+      ## loop over reference file
       for ref_line_elems in ref_file_lines:
         ## split line contents into words
         list_ref_line_elems = ref_line_elems.split()
@@ -233,9 +234,14 @@ def writeFlashParamFile(
         ## extract parameter name
         ## ----------------------
         param_name = list_ref_line_elems[0]
+        ## define driving parameter file
+        ## -----------------------------
+        if param_name == "st_infilename":
+          new_file.write(str_set_driving)
+          bool_set_driving = True
         ## turn physical dissipation on
         ## ----------------------------
-        if param_name == "useViscosity":
+        elif param_name == "useViscosity":
           new_file.write(str_use_visc)
           bool_use_visc = True
         elif param_name == "useMagneticResistivity":
@@ -289,6 +295,7 @@ def writeFlashParamFile(
         else: new_file.write(ref_line_elems)
   ## check that all parameters have been defined
   list_bools = [
+    bool_set_driving,
     bool_use_visc,
     bool_use_resis,
     bool_set_nu,
@@ -310,7 +317,7 @@ def writeFlashParamFile(
 
 
 ## ###############################################################
-## CLASS 
+## PREPARE ALL PARAMETER FILES FOR SIMULATION
 ## ###############################################################
 class PrepSimJob():
   def __init__(
@@ -340,12 +347,12 @@ class PrepSimJob():
     WWFnF.copyFileFromNTo(
         directory_from = filepath_ref_sim,
         directory_to   = self.filepath_sim,
-        filename       = FILENAME_TURB_PAR
+        filename       = FileNames.FILENAME_DRIVING_INPUT
     )
     WWFnF.copyFileFromNTo(
         directory_from = filepath_ref_sim,
         directory_to   = self.filepath_sim,
-        filename       = FILENAME_FLASH_PAR
+        filename       = FileNames.FILENAME_FLASH_INPUT
     )
     self.__createJob()
 
@@ -357,17 +364,17 @@ class PrepSimJob():
       filename       = self.filename_flash_exe
     )
     ## modify simulation parameter files
-    writeTurbGenFile(
+    writeTurbDrivingFile(
       filepath_ref         = self.filepath_ref,
       filepath_to          = self.filepath_sim,
       des_velocity         = 5.0,
-      des_ampl_coeff       = 0.1,
+      des_ampl_factor       = 0.1,
       des_k_driv           = 2.0,
       des_k_min            = 1.0,
       des_k_max            = 3.0,
       des_sol_weight       = 1.0,
       des_spect_form       = 1.0,
-      des_nsteps_per_teddy = 10
+      des_nsteps_per_t_turb = 10
     )
     writeFlashParamFile(
       filepath_ref = self.filepath_ref,
@@ -414,7 +421,7 @@ class PrepSimJob():
     if self.num_cpus > 1000:
       self.max_hours = 24
     else: self.max_hours = 48
-    self.job_name    = "job_run_sim.sh"
+    self.job_name    = FileNames.FILENAME_JOB_RUN_SIM
     self.job_tagname = "{}{}{}sim{}".format(
       self.sonic_regime.split("_")[0],
       self.suite_folder,
@@ -448,8 +455,8 @@ class PrepSimJob():
       job_file.write(f"mpirun ./{self.filename_flash_exe} 1>shell_sim.out00 2>&1\n")
     ## indicate progress
     print(f"Created PBS job:")
-    print(f"\t> Job name: {self.job_name}")
-    print(f"\t> Directory: {self.filepath_sim}")
+    print(f"\t> Job name:", self.job_name)
+    print(f"\t> Directory:", self.filepath_sim)
 
 
 ## END OF LIBRARY
