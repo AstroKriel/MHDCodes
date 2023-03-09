@@ -12,7 +12,9 @@ from organise_folders import removeFiles
 
 ## load user defined modules
 from TheSimModule import SimParams
+from TheUsefulModule import WWLists
 from TheLoadingModule import LoadFlashData, FileNames
+from TheFittingModule import FitFuncs
 
 
 ## ###############################################################
@@ -52,11 +54,10 @@ def updateDrivingHistory(filepath, current_time, measured_Mach, old_driving_ampl
   filepath_file = f"{filepath}/{FileNames.FILENAME_DRIVING_HISTORY}"
   with open(filepath_file, "a") as fp:
     fp.write(f"{current_time} {measured_Mach} {old_driving_amplitude} {new_driving_amplitude}\n")
-  a = 10
 
 
 ## ###############################################################
-## TUNE TUTBULENCE DRIVING FILE
+## OPERATOR CLASS
 ## ###############################################################
 class TurbDrvingFile():
   def __init__(self, filepath_sim):
@@ -67,7 +68,6 @@ class TurbDrvingFile():
     self.desired_Mach = dict_sim_inputs["desired_Mach"]
     self.current_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     ## initialise program parameters, measured quantities, and flags
-    self.relative_tol           = 0.05
     self.num_decimals_rounded   = 5
     self.list_old_Mach          = []
     self.list_old_coef          = []
@@ -87,20 +87,22 @@ class TurbDrvingFile():
     else: self._createDrivingHistory()
     ## check whether the driving paramaters need to be updated
     if not(self.bool_history_converged):
+      self._loadData()
       self._measureMach()
       if self.bool_repeating:
         print("\t> Measured Mach number is too similar to a previous entry.")
         return
       if not(self.bool_Mach_converged):
         self._tuneDriving()
+        self._removeOldData()
         self._reRunSimulation()
     else: print(f"\t> Driving parameters have already converged on the desired Mach = {self.desired_Mach}")
 
   def __round(self, value):
     return round(value, self.num_decimals_rounded)
 
-  def __relErrLessTol(self, value_ref, value):
-    return abs(value_ref - value) / value_ref < self.relative_tol
+  def __relErr(self, value_ref, value):
+    return abs(value_ref - value) / value_ref
 
   def _createDrivingHistory(self):
     with open(f"{self.filepath_sim}/{FileNames.FILENAME_DRIVING_HISTORY}", "w") as fp:
@@ -120,10 +122,11 @@ class TurbDrvingFile():
     print("\t> Previous Mach numbers:",       self.list_old_Mach)
     print("\t> Previous driving amplitudes:", self.list_old_coef)
 
-  def _measureMach(self):
-    data_time, data_Mach = LoadFlashData.loadTurbData(
+  def _loadData(self):
+    ## load Mach data
+    data_time, self.data_Mach = LoadFlashData.loadTurbData(
       filepath   = self.filepath_sim,
-      quantity   = "Mach",
+      quantity   = "mach",
       t_turb     = self.t_turb,
       time_start = 0.1,
       time_end   = np.inf
@@ -133,12 +136,60 @@ class TurbDrvingFile():
       raise Exception("ERROR: time range is insufficient to tune driving parameters")
     elif len(data_time) == 0:
       raise Exception("ERROR: no simulation data")
-    self.ave_Mach = self.__round(np.mean(data_Mach))
-    self.std_Mach = self.__round(np.std(data_Mach))
+    ## load kinetic energy
+    _, data_kin_energy = LoadFlashData.loadTurbData(
+      filepath   = self.filepath_sim,
+      quantity   = "kin",
+      t_turb     = self.t_turb,
+      time_start = 0.1,
+      time_end   = np.inf
+    )
+    ## load magnetic energy
+    _, data_mag_energy = LoadFlashData.loadTurbData(
+      filepath   = self.filepath_sim,
+      quantity   = "mag",
+      t_turb     = self.t_turb,
+      time_start = 0.1,
+      time_end   = np.inf
+    )
+    ## compute energy ratio
+    data_E_ratio = [
+      mag_energy / kin_energy
+      for mag_energy, kin_energy in zip(
+        data_mag_energy,
+        data_kin_energy
+      )
+    ]
+    ## find saturated energy ratio
+    index_sat_start = WWLists.getIndexClosestValue(
+      data_time,
+      0.75 * data_time[-1]
+    )
+    ## fit saturated energy ratio
+    E_sat_ratio, _ = FitFuncs.fitConstFunc(
+      data_x          = data_time,
+      data_y          = data_E_ratio,
+      index_start_fit = index_sat_start,
+      index_end_fit   = len(data_time)-1,
+    )
+    ## get index range corresponding with kinematic phase of the dynamo
+    t_start_index = WWLists.getIndexClosestValue(data_time, 5.0)
+    index_E_lo = WWLists.getIndexClosestValue(data_E_ratio, 10**(-8))
+    index_E_hi = WWLists.getIndexClosestValue(data_E_ratio, E_sat_ratio/100)
+    ## find indices associated with kinematic phase
+    self.index_growth_start = max([ t_start_index, min([ index_E_lo, index_E_hi ]) ])
+    self.index_growth_end   = max([ index_E_lo, index_E_hi ])
+
+  def _measureMach(self):
+    ## measure Mach number statistics in kinematic phase
+    self.ave_Mach = self.__round(np.mean(self.data_Mach[self.index_growth_start : self.index_growth_end]))
+    self.std_Mach = self.__round(np.std(self.data_Mach[self.index_growth_start : self.index_growth_end]))
     print(f"\t> Measured Mach = {self.ave_Mach} +/- {self.std_Mach}")
-    self.bool_Mach_converged = self.__relErrLessTol(self.desired_Mach, self.ave_Mach)
+    rel_Mach_err = self.__relErr(self.desired_Mach, self.ave_Mach)
+    self.bool_Mach_converged = rel_Mach_err < 0.05
+    print(f"\t> Measured Mach {100*rel_Mach_err:.3f}% off from dsired Mach = {self.desired_Mach:.1f}")
     self.bool_repeating = any([
-      self.__relErrLessTol(self.ave_Mach, old_Mach)
+      self.__relErr(self.ave_Mach, old_Mach) < 0.01
       for old_Mach in self.list_old_Mach
     ])
 
@@ -161,8 +212,10 @@ class TurbDrvingFile():
     removeFiles(self.filepath_sim, "Turb")
     removeFiles(self.filepath_sim, "stir.dat")
     removeFiles(self.filepath_sim, "sim_outputs.json")
-    removeFiles(self.filepath_sim, "*.o")
     removeFiles(self.filepath_sim, "shell_sim.out00")
+
+  def _resetFlashInputFile(self):
+    a = 10
 
   def _reRunSimulation(self):
     ## submit simulation PBS job script
@@ -175,14 +228,35 @@ class TurbDrvingFile():
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  obj_tune_driving = TurbDrvingFile("/scratch/ek9/nk7952/Mach/10/144/")
-  obj_tune_driving.performRoutine()
+  list_sim_filepaths = SimParams.getListOfSimFilepaths(
+    basepath           = BASEPATH,
+    list_suite_folders = LIST_SUITE_FOLDERS,
+    list_sonic_regimes = LIST_SONIC_REGIMES,
+    list_sim_folders   = LIST_SIM_FOLDERS,
+    list_sim_res       = LIST_SIM_RES
+  )
+  for sim_filepath in list_sim_filepaths:
+    obj_tune_driving = TurbDrvingFile(sim_filepath)
+    obj_tune_driving.performRoutine()
+    print(" ")
 
 
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-FILEPATH_BASE = "/scratch/ek9/nk7952/"
+BASEPATH = "/scratch/ek9/nk7952/"
+
+# ## PLASMA PARAMETER SET
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+
+## MACH NUMBER SET
+LIST_SUITE_FOLDERS = [ "Re300" ]
+LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+LIST_SIM_FOLDERS   = [ "Pm4" ]
+LIST_SIM_RES       = [ "144" ]
 
 
 ## ###############################################################

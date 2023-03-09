@@ -97,7 +97,7 @@ def plotReynoldsSpectrum(ax, list_times, list_k, list_power_group_t, viscosity, 
 
 
 ## ###############################################################
-## OPERATOR CLASS: PLOT NORMALISED + TIME-AVERAGED ENERGY SPECTRA
+## OPERATOR CLASS
 ## ###############################################################
 class PlotSpectra():
   def __init__(
@@ -583,11 +583,16 @@ class PlotSpectra():
 ## ###############################################################
 def plotSimData(
     filepath_sim_res,
-    lock         = None,
-    bool_verbose = True
+    lock            = None,
+    bool_check_only = False,
+    bool_verbose    = True
   ):
   print("Looking at:", filepath_sim_res)
+  ## get simulation parameters
   dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res, bool_verbose=False)
+  ## make sure a visualisation folder exists
+  filepath_vis = f"{filepath_sim_res}/vis_folder/"
+  WWFnF.createFolder(filepath_vis, bool_verbose=False)
   ## INITIALISE FIGURE
   ## -----------------
   if bool_verbose: print("Initialising figure...")
@@ -635,10 +640,10 @@ def plotSimData(
     bool_verbose     = bool_verbose
   )
   obj_plot_turb.performRoutines()
-  obj_plot_turb.saveFittedParams(filepath_sim_res)
+  if not(bool_check_only): obj_plot_turb.saveFittedParams(filepath_sim_res)
   dict_turb_params = obj_plot_turb.getFittedParams()
-  ## PLOT FITTED SPECTRA
-  ## -------------------
+  ## PLOT SPECTRA + MEASURED SCALES
+  ## ------------------------------
   obj_plot_spectra = PlotSpectra(
     fig             = fig,
     dict_axs        = {
@@ -658,86 +663,49 @@ def plotSimData(
   ## SAVE FIGURE + DATASET
   ## ---------------------
   if lock is not None: lock.acquire()
-  obj_plot_spectra.saveFittedParams(filepath_sim_res)
-  suite_folder = dict_sim_inputs["suite_folder"]
-  sim_folder   = dict_sim_inputs["sim_folder"]
-  fig_name = f"{suite_folder}_{sim_folder}_dataset.png"
-  PlotFuncs.saveFigure(fig, f"{filepath_sim_res}/vis_folder/{fig_name}", bool_verbose=True)
+  if not(bool_check_only): obj_plot_spectra.saveFittedParams(filepath_sim_res)
+  sim_name = SimParams.getSimName(dict_sim_inputs)
+  fig_name = f"{sim_name}_dataset.png"
+  PlotFuncs.saveFigure(fig, f"{filepath_vis}/{fig_name}", bool_verbose=True)
   if lock is not None: lock.release()
   if bool_verbose: print(" ")
-
-
-## ###############################################################
-## CREATE LIST OF SIMULATION DIRECTORIES TO ANALYSE
-## ###############################################################
-def getListOfSimFilepaths():
-  list_sim_filepaths = []
-  ## LOOK AT EACH SIMULATION SUITE
-  ## -----------------------------
-  for suite_folder in LIST_SUITE_FOLDER:
-    ## LOOK AT EACH SIMULATION FOLDER
-    ## -----------------------------
-    for sim_folder in LIST_SIM_FOLDER:
-      ## CHECK THE SUITE + SIMULATION CONFIG EXISTS
-      ## ------------------------------------------
-      filepath_sim = WWFnF.createFilepath([
-        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
-      ])
-      if not os.path.exists(filepath_sim): continue
-      ## loop over the different resolution runs
-      for sim_res in LIST_SIM_RES:
-        ## CHECK THE RESOLUTION RUN EXISTS
-        ## -------------------------------
-        filepath_sim_res = f"{filepath_sim}/{sim_res}/"
-        if not os.path.exists(filepath_sim_res): continue
-        list_sim_filepaths.append(filepath_sim_res)
-        ## MAKE SURE A VISUALISATION FOLDER EXISTS
-        ## ---------------------------------------
-        WWFnF.createFolder(f"{filepath_sim_res}/vis_folder", bool_verbose=False)
-  return list_sim_filepaths
 
 
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  list_sim_filepaths = getListOfSimFilepaths_plasmaSet()
-  if BOOL_MPROC:
-    with cfut.ProcessPoolExecutor() as executor:
-      manager = mproc.Manager()
-      lock = manager.Lock()
-      ## loop over all simulation folders
-      futures = [
-        executor.submit(
-          functools.partial(plotSimData, lock=lock, bool_verbose=False),
-          sim_filepath
-        ) for sim_filepath in list_sim_filepaths
-      ]
-      ## wait to ensure that all scheduled and running tasks have completed
-      cfut.wait(futures)
-      ## check if any tasks failed
-      for future in cfut.as_completed(futures):
-        future.result()
-  else: [
-    plotSimData(sim_filepath, bool_verbose=True)
-    for sim_filepath in list_sim_filepaths
-  ]
+  SimParams.callFuncForAllSimulations(
+    func               = plotSimData,
+    bool_mproc         = BOOL_MPROC,
+    bool_check_only    = BOOL_CHECK_ONLY,
+    basepath           = BASEPATH,
+    list_suite_folders = LIST_SUITE_FOLDERS,
+    list_sonic_regimes = LIST_SONIC_REGIMES,
+    list_sim_folders   = LIST_SIM_FOLDERS,
+    list_sim_res       = LIST_SIM_RES
+  )
 
 
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC        = 0
-BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "super_sonic"
+BOOL_MPROC         = 0
+BOOL_CHECK_ONLY    = 0
+BASEPATH           = "/scratch/ek9/nk7952/"
 
-LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+## PLASMA PARAMETER SET
+LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+LIST_SIM_RES       = [ "144", "288" ]
 
-LIST_SUITE_FOLDER = [ "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm25", "Pm50" ]
-LIST_SIM_RES      = [ "576" ]
+# ## MACH NUMBER SET
+# LIST_SUITE_FOLDERS = [ "Re300" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+# LIST_SIM_FOLDERS   = [ "Pm4" ]
+# LIST_SIM_RES       = [ "144" ]
 
 
 ## ###############################################################

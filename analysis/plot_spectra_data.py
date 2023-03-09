@@ -475,13 +475,13 @@ def main():
 
         ## CHECK THE RESOLUTION RUN EXISTS
         ## -------------------------------
-        filepath_sim_res = f"{filepath_sim}/{sim_res}/"
+        filepath_sim_res = f"{filepath_sim}/{sim_res}"
         ## check that the filepath exists
         if not os.path.exists(filepath_sim_res): continue
 
         ## MAKE SURE A VISUALISATION FOLDER EXISTS
         ## ---------------------------------------
-        filepath_sim_res_plot = f"{filepath_sim_res}/vis_folder/"
+        filepath_sim_res_plot = f"{filepath_sim_res}/vis_folder"
         WWFnF.createFolder(filepath_sim_res_plot, bool_verbose=True)
 
         ## PLOT SIMULATION DATA

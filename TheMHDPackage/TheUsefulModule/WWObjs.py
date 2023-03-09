@@ -7,6 +7,9 @@
 import os, json
 import numpy as np
 
+## import user defined modules
+from TheUsefulModule import WWFnF
+
 
 ## ###############################################################
 ## WORKING WITH JSON-FILES

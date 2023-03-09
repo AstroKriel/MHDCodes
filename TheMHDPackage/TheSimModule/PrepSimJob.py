@@ -4,6 +4,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
+from TheSimModule import SimParams
 from TheUsefulModule import WWFnF
 from TheLoadingModule import FileNames
 
@@ -32,19 +33,25 @@ def createParamFileLine(
     str_comment
   )
 
+def updateParam(file_line, updated_param_value):
+  return file_line.replace(
+    file_line.split("=")[1].split()[0],
+    updated_param_value
+  )
+
 
 ## ###############################################################
 ## FUNCTION: write turbulence driving generator file
 ## ###############################################################
 def writeTurbDrivingFile(
     filepath_ref, filepath_to,
-    des_velocity         = 5.0,
+    des_velocity          = 5.0,
     des_ampl_factor       = 0.1,
-    des_k_driv           = 2.0,
-    des_k_min            = 1.0,
-    des_k_max            = 3.0,
-    des_sol_weight       = 1.0, # solenoidal driving
-    des_spect_form       = 1.0, # paraboloid profile
+    des_k_driv            = 2.0,
+    des_k_min             = 1.0,
+    des_k_max             = 3.0,
+    des_sol_weight        = 1.0, # solenoidal driving
+    des_spect_form        = 1.0, # paraboloid profile
     des_nsteps_per_t_turb = 10
   ):
   ## initialise flags
@@ -112,9 +119,9 @@ def writeTurbDrivingFile(
   ## open new file
   with open(f"{filepath_to}/{FileNames.FILENAME_DRIVING_INPUT}", "w") as new_file:
     ## open refernce file
-    with open(f"{filepath_ref}/{FileNames.FILENAME_DRIVING_INPUT}", "r") as ref_file_lines:
+    with open(f"{filepath_ref}/{FileNames.FILENAME_DRIVING_INPUT}", "r") as ref_file:
       ## loop over lines in reference file
-      for ref_line in ref_file_lines:
+      for ref_line in ref_file.readlines():
         list_ref_line_elems = ref_line.split()
         ## handle empty lines
         ## ------------------
@@ -177,12 +184,7 @@ def writeTurbDrivingFile(
 ## ###############################################################
 ## FUNCTION: write flash input parameter file
 ## ###############################################################
-def writeFlashParamFile(
-    filepath_ref, filepath_to,
-    Re, Rm, Pm,
-    nu, eta, Mach, t_turb,
-    num_procs, max_hours
-  ):
+def writeFlashParamFile(filepath_ref, filepath_to, dict_sim_inputs, max_hours):
   max_wall_time_sec = max_hours * 60 * 60 - 1000 # [seconds]
   ## initialise flags
   bool_set_driving       = False
@@ -204,24 +206,32 @@ def writeFlashParamFile(
   str_set_driving        = f"st_infilename = {FileNames.FILENAME_DRIVING_INPUT}\n"
   str_use_visc           = "useViscosity = .true.\n"
   str_use_resis          = "useMagneticResistivity = .true.\n"
-  str_set_nu             = f"diff_visc_nu = {nu} # implies Re = {Re} with Mach = {Mach}\n"
-  str_set_eta            = f"resistivity = {eta} # implies Rm = {Rm} and Pm = {Pm}\n"
-  str_set_iproc          = f"iProcs = {num_procs[0]}\n"
-  str_set_jproc          = f"jProcs = {num_procs[1]}\n"
-  str_set_kproc          = f"kProcs = {num_procs[2]}\n"
+  str_set_nu             = "diff_visc_nu = {} # implies Re = {} with Mach = {}\n".format(
+    dict_sim_inputs["nu"],
+    dict_sim_inputs["Re"],
+    dict_sim_inputs["desired_Mach"]
+  )
+  str_set_eta            = "resistivity = {} # implies Rm = {} and Pm = {}\n".format(
+    dict_sim_inputs["eta"],
+    dict_sim_inputs["Rm"],
+    dict_sim_inputs["Pm"]
+  )
+  str_set_iproc          = "iProcs = {}\n".format(dict_sim_inputs["num_procs"][[0]])
+  str_set_jproc          = "jProcs = {}\n".format(dict_sim_inputs["num_procs"][[1]])
+  str_set_kproc          = "kProcs = {}\n".format(dict_sim_inputs["num_procs"][[2]])
   str_set_restart        = "restart = .false.\n"
   str_set_chk_num        = "checkpointFileNumber = 0\n"
   str_set_plt_num        = "plotFileNumber = 0\n"
-  str_set_chk_rate       = f"checkpointFileIntervalTime = {t_turb} # 1 t_turb\n"
-  str_set_plt_rate       = f"plotFileIntervalTime = {t_turb / 10} # 0.1 t_turb\n"
-  str_set_max_sim_time   = f"tmax = {100 * t_turb} # 100 t_turb\n"
+  str_set_chk_rate       = "checkpointFileIntervalTime = {} # 1 t_turb\n".format(dict_sim_inputs["t_turb"])
+  str_set_plt_rate       = "plotFileIntervalTime = {} # 0.1 t_turb\n".format(dict_sim_inputs["t_turb"] / 10)
+  str_set_max_sim_time   = "tmax = {} # 100 t_turb\n".format(100 * dict_sim_inputs["t_turb"])
   str_set_max_wall_time  = f"wall_clock_time_limit = {max_wall_time_sec} # closes sim and saves state\n"
   ## open new file
   with open(f"{filepath_to}/{FileNames.FILENAME_FLASH_INPUT}", "w") as new_file:
     ## open reference file
     with open(f"{filepath_ref}/{FileNames.FILENAME_FLASH_INPUT}", "r") as ref_file_lines:
       ## set cfl condition sufficiently low to resolve low Re dynamics
-      if (Re < 50): new_file.write("hy_diffuse_cfl = 0.2\n\n")
+      if (dict_sim_inputs["Re"] < 50): new_file.write("hy_diffuse_cfl = 0.2\n\n")
       ## loop over reference file
       for ref_line_elems in ref_file_lines:
         ## split line contents into words
@@ -322,119 +332,112 @@ def writeFlashParamFile(
 class PrepSimJob():
   def __init__(
       self,
-      filepath_ref, filepath_sim, dict_sim_inputs,
+      filepath_sim, dict_sim_inputs,
     ):
-    self.filepath_ref = filepath_ref
     self.filepath_sim = filepath_sim
-    self.suite_folder = dict_sim_inputs["suite_folder"]
-    self.sonic_regime = dict_sim_inputs["sonic_regime"]
-    self.sim_folder   = dict_sim_inputs["sim_folder"]
-    self.sim_res      = dict_sim_inputs["sim_res"]
-    self.num_blocks   = dict_sim_inputs["num_blocks"]
-    self.num_procs    = dict_sim_inputs["num_procs"]
-    self.k_turb       = dict_sim_inputs["k_turb"]
-    self.desired_Mach = dict_sim_inputs["desired_Mach"]
-    self.t_turb       = dict_sim_inputs["t_turb"]
-    self.nu           = dict_sim_inputs["nu"]
-    self.eta          = dict_sim_inputs["eta"]
-    self.Re           = dict_sim_inputs["Re"]
-    self.Rm           = dict_sim_inputs["Rm"]
-    self.Pm           = dict_sim_inputs["Pm"]
-    self.__calcJobParams()
+    self.dict_sim_inputs = dict_sim_inputs
+    self._calcJobParams()
 
-  def fromLowerNres(self, filepath_ref_sim):
-    self.__copyFilesFromLowerNres(filepath_ref_sim)
+  def fromTemplate(self, filepath_ref_folder):
+    ## copy flash4 executable
     WWFnF.copyFileFromNTo(
-        directory_from = filepath_ref_sim,
-        directory_to   = self.filepath_sim,
-        filename       = FileNames.FILENAME_DRIVING_INPUT
-    )
-    WWFnF.copyFileFromNTo(
-        directory_from = filepath_ref_sim,
-        directory_to   = self.filepath_sim,
-        filename       = FileNames.FILENAME_FLASH_INPUT
-    )
-    self.__createJob()
-
-  def fromTemplate(self):
-    ## copy template flash4 executable
-    WWFnF.copyFileFromNTo(
-      directory_from = self.filepath_ref,
+      directory_from = filepath_ref_folder,
       directory_to   = self.filepath_sim,
       filename       = self.filename_flash_exe
     )
-    ## modify simulation parameter files
+    ## write driving parameter file
     writeTurbDrivingFile(
-      filepath_ref         = self.filepath_ref,
-      filepath_to          = self.filepath_sim,
-      des_velocity         = 5.0,
+      filepath_ref          = filepath_ref_folder,
+      filepath_to           = self.filepath_sim,
+      des_velocity          = 5.0,
       des_ampl_factor       = 0.1,
-      des_k_driv           = 2.0,
-      des_k_min            = 1.0,
-      des_k_max            = 3.0,
-      des_sol_weight       = 1.0,
-      des_spect_form       = 1.0,
+      des_k_driv            = 2.0,
+      des_k_min             = 1.0,
+      des_k_max             = 3.0,
+      des_sol_weight        = 1.0,
+      des_spect_form        = 1.0,
       des_nsteps_per_t_turb = 10
     )
+    ## write flash parameter file
     writeFlashParamFile(
-      filepath_ref = self.filepath_ref,
-      filepath_to  = self.filepath_sim,
-      Re           = self.Re,
-      Rm           = self.Rm,
-      Pm           = self.Pm,
-      nu           = self.nu,
-      eta          = self.eta,
-      Mach         = self.desired_Mach,
-      t_turb       = self.t_turb,
-      num_procs    = self.num_procs,
-      max_hours    = self.max_hours
+      filepath_ref    = filepath_ref_folder,
+      filepath_to     = self.filepath_sim,
+      dict_sim_inputs = self.dict_sim_inputs,
+      max_hours       = self.max_hours
     )
-    self.__createJob()
+    ## create job script
+    self._createJob()
 
-  def __copyFilesFromLowerNres(self, filepath_ref_sim):
-    ## copy flash4 executable from the home directory
+  def fromLowerNres(self, filepath_ref_sim):
+    ## copy flash4 executable
     WWFnF.copyFileFromNTo(
       directory_from = filepath_ref_sim,
       directory_to   = self.filepath_sim,
       filename       = self.filename_flash_exe
     )
-    ## copy forcing input file from the Nres=144 directory
+    ## copy driving parameter file
     WWFnF.copyFileFromNTo(
       directory_from = filepath_ref_sim,
       directory_to   = self.filepath_sim,
-      filename       = "forcing_generator.inp"
+      filename       = FileNames.FILENAME_DRIVING_INPUT
     )
-    ## copy forcing data file from the Nres=144 directory
-    WWFnF.copyFileFromNTo(
-      directory_from = filepath_ref_sim,
-      directory_to   = self.filepath_sim,
-      filename       = "turb_driving.dat"
-    )
+    ## copy and update flash parameter file
+    self._copyFlashInputFromLower(filepath_ref_sim)
+    ## create job script
+    self._createJob()
 
-  def __calcJobParams(self):
-    nxb, nyb, nzb = self.num_blocks
-    self.iprocs   = int(self.sim_res) // nxb
-    self.jprocs   = int(self.sim_res) // nyb
-    self.kprocs   = int(self.sim_res) // nzb
+  def _copyFlashInputFromLower(self, filepath_ref_sim):
+    bool_update_iproc = False
+    bool_update_jproc = False
+    bool_update_kproc = False
+    with open(f"{self.filepath_sim}/{FileNames.FILENAME_FLASH_INPUT}", "w") as new_file:
+      with open(f"{filepath_ref_sim}/{FileNames.FILENAME_FLASH_INPUT}", "r") as ref_file:
+        for ref_line in ref_file.readlines():
+          ## handle empty lines
+          ## ------------------
+          if len(ref_line.split()) == 0:
+            new_file.write("\n")
+            continue
+          ## update number of processors per dimension
+          ## -----------------------------------------
+          elif "iProcs" in ref_line:
+            new_file.write(updateParam(ref_line, str(int(self.iprocs))))
+            bool_update_iproc = True
+          elif "jProcs"  in ref_line:
+            new_file.write(updateParam(ref_line, str(int(self.jprocs))))
+            bool_update_jproc = True
+          elif "kProcs"  in ref_line:
+            new_file.write(updateParam(ref_line, str(int(self.kprocs))))
+            bool_update_kproc = True
+          else: new_file.write(ref_line)
+    list_bools = [
+      bool_update_iproc,
+      bool_update_jproc,
+      bool_update_kproc
+    ]
+    if all(list_bools):
+      print(f"Successfully copied flash input parameter file")
+    else: raise Exception("ERROR: failed to copy flash input parameter file", list_bools)
+
+  def _calcJobParams(self):
+    nxb, nyb, nzb = self.dict_sim_inputs["num_blocks"]
+    self.iprocs   = int(self.dict_sim_inputs["sim_res"]) // nxb
+    self.jprocs   = int(self.dict_sim_inputs["sim_res"]) // nyb
+    self.kprocs   = int(self.dict_sim_inputs["sim_res"]) // nzb
     self.num_cpus = int(self.iprocs * self.jprocs * self.kprocs)
     self.max_mem  = int(4 * self.num_cpus)
     if self.num_cpus > 1000:
       self.max_hours = 24
     else: self.max_hours = 48
     self.job_name    = FileNames.FILENAME_JOB_RUN_SIM
-    self.job_tagname = "{}{}{}sim{}".format(
-      self.sonic_regime.split("_")[0],
-      self.suite_folder,
-      self.sim_folder,
-      self.sim_res
-    )
+    self.job_tagname = SimParams.getJobTag(self.dict_sim_inputs, "sim")
     self.filename_flash_exe = "flash4_nxb{}_nyb{}_nzb{}_3.0".format(
-      self.num_blocks[0],
-      self.num_blocks[1],
-      self.num_blocks[2]
+      self.dict_sim_inputs["num_blocks"][0],
+      self.dict_sim_inputs["num_blocks"][1],
+      self.dict_sim_inputs["num_blocks"][2]
     )
 
-  def __createJob(self):
+  def _createJob(self):
     ## create/overwrite job file
     with open(f"{self.filepath_sim}/{self.job_name}", "w") as job_file:
       ## write contents
@@ -455,7 +458,7 @@ class PrepSimJob():
       job_file.write(f"mpirun ./{self.filename_flash_exe} 1>shell_sim.out00 2>&1\n")
     ## indicate progress
     print(f"Created PBS job:")
-    print(f"\t> Job name:", self.job_name)
+    print(f"\t> Job name:",  self.job_name)
     print(f"\t> Directory:", self.filepath_sim)
 
 

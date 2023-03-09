@@ -91,7 +91,7 @@ def fitPowerLaw(
 
 
 ## ###############################################################
-## OPERATOR CLASS: PLOT RESOLUTION STUDY
+## OPERATOR CLASS
 ## ###############################################################
 class PlotScaleConvergence():
   def __init__(

@@ -78,7 +78,8 @@ def fitExpFunc(
   return fit_params_linear[1]
 
 def fitConstFunc(
-    ax, data_x, data_y, index_start_fit, index_end_fit,
+    data_x, data_y, index_start_fit, index_end_fit,
+    ax        = None,
     str_label = "",
     linestyle = "-"
   ):
@@ -98,18 +99,19 @@ def fitConstFunc(
   ## uniformly sample interpolated data
   data_y_sampled = interp_spline(data_fit_domain)
   ## measure average saturation level
-  data_x_sub  = data_x[index_start_fit : index_end_fit]
   data_y_mean = np.mean(data_y_sampled)
   data_y_std  = max(np.std(data_y_sampled), 0.01)
   ## plot fit
-  str_label += "{:.2f}".format(data_y_mean) + r" $\pm$ " + "{:.2f}".format(data_y_std)
-  ax.plot(
-    data_x_sub,
-    [ data_y_mean ] * len(data_x_sub),
-    label=str_label, color="black", ls=linestyle, lw=2, zorder=5
-  )
-  ## return mean value
-  return data_y_mean
+  if ax is not None:
+    data_x_sub = data_x[index_start_fit : index_end_fit]
+    str_label += "{:.2f}".format(data_y_mean) + r" $\pm$ " + "{:.2f}".format(data_y_std)
+    ax.plot(
+      data_x_sub,
+      [ data_y_mean ] * len(data_x_sub),
+      label=str_label, color="black", ls=linestyle, lw=2, zorder=5
+    )
+  ## return fitted quantities
+  return data_y_mean, data_y_std
 
 
 ## END OF LIBRARY

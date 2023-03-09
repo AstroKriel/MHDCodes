@@ -189,25 +189,24 @@ def loadTurbData(
   ):
   ## define which quantities to read in
   if var_y is None:
-    if quantity is None:
-      raise Exception("ERROR: neither a quantity index or name have been provided")
+    ## check that a variable name has been provided
+    if quantity is None: raise Exception("ERROR: neither a quantity index or name have been provided")
+    ## check which formatting the output file uses
     with open(f"{filepath}/{FileNames.FILENAME_FLASH_VOL}", "r") as fp:
       file_first_line = fp.readline()
-      bool_format_new = "#01_time" in file_first_line.split() # new if #01_time else #00_time
-    if "mach" in quantity.lower():
-      var_y = 13 if bool_format_new else 8
-    elif "kin" in quantity.lower():
-      var_y = 9 if bool_format_new else 6
-    elif "mag" in quantity.lower():
-      var_y = 11 if bool_format_new else 29
+      bool_format_new = "#01_time" in file_first_line.split() # new version indexes from 1
+    ## check which index is associated with the provided variable name
+    if  "mach" in quantity.lower(): var_y = 13 if bool_format_new else 8
+    elif "kin" in quantity.lower(): var_y = 9  if bool_format_new else 6
+    elif "mag" in quantity.lower(): var_y = 11 if bool_format_new else 29
     else: raise Exception("ERROR: reading in ")
-  ## initialise quantity to track data traversal
+  ## initialise quantities to track traversal
   data_x = []
   data_y = []
   prev_time = np.inf
-  ## read data backwards
   with open(f"{filepath}/{FileNames.FILENAME_FLASH_VOL}", "r") as fp:
     num_data_columns = len(fp.readline().split())
+    ## read data backwards
     for line in reversed(fp.readlines()):
       data_split = line.replace("\n", "").split()
       ## only look at lines where there is data is defined for every quantity
@@ -215,10 +214,9 @@ def loadTurbData(
         if not("#" in data_split[var_x][0]) and not("#" in data_split[var_y][0]):
           ## calculate the simulation time
           cur_time = float(data_split[var_x]) / t_turb # normalise by eddy turnover time
-          ## if the simulation has been restarted, only read the progressed data
-          if cur_time < prev_time: # walk backwards
+          if cur_time < prev_time: # only read data that has progressed forwards from a restart
             cur_val = float(data_split[var_y])
-            if cur_val == 0.0:
+            if cur_val == 0.0: ## indicates something went wrong: this is very unlikely to happen
               if bool_debug: raise Exception(f"Error: encountered 0-value in quantity index {var_y} in {FileNames.FILENAME_FLASH_VOL} at time = {cur_time}")
               continue
             data_x.append(cur_time)
@@ -243,15 +241,15 @@ def loadSpectra(filepath_file, spect_field, spect_quantity="total"):
     if   "tot" in spect_quantity.lower(): var_y = 15 # total
     elif "lgt" in spect_quantity.lower(): var_y = 11 # longitudinal
     elif "trv" in spect_quantity.lower(): var_y = 13 # transverse
-    else: raise Exception(f"Error: You have passed an invalid spectra quantity: '{spect_quantity}'.")
+    else: raise Exception("Error: an invalid spectra field has been provided:", spect_field)
     try:
       data_x = np.array(list(map(float, data[:, var_x]))) 
       data_y = np.array(list(map(float, data[:, var_y])))
       if   "vel" in spect_field.lower(): data_y = data_y
       elif "kin" in spect_field.lower(): data_y = data_y / 2
       elif "mag" in spect_field.lower(): data_y = data_y / (8 * np.pi)
-      else: raise Exception(f"Error: You have passed an invalid spectra field: '{spect_field}'.")
-    except: raise Exception("Error: Failed to read spectra-file:", filepath_file)
+      else: raise Exception("Error: an invalid spectra field has been provided:", spect_field)
+    except: raise Exception("Error: failed to read spectra-file:", filepath_file)
     return data_x, data_y
 
 def loadAllSpectra(
@@ -382,16 +380,20 @@ def getPlasmaConstants_fromFlashInput(filepath, rms_Mach, k_turb):
 def computeDissipationConstants(Mach, k_turb, Re=None, Rm=None, Pm=None):
   ## Re and Pm have been defined
   if (Re is not None) and (Pm is not None):
+    Re  = float(Re)
+    Pm  = float(Pm)
+    Rm  = Re * Pm
     nu  = round(Mach / (k_turb * Re), 5)
     eta = round(nu / Pm, 5)
-    Rm  = round(Mach / (k_turb * eta))
   ## Rm and Pm have been defined
   elif (Rm is not None) and (Pm is not None):
+    Rm  = float(Rm)
+    Pm  = float(Pm)
+    Re  = Rm / Pm
     eta = round(Mach / (k_turb * Rm), 5)
     nu  = round(eta * Pm, 5)
-    Re  = round(Mach / (k_turb * nu))
   ## error
-  else: raise Exception(f"ERROR: insufficient plasma Reynolds numbers defined: Re = {Re}, Rm = {Rm}, Pm = {Rm}")
+  else: raise Exception(f"ERROR: insufficient plasma Reynolds numbers provided: Re = {Re}, Rm = {Rm}, Pm = {Rm}")
   return {
     "nu"  : nu,
     "eta" : eta,
@@ -410,7 +412,7 @@ def computePlasmaNumbers(Re=None, Rm=None, Pm=None):
   elif (Re is not None) and (Rm is not None):
     Pm = Rm / Re
   ## error
-  else: raise Exception(f"ERROR: insufficient plasma Reynolds numbers defined: Re = {Re}, Rm = {Rm}, Pm = {Rm}")
+  else: raise Exception(f"ERROR: insufficient plasma Reynolds numbers provided: Re = {Re}, Rm = {Rm}, Pm = {Rm}")
   return {
     "Re"  : Re,
     "Rm"  : Rm,

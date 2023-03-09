@@ -1,5 +1,6 @@
 ## START OF LIBRARY
 
+from TheSimModule import SimParams
 from TheLoadingModule import FileNames
 
 class CalcSpectraJob():
@@ -15,12 +16,7 @@ class CalcSpectraJob():
     self.max_mem      = int(4 * self.num_cpus)
     self.program_name = "compute_spectra.py"
     self.job_name     = FileNames.FILENAME_JOB_CALC_SPECT
-    self.job_tagname  = "{}{}{}sim{}".format(
-      dict_sim_inputs["sonic_regime"].split("_")[0],
-      dict_sim_inputs["suite_folder"],
-      dict_sim_inputs["sim_folder"],
-      dict_sim_inputs["sim_res"]
-    )
+    self.job_tagname  = SimParams.getJobTag(dict_sim_inputs, "spect")
     ## perform routine
     self.__createJob()
 
@@ -46,7 +42,7 @@ class CalcSpectraJob():
     ## indicate progress
     if self.bool_verbose:
       print(f"Created PBS job:")
-      print(f"\t> Job name:", self.job_name)
+      print(f"\t> Job name:",  self.job_name)
       print(f"\t> Directory:", self.filepath_plt)
 
 ## END OF LIBRARY

@@ -4,10 +4,8 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys, functools
+import os, sys
 import numpy as np
-import multiprocessing as mproc
-import concurrent.futures as cfut
 
 ## 'tmpfile' needs to be loaded before any 'matplotlib' libraries,
 ## so matplotlib stores its cache in a temporary directory.
@@ -32,7 +30,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################
-## PLOT INTEGRATED QUANTITIES
+## OPERATOR CLASS
 ## ###############################################################
 class PlotTurbData():
   def __init__(
@@ -56,8 +54,9 @@ class PlotTurbData():
     self.__loadData()
     self.__plotMach()
     self.__plotEnergyRatio()
-    self.__fitData()
-    self.bool_fitted = True
+    if max(self.data_time) > 5:
+      self.__fitData()
+      self.bool_fitted = True
     self.__labelPlots()
 
   def getFittedParams(self):
@@ -68,6 +67,7 @@ class PlotTurbData():
       "time_growth_start" : self.time_exp_start,
       "time_growth_end"   : self.time_exp_end,
       "rms_Mach"          : self.rms_Mach,
+      "std_Mach"          : self.std_Mach,
       "Gamma"             : self.Gamma,
       "E_sat_ratio"       : self.E_sat_ratio
     }
@@ -84,6 +84,7 @@ class PlotTurbData():
     self.time_exp_start = None
     self.time_exp_end   = None
     self.rms_Mach       = None
+    self.std_Mach       = None
     self.Gamma          = None
     self.E_sat_ratio    = None
 
@@ -93,7 +94,8 @@ class PlotTurbData():
       self.plots_per_eddy,
       self.time_exp_start,
       self.time_exp_end,
-      self.rms_Mach
+      self.rms_Mach,
+      self.std_Mach
     ]
     list_quantities_undefined = [ 
       index_quantity
@@ -111,12 +113,10 @@ class PlotTurbData():
     if self.bool_verbose: print("Loading volume integrated data...")
     ## check how the integrated quantities are ordered in file
     with open(f"{self.filepath_sim_res}/{FileNames.FILENAME_FLASH_VOL}") as fp: file_first_line = fp.readline()
-    bool_format_new = "#01_time" in file_first_line.split() # new if #01_time else #00_time
     ## load kinetic energy
     _, data_kin_energy = LoadFlashData.loadTurbData(
       filepath   = self.filepath_sim_res,
       quantity   = "kin",
-      # var_y      = 9 if bool_format_new else 6, # 9+1 (new), 6 (old)
       t_turb     = self.t_turb,
       time_start = 0.1,
       time_end   = np.inf
@@ -125,7 +125,6 @@ class PlotTurbData():
     _, data_mag_energy = LoadFlashData.loadTurbData(
       filepath   = self.filepath_sim_res,
       quantity   = "mag",
-      # var_y      = 11 if bool_format_new else 29, # 11+1 (new), 29 (old)
       t_turb     = self.t_turb,
       time_start = 0.1,
       time_end   = np.inf
@@ -134,7 +133,6 @@ class PlotTurbData():
     data_time, data_Mach = LoadFlashData.loadTurbData(
       filepath   = self.filepath_sim_res,
       quantity   = "mach",
-      # var_y      = 13 if bool_format_new else 8, # 13+1 (new), 8 (old)
       t_turb     = self.t_turb,
       time_start = 0.1,
       time_end   = np.inf
@@ -217,7 +215,7 @@ class PlotTurbData():
         self.data_time,
         0.75 * self.data_time[-1]
       )
-      self.E_sat_ratio = FitFuncs.fitConstFunc(
+      self.E_sat_ratio, _ = FitFuncs.fitConstFunc(
         ax              = self.axs[1],
         data_x          = self.data_time,
         data_y          = self.data_E_ratio,
@@ -250,7 +248,7 @@ class PlotTurbData():
       )
       index_end_fit = len(self.data_time)-1
       ## find average energy ratio
-      self.E_sat_ratio = FitFuncs.fitConstFunc(
+      self.E_sat_ratio, _ = FitFuncs.fitConstFunc(
         ax              = self.axs[1],
         data_x          = self.data_time,
         data_y          = self.data_E_ratio,
@@ -260,7 +258,7 @@ class PlotTurbData():
         linestyle       = linestyle_sat
       )
     ## find average Mach number
-    self.rms_Mach = FitFuncs.fitConstFunc(
+    self.rms_Mach, self.std_Mach = FitFuncs.fitConstFunc(
       ax              = self.axs[0],
       data_x          = self.data_time,
       data_y          = self.data_Mach,
@@ -290,10 +288,11 @@ class PlotTurbData():
       ]
     )
     ## annotate measured quantities
-    legend_ax0 = self.axs[0].legend(frameon=False, loc="lower left", fontsize=18)
-    legend_ax1 = self.axs[1].legend(frameon=False, loc="lower right", fontsize=18)
-    self.axs[0].add_artist(legend_ax0)
-    self.axs[1].add_artist(legend_ax1)
+    if self.bool_fitted:
+      legend_ax0 = self.axs[0].legend(frameon=False, loc="lower left", fontsize=18)
+      legend_ax1 = self.axs[1].legend(frameon=False, loc="lower right", fontsize=18)
+      self.axs[0].add_artist(legend_ax0)
+      self.axs[1].add_artist(legend_ax1)
 
 
 ## ###############################################################
@@ -301,18 +300,16 @@ class PlotTurbData():
 ## ###############################################################
 def plotSimData(
     filepath_sim_res,
-    lock         = None,
-    bool_verbose = True
+    lock            = None,
+    bool_check_only = False,
+    bool_verbose    = True
   ):
-  ## GET SIMULATION PARAMETERS
-  ## -------------------------
+  print("Looking at:", filepath_sim_res)
+  ## get simulation parameters
   dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res, bool_verbose)
-  ## MAKE SURE A VISUALISATION FOLDER EXISTS
-  ## ---------------------------------------
+  ## make sure a visualisation folder exists
   filepath_vis = f"{filepath_sim_res}/vis_folder/"
   WWFnF.createFolder(filepath_vis, bool_verbose=False)
-  ## PLOT SIMULATION DATA AND SAVE MEASURED QUANTITIES
-  ## -------------------------------------------------
   ## INITIALISE FIGURE
   ## -----------------
   if bool_verbose: print("Initialising figure...")
@@ -324,8 +321,8 @@ def plotSimData(
   )
   ax_Mach         = fig.add_subplot(fig_grid[0, 0])
   ax_energy_ratio = fig.add_subplot(fig_grid[1, 0])
-  ## LOAD AND PLOT INTEGRATED QUANTITIES
-  ## -----------------------------------
+  ## PLOT INTEGRATED QUANTITIES
+  ## --------------------------
   obj_plot_turb = PlotTurbData(
     fig              = fig,
     axs              = [ ax_Mach, ax_energy_ratio ],
@@ -337,87 +334,49 @@ def plotSimData(
   ## SAVE FIGURE + DATASET
   ## ---------------------
   if lock is not None: lock.acquire()
-  obj_plot_turb.saveFittedParams(filepath_sim_res)
-  sim_name = "{}_{}".format(
-    dict_sim_inputs["suite_folder"],
-    dict_sim_inputs["sim_folder"]
-  )
+  if not(bool_check_only): obj_plot_turb.saveFittedParams(filepath_sim_res)
+  sim_name = SimParams.getSimName(dict_sim_inputs)
   fig_name = f"{sim_name}_time_evolution.png"
   PlotFuncs.saveFigure(fig, f"{filepath_vis}/{fig_name}", bool_verbose)
   if lock is not None: lock.release()
-
-
-## ###############################################################
-## CREATE LIST OF SIMULATION DIRECTORIES TO ANALYSE
-## ###############################################################
-def getListOfSimFilepaths():
-  list_sim_filepaths = []
-  ## LOOK AT EACH SIMULATION SUITE
-  ## -----------------------------
-  for suite_folder in LIST_SUITE_FOLDER:
-    ## LOOK AT EACH SIMULATION FOLDER
-    ## -----------------------------
-    for sim_folder in LIST_SIM_FOLDER:
-      ## CHECK THE SUITE + SIMULATION CONFIG EXISTS
-      ## ------------------------------------------
-      filepath_sim = WWFnF.createFilepath([
-        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
-      ])
-      if not os.path.exists(filepath_sim): continue
-      ## loop over the different resolution runs
-      for sim_res in LIST_SIM_RES:
-        ## CHECK THE RESOLUTION RUN EXISTS
-        ## -------------------------------
-        filepath_sim_res = f"{filepath_sim}/{sim_res}/"
-        if not os.path.exists(filepath_sim_res): continue
-        list_sim_filepaths.append(filepath_sim_res)
-        ## MAKE SURE A VISUALISATION FOLDER EXISTS
-        ## ---------------------------------------
-        WWFnF.createFolder(f"{filepath_sim_res}/vis_folder", bool_verbose=False)
-  return list_sim_filepaths
+  if bool_verbose: print(" ")
 
 
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  list_sim_filepaths = getListOfSimFilepaths()
-  if BOOL_MPROC:
-    with cfut.ProcessPoolExecutor() as executor:
-      manager = mproc.Manager()
-      lock = manager.Lock()
-      ## loop over all simulation folders
-      futures = [
-        executor.submit(
-          functools.partial(plotSimData, lock=lock, bool_verbose=False),
-          sim_filepath
-        ) for sim_filepath in list_sim_filepaths
-      ]
-      ## wait to ensure that all scheduled and running tasks have completed
-      cfut.wait(futures)
-      ## check if any tasks failed
-      for future in cfut.as_completed(futures):
-        future.result()
-  else: [
-    plotSimData(sim_filepath, bool_verbose=True)
-    for sim_filepath in list_sim_filepaths
-  ]
+  SimParams.callFuncForAllSimulations(
+    func               = plotSimData,
+    bool_mproc         = BOOL_MPROC,
+    bool_check_only    = BOOL_CHECK_ONLY,
+    basepath           = BASEPATH,
+    list_suite_folders = LIST_SUITE_FOLDERS,
+    list_sonic_regimes = LIST_SONIC_REGIMES,
+    list_sim_folders   = LIST_SIM_FOLDERS,
+    list_sim_res       = LIST_SIM_RES
+  )
 
 
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC        = 0
-BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = ""
+BOOL_MPROC         = 1
+BOOL_CHECK_ONLY    = 1
+BASEPATH           = "/scratch/ek9/nk7952/"
 
-# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+# ## PLASMA PARAMETER SET
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SIM_RES       = [ "144", "288" ]
 
-LIST_SUITE_FOLDER = [ "Mach" ]
-LIST_SIM_FOLDER   = [ "10" ]
-LIST_SIM_RES      = [ "144" ]
+## MACH NUMBER SET
+LIST_SUITE_FOLDERS = [ "Re300" ]
+LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+LIST_SIM_FOLDERS   = [ "Pm4" ]
+LIST_SIM_RES       = [ "288" ]
 
 
 ## ###############################################################

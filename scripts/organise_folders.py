@@ -6,6 +6,7 @@
 import os, sys
 
 ## load user defined modules
+from TheSimModule import SimParams
 from TheUsefulModule import WWFnF
 
 
@@ -19,9 +20,8 @@ def removeFiles(filepath_files, file_name_starts_with):
   )
   if len(list_files_in_filepath) > 0:
     os.system(f"rm {filepath_files}/{file_name_starts_with}*")
-    print(f"\t> Removed {len(list_files_in_filepath)} '{file_name_starts_with}*' files.")
+    print(f"\t> Removed {len(list_files_in_filepath)} '{file_name_starts_with}*' file(s)")
   else: print(f"\t> There are no '{file_name_starts_with}*' files in:\n\t", filepath_files)
-  print(" ")
 
 def moveFiles(
     filepath_files_from, filepath_files_to,
@@ -38,7 +38,6 @@ def moveFiles(
     os.system(f"mv {filepath_files_from}/*_{filename_contains}* {filepath_files_to}/.")
     print(f"\t> Moved {len(list_files_in_filepath)} '*_{filename_contains}*' files to:\n\t", filepath_files_to)
   else: print(f"\t> There are no '*_{filename_contains}*' files in:\n\t", filepath_files_from)
-  print(" ")
 
 def countFiles(
     filepath_files,
@@ -53,7 +52,6 @@ def countFiles(
   )
   num_files = len(list_files_in_filepath)
   print(f"\t> There are {num_files} '*_{filename_contains}*' files in:\n\t", filepath_files)
-  print(" ")
   return num_files
 
 
@@ -63,8 +61,11 @@ def countFiles(
 class ReorganiseSimFolder():
   def __init__(self, filepath_sim):
     self.filepath_sim   = filepath_sim
-    self.filepath_plt   = f"{filepath_sim}/plt/"
-    self.filepath_spect = f"{filepath_sim}/spect/"
+    self.filepath_plt   = WWFnF.createFilepath([filepath_sim, "plt"])
+    self.filepath_spect = WWFnF.createFilepath([filepath_sim, "spect"])
+    ## create sub-folders
+    WWFnF.createFolder(self.filepath_plt,   bool_verbose=False)
+    WWFnF.createFolder(self.filepath_spect, bool_verbose=False)
 
   def removeExtraFiles(self):
     print("Removing extraneous files...")
@@ -91,8 +92,8 @@ class ReorganiseSimFolder():
 
   def movePltFiles(self):
     print("Working with plt-files...")
-    ## create plt sub-folder
-    WWFnF.createFilepath(self.filepath_plt)
+    if not os.path.exists(self.filepath_plt):
+      raise Exception("ERROR: 'plt' sub-folder does not exist")
     ## move plt-files from simulation folder to plt sub-folder
     moveFiles(
       filepath_files_from   = self.filepath_sim,
@@ -109,8 +110,8 @@ class ReorganiseSimFolder():
 
   def moveSpectFiles(self):
     print("Working with spect-files...")
-    ## create spect sub-folder
-    WWFnF.createFilepath(self.filepath_spect)
+    if not os.path.exists(self.filepath_plt):
+      raise Exception("ERROR: 'spect' sub-folder does not exist")
     ## move spect-files from simulation folder to spect sub-folder
     moveFiles(
       filepath_files_from = self.filepath_sim,
@@ -133,58 +134,42 @@ class ReorganiseSimFolder():
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
+def reorganiseSimFolder(filepath_sim_res, **kwargs):
+  print("Reorganising:", filepath_sim_res)
+  obj_sim_folder = ReorganiseSimFolder(filepath_sim_res)
+  obj_sim_folder.removeExtraFiles()
+  obj_sim_folder.movePltFiles()
+  obj_sim_folder.moveSpectFiles()
+  print(" ")
+
 def main():
-  ## LOOK AT EACH SIMULATION FOLDER
-  ## ------------------------------
-  ## loop over the simulation suites
-  for suite_folder in LIST_SUITE_FOLDER:
-
-    ## loop over the simulation folders
-    for sim_folder in LIST_SIM_FOLDER:
-
-      ## CHECK THE SIMULATION EXISTS
-      ## ---------------------------
-      filepath_sim = WWFnF.createFilepath([
-        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
-      ])
-      if not os.path.exists(filepath_sim): continue
-      str_message = f"Looking at suite: {suite_folder}, sim: {sim_folder}, regime: {SONIC_REGIME}"
-      print(str_message)
-      print("=" * len(str_message))
-      print(" ")
-
-      ## loop over the different resolution runs
-      for sim_res in LIST_SIM_RES:
-
-        ## CHECK THE RESOLUTION RUN EXISTS
-        ## -------------------------------
-        filepath_sim_res = f"{filepath_sim}/{sim_res}/"
-        ## check that the filepath exists
-        if not os.path.exists(filepath_sim_res): continue
-        print(f"Looking at Nres = {sim_res}")
-
-        ## evaluate function
-        obj_sim_folder = ReorganiseSimFolder(filepath_sim_res)
-        # obj_sim_folder.removeExtraFiles()
-        # obj_sim_folder.movePltFiles()
-        # obj_sim_folder.moveSpectFiles()
-
-        ## create an empty line after each suite
-        print(" ")
-      print(" ")
-    print(" ")
+  SimParams.callFuncForAllSimulations(
+    func               = reorganiseSimFolder,
+    basepath           = BASEPATH,
+    list_suite_folders = LIST_SUITE_FOLDERS,
+    list_sonic_regimes = LIST_SONIC_REGIMES,
+    list_sim_folders   = LIST_SIM_FOLDERS,
+    list_sim_res       = LIST_SIM_RES
+  )
 
 
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_DEBUG        = 0
-BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "super_sonic"
+BASEPATH           = "/scratch/ek9/nk7952/"
 
-LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+# ## PLASMA PARAMETER SET
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SIM_RES       = [ "144", "288" ]
+
+## MACH NUMBER SET
+LIST_SUITE_FOLDERS = [ "Re300" ]
+LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+LIST_SIM_FOLDERS   = [ "Pm4" ]
+LIST_SIM_RES       = [ "288" ]
 
 
 ## ###############################################################

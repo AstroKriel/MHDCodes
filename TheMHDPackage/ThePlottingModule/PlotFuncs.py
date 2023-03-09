@@ -23,7 +23,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 ## load user defined modules
 from ThePlottingModule.TheMatplotlibStyler import *
-from TheUsefulModule import WWLists
+from TheUsefulModule import WWFnF, WWLists
 
 
 ## ###############################################################
