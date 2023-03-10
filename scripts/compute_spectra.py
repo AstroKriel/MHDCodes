@@ -11,12 +11,6 @@ from TheUsefulModule import WWArgparse, WWFnF
 
 
 ## ###############################################################
-## PREPARE TERMINAL/WORKSPACE/CODE
-## ###############################################################
-os.system("clear")  # clear terminal window
-
-
-## ###############################################################
 ## HELPER FUNCTION
 ## ###############################################################
 def processAllPltFiles(list_filenames_plt, num_proc):

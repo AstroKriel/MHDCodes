@@ -8,12 +8,6 @@ from TheUsefulModule import WWFnF
 
 
 ## ###############################################################
-## PREPARE WORKSPACE
-##################################################################
-os.system("clear") # clear terminal window
-
-
-## ###############################################################
 ## HELPER FUNCTION
 ##################################################################
 def downloadFromGadiToMac(filepath_gadi, filepath_mac, filename):

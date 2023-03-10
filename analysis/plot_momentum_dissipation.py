@@ -8,8 +8,6 @@ from TheSimModule import SimParams
 from TheLoadingModule import LoadFlashData
 from ThePlottingModule import PlotFuncs
 
-os.system("clear")
-
 class Derivatives():
   def chained(state, index, dx1, dx2, Nres):
     dx = 1 / Nres
