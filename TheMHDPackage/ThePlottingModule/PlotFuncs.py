@@ -145,6 +145,20 @@ def addSubplot_secondAxis(fig, grid_elem, shared_axis):
   ax0.set_frame_on(False) # prevents ax0 from hiding ax1
   return [ ax0, ax1 ]
 
+def addLegend(
+    ax,
+    loc      = "upper right",
+    bbox     = (0.99, 0.99),
+    ncol     = 1,
+    fontsize = 20,
+    alpha    = 0.85,
+    zorder   = 10
+  ):
+  ax.legend(
+    ncol=ncol, loc=loc, bbox_to_anchor=bbox, fontsize=fontsize,
+    frameon=True, facecolor="white", edgecolor="grey", framealpha=alpha
+  ).set_zorder(zorder)
+
 def addLegend_joinedAxis(
     axs,
     loc      = "upper right",
