@@ -129,10 +129,10 @@ def plotSpectra_res(axs, filepath_sim_res, sim_res, bool_verbose=True):
     list_power = WWSpectra.aveSpectra(dict_kin_spect_tot_data["list_power_group_t"], bool_norm=True),
     viscosity  = dict_sim_inputs["eta"]
   )
-  list_mag_power = WWSpectra.aveSpectra(dict_mag_spect_tot_data["list_power_group_t"], bool_norm=True)
-  k_p_index = np.argmax(list_mag_power)
+  list_power_mag = WWSpectra.aveSpectra(dict_mag_spect_tot_data["list_power_group_t"], bool_norm=True)
+  k_p_index = np.argmax(list_power_mag)
   k_p = list_k[k_p_index]
-  axs[0][0].plot(k_p, list_mag_power[k_p_index], "ko")
+  axs[0][0].plot(k_p, list_power_mag[k_p_index], "ko")
   ## plot total kinetic energy spectra
   plotSpectrum(
     ax_row     = 1,

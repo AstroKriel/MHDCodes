@@ -226,7 +226,7 @@ def getScale_kp(list_k, list_power):
 
 
 def getScale_keq(
-    list_sim_time, list_k, list_mag_power_group_t, list_kin_power_group_t,
+    list_sim_time, list_k, list_power_mag_group_t, list_power_kin_group_t,
     tol        = 1e-1,
     ax_spectra = None,
     ax_scales  = None,
@@ -241,8 +241,8 @@ def getScale_keq(
   for time_index in range(len(list_sim_time)):
     ## calculate energy spectrum ratio
     list_power_ratio = \
-      np.array(list_mag_power_group_t[time_index]) / \
-      np.array(list_kin_power_group_t[time_index])
+      np.array(list_power_mag_group_t[time_index]) / \
+      np.array(list_power_kin_group_t[time_index])
     ## plot spectrum ratio
     if ax_spectra is not None:
       ax_spectra.plot(

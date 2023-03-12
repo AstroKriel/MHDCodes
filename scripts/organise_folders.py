@@ -36,7 +36,9 @@ def moveFiles(
   )
   if len(list_files_in_filepath) > 0:
     os.system(f"mv {filepath_files_from}/*_{filename_contains}* {filepath_files_to}/.")
-    print(f"\t> Moved {len(list_files_in_filepath)} '*_{filename_contains}*' files to:\n\t", filepath_files_to)
+    print(f"\t> Moved {len(list_files_in_filepath)} '*_{filename_contains}*' files")
+    print("\t\tFrom:", filepath_files_from)
+    print("\t\tTo:", filepath_files_to)
   else: print(f"\t> There are no '*_{filename_contains}*' files in:\n\t", filepath_files_from)
 
 def countFiles(

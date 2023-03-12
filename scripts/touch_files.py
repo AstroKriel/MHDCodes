@@ -17,8 +17,8 @@ def getDate(time_sec):
 ## MAIN PROGRAM FUNCTIONS
 ## ###############################################################
 def touch(sub_directory):
-  print("T-ing:", sub_directory)
-  if not BOOL_DEBUG:
+  if BOOL_VERBOSE: print("T-ing:", sub_directory)
+  if BOOL_TOUCH:
     time_in_a_week = 60 * 60 * 24 * 7
     time_ago = time_in_a_week * random.random()
     new_time_access   = CURRENT_TIME - time_ago * 0.5 * (1 + random.random())
@@ -42,7 +42,8 @@ def lookAtSubDirectory(directory, file_type, count):
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BOOL_DEBUG = 0
+BOOL_TOUCH   = 0
+BOOL_VERBOSE = 0
 CURRENT_TIME = time.mktime(time.localtime())
 
 

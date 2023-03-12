@@ -244,22 +244,22 @@ class PlotSpectra():
     )
     ## extract data
     self.list_k                     = dict_mag_spect_tot["list_k_group_t"][0]
-    self.list_kin_power_tot_group_t = dict_kin_spect_tot["list_power_group_t"]
-    self.list_kin_power_lgt_group_t = dict_kin_spect_lgt["list_power_group_t"]
-    self.list_kin_power_trv_group_t = dict_kin_spect_trv["list_power_group_t"]
-    self.list_mag_power_tot_group_t = dict_mag_spect_tot["list_power_group_t"]
+    self.list_power_kin_tot_group_t = dict_kin_spect_tot["list_power_group_t"]
+    self.list_power_kin_lgt_group_t = dict_kin_spect_lgt["list_power_group_t"]
+    self.list_power_kin_trv_group_t = dict_kin_spect_trv["list_power_group_t"]
+    self.list_power_mag_tot_group_t = dict_mag_spect_tot["list_power_group_t"]
     self.list_kin_sim_times         = dict_kin_spect_tot["list_sim_times"]
     self.list_mag_sim_times         = dict_mag_spect_tot["list_sim_times"]
 
   def __plotAveKinComponents(self, ax):
     ax.plot(
       self.list_k,
-      np.mean(self.list_kin_power_lgt_group_t, axis=0),
+      np.mean(self.list_power_kin_lgt_group_t, axis=0),
       "k--", lw=2, label=r"$\mathcal{P}_{\rm kin, \parallel}(k, t)$", zorder=3
     )
     ax.plot(
       self.list_k,
-      np.mean(self.list_kin_power_trv_group_t, axis=0),
+      np.mean(self.list_power_kin_trv_group_t, axis=0),
       "k-",  lw=2, label=r"$\mathcal{P}_{\rm kin, \perp}(k, t)$", zorder=3
     )
 
@@ -278,7 +278,7 @@ class PlotSpectra():
       ax                 = self.axs[0,0],
       list_sim_times     = self.list_kin_sim_times,
       list_k             = self.list_k,
-      list_power_group_t = self.list_kin_power_tot_group_t,
+      list_power_group_t = self.list_power_kin_tot_group_t,
       cmap_name          = "Greens",
       bool_add_colorbar  = True
     )
@@ -291,14 +291,14 @@ class PlotSpectra():
       ax                 = self.axs[0,1],
       list_sim_times     = self.list_mag_sim_times,
       list_k             = self.list_k,
-      list_power_group_t = self.list_mag_power_tot_group_t,
+      list_power_group_t = self.list_power_mag_tot_group_t,
       cmap_name          = "Reds",
       bool_add_colorbar  = True
     )
     self.k_p_tot_group_t = measureScales_peak(
       ax                 = self.axs[0,1],
       list_k             = self.list_k,
-      list_power_group_t = self.list_mag_power_tot_group_t
+      list_power_group_t = self.list_power_mag_tot_group_t
     )
     ## LONGITUDINAL KINETIC ENERGY
     ## ---------------------------
@@ -310,7 +310,7 @@ class PlotSpectra():
       ax                 = self.axs[1,0],
       list_sim_times     = self.list_kin_sim_times,
       list_k             = self.list_k,
-      list_power_group_t = self.list_kin_power_lgt_group_t,
+      list_power_group_t = self.list_power_kin_lgt_group_t,
       cmap_name          = "Greens",
       bool_add_colorbar  = False
     )
@@ -320,16 +320,16 @@ class PlotSpectra():
       ax                   = self.axs[2,0],
       list_sim_times       = self.list_kin_sim_times,
       list_k               = self.list_k,
-      list_power_1_group_t = self.list_kin_power_lgt_group_t,
-      list_power_2_group_t = self.list_kin_power_tot_group_t,
+      list_power_1_group_t = self.list_power_kin_lgt_group_t,
+      list_power_2_group_t = self.list_power_kin_tot_group_t,
       cmap_name            = "Greens"
     )
     measureScales_peak(
       ax                 = self.axs[2,0],
       list_k             = self.list_k,
       list_power_group_t = getSpectraRatio_grouped(
-        self.list_kin_power_lgt_group_t,
-        self.list_kin_power_tot_group_t
+        self.list_power_kin_lgt_group_t,
+        self.list_power_kin_tot_group_t
       )
     )
     ## plot spectra component compared
@@ -338,16 +338,16 @@ class PlotSpectra():
       ax                   = self.axs[3,0],
       list_sim_times       = self.list_kin_sim_times,
       list_k               = self.list_k,
-      list_power_1_group_t = self.list_kin_power_lgt_group_t,
-      list_power_2_group_t = self.list_kin_power_trv_group_t,
+      list_power_1_group_t = self.list_power_kin_lgt_group_t,
+      list_power_2_group_t = self.list_power_kin_trv_group_t,
       cmap_name            = "Greens"
     )
     self.k_nu_lgt_group_t = measureScales_peak(
       ax                 = self.axs[3,0],
       list_k             = self.list_k,
       list_power_group_t = getSpectraRatio_grouped(
-        self.list_kin_power_lgt_group_t,
-        self.list_kin_power_trv_group_t
+        self.list_power_kin_lgt_group_t,
+        self.list_power_kin_trv_group_t
       )
     )
     index_end_k_nu_trv = int(np.mean(self.k_nu_lgt_group_t))
@@ -361,7 +361,7 @@ class PlotSpectra():
       ax                 = self.axs[1,1],
       list_sim_times     = self.list_kin_sim_times,
       list_k             = self.list_k,
-      list_power_group_t = self.list_kin_power_trv_group_t,
+      list_power_group_t = self.list_power_kin_trv_group_t,
       cmap_name          = "Greens",
       bool_add_colorbar  = False
     )
@@ -371,8 +371,8 @@ class PlotSpectra():
       ax                   = self.axs[2,1],
       list_sim_times       = self.list_kin_sim_times,
       list_k               = self.list_k,
-      list_power_1_group_t = self.list_kin_power_trv_group_t,
-      list_power_2_group_t = self.list_kin_power_tot_group_t,
+      list_power_1_group_t = self.list_power_kin_trv_group_t,
+      list_power_2_group_t = self.list_power_kin_tot_group_t,
       cmap_name            = "Greens"
     )
     ## plot spectra component compared
@@ -381,8 +381,8 @@ class PlotSpectra():
       ax                   = self.axs[3,1],
       list_sim_times       = self.list_kin_sim_times,
       list_k               = self.list_k,
-      list_power_1_group_t = self.list_kin_power_trv_group_t,
-      list_power_2_group_t = self.list_kin_power_lgt_group_t,
+      list_power_1_group_t = self.list_power_kin_trv_group_t,
+      list_power_2_group_t = self.list_power_kin_lgt_group_t,
       cmap_name            = "Greens"
     )
     self.k_nu_trv_group_t_p5 = measureScales_trv(
@@ -390,8 +390,8 @@ class PlotSpectra():
       target_value       = 0.5,
       list_k             = self.list_k[:index_end_k_nu_trv],
       list_power_group_t = getSpectraRatio_grouped(
-        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_trv_group_t ],
-        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_lgt_group_t ]
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_power_kin_trv_group_t ],
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_power_kin_lgt_group_t ]
       )
     )
     self.k_nu_trv_group_t_1 = measureScales_trv(
@@ -399,8 +399,8 @@ class PlotSpectra():
       target_value       = 1.0,
       list_k             = self.list_k[:index_end_k_nu_trv],
       list_power_group_t = getSpectraRatio_grouped(
-        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_trv_group_t ],
-        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_lgt_group_t ]
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_power_kin_trv_group_t ],
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_power_kin_lgt_group_t ]
       )
     )
     self.k_nu_trv_group_t_2 = measureScales_trv(
@@ -408,8 +408,8 @@ class PlotSpectra():
       target_value       = 2.0,
       list_k             = self.list_k[:index_end_k_nu_trv],
       list_power_group_t = getSpectraRatio_grouped(
-        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_trv_group_t ],
-        [ list_power[:index_end_k_nu_trv] for list_power in self.list_kin_power_lgt_group_t ]
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_power_kin_trv_group_t ],
+        [ list_power[:index_end_k_nu_trv] for list_power in self.list_power_kin_lgt_group_t ]
       )
     )
 

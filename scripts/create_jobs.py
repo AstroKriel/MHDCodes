@@ -128,7 +128,7 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH               = "/scratch/ek9/nk7952/"
-K_TURB                 = 1.0
+K_TURB                 = 2.0
 BOOL_CREATE_SIM_INPUTS = 0
 BOOL_PREP_SIM_FOLDERS  = 0
 PREP_FROM_LOWER_NRES   = ""
@@ -144,7 +144,7 @@ BOOL_CALC_SPECTRA      = 0
 LIST_SUITE_FOLDERS = [ "Re300" ]
 LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
 LIST_SIM_FOLDERS   = [ "Pm4" ]
-LIST_SIM_RES       = [ "288" ]
+LIST_SIM_RES       = [ "144", "288" ]
 
 
 ## ###############################################################

@@ -41,8 +41,8 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH  = "/scratch/ek9/nk7952/"
-# JOB_NAME  = FileNames.FILENAME_JOB_RUN_SIM
-SUBFOLDER = ""
+JOB_NAME  = FileNames.FILENAME_JOB_CALC_SPECT
+SUBFOLDER = "plt"
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]

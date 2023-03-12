@@ -163,10 +163,10 @@ class PlotSpectra():
     return {
       ## time-averaged energy spectra
       "list_k"                 : self.list_k,
-      "list_mag_power_tot_ave" : WWSpectra.aveSpectra(self.list_mag_power_tot_group_t, bool_norm=True),
-      "list_vel_power_tot_ave" : WWSpectra.aveSpectra(self.list_vel_power_tot_group_t, bool_norm=False),
-      "list_vel_power_lgt_ave" : WWSpectra.aveSpectra(self.list_vel_power_lgt_group_t, bool_norm=False),
-      "list_vel_power_trv_ave" : WWSpectra.aveSpectra(self.list_vel_power_trv_group_t, bool_norm=False),
+      "list_power_mag_tot_ave" : WWSpectra.aveSpectra(self.list_power_mag_tot_group_t, bool_norm=True),
+      "list_power_vel_tot_ave" : WWSpectra.aveSpectra(self.list_power_vel_tot_group_t, bool_norm=False),
+      "list_power_vel_lgt_ave" : WWSpectra.aveSpectra(self.list_power_vel_lgt_group_t, bool_norm=False),
+      "list_power_vel_trv_ave" : WWSpectra.aveSpectra(self.list_power_vel_trv_group_t, bool_norm=False),
       ## measured quantities
       "list_time_growth"       : self.list_time_growth,
       "list_time_k_eq"         : self.list_time_k_eq,
@@ -186,10 +186,10 @@ class PlotSpectra():
     self.bool_fitted                      = False
     ## initialise quantities to measure
     self.list_k                     = None
-    self.list_mag_power_tot_group_t = None
-    self.list_vel_power_tot_group_t = None # TODO: rename list_power_(field)_(sub)_group_t
-    self.list_vel_power_lgt_group_t = None
-    self.list_vel_power_trv_group_t = None
+    self.list_power_mag_tot_group_t = None
+    self.list_power_vel_tot_group_t = None
+    self.list_power_vel_lgt_group_t = None
+    self.list_power_vel_trv_group_t = None
     self.list_time_growth           = None
     self.list_time_k_eq             = None
     self.k_p_group_t                = None
@@ -200,18 +200,18 @@ class PlotSpectra():
 
   def __checkAnyQuantitiesNotMeasured(self):
     list_quantities_check = [
-      self.list_k,                     # 0
-      self.list_mag_power_tot_group_t, # 1
-      self.list_vel_power_tot_group_t, # 2
-      self.list_vel_power_lgt_group_t, # 3
-      self.list_vel_power_trv_group_t, # 4
-      self.list_time_growth,           # 5
-      self.list_time_k_eq,             # 6
-      self.k_p_group_t,                # 7
-      self.k_eq_group_t,               # 8
-      self.k_eta_group_t,              # 9
-      self.k_nu_trv_group_t,           # 10
-      self.k_nu_lgt_group_t,           # 11
+      self.list_k,
+      self.list_power_mag_tot_group_t,
+      self.list_power_vel_tot_group_t,
+      self.list_power_vel_lgt_group_t,
+      self.list_power_vel_trv_group_t,
+      self.list_time_growth,
+      self.list_time_k_eq,
+      self.k_p_group_t,
+      self.k_eq_group_t,
+      self.k_eta_group_t,
+      self.k_nu_trv_group_t,
+      self.k_nu_lgt_group_t,
     ]
     list_quantities_undefined = [ 
       index_quantity
@@ -266,17 +266,17 @@ class PlotSpectra():
     ## store time-evolving energy spectra
     self.list_k                     = dict_mag_spect_tot_data["list_k_group_t"][0]
     self.list_time_growth           = dict_mag_spect_tot_data["list_sim_times"]
-    self.list_mag_power_tot_group_t = dict_mag_spect_tot_data["list_power_group_t"]
-    self.list_vel_power_tot_group_t = dict_vel_spect_tot_data["list_power_group_t"]
-    self.list_vel_power_lgt_group_t = dict_vel_spect_lgt_data["list_power_group_t"]
-    self.list_vel_power_trv_group_t = dict_vel_spect_trv_data["list_power_group_t"]
+    self.list_power_mag_tot_group_t = dict_mag_spect_tot_data["list_power_group_t"]
+    self.list_power_vel_tot_group_t = dict_vel_spect_tot_data["list_power_group_t"]
+    self.list_power_vel_lgt_group_t = dict_vel_spect_lgt_data["list_power_group_t"]
+    self.list_power_vel_trv_group_t = dict_vel_spect_trv_data["list_power_group_t"]
 
   def __plotSpectra(self):
     ## magnetic energy spectrum
     plotSpectra(
       ax                 = self.axs_spectra[self.index_mag],
       list_k             = self.list_k,
-      list_power_group_t = self.list_mag_power_tot_group_t,
+      list_power_group_t = self.list_power_mag_tot_group_t,
       color              = self.dict_plot_mag["color_spect"],
       cmap_name          = self.dict_plot_mag["cmap_name"],
       list_times         = self.list_time_growth,
@@ -286,7 +286,7 @@ class PlotSpectra():
       ax                 = self.axs_reynolds[self.index_mag],
       list_times         = self.list_time_growth,
       list_k             = self.list_k,
-      list_power_group_t = self.list_vel_power_tot_group_t,
+      list_power_group_t = self.list_power_vel_tot_group_t,
       viscosity          = self.dict_sim_inputs["eta"],
       cmap_name          = self.dict_plot_mag["cmap_name"],
       color              = self.dict_plot_mag["color_keta"],
@@ -303,7 +303,7 @@ class PlotSpectra():
     plotSpectra(
       ax                 = self.axs_spectra[self.index_vel_lgt],
       list_k             = self.list_k,
-      list_power_group_t = self.list_vel_power_lgt_group_t,
+      list_power_group_t = self.list_power_vel_lgt_group_t,
       color              = self.dict_plot_vel_lgt["color_spect"],
       cmap_name          = self.dict_plot_vel_lgt["cmap_name"],
       list_times         = self.list_time_growth,
@@ -313,7 +313,7 @@ class PlotSpectra():
       ax                 = self.axs_reynolds[self.index_vel_lgt],
       list_times         = self.list_time_growth,
       list_k             = self.list_k,
-      list_power_group_t = self.list_vel_power_lgt_group_t,
+      list_power_group_t = self.list_power_vel_lgt_group_t,
       viscosity          = self.dict_sim_inputs["nu"],
       cmap_name          = self.dict_plot_vel_lgt["cmap_name"],
       color              = self.dict_plot_vel_lgt["color_knu"],
@@ -330,7 +330,7 @@ class PlotSpectra():
     plotSpectra(
       ax                 = self.axs_spectra[self.index_vel_trv],
       list_k             = self.list_k,
-      list_power_group_t = self.list_vel_power_trv_group_t,
+      list_power_group_t = self.list_power_vel_trv_group_t,
       color              = self.dict_plot_vel_trv["color_spect"],
       cmap_name          = self.dict_plot_vel_trv["cmap_name"],
       list_times         = self.list_time_growth,
@@ -340,7 +340,7 @@ class PlotSpectra():
       ax                 = self.axs_reynolds[self.index_vel_trv],
       list_times         = self.list_time_growth,
       list_k             = self.list_k,
-      list_power_group_t = self.list_vel_power_trv_group_t,
+      list_power_group_t = self.list_power_vel_trv_group_t,
       viscosity          = self.dict_sim_inputs["nu"],
       cmap_name          = self.dict_plot_vel_trv["cmap_name"],
       color              = self.dict_plot_vel_trv["color_knu"],
@@ -382,8 +382,8 @@ class PlotSpectra():
       ax_scales              = self.axs_scales[1],
       list_sim_time          = dict_mag_spect_tot_data["list_sim_times"],
       list_k                 = dict_mag_spect_tot_data["list_k_group_t"][0],
-      list_mag_power_group_t = dict_mag_spect_tot_data["list_power_group_t"],
-      list_kin_power_group_t = dict_vel_spect_tot_data["list_power_group_t"],
+      list_power_mag_group_t = dict_mag_spect_tot_data["list_power_group_t"],
+      list_power_kin_group_t = dict_vel_spect_tot_data["list_power_group_t"],
       color                  = self.color_k_eq
     )
 
@@ -394,7 +394,7 @@ class PlotSpectra():
     for time_index in range(len(self.list_time_growth)):
       k_p, k_max = FitMHDScales.getScale_kp(
         self.list_k,
-        WWSpectra.normSpectra(self.list_mag_power_tot_group_t[time_index])
+        WWSpectra.normSpectra(self.list_power_mag_tot_group_t[time_index])
       )
       ## store measured scales
       self.k_p_group_t.append(k_p)
@@ -468,7 +468,7 @@ class PlotSpectra():
   #     ax_residuals        = self.ax_residuals,
   #     ax_scales           = self.axs_scales[0],
   #     list_k              = self.list_k,
-  #     list_power_group_t  = self.list_vel_power_trv_group_t,
+  #     list_power_group_t  = self.list_power_vel_trv_group_t,
   #     list_time_growth    = self.list_time_growth,
   #     color_fit           = self.dict_plot_vel_trv["color_fit"],
   #     label_spect         = self.dict_plot_vel_trv["label_spect"] + str_fixed_alpha_cas,
@@ -482,7 +482,7 @@ class PlotSpectra():
   #     ax_residuals        = self.ax_residuals,
   #     ax_scales           = self.axs_scales[0],
   #     list_k              = self.list_k,
-  #     list_power_group_t  = self.list_vel_power_trv_group_t,
+  #     list_power_group_t  = self.list_power_vel_trv_group_t,
   #     list_time_growth    = self.list_time_growth,
   #     color_fit           = self.dict_plot_vel_trv["color_fit_fixed"],
   #     label_spect         = self.dict_plot_vel_trv["label_spect"] + str_fixed_alpha_dis,
@@ -689,22 +689,22 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC         = 0
+BOOL_MPROC         = 1
 BOOL_CHECK_ONLY    = 0
 BASEPATH           = "/scratch/ek9/nk7952/"
 
-## PLASMA PARAMETER SET
-LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
-LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
-LIST_SIM_RES       = [ "144", "288" ]
+# ## PLASMA PARAMETER SET
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SIM_RES       = [ "144", "288" ]
 
-# ## MACH NUMBER SET
-# LIST_SUITE_FOLDERS = [ "Re300" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
-# LIST_SIM_FOLDERS   = [ "Pm4" ]
-# LIST_SIM_RES       = [ "144" ]
+## MACH NUMBER SET
+LIST_SUITE_FOLDERS = [ "Re300" ]
+LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+LIST_SIM_FOLDERS   = [ "Pm4" ]
+LIST_SIM_RES       = [ "144", "288" ]
 
 
 ## ###############################################################

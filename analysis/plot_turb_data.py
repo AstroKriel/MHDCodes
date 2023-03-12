@@ -49,17 +49,17 @@ class PlotTurbData():
     self.bool_verbose     = bool_verbose
 
   def performRoutines(self):
-    self.__initialiseQuantities()
-    self.__loadData()
-    self.__plotMach()
-    self.__plotEnergyRatio()
+    self._initialiseQuantities()
+    self._loadData()
+    self._plotMach()
+    self._plotEnergyRatio()
     if max(self.data_time) > 5:
-      self.__fitData()
+      self._fitData()
       self.bool_fitted = True
-    self.__labelPlots()
+    self._labelPlots()
 
   def getFittedParams(self):
-    self.__checkAnyQuantitiesNotMeasured()
+    self._checkAnyQuantitiesNotMeasured()
     if not self.bool_fitted: self.performRoutines()
     return {
       "plots_per_eddy"    : self.plots_per_eddy,
@@ -75,7 +75,7 @@ class PlotTurbData():
     dict_params = self.getFittedParams()
     WWObjs.saveDict2JsonFile(f"{filepath_sim}/{FileNames.FILENAME_SIM_OUTPUTS}", dict_params, self.bool_verbose)
 
-  def __initialiseQuantities(self):
+  def _initialiseQuantities(self):
     ## flag to check that all required quantities have been measured
     self.bool_fitted    = False
     ## initialise quantities to measure
@@ -87,7 +87,7 @@ class PlotTurbData():
     self.Gamma          = None
     self.E_sat_ratio    = None
 
-  def __checkAnyQuantitiesNotMeasured(self):
+  def _checkAnyQuantitiesNotMeasured(self):
     ## no need to check growth rate (Gamma) and saturated ratio (E_sat_ratio)
     list_quantities_check = [
       self.plots_per_eddy,
@@ -103,7 +103,7 @@ class PlotTurbData():
     ]
     if len(list_quantities_undefined) > 0: raise Exception("Error: the following quantities were not measured:", list_quantities_undefined)
 
-  def __loadData(self):
+  def _loadData(self):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
     self.plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromFlashLog(
       filepath     = self.filepath_sim_res,
@@ -164,7 +164,7 @@ class PlotTurbData():
       max(self.data_time)
     ])
 
-  def __plotMach(self):
+  def _plotMach(self):
     self.axs[0].plot(
       self.data_time,
       self.data_Mach,
@@ -173,7 +173,7 @@ class PlotTurbData():
     self.axs[0].set_ylabel(r"$\mathcal{M}$")
     self.axs[0].set_xlim([ 0, self.max_time ])
   
-  def __plotEnergyRatio(self):
+  def _plotEnergyRatio(self):
     self.axs[1].plot(
       self.data_time,
       self.data_E_ratio,
@@ -199,7 +199,7 @@ class PlotTurbData():
       num_major_ticks  = num_y_major_ticks
     )
 
-  def __fitData(self):
+  def _fitData(self):
     linestyle_kin  = "--"
     linestyle_sat  = ":"
     label_Esat     = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ "
@@ -270,7 +270,7 @@ class PlotTurbData():
     self.time_exp_start = self.data_time[index_start_fit]
     self.time_exp_end   = self.data_time[index_end_fit]
 
-  def __labelPlots(self):
+  def _labelPlots(self):
     ## annotate simulation parameters
     PlotFuncs.addBoxOfLabels(
       self.fig, self.axs[0],
@@ -336,7 +336,7 @@ def plotSimData(
   if not(bool_check_only): obj_plot_turb.saveFittedParams(filepath_sim_res)
   sim_name = SimParams.getSimName(dict_sim_inputs)
   fig_name = f"{sim_name}_time_evolution.png"
-  PlotFuncs.saveFigure(fig, f"{filepath_vis}/{fig_name}", bool_verbose)
+  PlotFuncs.saveFigure(fig, f"{filepath_vis}/{fig_name}", bool_verbose=True)
   if lock is not None: lock.release()
   if bool_verbose: print(" ")
 
