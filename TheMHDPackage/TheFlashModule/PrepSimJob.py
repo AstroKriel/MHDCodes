@@ -4,9 +4,8 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-from TheSimModule import SimParams
+from TheFlashModule import SimParams, FileNames
 from TheUsefulModule import WWFnF
-from TheLoadingModule import FileNames
 
 
 ## ###############################################################
@@ -216,15 +215,18 @@ def writeFlashParamFile(filepath_ref, filepath_to, dict_sim_inputs, max_hours):
     dict_sim_inputs["Rm"],
     dict_sim_inputs["Pm"]
   )
-  str_set_iproc          = "iProcs = {}\n".format(dict_sim_inputs["num_procs"][[0]])
-  str_set_jproc          = "jProcs = {}\n".format(dict_sim_inputs["num_procs"][[1]])
-  str_set_kproc          = "kProcs = {}\n".format(dict_sim_inputs["num_procs"][[2]])
+  str_set_iproc          = "iProcs = {}\n".format(dict_sim_inputs["num_procs"][0])
+  str_set_jproc          = "jProcs = {}\n".format(dict_sim_inputs["num_procs"][1])
+  str_set_kproc          = "kProcs = {}\n".format(dict_sim_inputs["num_procs"][2])
   str_set_restart        = "restart = .false.\n"
   str_set_chk_num        = "checkpointFileNumber = 0\n"
   str_set_plt_num        = "plotFileNumber = 0\n"
   str_set_chk_rate       = "checkpointFileIntervalTime = {} # 1 t_turb\n".format(dict_sim_inputs["t_turb"])
   str_set_plt_rate       = "plotFileIntervalTime = {} # 0.1 t_turb\n".format(dict_sim_inputs["t_turb"] / 10)
-  str_set_max_sim_time   = "tmax = {} # 100 t_turb\n".format(100 * dict_sim_inputs["t_turb"])
+  str_set_max_sim_time   = "tmax = {} # {} t_turb\n".format(
+    dict_sim_inputs["num_t_turb"] * dict_sim_inputs["t_turb"], # TODO
+    dict_sim_inputs["num_t_turb"]
+  )
   str_set_max_wall_time  = f"wall_clock_time_limit = {max_wall_time_sec} # closes sim and saves state\n"
   ## open new file
   with open(f"{filepath_to}/{FileNames.FILENAME_FLASH_INPUT}", "w") as new_file:

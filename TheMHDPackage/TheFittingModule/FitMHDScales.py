@@ -226,7 +226,7 @@ def getScale_kp(list_k, list_power):
 
 
 def getScale_keq(
-    list_sim_time, list_k, list_power_mag_group_t, list_power_kin_group_t,
+    list_times, list_k, list_power_mag_group_t, list_power_kin_group_t,
     tol        = 1e-1,
     ax_spectra = None,
     ax_scales  = None,
@@ -238,7 +238,7 @@ def getScale_keq(
   k_eq_power_group_t = []
   list_time_k_eq     = []
   ## loop through each time realisation
-  for time_index in range(len(list_sim_time)):
+  for time_index in range(len(list_times)):
     ## calculate energy spectrum ratio
     list_power_ratio = \
       np.array(list_power_mag_group_t[time_index]) / \
@@ -248,7 +248,7 @@ def getScale_keq(
       ax_spectra.plot(
         list_k,
         list_power_ratio,
-        color=color, ls="-", alpha=0.1
+        color=color, ls="-", lw=1.5, alpha=0.1
       )
     ## calculate where to cutoff spectrum ratio
     ## ignore second point where spectrum ratio peaks
@@ -269,7 +269,7 @@ def getScale_keq(
       k_eq_power = list_power_ratio[index_k_eq]
       k_eq_group_t.append(k_eq)
       k_eq_power_group_t.append(k_eq_power)
-      list_time_k_eq.append(list_sim_time[time_index])
+      list_time_k_eq.append(list_times[time_index])
   ## plot measured equipartition scale
   if (len(k_eq_group_t) > 0) and (ax_scales is not None):
     ax_scales.plot(

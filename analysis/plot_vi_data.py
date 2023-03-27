@@ -15,11 +15,10 @@ os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
 
 ## load user defined modules
+from TheFlashModule import SimParams, LoadFlashData, FileNames
 from TheUsefulModule import WWLists, WWFnF, WWObjs
-from TheSimModule import SimParams
-from TheLoadingModule import LoadFlashData, FileNames
-from ThePlottingModule import PlotFuncs
 from TheFittingModule import FitFuncs
+from ThePlottingModule import PlotFuncs
 
 
 ## ###############################################################
@@ -41,109 +40,72 @@ class PlotTurbData():
     self.fig              = fig
     self.axs              = axs
     self.filepath_sim_res = filepath_sim_res
-    self.t_turb           = dict_sim_inputs["t_turb"]
-    self.N_res            = int(dict_sim_inputs["sim_res"])
-    self.Re               = dict_sim_inputs["Re"]
-    self.Rm               = dict_sim_inputs["Rm"]
-    self.Pm               = dict_sim_inputs["Pm"]
+    self.dict_sim_inputs  = dict_sim_inputs
     self.bool_verbose     = bool_verbose
 
   def performRoutines(self):
-    self._initialiseQuantities()
+    if self.bool_verbose: print("Loading volume integrated data...")
     self._loadData()
+    if self.bool_verbose: print("Plotting volume integrated data...")
     self._plotMach()
     self._plotEnergyRatio()
+    self.bool_fitted = False
     if max(self.data_time) > 5:
       self._fitData()
       self.bool_fitted = True
     self._labelPlots()
 
   def getFittedParams(self):
-    self._checkAnyQuantitiesNotMeasured()
     if not self.bool_fitted: self.performRoutines()
     return {
-      "plots_per_eddy"    : self.plots_per_eddy,
-      "time_growth_start" : self.time_exp_start,
-      "time_growth_end"   : self.time_exp_end,
-      "rms_Mach"          : self.rms_Mach,
-      "std_Mach"          : self.std_Mach,
-      "Gamma"             : self.Gamma,
-      "E_sat_ratio"       : self.E_sat_ratio
+      "outputs_per_t_turb" : self.outputs_per_t_turb,
+      "E_growth_rate"      : self.E_growth_rate,
+      "E_growth_percent"   : self.E_growth_percent,
+      "E_ratio_sat"        : self.E_ratio_sat,
+      "rms_Mach_growth"    : self.rms_Mach_growth,
+      "std_Mach_growth"    : self.std_Mach_growth,
+      "time_bounds_growth" : self.time_bounds_growth,
+      "time_start_sat"     : self.time_start_sat,
     }
 
   def saveFittedParams(self, filepath_sim):
     dict_params = self.getFittedParams()
     WWObjs.saveDict2JsonFile(f"{filepath_sim}/{FileNames.FILENAME_SIM_OUTPUTS}", dict_params, self.bool_verbose)
 
-  def _initialiseQuantities(self):
-    ## flag to check that all required quantities have been measured
-    self.bool_fitted    = False
-    ## initialise quantities to measure
-    self.plots_per_eddy = None
-    self.time_exp_start = None
-    self.time_exp_end   = None
-    self.rms_Mach       = None
-    self.std_Mach       = None
-    self.Gamma          = None
-    self.E_sat_ratio    = None
-
-  def _checkAnyQuantitiesNotMeasured(self):
-    ## no need to check growth rate (Gamma) and saturated ratio (E_sat_ratio)
-    list_quantities_check = [
-      self.plots_per_eddy,
-      self.time_exp_start,
-      self.time_exp_end,
-      self.rms_Mach,
-      self.std_Mach
-    ]
-    list_quantities_undefined = [ 
-      index_quantity
-      for index_quantity, quantity in enumerate(list_quantities_check)
-      if quantity is None
-    ]
-    if len(list_quantities_undefined) > 0: raise Exception("Error: the following quantities were not measured:", list_quantities_undefined)
-
   def _loadData(self):
     ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    self.plots_per_eddy = LoadFlashData.getPlotsPerEddy_fromFlashLog(
-      filepath     = self.filepath_sim_res,
-      bool_verbose = False
-    )
-    if self.bool_verbose: print("Loading volume integrated data...")
-    ## check how the integrated quantities are ordered in file
-    with open(f"{self.filepath_sim_res}/{FileNames.FILENAME_FLASH_VOL}") as fp: file_first_line = fp.readline()
-    ## load kinetic energy
-    _, data_kin_energy = LoadFlashData.loadTurbData(
+    self.outputs_per_t_turb = LoadFlashData.getPlotsPerEddy_fromFlashLog(self.filepath_sim_res, bool_verbose=False)
+    ## load Mach data
+    _, data_Mach = LoadFlashData.loadVIData(
       filepath   = self.filepath_sim_res,
-      quantity   = "kin",
-      t_turb     = self.t_turb,
+      field_name = "mach",
+      t_turb     = self.dict_sim_inputs["t_turb"],
+      time_start = 0.1,
+      time_end   = np.inf
+    )
+    ## load kinetic energy
+    _, data_kin_energy = LoadFlashData.loadVIData(
+      filepath   = self.filepath_sim_res,
+      field_name = "kin",
+      t_turb     = self.dict_sim_inputs["t_turb"],
       time_start = 0.1,
       time_end   = np.inf
     )
     ## load magnetic energy
-    _, data_mag_energy = LoadFlashData.loadTurbData(
+    data_time, data_mag_energy = LoadFlashData.loadVIData(
       filepath   = self.filepath_sim_res,
-      quantity   = "mag",
-      t_turb     = self.t_turb,
+      field_name = "mag",
+      t_turb     = self.dict_sim_inputs["t_turb"],
       time_start = 0.1,
       time_end   = np.inf
     )
-    ## load Mach data
-    data_time, data_Mach = LoadFlashData.loadTurbData(
-      filepath   = self.filepath_sim_res,
-      quantity   = "mach",
-      t_turb     = self.t_turb,
-      time_start = 0.1,
-      time_end   = np.inf
-    )
-    ## Only relevant when loading data while a simulation is running
-    ## (i.e., dealing w/ data synchronisation). So, only grab the portion
-    ## (i.e., time-range) of data that has been sefely written for all quantities
+    ## Only relevant when loading data while the simulation is running.
+    ## Only grab portion of data that has been sefely written, for all quantities.
     max_len = min([
       len(data_time),
       len(data_Mach),
-      len(data_mag_energy),
-      len(data_kin_energy)
+      len(data_kin_energy),
+      len(data_mag_energy)
     ])
     ## save data
     self.data_time       = data_time[:max_len]
@@ -159,10 +121,7 @@ class PlotTurbData():
       )
     ]
     ## define plot domain
-    self.max_time = max([
-      100,
-      max(self.data_time)
-    ])
+    self.max_time = max([ 100, max(self.data_time) ])
 
   def _plotMach(self):
     self.axs[0].plot(
@@ -202,89 +161,79 @@ class PlotTurbData():
   def _fitData(self):
     linestyle_kin  = "--"
     linestyle_sat  = ":"
-    label_Esat     = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ "
-    label_Mach     = r"$\mathcal{M} =$ "
-    t_start_index  = WWLists.getIndexClosestValue(self.data_time, 5.0)
-    growth_percent = self.data_E_ratio[-1] / self.data_E_ratio[t_start_index]
-    ## IF DYNAMO GROWTH OCCURS
-    ## -----------------------
-    if growth_percent > 100:
-      ## find saturated energy ratio
-      index_sat_start = WWLists.getIndexClosestValue(
-        self.data_time,
-        0.75 * self.data_time[-1]
-      )
-      self.E_sat_ratio, _ = FitFuncs.fitConstFunc(
-        ax              = self.axs[1],
-        data_x          = self.data_time,
-        data_y          = self.data_E_ratio,
-        str_label       = label_Esat,
-        index_start_fit = index_sat_start,
-        index_end_fit   = len(self.data_time)-1,
-        linestyle       = linestyle_sat
-      )
-      ## get index range corresponding with kinematic phase of the dynamo
+    ## SATURATED REGIME
+    ## ----------------
+    ## get index and time associated with saturated regime
+    time_start_sat      = 0.75 * self.data_time[-1]
+    index_start_sat     = WWLists.getIndexClosestValue(self.data_time, time_start_sat)
+    self.time_start_sat = self.data_time[index_start_sat]
+    index_end_sat       = len(self.data_time)-1
+    ## find saturated energy ratio
+    self.E_ratio_sat, _ = FitFuncs.fitConstFunc(
+      ax              = self.axs[1],
+      data_x          = self.data_time,
+      data_y          = self.data_E_ratio,
+      str_label       = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ ",
+      index_start_fit = index_start_sat,
+      index_end_fit   = index_end_sat,
+      linestyle       = linestyle_sat
+    )
+    ## GROWTH REGIME
+    ## -------------
+    t_start_index = WWLists.getIndexClosestValue(self.data_time, 5.0)
+    self.E_growth_percent = self.E_ratio_sat / self.data_E_ratio[t_start_index]
+    if self.E_growth_percent > 10**2:
+      ## get index range corresponding with growth phase
       index_E_lo = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-8))
-      index_E_hi = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_sat_ratio/100)
-      index_start_fit = max([ t_start_index, min([ index_E_lo, index_E_hi ]) ])
-      index_end_fit   = max([ index_E_lo, index_E_hi ])
+      index_E_hi = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_ratio_sat/100)
+      index_start_growth = max([ t_start_index, min([ index_E_lo, index_E_hi ]) ])
+      index_end_growth   = max([ index_E_lo, index_E_hi ])
       ## find growth rate of exponential
-      self.Gamma = FitFuncs.fitExpFunc(
+      self.E_growth_rate = FitFuncs.fitExpFunc(
         ax              = self.axs[1],
         data_x          = self.data_time,
         data_y          = self.data_E_ratio,
-        index_start_fit = index_start_fit,
-        index_end_fit   = index_end_fit,
+        index_start_fit = index_start_growth,
+        index_end_fit   = index_end_growth,
         linestyle       = linestyle_kin
       )
-    ## IF NO GROWTH OCCURS
-    ## -------------------
+      ## store time range of growth
+      self.time_bounds_growth = [
+        self.data_time[index_start_growth],
+        self.data_time[index_end_growth]
+      ]
+      ## when growth occurs, measure Mach number over growth regime
+      index_start_Mach = index_start_growth
+      index_end_Mach   = index_end_growth
     else:
-      ## get index range corresponding with end of the simulation
-      index_start_fit = WWLists.getIndexClosestValue(
-        self.data_time,
-        0.75 * self.data_time[-1]
-      )
-      index_end_fit = len(self.data_time)-1
-      ## find average energy ratio
-      self.E_sat_ratio, _ = FitFuncs.fitConstFunc(
-        ax              = self.axs[1],
-        data_x          = self.data_time,
-        data_y          = self.data_E_ratio,
-        str_label       = label_Esat,
-        index_start_fit = index_start_fit,
-        index_end_fit   = index_end_fit,
-        linestyle       = linestyle_sat
-      )
-    ## find average Mach number
-    self.rms_Mach, self.std_Mach = FitFuncs.fitConstFunc(
+      ## undefined growth rate
+      self.E_growth_rate = None
+      ## indicate that there is no time of growth
+      self.time_bounds_growth = [ None, None ]
+      ## when no growth occurs, measure Mach number over saturated regime
+      index_start_Mach = index_start_sat
+      index_end_Mach   = index_end_sat
+    ## MACH NUMBER
+    ## -----------
+    self.rms_Mach_growth, self.std_Mach_growth = FitFuncs.fitConstFunc(
       ax              = self.axs[0],
       data_x          = self.data_time,
       data_y          = self.data_Mach,
-      str_label       = label_Mach,
-      index_start_fit = index_start_fit,
-      index_end_fit   = index_end_fit,
+      str_label       = r"$\mathcal{M} =$ ",
+      index_start_fit = index_start_Mach,
+      index_end_fit   = index_end_Mach,
       linestyle       = linestyle_kin
     )
-    ## store time range bounds corresponding with the exponential phase of the dynamo
-    self.time_exp_start = self.data_time[index_start_fit]
-    self.time_exp_end   = self.data_time[index_end_fit]
 
   def _labelPlots(self):
     ## annotate simulation parameters
-    PlotFuncs.addBoxOfLabels(
-      self.fig, self.axs[0],
-      bbox        = (1.0, 0.0),
-      xpos        = 0.95,
-      ypos        = 0.05,
-      alpha       = 0.5,
-      fontsize    = 18,
-      list_labels = [
-        r"${\rm N}_{\rm res} = $ " + "{:d}".format(int(self.N_res)),
-        r"${\rm Re} = $ "          + "{:d}".format(int(self.Re)),
-        r"${\rm Rm} = $ "          + "{:d}".format(int(self.Rm)),
-        r"${\rm Pm} = $ "          + "{:d}".format(int(self.Pm)),
-      ]
+    SimParams.addLabel_simInputs(
+      fig             = self.fig,
+      ax              = self.axs[0],
+      dict_sim_inputs = self.dict_sim_inputs,
+      bbox            = (1,0),
+      vpos            = (0.95, 0.05),
+      bool_show_res   = True
     )
     ## annotate measured quantities
     if self.bool_fitted:
@@ -295,7 +244,7 @@ class PlotTurbData():
 
 
 ## ###############################################################
-## HANDLING PLOT CALLS
+## OPPERATOR HANDLING PLOT CALLS
 ## ###############################################################
 def plotSimData(
     filepath_sim_res,
@@ -304,7 +253,7 @@ def plotSimData(
     bool_verbose    = True
   ):
   print("Looking at:", filepath_sim_res)
-  ## get simulation parameters
+  ## read simulation input parameters
   dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res, bool_verbose)
   ## make sure a visualisation folder exists
   filepath_vis = f"{filepath_sim_res}/vis_folder/"
@@ -360,7 +309,7 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC         = 1
+BOOL_MPROC         = 0
 BOOL_CHECK_ONLY    = 1
 BASEPATH           = "/scratch/ek9/nk7952/"
 
@@ -368,12 +317,11 @@ BASEPATH           = "/scratch/ek9/nk7952/"
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
-# LIST_SIM_RES       = [ "144", "288" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
 ## MACH NUMBER SET
 LIST_SUITE_FOLDERS = [ "Re300" ]
-LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 LIST_SIM_FOLDERS   = [ "Pm4" ]
 LIST_SIM_RES       = [ "288" ]
 

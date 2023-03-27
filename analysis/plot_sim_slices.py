@@ -30,7 +30,7 @@ ap.add_argument("-start_time",     type=int,   default=[1],          required=Fa
 ap.add_argument("-end_time",       type=int,   default=[np.inf],     required=False, nargs="+")
 ap.add_argument("-num_blocks",     type=int,   default=[36, 36, 48], required=False, nargs="+")
 ap.add_argument("-num_procs",      type=int,   default=[8, 8, 6],    required=False, nargs="+")
-ap.add_argument("-plots_per_eddy", type=float, default=10, required=False)
+ap.add_argument("-outputs_per_t_turb", type=float, default=10, required=False)
 ap.add_argument("-plot_every",     type=int,   default=1,  required=False)
 ## ------------------- DEFINE REQUIRED ARGUMENTS
 ap.add_argument("-base_path",   type=str, required=True)
@@ -41,7 +41,7 @@ args = vars(ap.parse_args())
 ## ---------------------------- SAVE PARAMETERS
 start_time     = args["start_time"] # starting processing frame
 end_time       = args["end_time"]   # the last file to process
-plots_per_eddy = args["plots_per_eddy"] # number of plot files per eddy turnover time
+outputs_per_t_turb = args["outputs_per_t_turb"] # number of plot files per eddy turnover time
 plot_every     = args["plot_every"] # number of plot files per eddy turnover time
 num_blocks     = args["num_blocks"]
 num_procs      = args["num_procs"]
@@ -96,7 +96,7 @@ for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
     str_field  = "mag",
     num_blocks = num_blocks,
     num_procs  = num_procs,
-    plots_per_eddy   = plots_per_eddy,
+    outputs_per_t_turb   = outputs_per_t_turb,
     plot_every_index = plot_every
   )
   ## plot simulation frames

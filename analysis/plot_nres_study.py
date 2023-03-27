@@ -3,16 +3,15 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys, copy
+import sys, copy
 import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.optimize import curve_fit
 
 ## load user defined modules
-from TheSimModule import SimParams
+from TheFlashModule import SimParams, FileNames
 from TheUsefulModule import WWFnF, WWObjs
-from TheLoadingModule import FileNames
 from TheFittingModule import UserModels
 from ThePlottingModule import PlotFuncs
 
@@ -93,31 +92,43 @@ def fitPowerLaw(
 ## OPERATOR CLASS
 ## ###############################################################
 class PlotScaleConvergence():
-  def __init__(
-      self,
-      filepath_sim, filepath_vis, sim_name
-    ):
-    self.filepath_sim = filepath_sim
-    self.filepath_vis = filepath_vis
-    self.sim_name     = sim_name
-    self.__initialiseData()
+  def __init__(self, filepath_sim_288):
+    self.filepath_sim = f"{filepath_sim_288}/../"
+    self.filepath_vis = f"{self.filepath_sim}/vis_folder/"
+    WWFnF.createFolder(self.filepath_vis, bool_verbose=False)
+    dict_sim_inputs   = SimParams.readSimInputs(filepath_sim_288, bool_verbose=False)
+    self.sim_name     = SimParams.getSimName(dict_sim_inputs)
 
-  def __initialiseData(self):
-    ## initialise input datasets
+  def saveData(self):
+    dict_converged_scales = {
+      "k_p_stats_converge"      : self.k_p_stats_converge,
+      "k_eta_stats_converge"    : self.k_eta_stats_converge,
+      "k_nu_lgt_stats_converge" : self.k_nu_lgt_stats_converge,
+      "k_nu_trv_stats_converge" : self.k_nu_trv_stats_converge,
+    }
+    WWObjs.saveDict2JsonFile(
+      filepath_file = f"{self.filepath_sim}/{FileNames.FILENAME_SIM_SCALES}",
+      input_dict    = dict_converged_scales
+    )
+    return
+
+  def readData(self):
     self.list_sim_res         = []
     self.k_p_group_t_res      = []
     self.k_eta_group_t_res    = []
     self.k_nu_lgt_group_t_res = []
     self.k_nu_trv_group_t_res = []
-
-  def readData(self):
     for sim_res in LIST_SIM_RES:
       try:
         dict_sim_outputs = SimParams.readSimOutputs(f"{self.filepath_sim}/{sim_res}/")
-        self.k_p_group_t_res.append(dict_sim_outputs["k_p_group_t"])
-        self.k_eta_group_t_res.append(dict_sim_outputs["k_eta_group_t"])
-        self.k_nu_lgt_group_t_res.append(dict_sim_outputs["k_nu_trv_group_t"])
-        self.k_nu_trv_group_t_res.append(dict_sim_outputs["k_nu_lgt_group_t"])
+        k_p_group_t      = dict_sim_outputs["k_p_group_t"]
+        k_eta_group_t    = dict_sim_outputs["k_eta_group_t"]
+        k_nu_trv_group_t = dict_sim_outputs["k_nu_trv_group_t"]
+        k_nu_lgt_group_t = dict_sim_outputs["k_nu_lgt_group_t"]
+        self.k_p_group_t_res.append(k_p_group_t)
+        self.k_eta_group_t_res.append(k_eta_group_t)
+        self.k_nu_lgt_group_t_res.append(k_nu_trv_group_t)
+        self.k_nu_trv_group_t_res.append(k_nu_lgt_group_t)
         self.list_sim_res.append(int(sim_res))
       except: continue
 
@@ -132,26 +143,11 @@ class PlotScaleConvergence():
     self.ax_k_eta    = self.fig.add_subplot(fig_grid[1, 0])
     self.ax_k_nu_lgt = self.fig.add_subplot(fig_grid[0, 1])
     self.ax_k_nu_trv = self.fig.add_subplot(fig_grid[1, 1])
-    ## plot and fit data
     self.__plotScales()
-    self.__fitScales()
+    # self.__fitScales()
     self.__labelAxis()
-    ## save figure
     filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_scales.png"
     PlotFuncs.saveFigure(self.fig, filepath_fig)
-
-  def saveData(self):
-    dict_converged_scales = {
-      "k_p_stats_converge"      : self.k_p_stats_converge,
-      "k_eta_stats_converge"    : self.k_eta_stats_converge,
-      "k_nu_lgt_stats_converge" : self.k_nu_lgt_stats_converge,
-      "k_nu_trv_stats_converge" : self.k_nu_trv_stats_converge,
-    }
-    WWObjs.saveDict2JsonFile(
-      filepath_file = f"{self.filepath_sim}/{FileNames.FILENAME_SIM_SCALES}",
-      input_dict    = dict_converged_scales
-    )
-    return
 
   def __plotScales(self):
     for res_index, sim_res in enumerate(self.list_sim_res):
@@ -240,7 +236,6 @@ class PlotScaleConvergence():
         ],
         list_labels = [
           createLabel_fromStats_converge(stats_converge),
-
         ],
       )
     ## define helper variables
@@ -273,69 +268,56 @@ class PlotScaleConvergence():
       vpos          = (0.05, 0.95),
       bool_show_res = False
     )
-    ## annotate fitted scales
-    labelAxis(self.ax_k_p,      self.k_p_stats_converge)
-    labelAxis(self.ax_k_eta,    self.k_eta_stats_converge)
-    labelAxis(self.ax_k_nu_lgt, self.k_nu_lgt_stats_converge)
-    labelAxis(self.ax_k_nu_trv, self.k_nu_trv_stats_converge)
+    # ## annotate fitted scales
+    # labelAxis(self.ax_k_p,      self.k_p_stats_converge)
+    # labelAxis(self.ax_k_eta,    self.k_eta_stats_converge)
+    # labelAxis(self.ax_k_nu_lgt, self.k_nu_lgt_stats_converge)
+    # labelAxis(self.ax_k_nu_trv, self.k_nu_trv_stats_converge)
+
+
+## ###############################################################
+## OPPERATOR HANDLING PLOT CALLS
+## ###############################################################
+def plotSimData(filepath_sim_res, **kwargs):
+  obj = PlotScaleConvergence(filepath_sim_288=filepath_sim_res)
+  obj.readData()
+  obj.plotData()
+  # obj.saveData()
 
 
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  ## LOOK AT EACH SIMULATION FOLDER
-  ## ------------------------------
-  ## loop over the simulation suites
-  for suite_folder in LIST_SUITE_FOLDER:
-    ## COMMUNICATE PROGRESS
-    ## --------------------
-    str_message = f"Looking at suite: {suite_folder}, regime: {SONIC_REGIME}"
-    print(str_message)
-    print("=" * len(str_message))
-    print(" ")
-    ## loop over the simulation folders
-    for sim_folder in LIST_SIM_FOLDER:
-      ## define name of simulation dataset
-      sim_name = f"{suite_folder}_{sim_folder}"
-      ## define filepath to simulation
-      filepath_sim = WWFnF.createFilepath([ 
-        BASEPATH, suite_folder, SONIC_REGIME, sim_folder
-      ])
-      ## CHECK THE NRES=288 DATASET EXISTS
-      ## ---------------------------------
-      ## check that the simulation data exists at Nres=288
-      if not os.path.isfile(f"{filepath_sim}/288/{FileNames.FILENAME_SIM_OUTPUTS}"): continue
-      ## MAKE SURE A VISUALISATION FOLDER EXISTS
-      ## ---------------------------------------
-      ## where plots/dataset of converged data will be stored
-      filepath_vis = f"{filepath_sim}/vis_folder/"
-      WWFnF.createFolder(filepath_vis, bool_verbose=False)
-      ## MEASURE HOW WELL SCALES ARE CONVERGED
-      ## -------------------------------------
-      obj = PlotScaleConvergence(filepath_sim, filepath_vis, sim_name)
-      obj.readData()
-      obj.plotData()
-      obj.saveData()
-      if BOOL_DEBUG: return
-      ## create empty space
-      print(" ")
-    print(" ")
+  SimParams.callFuncForAllSimulations(
+    func               = plotSimData,
+    bool_mproc         = BOOL_MPROC,
+    basepath           = BASEPATH,
+    list_suite_folders = LIST_SUITE_FOLDERS,
+    list_sonic_regimes = LIST_SONIC_REGIMES,
+    list_sim_folders   = LIST_SIM_FOLDERS,
+    list_sim_res       = [ "288" ]
+  )
 
 
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BOOL_DEBUG        = 0
+BOOL_MPROC        = 0
 BASEPATH          = "/scratch/ek9/nk7952/"
-SONIC_REGIME      = "sub_sonic"
 
-# LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES      = [ "18", "36", "72", "144", "288", "576" ]
+# ## PLASMA PARAMETER SET
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SIM_RES       = [ "144", "288" ]
 
-LIST_SUITE_FOLDER = [ "Re10" ]
-LIST_SIM_FOLDER   = [ "Pm50" ]
+## MACH NUMBER SET
+LIST_SUITE_FOLDERS = [ "Re300" ]
+LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+LIST_SIM_FOLDERS   = [ "Pm4" ]
+LIST_SIM_RES       = [ "144", "288" ]
 
 
 ## ###############################################################

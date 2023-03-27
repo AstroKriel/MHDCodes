@@ -10,7 +10,7 @@ import concurrent.futures as cfut
 
 ## import user defined modules
 from TheUsefulModule import WWFnF, WWVariables, WWObjs
-from TheLoadingModule import LoadFlashData, FileNames
+from TheFlashModule import LoadFlashData, FileNames
 from ThePlottingModule import PlotFuncs
 
 
@@ -83,7 +83,7 @@ def callFuncForAllSimulations(
     list_sim_res       = list_sim_res
   )
   if bool_mproc:
-    print("Looking at the following simulations:")
+    print(f"Looking at {len(list_filepath_sim_res)} simulations:")
     [
       print("\t> " + filepath_sim_res)
       for filepath_sim_res in list_filepath_sim_res
@@ -124,13 +124,18 @@ def callFuncForAllSimulations(
 ## PLOT SIMULATION DETAILS
 ## ###############################################################
 def addLabel_simInputs(
-    fig, ax, filepath,
-    bbox          = (0,0),
-    vpos          = (0.05, 0.05),
-    bool_show_res = True
+    fig, ax,
+    dict_sim_inputs = None,
+    filepath        = None,
+    bbox            = (0,0),
+    vpos            = (0.05, 0.05),
+    bool_show_res   = True
   ):
   ## load simulation parameters
-  dict_sim_inputs = readSimInputs(filepath)
+  if dict_sim_inputs is None:
+    if filepath is None:
+      raise Exception("ERROR: need to pass details about simulation inputs")
+    dict_sim_inputs = readSimInputs(filepath)
   ## annotate simulation parameters
   PlotFuncs.addBoxOfLabels(
     fig, ax,
@@ -181,12 +186,9 @@ def createSimInputs(
     Pm = None
   ):
   ## number of cells per block that the flash4-exe was compiled with
-  if sim_res in [ "144", "288", "576" ]:
-    num_blocks = [ 36, 36, 48 ]
-  elif sim_res in [ "36", "72" ]:
-    num_blocks = [ 12, 12, 18 ]
-  elif sim_res in [ "18" ]:
-    num_blocks = [ 6, 6, 6 ]
+  if sim_res in [ "144", "288", "576" ]: num_blocks = [ 36, 36, 48 ]
+  elif sim_res in [ "36", "72" ]:        num_blocks = [ 12, 12, 18 ]
+  elif sim_res in [ "18" ]:              num_blocks = [ 6, 6, 6 ]
   num_procs = [
     int(int(sim_res) / num_blocks_in_dir)
     for num_blocks_in_dir in num_blocks
@@ -231,6 +233,7 @@ class SimInputParams():
     self.num_procs     = num_procs
     self.k_turb        = k_turb
     self.desired_Mach  = desired_Mach
+    self.num_t_turb    = 100
     ## parameters that (may) need to be computed
     self.t_turb        = t_turb
     self.Re            = Re
@@ -261,7 +264,7 @@ class SimInputParams():
     self.sonic_regime = getSonicRegime(self.desired_Mach)
 
   def __definePlasmaParameters(self):
-    dict_params = LoadFlashData.computeDissipationConstants(
+    dict_params = LoadFlashData.computePlasmaConstants(
       Mach   = self.desired_Mach,
       k_turb = self.k_turb,
       Re     = self.Re,

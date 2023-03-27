@@ -23,18 +23,13 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 ## load user defined modules
 from ThePlottingModule.TheMatplotlibStyler import *
-from TheUsefulModule import WWFnF, WWLists
+from TheUsefulModule import WWLists
 
 
 ## ###############################################################
-## ANIMATIONS
+## ANIMATING FRAMES
 ## ###############################################################
-def aniEvolution(
-    filepath_frames, filepath_movie,
-    input_name, output_name
-  ):
-  ''' Animate plot frames into .mp4 video.
-  '''
+def aniEvolution(filepath_frames, filepath_movie, input_name, output_name):
   filepath_input  = f"{filepath_frames}/{input_name}"
   filepath_output = f"{filepath_movie}/{output_name}"
   ## animate the plot-frames
@@ -47,8 +42,7 @@ def aniEvolution(
 ## WORKING WITH FIGURES AND COLORBARS
 ## ###############################################################
 def createFigure_grid(
-    num_rows         = 1,
-    num_cols         = 1,
+    num_rows, num_cols,
     fig_scale        = 1.0,
     fig_aspect_ratio = (4, 6)
   ):
@@ -82,9 +76,18 @@ def createCmap(
   norm = createNorm(vmin, vmax)
   return cmap, norm
 
+class MidpointNormalize(colors.Normalize):
+  def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+    self.midpoint = midpoint
+    colors.Normalize.__init__(self, vmin, vmax, clip)
+
+  def __call__(self, value, clip=None):
+    x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+    return np.ma.masked_array(np.interp(value, x, y))
+
 
 ## ###############################################################
-## PLOT DATA
+## PLOT 1D DATA
 ## ###############################################################
 def plotData_noAutoAxisScale(
     ax, x, y,
@@ -132,6 +135,73 @@ def plotPDF(ax, list_data, color):
 
 
 ## ###############################################################
+## PLOT 2D DATA
+## ###############################################################
+def plot2DField(
+    field_slice_x1,
+    field_slice_x2,
+    filepath_fig        = None,
+    fig                 = None,
+    ax                  = None,
+    cmap_str            = "cmr.arctic",
+    cbar_bounds         = None,
+    cbar_title          = None,
+    quiver_step         = 2,
+    quiver_width        = 5e-3,
+    quiver_color        = "red",
+    bool_plot_magnitude = True,
+    bool_plot_quiver    = True,
+    bool_add_colorbar   = True,
+    bool_label_axis     = True
+  ):
+  ## check that a figure object has been passed
+  if (fig is None) or (ax is None):
+    fig, ax = fig, ax = plt.subplots(constrained_layout=True)
+  ## plot magnitude of vector field
+  if bool_plot_magnitude:
+    field_magnitude = np.sqrt(field_slice_x1**2 + field_slice_x2**2)
+    im_obj = ax.imshow(
+      field_magnitude,
+      extent = [-1.0, 1.0, -1.0, 1.0],
+      cmap   = plt.get_cmap(cmap_str),
+      norm   = colors.LogNorm(
+        vmin = 0.9*np.min(field_magnitude) if cbar_bounds is None else cbar_bounds[0],
+        vmax = 1.1*np.max(field_magnitude) if cbar_bounds is None else cbar_bounds[1]
+      )
+    )
+    ## add colorbar
+    if bool_add_colorbar: addColorbar_fromMappble(im_obj, cbar_title)
+  ## overlay vector field
+  if bool_plot_quiver:
+    field_vecs_x1 = field_slice_x1[::quiver_step, ::quiver_step]
+    field_vecs_x2 = field_slice_x2[::quiver_step, ::quiver_step]
+    x = np.linspace(-1.0, 1.0, len(field_vecs_x1[0,:]))
+    y = np.linspace(-1.0, 1.0, len(field_vecs_x2[:,0]))
+    X, Y = np.meshgrid(x, -y)
+    norm = np.sqrt(field_vecs_x1**2 + field_vecs_x2**2)
+    ax.quiver(
+      X, Y,
+      field_vecs_x1 / norm,
+      field_vecs_x2 / norm,
+      width = quiver_width,
+      color = quiver_color
+    )
+  ## add axis labels
+  if bool_label_axis:
+    ax.set_xticks([-1, -0.5, 0, 0.5, 1])
+    ax.set_yticks([-1, -0.5, 0, 0.5, 1])
+    ax.set_xticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
+    ax.set_yticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
+  else: ax.set_axis_off()
+  ## save figure
+  if filepath_fig is not None:
+    plt.savefig(filepath_fig)
+    ## clear figure and axis
+    fig.artists.clear()
+    ax.clear()
+
+
+## ###############################################################
 ## ADD TO PLOTS
 ## ###############################################################
 def addSubplot_secondAxis(fig, grid_elem, shared_axis):
@@ -154,10 +224,70 @@ def addLegend(
     alpha    = 0.85,
     zorder   = 10
   ):
-  ax.legend(
-    ncol=ncol, loc=loc, bbox_to_anchor=bbox, fontsize=fontsize,
-    frameon=True, facecolor="white", edgecolor="grey", framealpha=alpha
-  ).set_zorder(zorder)
+  obj_legend = ax.legend(
+    ncol=ncol, loc=loc, bbox_to_anchor=bbox, fontsize=fontsize, framealpha=alpha,
+    frameon=True, facecolor="white", edgecolor="grey"
+  )
+  obj_legend.set_zorder(zorder)
+  return obj_legend
+
+def addLegend_fromArtists(
+    ax, list_artists, list_legend_labels,
+    list_marker_colors = [ "k" ],
+    bool_frame         = False,
+    label_color        = "black",
+    loc                = "upper right",
+    bbox               = (1.0, 1.0),
+    ms                 = 8,
+    lw                 = 2,
+    title              = None,
+    ncol               = 1,
+    rspacing           = 0.5,
+    cspacing           = 0.5,
+    fontsize           = 16,
+    alpha              = 0.6
+  ):
+  ## check that the inputs are the correct length
+  WWLists.ensureListLength(list_artists,       list_legend_labels)
+  WWLists.ensureListLength(list_marker_colors, list_legend_labels)
+  ## iniialise list of artists to draw
+  list_legend_artists = []
+  ## lists of artists the user can choose from
+  list_markers = [ ".", "o", "s", "D", "^", "v" ]
+  list_lines   = [ "-", "--", "-.", ":" ]
+  for artist, marker_color in zip(list_artists, list_marker_colors):
+    ## if the artist is a marker
+    if artist in list_markers:
+      list_legend_artists.append( 
+        Line2D([0], [0], marker=artist, color=marker_color, linewidth=0, markeredgecolor="white", markersize=ms)
+      )
+    ## if the artist is a line
+    elif artist in list_lines:
+      list_legend_artists.append(
+        Line2D([0], [0], linestyle=artist, color=marker_color, linewidth=lw)
+      )
+    ## otherwise throw an error
+    else: raise Exception(f"Error: '{artist}' is not a valid valid.")
+  ## create legend
+  legend = ax.legend(
+    list_legend_artists,
+    list_legend_labels,
+    frameon        = bool_frame,
+    title          = title,
+    loc            = loc,
+    bbox_to_anchor = bbox,
+    ncol           = ncol,
+    borderpad      = 0.45,
+    handletextpad  = 0.5,
+    labelspacing   = rspacing,
+    columnspacing  = cspacing,
+    fontsize       = fontsize,
+    labelcolor     = label_color,
+    framealpha     = alpha,
+    facecolor="white", edgecolor="grey"
+  )
+  ## draw legend
+  ax.add_artist(legend)
 
 def addLegend_joinedAxis(
     axs,
@@ -175,8 +305,8 @@ def addLegend_joinedAxis(
   axs[0].legend(
     list_lines,
     list_labels,
-    ncol=ncol, loc=loc, bbox_to_anchor=bbox, fontsize=fontsize,
-    frameon=True, facecolor="white", edgecolor="grey", framealpha=alpha
+    ncol=ncol, loc=loc, bbox_to_anchor=bbox, fontsize=fontsize, framealpha=alpha,
+    frameon=True, facecolor="white", edgecolor="grey"
   ).set_zorder(zorder)
 
 def addLegend_withBox(
@@ -317,61 +447,10 @@ def addInsetAxis(
   ## return inset axis
   return ax_inset
 
-def addLegend(
-    ax, list_artists, list_legend_labels,
-    list_marker_colors = [ "k" ],
-    label_color = "black",
-    loc         = "upper right",
-    bbox        = (1.0, 1.0),
-    ms          = 8,
-    lw          = 2,
-    title       = None,
-    ncol        = 1,
-    rspacing    = 0.5,
-    cspacing    = 0.5,
-    fontsize    = 16,
-  ):
-  ## check that the inputs are the correct length
-  WWLists.ensureListLength(list_artists,       list_legend_labels)
-  WWLists.ensureListLength(list_marker_colors, list_legend_labels)
-  ## iniialise list of artists to draw
-  list_legend_artists = []
-  ## lists of artists the user can choose from
-  list_markers = [ ".", "o", "s", "D", "^", "v" ]
-  list_lines   = [ "-", "--", "-.", ":" ]
-  for artist, marker_color in zip(list_artists, list_marker_colors):
-    ## if the artist is a marker
-    if artist in list_markers:
-      list_legend_artists.append( 
-        Line2D([0], [0], marker=artist, color=marker_color, linewidth=0, markeredgecolor="white", markersize=ms)
-      )
-    ## if the artist is a line
-    elif artist in list_lines:
-      list_legend_artists.append(
-        Line2D([0], [0], linestyle=artist, color=marker_color, linewidth=lw)
-      )
-    ## otherwise throw an error
-    else: raise Exception(f"Error: '{artist}' is not a valid valid.")
-  ## create legend
-  legend = ax.legend(
-    list_legend_artists,
-    list_legend_labels,
-    frameon        = False,
-    facecolor      = None,
-    title          = title,
-    loc            = loc,
-    bbox_to_anchor = bbox,
-    ncol           = ncol,
-    borderpad      = 0.8,
-    handletextpad  = 0.5,
-    labelspacing   = rspacing,
-    columnspacing  = cspacing,
-    fontsize       = fontsize,
-    labelcolor     = label_color
-  )
-  ## draw legend
-  ax.add_artist(legend)
 
+## ###############################################################
+## LABELLING PLOTS
+## ###############################################################
 def labelDualAxis_sharedX(
     axs,
     label_left  = r"",
@@ -401,60 +480,6 @@ def labelDualAxis_sharedY(
   axs[1].tick_params(axis="x", colors=color_top)
   axs[1].spines["bottom"].set_color(color_bottom)
   axs[1].spines["top"   ].set_color(color_top)
-
-
-## ###############################################################
-## PLOT 2D FIELDS
-## ###############################################################
-class MidpointNormalize(colors.Normalize):
-  def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-    self.midpoint = midpoint
-    colors.Normalize.__init__(self, vmin, vmax, clip)
-
-  def __call__(self, value, clip=None):
-    x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-    return np.ma.masked_array(np.interp(value, x, y))
-
-def plot2DField(
-    data,
-    fig              = None,
-    ax               = None,
-    filepath_fig     = None,
-    cmap_str         = "cmr.arctic",
-    cbar_title       = None,
-    cbar_bounds      = None,
-    bool_colorbar    = True,
-    bool_label       = True
-  ):
-  ## check that a figure object has been passed
-  if (fig is None) or (ax is None):
-    fig, ax = fig, ax = plt.subplots(constrained_layout=True)
-  ## plot slice
-  im_obj = ax.imshow(
-    data,
-    extent = [-1.0, 1.0, -1.0, 1.0],
-    cmap   = plt.get_cmap(cmap_str),
-    norm   = colors.LogNorm(
-      vmin = 0.9*np.min(data) if cbar_bounds is None else cbar_bounds[0],
-      vmax = 1.1*np.max(data) if cbar_bounds is None else cbar_bounds[1]
-    )
-  )
-  ## add colorbar
-  if bool_colorbar:
-    addColorbar_fromMappble(im_obj, cbar_title)
-  ## add axis labels
-  if bool_label:
-    ax.set_xticks([-1, -0.5, 0, 0.5, 1])
-    ax.set_yticks([-1, -0.5, 0, 0.5, 1])
-    ax.set_xticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
-    ax.set_yticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
-  else: ax.set_axis_off()
-  ## save figure
-  if filepath_fig is not None:
-    plt.savefig(filepath_fig)
-    ## clear figure and axis
-    fig.artists.clear()
-    ax.clear()
 
 
 ## END OF LIBRARY

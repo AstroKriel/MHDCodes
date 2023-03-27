@@ -14,9 +14,8 @@ os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
 
 ## load user defined modules
-from TheSimModule import SimParams
+from TheFlashModule import SimParams, FileNames
 from TheUsefulModule import WWFnF, WWObjs
-from TheLoadingModule import FileNames
 from ThePlottingModule import PlotFuncs
 
 
@@ -138,7 +137,7 @@ class PlotSimScales():
       PlotFuncs.plotData_noAutoAxisScale(ax, x, x, ls=":")
     else: PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.025*x, ls=":")
     ## label figure
-    PlotFuncs.addLegend(
+    PlotFuncs.addLegend_fromArtists(
       ax,
       list_artists       = [ "s", "D", "o" ],
       list_legend_labels = [
@@ -187,7 +186,7 @@ class PlotSimScales():
       PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.75*x**(1/4), ls=":")
     else: PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.15*x, ls=":")
     ## label figure
-    PlotFuncs.addLegend(
+    PlotFuncs.addLegend_fromArtists(
       ax,
       list_artists       = [ "-", ":" ],
       list_legend_labels = [
@@ -200,7 +199,7 @@ class PlotSimScales():
       bbox               = (1.0, 0.0),
       lw                 = 1
     )
-    PlotFuncs.addLegend(
+    PlotFuncs.addLegend_fromArtists(
       ax,
       list_artists       = [ "s", "D", "o" ],
       list_legend_labels = [
@@ -252,7 +251,7 @@ class PlotSimScales():
       ax.axhline(y=mean_kp, ls=":", c="black")
     else: PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.025*x, ls=":")
     ## label figure
-    PlotFuncs.addLegend(
+    PlotFuncs.addLegend_fromArtists(
       ax,
       list_artists       = [ "s", "D", "o" ],
       list_legend_labels = [

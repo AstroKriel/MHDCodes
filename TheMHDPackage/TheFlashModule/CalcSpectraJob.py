@@ -1,7 +1,6 @@
 ## START OF LIBRARY
 
-from TheSimModule import SimParams
-from TheLoadingModule import FileNames
+from TheFlashModule import SimParams, FileNames
 
 class CalcSpectraJob():
   def __init__(

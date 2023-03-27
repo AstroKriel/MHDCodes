@@ -6,7 +6,7 @@
 import os, sys
 
 ## load user defined modules
-from TheSimModule import SimParams
+from TheFlashModule import SimParams
 from TheUsefulModule import WWFnF
 
 
@@ -81,16 +81,15 @@ class ReorganiseSimFolder():
       filename_startswith = "Turb_hdf5_chk_"
     )
     ## if there are many chk-files
-    num_chk_files_keep = 3
-    num_files_removed  = 0
-    if len(list_chk_files) > num_chk_files_keep:
+    num_chk_files_to_keep = 3
+    num_chk_files_removed = 0
+    if len(list_chk_files) > num_chk_files_to_keep:
       ## cull chk-files at early simulation times
-      for file_index in range(len(list_chk_files) - num_chk_files_keep):
+      for file_index in range(len(list_chk_files) - num_chk_files_to_keep):
         os.system(f"rm {self.filepath_sim}/{list_chk_files[file_index]}")
-        num_files_removed += 1
+        num_chk_files_removed += 1
       ## reflect the number of files removed
-      print(f"\t> Removed {num_files_removed} 'chk' files from:\n\t", self.filepath_sim)
-      print(" ")
+      print(f"\t> Removed {num_chk_files_removed} 'chk' files from:\n\t", self.filepath_sim)
 
   def movePltFiles(self):
     print("Working with plt-files...")
@@ -164,14 +163,13 @@ BASEPATH           = "/scratch/ek9/nk7952/"
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
-# LIST_SIM_RES       = [ "144", "288" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
 ## MACH NUMBER SET
 LIST_SUITE_FOLDERS = [ "Re300" ]
-LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+LIST_SONIC_REGIMES = [ "Mach5" ]
 LIST_SIM_FOLDERS   = [ "Pm4" ]
-LIST_SIM_RES       = [ "288" ]
+LIST_SIM_RES       = [ "36", "72", "144", "288" ]
 
 
 ## ###############################################################

@@ -11,6 +11,9 @@ from tqdm.auto import tqdm
 ## ###############################################################
 ## WORKING WITH LISTS
 ## ###############################################################
+def replaceNoneWNan(list_elems):
+  return [ np.nan if elem is None else elem for elem in list_elems ]
+
 def getCommonElements(list1, list2):
   return sorted( list( set(list1).intersection(set(list2)) ) )
 

@@ -11,10 +11,8 @@ from datetime import datetime
 from organise_folders import removeFiles
 
 ## load user defined modules
-from TheSimModule import SimParams
+from TheFlashModule import SimParams, LoadFlashData, FileNames
 from TheUsefulModule import WWLists
-from TheLoadingModule import LoadFlashData, FileNames
-from TheFittingModule import FitFuncs
 
 
 ## ###############################################################
@@ -124,30 +122,30 @@ class TurbDrvingFile():
 
   def _loadData(self):
     ## load Mach data
-    data_time, self.data_Mach = LoadFlashData.loadTurbData(
+    data_time, self.data_Mach = LoadFlashData.loadVIData(
       filepath   = self.filepath_sim,
-      quantity   = "mach",
+      field_name = "mach",
       t_turb     = self.t_turb,
       time_start = 0.1,
       time_end   = np.inf
     )
     ## check that there is sufficient data to look at
-    if (len(data_time) > 0) and (data_time[-1] < 4):
+    if (len(data_time) > 100) and (data_time[-1] < 4):
       raise Exception("ERROR: time range is insufficient to tune driving parameters")
     elif len(data_time) == 0:
       raise Exception("ERROR: no simulation data")
     ## load kinetic energy
-    _, data_kin_energy = LoadFlashData.loadTurbData(
+    _, data_kin_energy = LoadFlashData.loadVIData(
       filepath   = self.filepath_sim,
-      quantity   = "kin",
+      field_name = "kin",
       t_turb     = self.t_turb,
       time_start = 0.1,
       time_end   = np.inf
     )
     ## load magnetic energy
-    _, data_mag_energy = LoadFlashData.loadTurbData(
+    _, data_mag_energy = LoadFlashData.loadVIData(
       filepath   = self.filepath_sim,
-      quantity   = "mag",
+      field_name = "mag",
       t_turb     = self.t_turb,
       time_start = 0.1,
       time_end   = np.inf
@@ -161,33 +159,30 @@ class TurbDrvingFile():
       )
     ]
     ## find saturated energy ratio
-    index_sat_start = WWLists.getIndexClosestValue(
-      data_time,
-      0.75 * data_time[-1]
-    )
-    ## fit saturated energy ratio
-    E_sat_ratio, _ = FitFuncs.fitConstFunc(
-      data_x          = data_time,
-      data_y          = data_E_ratio,
-      index_start_fit = index_sat_start,
-      index_end_fit   = len(data_time)-1,
-    )
-    ## get index range corresponding with kinematic phase of the dynamo
-    t_start_index = WWLists.getIndexClosestValue(data_time, 5.0)
-    index_E_lo = WWLists.getIndexClosestValue(data_E_ratio, 10**(-8))
-    index_E_hi = WWLists.getIndexClosestValue(data_E_ratio, E_sat_ratio/100)
+    time_start_sat  = 0.75 * data_time[-1]
+    index_start_sat = WWLists.getIndexClosestValue(data_time, time_start_sat)
+    index_end_sat   = len(data_time)-1
+    E_ratio_sat     = np.mean(data_E_ratio[index_start_sat : index_end_sat])
     ## find indices associated with kinematic phase
-    self.index_growth_start = max([ t_start_index, min([ index_E_lo, index_E_hi ]) ])
-    self.index_growth_end   = max([ index_E_lo, index_E_hi ])
+    t_start_index    = WWLists.getIndexClosestValue(data_time, 5.0)
+    E_growth_percent = E_ratio_sat / data_E_ratio[t_start_index]
+    if E_growth_percent > 10**2:
+      index_E_lo = WWLists.getIndexClosestValue(data_E_ratio, 10**(-8))
+      index_E_hi = WWLists.getIndexClosestValue(data_E_ratio, E_ratio_sat/100)
+      self.index_start_Mach = max([ t_start_index, min([ index_E_lo, index_E_hi ]) ])
+      self.index_end_Mach   = max([ index_E_lo, index_E_hi ])
+    else:
+      self.index_start_Mach = index_start_sat
+      self.index_end_Mach   = index_end_sat
 
   def _measureMach(self):
     ## measure Mach number statistics in kinematic phase
-    self.ave_Mach = self.__round(np.mean(self.data_Mach[self.index_growth_start : self.index_growth_end]))
-    self.std_Mach = self.__round(np.std(self.data_Mach[self.index_growth_start : self.index_growth_end]))
+    self.ave_Mach = self.__round(np.mean(self.data_Mach[self.index_start_Mach : self.index_end_Mach]))
+    self.std_Mach = self.__round(np.std(self.data_Mach[self.index_start_Mach : self.index_end_Mach]))
     print(f"\t> Measured Mach = {self.ave_Mach} +/- {self.std_Mach}")
     rel_Mach_err = self.__relErr(self.desired_Mach, self.ave_Mach)
     self.bool_Mach_converged = rel_Mach_err < 0.05
-    print(f"\t> Measured Mach {100*rel_Mach_err:.3f}% off from dsired Mach = {self.desired_Mach:.1f}")
+    print(f"\t> Measured Mach {100*rel_Mach_err:.3f}% off from desired Mach = {self.desired_Mach:.1f}")
     self.bool_repeating = any([
       self.__relErr(self.ave_Mach, old_Mach) < 0.01
       for old_Mach in self.list_old_Mach
@@ -199,6 +194,7 @@ class TurbDrvingFile():
     print(f"\t> Tuning driving amplitude to achieve Mach = {self.desired_Mach}")
     print(f"\t\t Prev: {self.old_driving_amplitude}")
     print(f"\t\t New:  {self.new_driving_amplitude}")
+    if BOOL_CHECK_ONLY: return
     updateDrivingAmplitude(self.filepath_sim, self.new_driving_amplitude)
     updateDrivingHistory(
       filepath              = self.filepath_sim,
@@ -209,15 +205,17 @@ class TurbDrvingFile():
     )
 
   def _removeOldData(self):
+    if BOOL_CHECK_ONLY: return
     removeFiles(self.filepath_sim, "Turb")
     removeFiles(self.filepath_sim, "stir.dat")
     removeFiles(self.filepath_sim, "sim_outputs.json")
     removeFiles(self.filepath_sim, "shell_sim.out00")
 
   def _resetFlashInputFile(self):
-    a = 10
+    a = 10 # TODO
 
   def _reRunSimulation(self):
+    if BOOL_CHECK_ONLY: return
     ## submit simulation PBS job script
     print("\t> Submitting job to run simulation:")
     p = subprocess.Popen([ "qsub", FileNames.FILENAME_JOB_RUN_SIM ], cwd=self.filepath_sim)
@@ -244,7 +242,8 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BASEPATH = "/scratch/ek9/nk7952/"
+BOOL_CHECK_ONLY = 0
+BASEPATH        = "/scratch/ek9/nk7952/"
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
@@ -254,9 +253,9 @@ BASEPATH = "/scratch/ek9/nk7952/"
 
 ## MACH NUMBER SET
 LIST_SUITE_FOLDERS = [ "Re300" ]
-LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+LIST_SONIC_REGIMES = [ "Mach5" ]
 LIST_SIM_FOLDERS   = [ "Pm4" ]
-LIST_SIM_RES       = [ "144" ]
+LIST_SIM_RES       = [ "288" ]
 
 
 ## ###############################################################

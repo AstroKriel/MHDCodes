@@ -7,9 +7,9 @@
 import os, sys
 
 ## load user defined modules
-from TheSimModule import SimParams, PrepSimJob, CalcSpectraJob
+from TheFlashModule import SimParams, LoadFlashData, FileNames
+from TheFlashModule import PrepSimJob, CalcSpectraJob
 from TheUsefulModule import WWFnF
-from TheLoadingModule import LoadFlashData, FileNames
 
 
 ## ###############################################################
@@ -19,7 +19,7 @@ def createJob(filepath_sim_res):
   ## read/create simulation input reference file
   dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res)
   ## --------------
-  if BOOL_PREP_SIM_FOLDERS:
+  if BOOL_PREP_SIM:
   ## --------------
     obj_prep_sim = PrepSimJob.PrepSimJob(
       filepath_sim    = filepath_sim_res,
@@ -97,7 +97,10 @@ def getSimInputDetails():
 ## ###############################################################
 def main():
   ## loop over simulation directories
+  indx = 0
   for dict_sim in getSimInputDetails():
+    print(f"({indx})")
+    indx += 1
     bool_printed_something = False
     filepath_sim_res = dict_sim["filepath_sim_res"]
     ## create simulation input parameter file if it doesn't exist
@@ -116,7 +119,7 @@ def main():
         Pm            = dict_sim["Pm"]
       )
     ## create job script
-    if BOOL_PREP_SIM_FOLDERS or BOOL_CALC_SPECTRA:
+    if BOOL_PREP_SIM or BOOL_CALC_SPECTRA:
       bool_printed_something = True
       createJob(filepath_sim_res)
     ## create empty space
@@ -130,21 +133,21 @@ def main():
 BASEPATH               = "/scratch/ek9/nk7952/"
 K_TURB                 = 2.0
 BOOL_CREATE_SIM_INPUTS = 0
-BOOL_PREP_SIM_FOLDERS  = 0
+BOOL_PREP_SIM          = 0
 PREP_FROM_LOWER_NRES   = ""
 BOOL_CALC_SPECTRA      = 0
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_SONIC_REGIMES = [ "Mach" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
 ## MACH NUMBER SET
 LIST_SUITE_FOLDERS = [ "Re300" ]
-LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 LIST_SIM_FOLDERS   = [ "Pm4" ]
-LIST_SIM_RES       = [ "144", "288" ]
+LIST_SIM_RES       = [ "36", "72", "144", "288" ]
 
 
 ## ###############################################################

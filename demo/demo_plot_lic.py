@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 
 from numba import njit
 
-from TheSimModule import SimParams
-from TheLoadingModule import LoadFlashData
+from TheFlashModule import LoadFlashData
 from ThePlottingModule import PlotFuncs
 
 
