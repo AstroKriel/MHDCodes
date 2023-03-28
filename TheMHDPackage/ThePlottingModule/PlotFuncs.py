@@ -62,18 +62,19 @@ def saveFigure(fig, filepath_fig, bool_verbose=True):
   plt.close(fig)
   if bool_verbose: print("Saved figure:", filepath_fig)
 
-def createNorm(vmin=0.0, vmax=1.0):
-  return colors.Normalize(vmin=vmin, vmax=vmax)
+def createNorm(vmin=0.0, vmax=1.0, NormType=colors.Normalize):
+  return NormType(vmin=vmin, vmax=vmax)
 
 def createCmap(
     cmap_name,
     cmin=0.0, cmax=1.0,
-    vmin=0.0, vmax=1.0
+    vmin=0.0, vmax=1.0,
+    NormType = colors.Normalize
   ):
   ## cmaps span cmin=0.0 to cmax=1.0, so pass (cmin, cmax) to subset a cmap color-range
   cmap = cmr.get_sub_cmap(cmap_name, cmin, cmax)
   ## define value range of colorbar: [vmin, vmax]
-  norm = createNorm(vmin, vmax)
+  norm = createNorm(vmin, vmax, NormType)
   return cmap, norm
 
 class MidpointNormalize(colors.Normalize):
@@ -108,7 +109,11 @@ def plotErrorBar_1D(
     ax, x, array_y,
     color="k", marker="o", label=None
   ):
-  array_y = [ elem for elem in array_y if elem is not None ]
+  array_y = [
+    y
+    for y in array_y
+    if y is not None
+  ]
   if len(array_y) < 5: return
   y_p16  = np.nanpercentile(array_y, 16)
   y_p50  = np.nanpercentile(array_y, 50)
@@ -143,16 +148,17 @@ def plot2DField(
     filepath_fig        = None,
     fig                 = None,
     ax                  = None,
-    cmap_str            = "cmr.arctic",
+    cmap_name           = "cmr.arctic",
+    NormType            = colors.LogNorm,
     cbar_bounds         = None,
     cbar_title          = None,
-    quiver_step         = 2,
+    quiver_step         = 1,
     quiver_width        = 5e-3,
     quiver_color        = "red",
     bool_plot_magnitude = True,
-    bool_plot_quiver    = True,
-    bool_add_colorbar   = True,
-    bool_label_axis     = True
+    bool_plot_quiver    = False,
+    bool_add_colorbar   = False,
+    bool_label_axis     = False
   ):
   ## check that a figure object has been passed
   if (fig is None) or (ax is None):
@@ -163,8 +169,8 @@ def plot2DField(
     im_obj = ax.imshow(
       field_magnitude,
       extent = [-1.0, 1.0, -1.0, 1.0],
-      cmap   = plt.get_cmap(cmap_str),
-      norm   = colors.LogNorm(
+      cmap   = plt.get_cmap(cmap_name),
+      norm   = NormType(
         vmin = 0.9*np.min(field_magnitude) if cbar_bounds is None else cbar_bounds[0],
         vmax = 1.1*np.max(field_magnitude) if cbar_bounds is None else cbar_bounds[1]
       )
@@ -179,6 +185,7 @@ def plot2DField(
     y = np.linspace(-1.0, 1.0, len(field_vecs_x2[:,0]))
     X, Y = np.meshgrid(x, -y)
     norm = np.sqrt(field_vecs_x1**2 + field_vecs_x2**2)
+    norm[norm == 0.0] = 1.0
     ax.quiver(
       X, Y,
       field_vecs_x1 / norm,
@@ -192,7 +199,10 @@ def plot2DField(
     ax.set_yticks([-1, -0.5, 0, 0.5, 1])
     ax.set_xticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
     ax.set_yticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
-  else: ax.set_axis_off()
+  else:
+    # ax.set_axis_off()
+    ax.set_xticks([])
+    ax.set_yticks([])
   ## save figure
   if filepath_fig is not None:
     plt.savefig(filepath_fig)

@@ -1,6 +1,8 @@
 # things to ignore in the main repo
 .vscode
 .DS_STore
+*.png
+*.json
 
 # things to ignore in sub-folders
 */__pycache__

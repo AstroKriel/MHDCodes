@@ -107,7 +107,7 @@ for filepath_data, sim_index in zip(filepaths_data, range(len(filepaths_data))):
       filepath_fig = "{}/{}_{}.png".format(
         filepath_frames, sim_names[sim_index], str(int(time_index)).zfill(4)
       ),
-      cmap_str   = "cmr.ocean",
+      cmap_name   = "cmr.ocean",
       cbar_label = r"$\log_{10}(B^2)$",
       cbar_lims  = [col_min_val, col_max_val]
     )
