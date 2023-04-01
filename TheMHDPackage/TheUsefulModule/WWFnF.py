@@ -14,68 +14,54 @@ import numpy as np
 def makeFilter(
     filename_contains     = None,
     filename_not_contains = None,
-    filename_startswith   = None,
-    filename_endswith     = None,
+    filename_starts_with  = None,
+    filename_ends_with    = None,
     loc_file_index        = None,
     file_start_index      = 0,
     file_end_index        = np.inf,
-    filename_split_wrt    = "_"
+    filename_split_by     = "_"
   ):
   """ makeFilter
     PURPOSE: Create a filter condition for files that look a particular way.
   """
   def meetsCondition(element):
-    if filename_contains is not None:
-      bool_contains = element.__contains__(filename_contains)
-    else: bool_contains = True
-    if filename_not_contains is not None:
-      bool_not_contains = not(element.__contains__(filename_not_contains))
-    else: bool_not_contains = True
-    if filename_startswith is not None:
-      bool_startswith = element.startswith(filename_startswith)
-    else: bool_startswith = True
-    if filename_endswith is not None:
-      bool_endswith = element.endswith(filename_endswith)
-    else: bool_endswith = True
-    if (bool_contains and 
-        bool_not_contains and 
-        bool_startswith and 
-        bool_endswith):
+    bool_contains     = filename_contains     is None or element.__contains__(filename_contains)
+    bool_not_contains = filename_not_contains is None or not(element.__contains__(filename_not_contains))
+    bool_starts_with  = filename_starts_with  is None or element.startswith(filename_starts_with)
+    bool_ends_with    = filename_ends_with    is None or element.endswith(filename_ends_with)
+    if all([ bool_contains, bool_not_contains, bool_starts_with, bool_ends_with ]):
       if loc_file_index is not None:
         ## check that the file index falls within the specified range
-        if len(element.split(filename_split_wrt)) > abs(loc_file_index):
-          bool_time_after  = (
-            int(element.split(filename_split_wrt)[loc_file_index]) >= file_start_index
-          )
-          bool_time_before = (
-            int(element.split(filename_split_wrt)[loc_file_index]) <= file_end_index
-          )
+        if len(element.split(filename_split_by)) > abs(loc_file_index):
+          file_index = int(element.split(filename_split_by)[loc_file_index])
+          bool_after_start = file_index >= file_start_index
+          bool_before_end  = file_index <= file_end_index
           ## if the file meets all the required conditions
-          if (bool_time_after and bool_time_before): return True
-      ## otherwise, all specified conditions have been met
+          if (bool_after_start and bool_before_end): return True
+      ## all specified conditions have been met
       else: return True
-    ## otherwise, don't look at the file
+    ## file doesn't meet conditions
     else: return False
   return meetsCondition
 
 def getFilesFromFilepath(
     filepath, 
-    filename_contains       = None,
-    filename_startswith     = None,
-    filename_endswith       = None,
-    filename_not_contains   = None,
-    loc_file_index = None,
-    file_start_index   = 0,
-    file_end_index     = np.inf
+    filename_contains     = None,
+    filename_starts_with  = None,
+    filename_ends_with    = None,
+    filename_not_contains = None,
+    loc_file_index        = None,
+    file_start_index      = 0,
+    file_end_index        = np.inf
   ):
   myFilter = makeFilter(
-    filename_contains,
-    filename_not_contains,
-    filename_startswith,
-    filename_endswith,
-    loc_file_index,
-    file_start_index,
-    file_end_index
+    filename_contains     = filename_contains,
+    filename_not_contains = filename_not_contains,
+    filename_starts_with  = filename_starts_with,
+    filename_ends_with    = filename_ends_with,
+    loc_file_index        = loc_file_index,
+    file_start_index      = file_start_index,
+    file_end_index        = file_end_index
   )
   return list(filter(myFilter, sorted(os.listdir(filepath))))
 

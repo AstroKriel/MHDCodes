@@ -231,11 +231,11 @@ def loadAllSpectra(
   else: raise Exception("Error: invalid spectra filename:", spect_field)
   ## get list of spect-filenames in directory
   list_spectra_filenames = WWFnF.getFilesFromFilepath(
-    filepath          = filepath,
-    filename_endswith = file_end_str,
-    loc_file_index    = -3,
-    file_start_index  = outputs_per_t_turb * file_start_time,
-    file_end_index    = outputs_per_t_turb * file_end_time
+    filepath           = filepath,
+    filename_ends_with = file_end_str,
+    loc_file_index     = -3,
+    file_start_index   = outputs_per_t_turb * file_start_time,
+    file_end_index     = outputs_per_t_turb * file_end_time
   )
   ## initialise list of spectra data
   list_k_group_t     = []

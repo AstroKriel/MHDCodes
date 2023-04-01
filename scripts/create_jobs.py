@@ -99,10 +99,11 @@ def main():
   ## loop over simulation directories
   indx = 0
   for dict_sim in getSimInputDetails():
+    filepath_sim_res = dict_sim["filepath_sim_res"]
     print(f"({indx})")
+    print("Looking at:", filepath_sim_res)
     indx += 1
     bool_printed_something = False
-    filepath_sim_res = dict_sim["filepath_sim_res"]
     ## create simulation input parameter file if it doesn't exist
     bool_sim_inputs_exists = os.path.isfile(f"{filepath_sim_res}/{FileNames.FILENAME_SIM_INPUTS}")
     if BOOL_CREATE_SIM_INPUTS or not(bool_sim_inputs_exists):
@@ -131,7 +132,7 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH               = "/scratch/ek9/nk7952/"
-K_TURB                 = 2.0
+# K_TURB                 = 2.0
 BOOL_CREATE_SIM_INPUTS = 0
 BOOL_PREP_SIM          = 0
 PREP_FROM_LOWER_NRES   = ""
@@ -139,15 +140,15 @@ BOOL_CALC_SPECTRA      = 0
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
-## MACH NUMBER SET
-LIST_SUITE_FOLDERS = [ "Re300" ]
-LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
-LIST_SIM_FOLDERS   = [ "Pm4" ]
-LIST_SIM_RES       = [ "36", "72", "144", "288" ]
+# ## MACH NUMBER SET
+# LIST_SUITE_FOLDERS = [ "Re300" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
+# LIST_SIM_FOLDERS   = [ "Pm4" ]
+# LIST_SIM_RES       = [ "36", "72", "144", "288" ]
 
 
 ## ###############################################################

@@ -15,9 +15,20 @@ from TheUsefulModule import WWArgparse, WWFnF
 ## ###############################################################
 def processAllPltFiles(list_filenames_plt, num_proc):
   for filename_plt in list_filenames_plt:
-    print(f"--------- Looking at: {filename_plt} -----------------------------------")
-    os.system(f"mpirun -np {num_proc} spectra_mpi {filename_plt} -types 1 2")
-    print(" ")
+    print(f"--------- Looking at: {filename_plt} -----------------------------------", flush=True)
+    ## current components
+    print("> Computing current components...", flush=True)
+    os.system(f"mpirun -np {num_proc} derivative_var {filename_plt} -current")
+    ## other key components
+    print("\n> Computing other components...", flush=True)
+    os.system(f"mpirun -np {num_proc} derivative_var {filename_plt} -MHD_scales -divv -vort -dissipation")
+    ## velocity, magnetic, and kinetic energy spectra
+    print("\n> Computing velocity + magnetic + kinetic energy spectra...", flush=True)
+    os.system(f"mpirun -np {num_proc} spectra_mpi {filename_plt} -types 1 2 7") # vels, mags, sqrtrho
+    ## current spectrum
+    print("\n> Computing current spectrum...", flush=True)
+    os.system(f"mpirun -np {num_proc} spectra_mpi {filename_plt} -types 0 -dsets curx cury curz")
+    print("\n", flush=True)
 
 
 ## ###############################################################
@@ -33,15 +44,15 @@ class CalcSpectraFiles():
     self.file_start      = file_start
     self.file_end        = file_end
     self.bool_check_only = bool_check_only
-    
+
   def performRoutines(self):
-    self.__getPltFiles()
-    if not(self.bool_check_only): self.__processFiles()
-    self.__checkAllFilesProcessed()
-    self.__reprocessFiles()
+    self._getPltFiles()
+    if not(self.bool_check_only): self._processFiles()
+    self._checkAllFilesProcessed()
+    self._reprocessFiles()
     print("Finished running the spectra code")
 
-  def __getPltFiles(self):
+  def _getPltFiles(self):
     self.list_filenames_plt = WWFnF.getFilesFromFilepath(
       filepath              = self.filepath_data,
       filename_contains     = "plt",
@@ -51,7 +62,7 @@ class CalcSpectraFiles():
       file_end_index        = self.file_end
     )
 
-  def __processFiles(self):
+  def _processFiles(self):
     ## loop over and compute spectra for plt-files in the data directory
     print(f"There are {len(self.list_filenames_plt)} files to process")
     if len(self.list_filenames_plt) > 0:
@@ -59,23 +70,23 @@ class CalcSpectraFiles():
       print("Processing plt-files...")
       processAllPltFiles(self.list_filenames_plt, self.num_proc)
 
-  def __checkAllFilesProcessed(self):
+  def _checkAllFilesProcessed(self):
     ## check all spectra files have been successfully computed
     list_filenames_spect_mag = WWFnF.getFilesFromFilepath(
-      filepath          = self.filepath_data,
-      filename_contains = "plt",
-      filename_endswith = "spect_mags.dat",
-      loc_file_index    = -3,
-      file_start_index  = self.file_start,
-      file_end_index    = self.file_end
+      filepath           = self.filepath_data,
+      filename_contains  = "plt",
+      filename_ends_with = "spect_mags.dat",
+      loc_file_index     = -3,
+      file_start_index   = self.file_start,
+      file_end_index     = self.file_end
     )
     list_filenames_spect_vel = WWFnF.getFilesFromFilepath(
-      filepath          = self.filepath_data,
-      filename_contains = "plt",
-      filename_endswith = "spect_vels.dat",
-      loc_file_index    = -3,
-      file_start_index  = self.file_start,
-      file_end_index    = self.file_end
+      filepath           = self.filepath_data,
+      filename_contains  = "plt",
+      filename_ends_with = "spect_vels.dat",
+      loc_file_index     = -3,
+      file_start_index   = self.file_start,
+      file_end_index     = self.file_end
     )
     ## initialise list of files to (re)process
     self.list_filenames_to_process = []
@@ -91,7 +102,7 @@ class CalcSpectraFiles():
       if not(bool_mags_exists) or not(bool_vels_exists):
         self.list_filenames_to_process.append(filename_plt)
 
-  def __reprocessFiles(self):
+  def _reprocessFiles(self):
     ## if there are any plt-files to (re)process
     if len(self.list_filenames_to_process) > 0:
       print(f"There are {len(self.list_filenames_to_process)} plt-files to (re)process:")
@@ -104,9 +115,9 @@ class CalcSpectraFiles():
     print(" ")
 
 
-## ################################
+## ###############################################################
 ## GET COMMAND LINE INPUT ARGUMENTS
-## ################################
+## ###############################################################
 def getInputArgs():
   parser = WWArgparse.MyParser(description="Calculate kinetic and magnetic energy spectra.")
   ## ------------------- DEFINE OPTIONAL ARGUMENTS
@@ -133,7 +144,7 @@ def getInputArgs():
   print("Last file index to process: "                        + str(file_end))
   print("Number of processors: "                              + str(num_proc))
   print("Should the program only process unprocessed files: " + str(bool_check_only))
-  print(" ")
+  print(" ", flush=True)
   ## ---------------------------- RETURN ARGS
   return filepath_data, num_proc, file_start, file_end, bool_check_only
 

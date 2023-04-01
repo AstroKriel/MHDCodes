@@ -251,11 +251,11 @@ BASEPATH        = "/scratch/ek9/nk7952/"
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
-## MACH NUMBER SET
-LIST_SUITE_FOLDERS = [ "Re300" ]
-LIST_SONIC_REGIMES = [ "Mach5" ]
-LIST_SIM_FOLDERS   = [ "Pm4" ]
-LIST_SIM_RES       = [ "288" ]
+# ## MACH NUMBER SET
+# LIST_SUITE_FOLDERS = [ "Re300" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm4" ]
+# LIST_SIM_RES       = [ "288" ]
 
 
 ## ###############################################################

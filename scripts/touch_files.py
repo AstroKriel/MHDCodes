@@ -4,6 +4,7 @@
 ## MODULES
 ## ###############################################################
 import os, sys, time, glob, random, datetime
+from numba import jit
 
 
 ## ###############################################################
@@ -19,12 +20,14 @@ def getDate(time_sec):
 def touch(sub_directory):
   if BOOL_VERBOSE: print("T-ing:", sub_directory)
   if BOOL_TOUCH:
-    time_in_a_week = 60 * 60 * 24 * 7
-    time_ago = time_in_a_week * random.random()
-    new_time_access   = CURRENT_TIME - time_ago * 0.5 * (1 + random.random())
+    if BOOL_RANDOM:
+      time_in_a_week = 60 * 60 * 24 * 7
+      time_ago = time_in_a_week * random.random()
+    else: time_ago = 0
+    new_time_access   = CURRENT_TIME - time_ago
     new_time_modified = CURRENT_TIME - time_ago
     try: os.utime(sub_directory, (new_time_access, new_time_modified))
-    except: print("ERROR: Could not modify directory. Probably due to incorrect file permissions:", sub_directory)
+    except: print("ERROR: couldn't modify directory, probably due to file permission issues:", sub_directory)
 
 def lookAtSubDirectory(directory, file_type, count):
   print("Looking at:", directory)
@@ -44,6 +47,7 @@ def lookAtSubDirectory(directory, file_type, count):
 ## ###############################################################
 BOOL_TOUCH   = 0
 BOOL_VERBOSE = 0
+BOOL_RANDOM  = 0
 CURRENT_TIME = time.mktime(time.localtime())
 
 

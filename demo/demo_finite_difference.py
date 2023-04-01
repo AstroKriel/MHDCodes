@@ -6,8 +6,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
+from numpy import linalg
+
+## load user defined modules
+from TheUsefulModule import WWFnF
 from ThePlottingModule import PlotFuncs
 
+
+## ###############################################################
+## HELPER FUNCTIONS
+## ###############################################################
 def relError(rel_val, val):
   return np.where(
     rel_val == 0,
@@ -15,10 +23,9 @@ def relError(rel_val, val):
     (rel_val - val) / rel_val
   )
 
-def getRelErrorStats(rel_val, val):
+def getErrorStats(rel_val, val, num_cells):
   rel_error = copy.deepcopy(relError(rel_val, val))
   rel_error_flat = rel_error.flatten()
-  index_inset = 3
   return {
     "rel_error_abs_max" : np.nanmax(np.abs(rel_error_flat)),
     "rel_error_min"     : np.nanmin(rel_error_flat),
@@ -26,12 +33,19 @@ def getRelErrorStats(rel_val, val):
     "rel_error_p16"     : np.nanpercentile(rel_error_flat, 16),
     "rel_error_p50"     : np.nanpercentile(rel_error_flat, 50),
     "rel_error_p84"     : np.nanpercentile(rel_error_flat, 84),
-    "2norm"             : np.sum((
-      rel_val[index_inset:-index_inset,index_inset:-index_inset]
-      - val[index_inset:-index_inset,index_inset:-index_inset]
-    )**2)
+    "2norm"             : linalg.norm(rel_val - val, ord=2) # np.sqrt(np.sum((rel_val - val)**2)) / num_cells
   }
 
+def saveFig(fig, fig_name):
+  filepath_file = f"{SUB_FOLDER}/{fig_name}"
+  fig.savefig(filepath_file)
+  print("Saved figure:", filepath_file)
+  print(" ")
+
+
+## ###############################################################
+## FIRST DERIVATIVES
+## ###############################################################
 class FirstDerivatives():
   ''' index: [row, col] '''
 
@@ -90,6 +104,9 @@ class FirstDerivatives():
     )
 
 
+## ###############################################################
+## SECOND DERIVATIVES
+## ###############################################################
 class SecondDerivatives():
   ''' index: [row, col] '''
 
@@ -126,13 +143,16 @@ class SecondDerivatives():
     )
 
 
-def plot_df_dx(field_x, field_y, dfield_dx_exact, dfield_dx_approx, num_cells, field_name):
+## ###############################################################
+## PLOTTING FIELDS
+## ###############################################################
+def plot_dfield(field_x, field_y, dfield_exact, dfield_approx, num_cells, method_name, d_order):
   cbar_bounds = [
-    0.8 * np.min(dfield_dx_exact),
-    1.2 * np.max(dfield_dx_exact)
+    0.8 * np.min(dfield_exact),
+    1.2 * np.max(dfield_exact)
   ]
-  rel_error     = relError(dfield_dx_exact, dfield_dx_approx)
-  dict_error    = getRelErrorStats(dfield_dx_exact, dfield_dx_approx)
+  rel_error     = relError(dfield_exact, dfield_approx)
+  dict_error    = getErrorStats(dfield_exact, dfield_approx, num_cells)
   error_abs_max = dict_error["rel_error_abs_max"]
   error_min     = dict_error["rel_error_min"]
   error_max     = dict_error["rel_error_max"]
@@ -161,31 +181,31 @@ def plot_df_dx(field_x, field_y, dfield_dx_exact, dfield_dx_approx, num_cells, f
     bool_plot_magnitude = True,
     bool_plot_quiver    = True,
     bool_add_colorbar   = True,
-    cbar_title          = r"$||$" + field_name + r"$||$"
+    cbar_title          = "field magnitude"
   )
   PlotFuncs.plot2DField(
     fig                 = fig,
     ax                  = axs[0,1],
-    field_slice_x1      = dfield_dx_exact,
-    field_slice_x2      = np.zeros_like(dfield_dx_exact),
+    field_slice_x1      = dfield_exact,
+    field_slice_x2      = np.zeros_like(dfield_exact),
     NormType            = colors.Normalize,
     cbar_bounds         = cbar_bounds,
     cmap_name           = "cmr.arctic_r",
     bool_plot_magnitude = True,
     bool_add_colorbar   = True,
-    cbar_title          = r"exact ${\rm d}f/{\rm d}x$"
+    cbar_title          = r"exact: ${\rm d^" + str(d_order) + r"}f_x/{\rm d}x^" + str(d_order) + "$"
   )
   PlotFuncs.plot2DField(
     fig                 = fig,
     ax                  = axs[1,1],
-    field_slice_x1      = dfield_dx_approx,
-    field_slice_x2      = np.zeros_like(dfield_dx_approx),
+    field_slice_x1      = dfield_approx,
+    field_slice_x2      = np.zeros_like(dfield_approx),
     NormType            = colors.Normalize,
     cmap_name           = "cmr.arctic_r",
     cbar_bounds         = cbar_bounds,
     bool_plot_magnitude = True,
     bool_add_colorbar   = True,
-    cbar_title          = r"approx. ${\rm d}f/{\rm d}x$"
+    cbar_title          = method_name + r": ${\rm d^" + str(d_order) + r"}f_x/{\rm d}x^" + str(d_order) + "$"
   )
   PlotFuncs.plot2DField(
     fig                 = fig,
@@ -200,104 +220,23 @@ def plot_df_dx(field_x, field_y, dfield_dx_exact, dfield_dx_approx, num_cells, f
     bool_add_colorbar   = True,
   )
   ## save figure
-  fig_name = f"demo_df_dx_ncells={num_cells:.0f}.png"
-  fig.savefig(fig_name)
+  fig_name = f"demo_d{d_order}f_dx{d_order}_{method_name}_ncells={num_cells:.0f}.png"
+  saveFig(fig, fig_name)
   plt.close(fig)
-  print("Saved figure:", fig_name)
-  print(" ")
 
 
-def plot_d2f_dx2(field_x, field_y, d2field_dx2_exact, d2field_dx2_approx, num_cells, field_name):
-  cbar_bounds = [
-    0.8 * np.min(d2field_dx2_exact),
-    1.2 * np.max(d2field_dx2_exact)
-  ]
-  rel_error     = relError(d2field_dx2_exact, d2field_dx2_approx)
-  dict_error    = getRelErrorStats(d2field_dx2_exact, d2field_dx2_approx)
-  error_abs_max = dict_error["rel_error_abs_max"]
-  error_min     = dict_error["rel_error_min"]
-  error_max     = dict_error["rel_error_max"]
-  error_p16     = dict_error["rel_error_p16"]
-  error_p50     = dict_error["rel_error_p50"]
-  error_p84     = dict_error["rel_error_p84"]
-  two_norm      = dict_error["2norm"]
-  print("Plotting second derivatives...")
-  print("relative error:")
-  print(f"\t> min: {error_min:.3f}")
-  print(f"\t> perc-16: {error_p16:.3f}")
-  print(f"\t> perc-50: {error_p50:.3f}")
-  print(f"\t> perc-84: {error_p84:.3f}")
-  print(f"\t> max: {error_max:.3f}")
-  print(f"\t> 2-norm: {two_norm:.3f}")
-  fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(13,10))
-  PlotFuncs.plot2DField(
-    fig                 = fig,
-    ax                  = axs[0,0],
-    field_slice_x1      = field_x,
-    field_slice_x2      = field_y,
-    quiver_step         = num_cells // 10,
-    NormType            = colors.Normalize,
-    cbar_bounds         = [-0.5, 1.5],
-    cmap_name           = "cmr.arctic_r",
-    bool_plot_magnitude = True,
-    bool_plot_quiver    = True,
-    bool_add_colorbar   = True,
-    cbar_title          = r"$||$" + field_name + r"$||$"
-  )
-  PlotFuncs.plot2DField(
-    fig                 = fig,
-    ax                  = axs[0,1],
-    field_slice_x1      = d2field_dx2_exact,
-    field_slice_x2      = np.zeros_like(d2field_dx2_exact),
-    NormType            = colors.Normalize,
-    cbar_bounds         = cbar_bounds,
-    cmap_name           = "cmr.arctic_r",
-    bool_plot_magnitude = True,
-    bool_add_colorbar   = True,
-    cbar_title          = r"exact ${\rm d}^2f/{\rm d}x^2$"
-  )
-  PlotFuncs.plot2DField(
-    fig                 = fig,
-    ax                  = axs[1,1],
-    field_slice_x1      = d2field_dx2_approx,
-    field_slice_x2      = np.zeros_like(d2field_dx2_approx),
-    NormType            = colors.Normalize,
-    cbar_bounds         = cbar_bounds,
-    cmap_name           = "cmr.arctic_r",
-    bool_plot_magnitude = True,
-    bool_add_colorbar   = True,
-    cbar_title          = r"approx. ${\rm d}^2f/{\rm d}x^2$"
-  )
-  PlotFuncs.plot2DField(
-    fig                 = fig,
-    ax                  = axs[1,0],
-    field_slice_x1      = rel_error,
-    field_slice_x2      = np.zeros_like(rel_error),
-    NormType            = colors.Normalize,
-    cbar_bounds         = [ -error_abs_max, error_abs_max ],
-    cbar_title          = "rel. error",
-    cmap_name           = "cmr.fusion",
-    bool_plot_magnitude = True,
-    bool_add_colorbar   = True,
-  )
-  ## save figure
-  fig_name = f"demo_d2f_dx2_ncells={num_cells:.0f}.png"
-  fig.savefig(fig_name)
-  plt.close(fig)
-  print("Saved figure:", fig_name)
-  print(" ")
-
-
-def computeDerivatives(num_cells):
+## ###############################################################
+## OPPERATOR FUNCTION
+## ###############################################################
+def computeDerivatives(num_cells, bool_plot_fields=True):
   ## define field
   x = np.linspace(-1.0, 1.0, num_cells)
   y = np.linspace(-1.0, 1.0, num_cells)
   X, Y = np.meshgrid(x, -y)
-  field_name = r"$x^2$"
-  field_x = X**4
-  field_y = Y**2
-  df_dx_exact = lambda x_, y_: 4*x_**3
-  d2f_dx2_exact = lambda x_, y_: 12*x_**2
+  field_x = X**3
+  field_y = Y**3
+  df_dx_exact = lambda x_, y_: 3*x_**2
+  d2f_dx2_exact = lambda x_, y_: 6*x_
   ## compute grid information
   box_size_x   = np.max(x) - np.min(x)
   cell_width_x = box_size_x / num_cells
@@ -383,68 +322,72 @@ def computeDerivatives(num_cells):
       )
   ## compute relative error statistics
   dict_error_stats = {
-    "df_dx_fd1o"   : getRelErrorStats(dfield_dx_exact, dfield_dx_fd1o),
-    "df_dx_bd1o"   : getRelErrorStats(dfield_dx_exact, dfield_dx_bd1o),
-    "df_dx_cd2o"   : getRelErrorStats(dfield_dx_exact, dfield_dx_cd2o),
-    "df_dx_cd4o"   : getRelErrorStats(dfield_dx_exact, dfield_dx_cd4o),
-    "d2f_dx2_cd2o" : getRelErrorStats(d2field_dx2_exact, d2field_dx2_cd2o),
-    "d2f_dx2_cd4o" : getRelErrorStats(d2field_dx2_exact, d2field_dx2_cd4o)
+    "df_dx_fd1o"   : getErrorStats(dfield_dx_exact, dfield_dx_fd1o, num_cells),
+    "df_dx_bd1o"   : getErrorStats(dfield_dx_exact, dfield_dx_bd1o, num_cells),
+    "df_dx_cd2o"   : getErrorStats(dfield_dx_exact, dfield_dx_cd2o, num_cells),
+    "df_dx_cd4o"   : getErrorStats(dfield_dx_exact, dfield_dx_cd4o, num_cells),
+    "d2f_dx2_cd2o" : getErrorStats(d2field_dx2_exact, d2field_dx2_cd2o, num_cells),
+    "d2f_dx2_cd4o" : getErrorStats(d2field_dx2_exact, d2field_dx2_cd4o, num_cells)
   }
-  ## choose which approx derivatives to have a look at
-  dfield_dx_approx   = dfield_dx_cd2o
-  d2field_dx2_approx = d2field_dx2_cd2o
   ## plot data
-  plot_df_dx(field_x,   field_y, dfield_dx_exact,   dfield_dx_approx,   num_cells, field_name)
-  plot_d2f_dx2(field_x, field_y, d2field_dx2_exact, d2field_dx2_approx, num_cells, field_name)
+  if bool_plot_fields:
+    plot_dfield(field_x, field_y, dfield_dx_exact,   dfield_dx_fd1o,   num_cells, "fd1o", 1)
+    plot_dfield(field_x, field_y, dfield_dx_exact,   dfield_dx_bd1o,   num_cells, "bd1o", 1)
+    plot_dfield(field_x, field_y, dfield_dx_exact,   dfield_dx_cd2o,   num_cells, "cd2o", 1)
+    plot_dfield(field_x, field_y, dfield_dx_exact,   dfield_dx_cd4o,   num_cells, "cd4o", 1)
+    plot_dfield(field_x, field_y, d2field_dx2_exact, d2field_dx2_cd2o, num_cells, "cd2o", 2)
+    plot_dfield(field_x, field_y, d2field_dx2_exact, d2field_dx2_cd4o, num_cells, "cd4o", 2)
+  ## return error statistics
   return dict_error_stats
 
 
+## ###############################################################
+## MAIN PROGRAM
+## ###############################################################
 def main():
-  ## define helper plot function
+  ## define helper plot functions
   def plotErrorBar(ax, num_cells, list_stats, color, marker, label):
     if bool_labelled: label=None
     ax.plot(
       num_cells, list_stats["2norm"],
       color=color, marker=marker, ms=7, ls="", label=label
     )
+  def plotScalingLine(ax, domain, slope, ls, offset=1):
+    PlotFuncs.plotData_noAutoAxisScale(
+      ax    = ax,
+      x     = domain,
+      y     = offset * domain**(slope),
+      ls    = ls,
+      lw    = 2,
+      label = r"$\propto (\Delta x)" + "^{" + str(slope) + "}$"
+    )
   ## initialise figure
+  WWFnF.createFolder(SUB_FOLDER, bool_verbose=False)
   fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(15,5))
   box_width = 2
   list_num_cells = [ 10, 20, 50, 100, 500, 1000 ]
   bool_labelled = False
   for num_cells in list_num_cells:
     ## compute error information
-    dict_error_stats = computeDerivatives(num_cells)
+    dict_error_stats = computeDerivatives(num_cells, bool_plot_fields=False)
     ## plot scalings for first derivatives
-    plotErrorBar(axs[0], box_width/num_cells, dict_error_stats["df_dx_fd1o"], "red",   "D", "1-order, forward dif.")
-    plotErrorBar(axs[0], box_width/num_cells, dict_error_stats["df_dx_bd1o"], "blue",  "s", "1-order, backward dif.")
-    plotErrorBar(axs[0], box_width/num_cells, dict_error_stats["df_dx_cd2o"], "green", "o", "2-order, centered dif.")
-    plotErrorBar(axs[0], box_width/num_cells, dict_error_stats["df_dx_cd4o"], "black", "^", "4-order, centered dif.")
+    plotErrorBar(axs[0], box_width/num_cells, dict_error_stats["df_dx_fd1o"], "red",   "D", "1-order, forward")
+    plotErrorBar(axs[0], box_width/num_cells, dict_error_stats["df_dx_bd1o"], "blue",  "s", "1-order, backward")
+    plotErrorBar(axs[0], box_width/num_cells, dict_error_stats["df_dx_cd2o"], "green", "o", "2-order, centered")
+    plotErrorBar(axs[0], box_width/num_cells, dict_error_stats["df_dx_cd4o"], "black", "^", "4-order, centered")
     ## plot scalings for second derivatives
-    plotErrorBar(axs[1], box_width/num_cells, dict_error_stats["d2f_dx2_cd2o"], "green", "o", "2-order, centered dif.")
-    plotErrorBar(axs[1], box_width/num_cells, dict_error_stats["d2f_dx2_cd4o"], "black", "^", "4-order, centered dif.")
+    plotErrorBar(axs[1], box_width/num_cells, dict_error_stats["d2f_dx2_cd2o"], "green", "o", "2-order, centered")
+    plotErrorBar(axs[1], box_width/num_cells, dict_error_stats["d2f_dx2_cd4o"], "black", "^", "4-order, centered")
     bool_labelled = True
     print(" ")
-  ## adjust figure axis
+  ## add reference lines
   x = np.logspace(-5, 0, 100)
-  list_weight = [ 0.01, 1 ]
+  plotScalingLine(axs[0], x, -1.425, ":", offset=3.5)
+  plotScalingLine(axs[1], x, -2.425, ":", offset=5)
+  ## adjust figure axis
+  axs[0].set_title(r"${\rm d}f_x/{\rm d}x$", pad=10)
+  axs[1].set_title(r"${\rm d^2}f_x/{\rm d}x^2$", pad=10)
   for col_index in range(2):
-    PlotFuncs.plotData_noAutoAxisScale(
-      ax    = axs[col_index],
-      x     = x,
-      y     = list_weight[col_index] * x**(-1),
-      ls    = "-",
-      lw    = 2,
-      label = r"$\propto (\Delta x)^{-1}$"
-    )
-    PlotFuncs.plotData_noAutoAxisScale(
-      ax    = axs[col_index],
-      x     = x,
-      y     = list_weight[col_index] * x**(-2),
-      ls    = ":",
-      lw    = 2,
-      label = r"$\propto (\Delta x)^{-2}$"
-    )
     axs[col_index].set_xscale("log")
     axs[col_index].set_xscale("log")
     axs[col_index].set_yscale("log")
@@ -465,12 +408,19 @@ def main():
   )
   ## save figure
   fig_name = f"demo_differencing_scaling.png"
-  fig.savefig(fig_name)
+  saveFig(fig, fig_name)
   plt.close(fig)
-  print("Saved figure:", fig_name)
 
 
+## ###############################################################
+## PROGRAM PARAMETERS
+## ###############################################################
+SUB_FOLDER = "plots"
+
+
+## ###############################################################
 ## PROGRAM ENTRY POINT
+## ###############################################################
 if __name__ == "__main__":
   main()
 
