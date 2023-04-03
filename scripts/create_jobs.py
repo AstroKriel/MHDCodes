@@ -7,15 +7,15 @@
 import os, sys
 
 ## load user defined modules
-from TheFlashModule import SimParams, LoadFlashData, FileNames
-from TheFlashModule import PrepSimJob, CalcSpectraJob
+from TheFlashModule import ProcessPltFilesJob, SimParams, LoadFlashData, FileNames
+from TheFlashModule import PrepSimJob
 from TheUsefulModule import WWFnF
 
 
 ## ###############################################################
 ## CREATE JOB SCRIPT
 ## ###############################################################
-def createJob(filepath_sim_res):
+def createJobs(filepath_sim_res):
   ## read/create simulation input reference file
   dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res)
   ## --------------
@@ -41,12 +41,12 @@ def createJob(filepath_sim_res):
         raise Exception("ERROR: reference folder does not exist:", filepath_ref_folder)
       obj_prep_sim.fromTemplate(filepath_ref_folder)
   ## ------------------
-  if BOOL_CALC_SPECTRA:
+  if BOOL_PROCESS_PLT_FILES:
   ## ------------------
     filepath_plt = f"{filepath_sim_res}/plt/"
     if not os.path.exists(filepath_plt):
       raise Exception("ERROR: plt sub-folder does not exist")
-    CalcSpectraJob.CalcSpectraJob(
+    ProcessPltFilesJob.ProcessPltFilesJob(
       filepath_plt    = filepath_plt,
       dict_sim_inputs = dict_sim_inputs
     )
@@ -120,9 +120,9 @@ def main():
         Pm            = dict_sim["Pm"]
       )
     ## create job script
-    if BOOL_PREP_SIM or BOOL_CALC_SPECTRA:
+    if BOOL_PREP_SIM or BOOL_PROCESS_PLT_FILES:
       bool_printed_something = True
-      createJob(filepath_sim_res)
+      createJobs(filepath_sim_res)
     ## create empty space
     if bool_printed_something:
       print(" ")
@@ -136,7 +136,7 @@ BASEPATH               = "/scratch/ek9/nk7952/"
 BOOL_CREATE_SIM_INPUTS = 0
 BOOL_PREP_SIM          = 0
 PREP_FROM_LOWER_NRES   = ""
-BOOL_CALC_SPECTRA      = 0
+BOOL_PROCESS_PLT_FILES = 0
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
@@ -146,9 +146,11 @@ BOOL_CALC_SPECTRA      = 0
 
 # ## MACH NUMBER SET
 # LIST_SUITE_FOLDERS = [ "Re300" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
+# # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm4" ]
-# LIST_SIM_RES       = [ "36", "72", "144", "288" ]
+# # LIST_SIM_RES       = [ "36", "72", "144", "288" ]
+# LIST_SIM_RES       = [ "36", "72", "144" ]
 
 
 ## ###############################################################

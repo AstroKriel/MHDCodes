@@ -103,13 +103,12 @@ BASEPATH_GADI            = "/scratch/ek9/nk7952"
 SONIC_REGIME             = "super_sonic"
 LIST_SUITE_FOLDER        = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER          = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES             = [ "18", "36", "72", "144", "288", "576" ]
-LIST_SIM_RES             = [ "288" ]
+LIST_SIM_RES             = [ "18", "36", "72", "144", "288", "576" ]
 ## plots of convergence data
 BOOL_GET_PLOTS_CONVERGED = 0
 FILENAME_PLOTS_CONVERGED = "*_nres_*.png"
 ## plots of simulations at a Nres
-BOOL_GET_PLOTS_NRES      = 1
+BOOL_GET_PLOTS_NRES      = 0
 FILENAME_PLOTS_NRES      = "*.png"
 ## animated spectra at a Nres
 BOOL_GET_VIDEOS_NRES     = 0

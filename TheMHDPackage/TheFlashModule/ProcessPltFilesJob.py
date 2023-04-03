@@ -2,7 +2,7 @@
 
 from TheFlashModule import SimParams, FileNames
 
-class CalcSpectraJob():
+class ProcessPltFilesJob():
   def __init__(
       self,
       filepath_plt, dict_sim_inputs,
@@ -11,11 +11,12 @@ class CalcSpectraJob():
     self.filepath_plt = filepath_plt
     self.bool_verbose = bool_verbose
     self.max_hours    = int(24)
-    self.num_cpus     = int(6)
-    self.max_mem      = int(4 * self.num_cpus)
-    self.program_name = "compute_spectra.py"
-    self.job_name     = FileNames.FILENAME_JOB_CALC_SPECT
-    self.job_tagname  = SimParams.getJobTag(dict_sim_inputs, "spect")
+    self.num_procs    = int(6)
+    self.max_mem      = int(4 * self.num_procs)
+    self.program_name = FileNames.FILENAME_PROCESS_PLT_SCRIPT
+    self.job_name     = FileNames.FILENAME_PROCESS_PLT_JOB
+    self.job_output   = FileNames.FILENAME_PROCESS_PLT_OUTPUT
+    self.job_tagname  = SimParams.getJobTag(dict_sim_inputs, "plt")
     ## perform routine
     self.__createJob()
 
@@ -27,7 +28,7 @@ class CalcSpectraJob():
       job_file.write("#PBS -P ek9\n")
       job_file.write("#PBS -q normal\n")
       job_file.write(f"#PBS -l walltime={self.max_hours}:00:00\n")
-      job_file.write(f"#PBS -l ncpus={self.num_cpus}\n")
+      job_file.write(f"#PBS -l ncpus={self.num_procs}\n")
       job_file.write(f"#PBS -l mem={self.max_mem}GB\n")
       job_file.write("#PBS -l storage=scratch/ek9+gdata/ek9\n")
       job_file.write("#PBS -l wd\n")
@@ -37,7 +38,7 @@ class CalcSpectraJob():
       job_file.write(f"#PBS -M neco.kriel@anu.edu.au\n")
       job_file.write("\n")
       job_file.write(". ~/modules_flash\n")
-      job_file.write(f"{self.program_name} -data_path {self.filepath_plt} -num_proc {self.num_cpus} 1>shell_calc_spect.out00 2>&1\n")
+      job_file.write(f"{self.program_name} -data_path {self.filepath_plt} -num_procs {self.num_procs} -check_only -h5del_dsets 1>{self.job_output} 2>&1\n")
     ## indicate progress
     if self.bool_verbose:
       print(f"Created PBS job:")

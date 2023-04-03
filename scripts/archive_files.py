@@ -52,8 +52,8 @@ def main():
 
         ## archive data
         os.chdir(sim_filepath_plt) # change the directory
-        os.system("pwd") # check the directory
-        os.system("archive.py -i Turb_hdf5_plt_cnt_*") # archive data
+        # os.system("pwd") # check the directory
+        # os.system("archive.py -i Turb_hdf5_plt_cnt_*") # archive data
 
       print(" ")
     print(" ")

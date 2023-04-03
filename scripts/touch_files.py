@@ -45,10 +45,10 @@ def lookAtSubDirectory(directory, file_type, count):
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
+CURRENT_TIME = time.mktime(time.localtime())
 BOOL_TOUCH   = 0
 BOOL_VERBOSE = 0
 BOOL_RANDOM  = 0
-CURRENT_TIME = time.mktime(time.localtime())
 
 
 ## ###############################################################

@@ -14,7 +14,7 @@ from TheUsefulModule import WWFnF
 ## SUBMIT JOB SCRIPT
 ## ###############################################################
 def runJob(filepath_sim_res, **kwargs):
-  filepath_file = WWFnF.createFilepath([filepath_sim_res, SUBFOLDER])
+  filepath_file = WWFnF.createFilepath([ filepath_sim_res, SUBFOLDER ])
   print("Looking at:", filepath_file)
   print("Submitting job:", JOB_NAME)
   p = subprocess.Popen([ "qsub", JOB_NAME ], cwd=filepath_file)
@@ -40,7 +40,7 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH  = "/scratch/ek9/nk7952/"
-JOB_NAME  = FileNames.FILENAME_JOB_CALC_SPECT
+# JOB_NAME  = FileNames.FILENAME_PROCESS_PLT_JOB
 SUBFOLDER = "plt"
 
 # ## PLASMA PARAMETER SET
@@ -49,11 +49,13 @@ SUBFOLDER = "plt"
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
-## MACH NUMBER SET
-LIST_SUITE_FOLDERS = [ "Re300" ]
-LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
-LIST_SIM_FOLDERS   = [ "Pm4" ]
-LIST_SIM_RES       = [ "36", "72", "144", "288" ]
+# ## MACH NUMBER SET
+# LIST_SUITE_FOLDERS = [ "Re300" ]
+# # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm4" ]
+# # LIST_SIM_RES       = [ "36", "72", "144", "288" ]
+# LIST_SIM_RES       = [ "36", "72", "144" ]
 
 
 ## ###############################################################

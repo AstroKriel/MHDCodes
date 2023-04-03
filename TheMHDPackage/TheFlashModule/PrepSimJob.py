@@ -426,12 +426,12 @@ class PrepSimJob():
     self.iprocs   = int(self.dict_sim_inputs["sim_res"]) // nxb
     self.jprocs   = int(self.dict_sim_inputs["sim_res"]) // nyb
     self.kprocs   = int(self.dict_sim_inputs["sim_res"]) // nzb
-    self.num_cpus = int(self.iprocs * self.jprocs * self.kprocs)
-    self.max_mem  = int(4 * self.num_cpus)
-    if self.num_cpus > 1000:
+    self.num_procs = int(self.iprocs * self.jprocs * self.kprocs)
+    self.max_mem  = int(4 * self.num_procs)
+    if self.num_procs > 1000:
       self.max_hours = 24
     else: self.max_hours = 48
-    self.job_name    = FileNames.FILENAME_JOB_RUN_SIM
+    self.job_name    = FileNames.FILENAME_RUN_SIM_JOB
     self.job_tagname = SimParams.getJobTag(self.dict_sim_inputs, "sim")
     self.filename_flash_exe = "flash4_nxb{}_nyb{}_nzb{}_3.0".format(
       self.dict_sim_inputs["num_blocks"][0],
@@ -447,7 +447,7 @@ class PrepSimJob():
       job_file.write("#PBS -P ek9\n")
       job_file.write("#PBS -q normal\n")
       job_file.write(f"#PBS -l walltime={self.max_hours}:00:00\n")
-      job_file.write(f"#PBS -l ncpus={self.num_cpus}\n")
+      job_file.write(f"#PBS -l ncpus={self.num_procs}\n")
       job_file.write(f"#PBS -l mem={self.max_mem}GB\n")
       job_file.write("#PBS -l storage=scratch/ek9+gdata/ek9\n")
       job_file.write("#PBS -l wd\n")

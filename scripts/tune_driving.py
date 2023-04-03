@@ -218,7 +218,7 @@ class TurbDrvingFile():
     if BOOL_CHECK_ONLY: return
     ## submit simulation PBS job script
     print("\t> Submitting job to run simulation:")
-    p = subprocess.Popen([ "qsub", FileNames.FILENAME_JOB_RUN_SIM ], cwd=self.filepath_sim)
+    p = subprocess.Popen([ "qsub", FileNames.FILENAME_RUN_SIM_JOB ], cwd=self.filepath_sim)
     p.wait()
 
 
