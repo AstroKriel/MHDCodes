@@ -1,3 +1,3 @@
 # MHD Codes
 
-Codes for analysing MHD simulations run with FLASH.
+Scripts that I use to analyse MHD simulations run with FLASH and QUOKKA.
