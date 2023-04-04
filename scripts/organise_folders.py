@@ -6,20 +6,23 @@
 import os, sys
 
 ## load user defined modules
+from TheUsefulModule import WWFnF, WWTerminal
 from TheFlashModule import SimParams
-from TheUsefulModule import WWFnF
 
 
 ## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
 def runCommand(command):
-  if BOOL_CHECK_ONLY: print(command)
-  else: os.system(command)
+  WWTerminal.runCommand(
+    command,
+    bool_print_command = BOOL_CHECK_ONLY,
+    bool_debug         = not(BOOL_CHECK_ONLY)
+  )
 
 def removeFiles(filepath, filename_starts_with):
-  list_files_in_filepath = WWFnF.getFilesFromFilepath(
-    filepath             = filepath,
+  list_files_in_filepath = WWFnF.getFilesInDirectory(
+    directory            = filepath,
     filename_starts_with = filename_starts_with
   )
   if len(list_files_in_filepath) > 0:
@@ -32,8 +35,8 @@ def moveFiles(
     filename_contains     = None,
     filename_not_contains = None
   ):
-  list_files_in_filepath = WWFnF.getFilesFromFilepath(
-    filepath              = filepath_from,
+  list_files_in_filepath = WWFnF.getFilesInDirectory(
+    directory             = filepath_from,
     filename_starts_with  = "Turb",
     filename_contains     = filename_contains,
     filename_not_contains = filename_not_contains
@@ -50,8 +53,8 @@ def countFiles(
     filename_contains     = None,
     filename_not_contains = None
   ):
-  list_files_in_filepath = WWFnF.getFilesFromFilepath(
-    filepath              = filepath,
+  list_files_in_filepath = WWFnF.getFilesInDirectory(
+    directory             = filepath,
     filename_starts_with  = "Turb",
     filename_contains     = filename_contains,
     filename_not_contains = filename_not_contains
@@ -61,8 +64,8 @@ def countFiles(
   return num_files
 
 def renameFiles(filepath, old_filename_ends_with, new_filename_ends_with):
-  list_files_in_filepath = WWFnF.getFilesFromFilepath(
-    filepath           = filepath,
+  list_files_in_filepath = WWFnF.getFilesInDirectory(
+    directory          = filepath,
     filename_ends_with = old_filename_ends_with
   )
   if len(list_files_in_filepath) > 0:
@@ -92,8 +95,8 @@ class ReorganiseSimFolder():
     removeFiles(self.filepath_sim, "Turb_proj_")
     removeFiles(self.filepath_sim, "Turb_slice_")
     ## count number of chk-files
-    list_chk_files = WWFnF.getFilesFromFilepath(
-      filepath             = self.filepath_sim,
+    list_chk_files = WWFnF.getFilesInDirectory(
+      directory            = self.filepath_sim,
       filename_starts_with = "Turb_hdf5_chk_"
     )
     ## if there are many chk-files
@@ -110,7 +113,7 @@ class ReorganiseSimFolder():
   def movePltFiles(self):
     print("Working with plt-files...")
     if not os.path.exists(self.filepath_plt):
-      raise Exception("ERROR: 'plt' sub-folder does not exist")
+      raise Exception("Error: 'plt' sub-folder does not exist")
     ## move plt-files from simulation folder to plt sub-folder
     moveFiles(
       filepath_from         = self.filepath_sim,
@@ -128,7 +131,7 @@ class ReorganiseSimFolder():
   def moveSpectFiles(self):
     print("Working with spect-files...")
     if not os.path.exists(self.filepath_plt):
-      raise Exception("ERROR: 'spect' sub-folder does not exist")
+      raise Exception("Error: 'spect' sub-folder does not exist")
     ## move spect-files from simulation folder to spect sub-folder
     moveFiles(
       filepath_from     = self.filepath_sim,
@@ -157,31 +160,29 @@ class ReorganiseSimFolder():
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
-def reorganiseSimFolder(filepath_sim_res, **kwargs):
-  print("Reorganising:", filepath_sim_res)
-  obj_sim_folder = ReorganiseSimFolder(filepath_sim_res)
-  obj_sim_folder.removeExtraFiles()
-  obj_sim_folder.movePltFiles()
-  obj_sim_folder.moveSpectFiles()
-  print(" ")
-
 def main():
   if BOOL_CHECK_ONLY: print("Running in debug mode.")
-  SimParams.callFuncForAllSimulations(
-    func               = reorganiseSimFolder,
+  list_sim_filepaths = SimParams.getListOfSimFilepaths(
     basepath           = BASEPATH,
     list_suite_folders = LIST_SUITE_FOLDERS,
     list_sonic_regimes = LIST_SONIC_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
     list_sim_res       = LIST_SIM_RES
   )
+  for filepath_sim in list_sim_filepaths:
+    print("Reorganising:", filepath_sim)
+    obj_sim_folder = ReorganiseSimFolder(filepath_sim)
+    obj_sim_folder.removeExtraFiles()
+    obj_sim_folder.movePltFiles()
+    obj_sim_folder.moveSpectFiles()
+    print(" ")
 
 
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
 BOOL_CHECK_ONLY = 1
-BASEPATH         = "/scratch/ek9/nk7952/"
+BASEPATH        = "/scratch/ek9/nk7952/"
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]

@@ -9,7 +9,7 @@ import multiprocessing as mproc
 import concurrent.futures as cfut
 
 ## import user defined modules
-from TheUsefulModule import WWFnF, WWVariables, WWObjs
+from TheUsefulModule import WWFnF, WWTerminal, WWVariables, WWObjs
 from TheFlashModule import LoadFlashData, FileNames
 from ThePlottingModule import PlotFuncs
 
@@ -34,6 +34,7 @@ def getSimName(dict_sim_inputs):
     dict_sim_inputs["sim_folder"],
     dict_sim_inputs["sonic_regime"]
   )
+
 
 ## ###############################################################
 ## CREATE A LIST OF SIMULATION DIRECTORIES
@@ -134,7 +135,7 @@ def addLabel_simInputs(
   ## load simulation parameters
   if dict_sim_inputs is None:
     if filepath is None:
-      raise Exception("ERROR: need to pass details about simulation inputs")
+      raise Exception("Error: need to pass details about simulation inputs")
     dict_sim_inputs = readSimInputs(filepath)
   ## annotate simulation parameters
   PlotFuncs.addBoxOfLabels(
@@ -186,9 +187,9 @@ def createSimInputs(
     Pm = None
   ):
   ## number of cells per block that the flash4-exe was compiled with
-  if sim_res in [ "144", "288", "576" ]: num_blocks = [ 36, 36, 48 ]
-  elif sim_res in [ "36", "72" ]:        num_blocks = [ 12, 12, 18 ]
-  elif sim_res in [ "18" ]:              num_blocks = [ 6, 6, 6 ]
+  if   sim_res in [ "144", "288", "576" ]: num_blocks = [ 36, 36, 48 ]
+  elif sim_res in [ "36", "72" ]:          num_blocks = [ 12, 12, 18 ]
+  elif sim_res in [ "18" ]:                num_blocks = [ 6, 6, 6 ]
   num_procs = [
     int(int(sim_res) / num_blocks_in_dir)
     for num_blocks_in_dir in num_blocks

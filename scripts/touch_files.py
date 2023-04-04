@@ -27,7 +27,7 @@ def touch(sub_directory):
     new_time_access   = CURRENT_TIME - time_ago
     new_time_modified = CURRENT_TIME - time_ago
     try: os.utime(sub_directory, (new_time_access, new_time_modified))
-    except: print("ERROR: couldn't modify directory, probably due to file permission issues:", sub_directory)
+    except: print("Error: couldn't modify directory, probably due to file permission issues:", sub_directory)
 
 def lookAtSubDirectory(directory, file_type, count):
   print("Looking at:", directory)

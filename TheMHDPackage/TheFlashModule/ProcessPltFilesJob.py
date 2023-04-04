@@ -38,7 +38,7 @@ class ProcessPltFilesJob():
       job_file.write(f"#PBS -M neco.kriel@anu.edu.au\n")
       job_file.write("\n")
       job_file.write(". ~/modules_flash\n")
-      job_file.write(f"{self.program_name} -data_path {self.filepath_plt} -num_procs {self.num_procs} -check_only -h5del_dsets 1>{self.job_output} 2>&1\n")
+      job_file.write(f"{self.program_name} -data_path {self.filepath_plt} -num_procs {self.num_procs} -check_only 1>{self.job_output} 2>&1\n")
     ## indicate progress
     if self.bool_verbose:
       print(f"Created PBS job:")

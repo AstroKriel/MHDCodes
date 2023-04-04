@@ -3,7 +3,9 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys, h5py, subprocess
+import os, sys, h5py
+
+from TheUsefulModule import WWTerminal
 
 ## ###############################################################
 ## HELPER FUNCTIONS
@@ -31,11 +33,8 @@ Notes:
     """)
 
 def h5del(filename, list_dsets, directory):
-  ## helper function
-  def runCommand(command):
-    print(command)
-    p = subprocess.Popen([command], shell=True, cwd=directory)
-    p.wait()
+  def _runCommand(command):
+    WWTerminal.runCommand(command, directory)
   if not os.path.isfile(filename):
     raise Exception(f"Error: hdf5-file '{filename}' does not exist")
   with h5py.File(filename, "a") as fp:
@@ -51,8 +50,8 @@ def h5del(filename, list_dsets, directory):
       print(f"Deleted '{dset}' from: {filename}")
   ## adjust hdf5-file size to only what is needed
   if len(list_dsets_to_delete) > 0:
-    runCommand(f"h5repack -i {filename} -o {filename}_tmp")
-    runCommand(f"mv {filename}_tmp {filename}")
+    _runCommand(f"h5repack -i {filename} -o {filename}_tmp")
+    _runCommand(f"mv {filename}_tmp {filename}")
 
 ## ###############################################################
 ## MAIN PROGRAM

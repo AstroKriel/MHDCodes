@@ -10,14 +10,7 @@ import numpy as np
 from h5del import h5del
 
 ## load new user defined modules
-from TheUsefulModule import WWArgparse, WWFnF
-
-
-## ###############################################################
-## HELPER FUNCTION
-## ###############################################################
-def printLine(mssg):
-  print(mssg, flush=True)
+from TheUsefulModule import WWArgparse, WWFnF, WWTerminal
 
 
 ## ###############################################################
@@ -29,14 +22,15 @@ class ProcessPltFiles():
 
   def performRoutines(self):
     self._getPltFiles()
-    if not(self.bool_check_only) and (len(self.list_filenames_to_process) > 0):
-      self._processPltFiles(self.list_filenames_to_process)
-    else: printLine("There are no plt-files to process.\n")
+    if not(self.bool_check_only):
+      if len(self.list_filenames_to_process) > 0:
+        self._processPltFiles(self.list_filenames_to_process)
+      else: WWTerminal.printLine("There are no plt-files to process.")
     self._checkAllPltFilesProcessed()
     if len(self.list_filenames_to_reprocess) > 0:
       self._processPltFiles(self.list_filenames_to_reprocess)
-    else: printLine("There are no plt-files to re-process.\n")
-    printLine("Finished processing files.")
+    else: WWTerminal.printLine("There are no plt-files to re-process.")
+    WWTerminal.printLine("Finished processing files.")
 
   def _getInputArgs(self):
     parser = WWArgparse.MyParser(description="Calculate kinetic and magnetic energy spectra.")
@@ -62,18 +56,18 @@ class ProcessPltFiles():
     self.num_procs              = args["num_procs"]
     self.filepath_data          = args["data_path"]
     ## report input parameters
-    printLine("Processing in directory: "    + self.filepath_data)
-    printLine("Processing from file index: " + str(self.file_start))
-    printLine("Processing upto file index: " + str(self.file_end))
-    printLine("Number of processors: "       + str(self.num_procs))
-    if self.bool_check_only:        printLine("Will only process unprocessed files.")
-    if self.bool_compute_all_dsets: printLine("Will compute extended list of datasets.")
-    if self.bool_h5del_dsets:       printLine("Will cull extraneous datasets from hdf5-files")
-    printLine(" ")
+    WWTerminal.printLine("Processing in directory: "    + self.filepath_data)
+    WWTerminal.printLine("Processing from file index: " + str(self.file_start))
+    WWTerminal.printLine("Processing upto file index: " + str(self.file_end))
+    WWTerminal.printLine("Number of processors: "       + str(self.num_procs))
+    if self.bool_check_only:        WWTerminal.printLine("Will only process unprocessed files.")
+    if self.bool_compute_all_dsets: WWTerminal.printLine("Will compute extended list of datasets.")
+    if self.bool_h5del_dsets:       WWTerminal.printLine("Will cull extraneous datasets from hdf5-files")
+    WWTerminal.printLine("")
 
   def _getPltFiles(self):
-    self.list_filenames_to_process = WWFnF.getFilesFromFilepath(
-      filepath              = self.filepath_data,
+    self.list_filenames_to_process = WWFnF.getFilesInDirectory(
+      directory             = self.filepath_data,
       filename_contains     = "plt",
       filename_not_contains = "spect",
       loc_file_index        = 4,
@@ -84,24 +78,24 @@ class ProcessPltFiles():
   def _checkAllPltFilesProcessed(self):
     ## filename structure: Turb_hdf5_plt_cnt_NUMBER
     ## check all spectra files have been successfully computed
-    list_filenames_spect_mag = WWFnF.getFilesFromFilepath(
-      filepath           = self.filepath_data,
+    list_filenames_spect_mag = WWFnF.getFilesInDirectory(
+      directory          = self.filepath_data,
       filename_contains  = "plt",
       filename_ends_with = "spect_mags.dat",
       loc_file_index     = 4,
       file_start_index   = self.file_start,
       file_end_index     = self.file_end
     )
-    list_filenames_spect_vel = WWFnF.getFilesFromFilepath(
-      filepath           = self.filepath_data,
+    list_filenames_spect_vel = WWFnF.getFilesInDirectory(
+      directory          = self.filepath_data,
       filename_contains  = "plt",
       filename_ends_with = "spect_vels.dat",
       loc_file_index     = 4,
       file_start_index   = self.file_start,
       file_end_index     = self.file_end
     )
-    list_filenames_spect_current = WWFnF.getFilesFromFilepath(
-      filepath           = self.filepath_data,
+    list_filenames_spect_current = WWFnF.getFilesInDirectory(
+      directory          = self.filepath_data,
       filename_contains  = "plt",
       filename_ends_with = "spect_dset_curx_cury_curz.dat",
       loc_file_index     = 4,
@@ -121,31 +115,28 @@ class ProcessPltFiles():
 
   def _processPltFiles(self, list_filenames):
     ## helper function
-    def runCommand(command):
-      p = subprocess.Popen(
-        [ f"mpirun -np {self.num_procs} {command}" ],
-        shell=True, cwd=self.filepath_data
-      )
-      p.wait()
+    def _runCommand(command):
+      WWTerminal.runCommand(f"mpirun -np {self.num_procs} {command}", self.filepath_data)
     ## process each plt-file
-    printLine(f"There are {len(list_filenames)} files to (re)process")
-    printLine("\t> " + "\n\t> ".join(list_filenames))
-    printLine("Processing plt-files...")
+    WWTerminal.printLine(f"There are {len(list_filenames)} plt-files to (re)process")
+    WWTerminal.printLine("\t> " + "\n\t> ".join(list_filenames))
+    WWTerminal.printLine("")
+    WWTerminal.printLine("Processing plt-files...")
     for filename in list_filenames:
-      printLine(f"--------- Looking at: {filename} -----------------------------------")
+      WWTerminal.printLine(f"--------- Looking at: {filename} -----------------------------------")
       ## compute current components
-      printLine("> Processing current components (J = curl of B)...")
-      runCommand(f"derivative_var {filename} -current")
+      WWTerminal.printLine("> Processing current components (J = curl of B)...")
+      _runCommand(f"derivative_var {filename} -current")
       ## compute current spectrum
-      printLine("\n> Processing current (J) spectrum...")
-      runCommand(f"spectra_mpi {filename} -types 0 -dsets curx cury curz")
+      WWTerminal.printLine("\n> Processing current (J) spectrum...")
+      _runCommand(f"spectra_mpi {filename} -types 0 -dsets curx cury curz")
       ## compute velocity, magnetic, and kinetic energy spectra
-      printLine("\n> Processing velocity and magnetic power spectra + kinetic energy spectrum...")
-      runCommand(f"spectra_mpi {filename} -types 1 2 7") # vels, mags, sqrtrho
+      WWTerminal.printLine("\n> Processing velocity and magnetic power spectra + kinetic energy spectrum...")
+      _runCommand(f"spectra_mpi {filename} -types 1 2 7") # vels, mags, sqrtrho
       ## compute other interesting datasets
       if self.bool_compute_all_dsets:
-        printLine("\n> Processing (B cross J), (B dot J), magnetic tension, (div of U), vorticity, viscous dissipation...")
-        runCommand(f"derivative_var {filename} -MHD_scales -divv -vort -dissipation")
+        WWTerminal.printLine("\n> Processing (B cross J), (B dot J), magnetic tension, (div of U), vorticity, viscous dissipation...")
+        _runCommand(f"derivative_var {filename} -MHD_scales -divv -vort -dissipation")
       ## delete unused components in plt-file
       if self.bool_h5del_dsets:
         list_dsets = [
@@ -164,7 +155,7 @@ class ProcessPltFiles():
         ]
         h5del(filename, list_dsets, self.filepath_data)
       ## add empty space
-      printLine("\n")
+      WWTerminal.printLine("")
 
 
 ## ###############################################################

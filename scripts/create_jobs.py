@@ -7,8 +7,7 @@
 import os, sys
 
 ## load user defined modules
-from TheFlashModule import ProcessPltFilesJob, SimParams, LoadFlashData, FileNames
-from TheFlashModule import PrepSimJob
+from TheFlashModule import FileNames, SimParams, RunSimJob, ProcessPltFilesJob, LoadFlashData
 from TheUsefulModule import WWFnF
 
 
@@ -19,9 +18,9 @@ def createJobs(filepath_sim_res):
   ## read/create simulation input reference file
   dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res)
   ## --------------
-  if BOOL_PREP_SIM:
+  if BOOL_PREP_SIM_RUN:
   ## --------------
-    obj_prep_sim = PrepSimJob.PrepSimJob(
+    obj_prep_sim = RunSimJob.RunSimJob(
       filepath_sim    = filepath_sim_res,
       dict_sim_inputs = dict_sim_inputs
     )
@@ -32,20 +31,20 @@ def createJobs(filepath_sim_res):
         PREP_FROM_LOWER_NRES
       )
       if not os.path.exists(filepath_ref_sim):
-        raise Exception("ERROR: reference simulation does not exist:", filepath_ref_sim)
+        raise Exception("Error: reference simulation does not exist:", filepath_ref_sim)
       obj_prep_sim.fromLowerNres(filepath_ref_sim)
     else:
       ## prepare simulation from template files
       filepath_ref_folder = f"{BASEPATH}/backup_files/"
       if not os.path.exists(filepath_ref_folder):
-        raise Exception("ERROR: reference folder does not exist:", filepath_ref_folder)
+        raise Exception("Error: reference folder does not exist:", filepath_ref_folder)
       obj_prep_sim.fromTemplate(filepath_ref_folder)
   ## ------------------
   if BOOL_PROCESS_PLT_FILES:
   ## ------------------
     filepath_plt = f"{filepath_sim_res}/plt/"
     if not os.path.exists(filepath_plt):
-      raise Exception("ERROR: plt sub-folder does not exist")
+      raise Exception("Error: plt sub-folder does not exist")
     ProcessPltFilesJob.ProcessPltFilesJob(
       filepath_plt    = filepath_plt,
       dict_sim_inputs = dict_sim_inputs
@@ -97,12 +96,12 @@ def getSimInputDetails():
 ## ###############################################################
 def main():
   ## loop over simulation directories
-  indx = 0
+  index_job = 0
   for dict_sim in getSimInputDetails():
     filepath_sim_res = dict_sim["filepath_sim_res"]
-    print(f"({indx})")
+    print(f"({index_job})")
     print("Looking at:", filepath_sim_res)
-    indx += 1
+    index_job += 1
     bool_printed_something = False
     ## create simulation input parameter file if it doesn't exist
     bool_sim_inputs_exists = os.path.isfile(f"{filepath_sim_res}/{FileNames.FILENAME_SIM_INPUTS}")
@@ -120,7 +119,7 @@ def main():
         Pm            = dict_sim["Pm"]
       )
     ## create job script
-    if BOOL_PREP_SIM or BOOL_PROCESS_PLT_FILES:
+    if BOOL_PREP_SIM_RUN or BOOL_PROCESS_PLT_FILES:
       bool_printed_something = True
       createJobs(filepath_sim_res)
     ## create empty space
@@ -134,7 +133,7 @@ def main():
 BASEPATH               = "/scratch/ek9/nk7952/"
 # K_TURB                 = 2.0
 BOOL_CREATE_SIM_INPUTS = 0
-BOOL_PREP_SIM          = 0
+BOOL_PREP_SIM_RUN      = 0
 PREP_FROM_LOWER_NRES   = ""
 BOOL_PROCESS_PLT_FILES = 0
 
@@ -146,11 +145,9 @@ BOOL_PROCESS_PLT_FILES = 0
 
 # ## MACH NUMBER SET
 # LIST_SUITE_FOLDERS = [ "Re300" ]
-# # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
-# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 # LIST_SIM_FOLDERS   = [ "Pm4" ]
-# # LIST_SIM_RES       = [ "36", "72", "144", "288" ]
-# LIST_SIM_RES       = [ "36", "72", "144" ]
+# LIST_SIM_RES       = [ "36", "72", "144", "288" ]
 
 
 ## ###############################################################

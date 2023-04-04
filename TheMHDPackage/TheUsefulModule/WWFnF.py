@@ -9,7 +9,24 @@ import numpy as np
 
 
 ## ###############################################################
-## WORKING WITH FILES / FOLDERS
+## HELPER FUNCTIONS
+## ###############################################################
+def createFolder(directory, bool_verbose=True):
+  if not(os.path.exists(directory)):
+    os.makedirs(directory)
+    if bool_verbose: print("Success: Created folder:\n\t" + directory + "\n")
+  elif bool_verbose: print("Warning: Folder already exists:\n\t" + directory + "\n")
+
+def createFilepath(list_filepath_folders):
+  return re.sub("/+", "/", "/".join([
+    folder
+    for folder in list_filepath_folders
+    if not(folder == "")
+  ]))
+
+
+## ###############################################################
+## FILTERING FILES IN DIRECTORY
 ## ###############################################################
 def makeFilter(
     filename_contains     = None,
@@ -44,8 +61,8 @@ def makeFilter(
     else: return False
   return meetsCondition
 
-def getFilesFromFilepath(
-    filepath, 
+def getFilesInDirectory(
+    directory, 
     filename_contains     = None,
     filename_starts_with  = None,
     filename_ends_with    = None,
@@ -63,39 +80,13 @@ def getFilesFromFilepath(
     file_start_index      = file_start_index,
     file_end_index        = file_end_index
   )
-  return list(filter(myFilter, sorted(os.listdir(filepath))))
+  return list(filter(myFilter, sorted(os.listdir(directory))))
 
-def readLineFromFile(filepath, des_str, bool_case_sensitive=True):
-  for line in open(filepath).readlines():
-    if bool_case_sensitive:
-      if des_str in line:
-        return line
-    else:
-      if des_str.lower() in line.lower():
-        return line
-  return None
 
-def createFolder(filepath, bool_verbose=True):
-  if not(os.path.exists(filepath)):
-    os.makedirs(filepath)
-    if bool_verbose: print("Success: Created folder:\n\t" + filepath + "\n")
-  elif bool_verbose: print("Warning: Folder already exists:\n\t" + filepath + "\n")
-
-def createFilepath(list_filepath_folders):
-  return re.sub("/+", "/", "/".join([
-    folder
-    for folder in list_filepath_folders
-    if not(folder == "")
-  ]))
-
-def createName(list_name_elems):
-  return re.sub("_+", "_", "_".join([
-    elems
-    for elems in list_name_elems
-    if not(elems == "")
-  ]))
-
-def copyFileFromNTo(directory_from, directory_to, filename, bool_verbose=True):
+## ###############################################################
+## WORKING WITH FILES
+## ###############################################################
+def copyFile(directory_from, directory_to, filename, bool_verbose=True):
   ## copy the file and it's permissions
   shutil.copy(
     f"{directory_from}/{filename}",

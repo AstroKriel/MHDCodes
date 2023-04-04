@@ -3,16 +3,13 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys, subprocess
+import os, sys
 import numpy as np
 from datetime import datetime
 
-## load user defined routines
-from organise_folders import removeFiles
-
 ## load user defined modules
 from TheFlashModule import SimParams, LoadFlashData, FileNames
-from TheUsefulModule import WWLists
+from TheUsefulModule import WWFnF, WWLists, WWTerminal
 
 
 ## ###############################################################
@@ -22,7 +19,7 @@ def readDrivingAmplitude(filepath):
   filepath_file = f"{filepath}/{FileNames.FILENAME_DRIVING_INPUT}"
   ## check the file exists
   if not os.path.isfile(filepath_file):
-    raise Exception("ERROR: turbulence generator input file does not exist:", FileNames.FILENAME_DRIVING_INPUT)
+    raise Exception("Error: turbulence driving input file does not exist:", FileNames.FILENAME_DRIVING_INPUT)
   ## open file
   with open(filepath_file) as fp:
     for line in fp.readlines():
@@ -32,7 +29,7 @@ def readDrivingAmplitude(filepath):
       ## read driving amplitude
       if list_line_elems[0] == "ampl_factor":
         return float(list_line_elems[2])
-  raise Exception(f"ERROR: could not read 'ampl_factor' in the turbulence generator")
+  raise Exception(f"Error: could not read 'ampl_factor' in the turbulence generator")
 
 def updateDrivingAmplitude(filepath, driving_amplitude):
   filepath_file = f"{filepath}/{FileNames.FILENAME_DRIVING_INPUT}"
@@ -78,7 +75,6 @@ class TurbDrvingFile():
     self.bool_repeating         = False
 
   def performRoutine(self):
-    print("Tuning driving parameters in:", self.filepath_sim)
     ## make sure a driving history file exists
     if os.path.isfile(f"{self.filepath_sim}/{FileNames.FILENAME_DRIVING_HISTORY}"):
       self._checkIfAlreadyConverged()
@@ -131,9 +127,9 @@ class TurbDrvingFile():
     )
     ## check that there is sufficient data to look at
     if (len(data_time) > 100) and (data_time[-1] < 4):
-      raise Exception("ERROR: time range is insufficient to tune driving parameters")
+      raise Exception("Error: time range is insufficient to tune driving parameters")
     elif len(data_time) == 0:
-      raise Exception("ERROR: no simulation data")
+      raise Exception("Error: no simulation data")
     ## load kinetic energy
     _, data_kin_energy = LoadFlashData.loadVIData(
       filepath   = self.filepath_sim,
@@ -205,11 +201,25 @@ class TurbDrvingFile():
     )
 
   def _removeOldData(self):
-    if BOOL_CHECK_ONLY: return
-    removeFiles(self.filepath_sim, "Turb")
-    removeFiles(self.filepath_sim, "stir.dat")
-    removeFiles(self.filepath_sim, "sim_outputs.json")
-    removeFiles(self.filepath_sim, "shell_sim.out00")
+    ## helper function
+    def _removeFiles(filename_starts_with):
+      list_files_in_filepath = WWFnF.getFilesInDirectory(
+        directory            = self.filepath_sim,
+        filename_starts_with = filename_starts_with
+      )
+      if len(list_files_in_filepath) > 0:
+        WWTerminal.runCommand(
+          command    = f"rm {filename_starts_with}*",
+          directory  = self.filepath_sim,
+          bool_debug = BOOL_CHECK_ONLY
+        )
+        print(f"\t> Removed {len(list_files_in_filepath)} '{filename_starts_with}*' file(s)")
+      else: print(f"\t> There are no '{filename_starts_with}*' files in:\n\t", self.filepath_sim)
+    ## remove extraneous files
+    _removeFiles("Turb")
+    _removeFiles("stir.dat")
+    _removeFiles("sim_outputs.json")
+    _removeFiles("shell_sim.out00")
 
   def _resetFlashInputFile(self):
     a = 10 # TODO
@@ -218,14 +228,14 @@ class TurbDrvingFile():
     if BOOL_CHECK_ONLY: return
     ## submit simulation PBS job script
     print("\t> Submitting job to run simulation:")
-    p = subprocess.Popen([ "qsub", FileNames.FILENAME_RUN_SIM_JOB ], cwd=self.filepath_sim)
-    p.wait()
+    WWTerminal.runCommand(f"qsub {FileNames.FILENAME_RUN_SIM_JOB}", self.filepath_sim)
 
 
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
+  if BOOL_CHECK_ONLY: print("Running in debug mode.")
   list_sim_filepaths = SimParams.getListOfSimFilepaths(
     basepath           = BASEPATH,
     list_suite_folders = LIST_SUITE_FOLDERS,
@@ -233,8 +243,9 @@ def main():
     list_sim_folders   = LIST_SIM_FOLDERS,
     list_sim_res       = LIST_SIM_RES
   )
-  for sim_filepath in list_sim_filepaths:
-    obj_tune_driving = TurbDrvingFile(sim_filepath)
+  for filepath_sim in list_sim_filepaths:
+    print("Tuning driving parameters in:", filepath_sim)
+    obj_tune_driving = TurbDrvingFile(filepath_sim)
     obj_tune_driving.performRoutine()
     print(" ")
 
@@ -242,7 +253,7 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BOOL_CHECK_ONLY = 0
+BOOL_CHECK_ONLY = 1
 BASEPATH        = "/scratch/ek9/nk7952/"
 
 # ## PLASMA PARAMETER SET

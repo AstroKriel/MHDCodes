@@ -86,8 +86,8 @@ def loadAllFlashDataCubes(
   ):
   outputs_per_t_turb = dict_sim_inputs["outputs_per_t_turb"]
   ## get all plt files in the directory
-  filenames = WWFnF.getFilesFromFilepath(
-    filepath              = filepath,
+  filenames = WWFnF.getFilesInDirectory(
+    directory             = filepath,
     filename_contains     = FileNames.FILENAME_FLASH_DATA_CUBE,
     filename_not_contains = "spect",
     loc_file_index        = -1,
@@ -141,7 +141,7 @@ def loadVIData(
   time_index = 0
   if field_index is None:
     ## check that a variable name has been provided
-    if field_name is None: raise Exception("ERROR: need to provide either a field-index or field-name")
+    if field_name is None: raise Exception("Error: need to provide either a field-index or field-name")
     ## check which formatting the output file uses
     with open(f"{filepath}/{FileNames.FILENAME_FLASH_VI_DATA}", "r") as fp:
       file_first_line = fp.readline()
@@ -150,7 +150,7 @@ def loadVIData(
     if   "kin"  in field_name.lower(): field_index = 9  if bool_format_new else 6
     elif "mag"  in field_name.lower(): field_index = 11 if bool_format_new else 29
     elif "mach" in field_name.lower(): field_index = 13 if bool_format_new else 8
-    else: raise Exception(f"ERROR: reading in {FileNames.FILENAME_FLASH_VI_DATA}")
+    else: raise Exception(f"Error: reading in {FileNames.FILENAME_FLASH_VI_DATA}")
   ## initialise quantities to track traversal
   data_time  = []
   data_field = []
@@ -230,8 +230,8 @@ def loadAllSpectra(
   elif "cur" in spect_field.lower():  file_end_str = "spect_current.dat"
   else: raise Exception("Error: invalid spectra filename:", spect_field)
   ## get list of spect-filenames in directory
-  list_spectra_filenames = WWFnF.getFilesFromFilepath(
-    filepath           = filepath,
+  list_spectra_filenames = WWFnF.getFilesInDirectory(
+    directory          = filepath,
     filename_ends_with = file_end_str,
     loc_file_index     = -3,
     file_start_index   = outputs_per_t_turb * file_start_time,
@@ -294,7 +294,7 @@ def getPlotsPerEddy_fromFlashLog(
           print(" ")
         return outputs_per_t_turb
   ## failed to read quantity
-  raise Exception(f"ERROR: failed to read outputs_per_t_turb from {FileNames.FILENAME_FLASH_LOG}")
+  raise Exception(f"Error: failed to read outputs_per_t_turb from {FileNames.FILENAME_FLASH_LOG}")
 
 def computePlasmaConstants(Mach, k_turb, Re=None, Rm=None, Pm=None):
   ## Re and Pm have been defined
@@ -312,7 +312,7 @@ def computePlasmaConstants(Mach, k_turb, Re=None, Rm=None, Pm=None):
     eta = round(Mach / (k_turb * Rm), 5)
     nu  = round(eta * Pm, 5)
   ## error
-  else: raise Exception(f"ERROR: insufficient plasma Reynolds numbers provided: Re = {Re}, Rm = {Rm}, Pm = {Rm}")
+  else: raise Exception(f"Error: insufficient plasma Reynolds numbers provided: Re = {Re}, Rm = {Rm}, Pm = {Rm}")
   return {
     "nu"  : nu,
     "eta" : eta,
@@ -331,7 +331,7 @@ def computePlasmaNumbers(Re=None, Rm=None, Pm=None):
   elif (Re is not None) and (Rm is not None):
     Pm = Rm / Re
   ## error
-  else: raise Exception(f"ERROR: insufficient plasma Reynolds numbers provided: Re = {Re}, Rm = {Rm}, Pm = {Rm}")
+  else: raise Exception(f"Error: insufficient plasma Reynolds numbers provided: Re = {Re}, Rm = {Rm}, Pm = {Rm}")
   return {
     "Re"  : Re,
     "Rm"  : Rm,

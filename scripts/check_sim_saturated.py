@@ -23,7 +23,7 @@ def readDrivingAmplitude(filepath):
   filepath_file = f"{filepath}/{FileNames.FILENAME_DRIVING_INPUT}"
   ## check the file exists
   if not os.path.isfile(filepath_file):
-    raise Exception("ERROR: turbulence generator input file does not exist:", FileNames.FILENAME_DRIVING_INPUT)
+    raise Exception("Error: turbulence generator input file does not exist:", FileNames.FILENAME_DRIVING_INPUT)
   ## open file
   with open(filepath_file) as fp:
     for line in fp.readlines():
@@ -33,7 +33,7 @@ def readDrivingAmplitude(filepath):
       ## read driving amplitude
       if list_line_elems[0] == "ampl_factor":
         return float(list_line_elems[2])
-  raise Exception(f"ERROR: could not read 'ampl_factor' in the turbulence generator")
+  raise Exception(f"Error: could not read 'ampl_factor' in the turbulence generator")
 
 def updateDrivingAmplitude(filepath, driving_amplitude):
   filepath_file = f"{filepath}/{FileNames.FILENAME_DRIVING_INPUT}"
