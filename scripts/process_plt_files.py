@@ -130,9 +130,9 @@ class ProcessPltFiles():
       ## compute current spectrum
       WWTerminal.printLine("\n> Processing current (J) spectrum...")
       _runCommand(f"spectra_mpi {filename} -types 0 -dsets curx cury curz")
-      ## compute velocity, magnetic, and kinetic energy spectra
-      WWTerminal.printLine("\n> Processing velocity and magnetic power spectra + kinetic energy spectrum...")
-      _runCommand(f"spectra_mpi {filename} -types 1 2 7") # vels, mags, sqrtrho
+      # ## compute velocity, magnetic, and kinetic energy spectra
+      # WWTerminal.printLine("\n> Processing velocity and magnetic power spectra + kinetic energy spectrum...")
+      # _runCommand(f"spectra_mpi {filename} -types 1 2 7") # vels, mags, sqrtrho
       ## compute other interesting datasets
       if self.bool_compute_all_dsets:
         WWTerminal.printLine("\n> Processing (B cross J), (B dot J), magnetic tension, (div of U), vorticity, viscous dissipation...")

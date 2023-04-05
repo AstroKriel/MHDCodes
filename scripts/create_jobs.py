@@ -135,7 +135,7 @@ BASEPATH               = "/scratch/ek9/nk7952/"
 BOOL_CREATE_SIM_INPUTS = 0
 BOOL_PREP_SIM_RUN      = 0
 PREP_FROM_LOWER_NRES   = ""
-BOOL_PROCESS_PLT_FILES = 0
+BOOL_PROCESS_PLT_FILES = 1
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
@@ -147,7 +147,7 @@ BOOL_PROCESS_PLT_FILES = 0
 # LIST_SUITE_FOLDERS = [ "Re300" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 # LIST_SIM_FOLDERS   = [ "Pm4" ]
-# LIST_SIM_RES       = [ "36", "72", "144", "288" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
 
 ## ###############################################################

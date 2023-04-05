@@ -14,66 +14,64 @@ from TheFlashModule import SimParams
 ## HELPER FUNCTIONS
 ## ###############################################################
 def runCommand(command):
-  WWTerminal.runCommand(
-    command,
-    bool_print_command = BOOL_CHECK_ONLY,
-    bool_debug         = not(BOOL_CHECK_ONLY)
-  )
+  if BOOL_CHECK_ONLY:
+    print(command)
+  else: os.system(command)
 
-def removeFiles(filepath, filename_starts_with):
-  list_files_in_filepath = WWFnF.getFilesInDirectory(
-    directory            = filepath,
-    filename_starts_with = filename_starts_with
+def removeFiles(directory, filename_starts_with):
+  list_files_in_directory = WWFnF.getFilesInDirectory(
+    directory             = directory,
+    filename_starts_with  = filename_starts_with
   )
-  if len(list_files_in_filepath) > 0:
-    runCommand(f"rm {filepath}/{filename_starts_with}*")
-    print(f"\t> Removed {len(list_files_in_filepath)} '{filename_starts_with}*' file(s)")
-  else: print(f"\t> There are no '{filename_starts_with}*' files in:\n\t", filepath)
+  if len(list_files_in_directory) > 0:
+    runCommand(f"rm {directory}/{filename_starts_with}*")
+    print(f"\t> Removed {len(list_files_in_directory)} '{filename_starts_with}*' file(s)")
+  else: print(f"\t> There are no '{filename_starts_with}*' files in:\n\t", directory)
 
 def moveFiles(
-    filepath_from, filepath_to,
+    directory_from, directory_to,
     filename_contains     = None,
     filename_not_contains = None
   ):
-  list_files_in_filepath = WWFnF.getFilesInDirectory(
-    directory             = filepath_from,
+  list_files_in_directory= WWFnF.getFilesInDirectory(
+    directory             = directory_from,
     filename_starts_with  = "Turb",
     filename_contains     = filename_contains,
     filename_not_contains = filename_not_contains
   )
-  if len(list_files_in_filepath) > 0:
-    runCommand(f"mv {filepath_from}/*{filename_contains}* {filepath_to}/.")
-    print(f"\t> Moved {len(list_files_in_filepath)} '*{filename_contains}*' files")
-    print("\t\tFrom:", filepath_from)
-    print("\t\tTo:", filepath_to)
-  else: print(f"\t> There are no '*{filename_contains}*' files in:\n\t", filepath_from)
+  if len(list_files_in_directory) > 0:
+    runCommand(f"mv {directory_from}/*{filename_contains}* {directory_to}/.")
+    print(f"\t> Moved {len(list_files_in_directory)} '*{filename_contains}*' files")
+    print("\t\tFrom:", directory_from)
+    print("\t\tTo:", directory_to)
+  else: print(f"\t> There are no '*{filename_contains}*' files in:\n\t", directory_from)
 
 def countFiles(
-    filepath,
+    directory,
     filename_contains     = None,
     filename_not_contains = None
   ):
-  list_files_in_filepath = WWFnF.getFilesInDirectory(
-    directory             = filepath,
+  list_files_in_directory= WWFnF.getFilesInDirectory(
+    directory             = directory,
     filename_starts_with  = "Turb",
     filename_contains     = filename_contains,
     filename_not_contains = filename_not_contains
   )
-  num_files = len(list_files_in_filepath)
-  print(f"\t> There are {num_files} '*{filename_contains}*' files in:\n\t", filepath)
+  num_files = len(list_files_in_directory)
+  print(f"\t> There are {num_files} '*{filename_contains}*' files in:\n\t", directory)
   return num_files
 
-def renameFiles(filepath, old_filename_ends_with, new_filename_ends_with):
-  list_files_in_filepath = WWFnF.getFilesInDirectory(
-    directory          = filepath,
-    filename_ends_with = old_filename_ends_with
+def renameFiles(directory, old_phrase, new_phrase):
+  list_files_in_directory= WWFnF.getFilesInDirectory(
+    directory         = directory,
+    filename_contains = old_phrase
   )
-  if len(list_files_in_filepath) > 0:
-    for old_filename in list_files_in_filepath:
-      new_filename = old_filename.replace(old_filename_ends_with, new_filename_ends_with)
-      runCommand(f"rm {filepath}/{old_filename} {filepath}/{new_filename}")
-    print(f"\t> Renamed {len(list_files_in_filepath)} '*{old_filename_ends_with}' file(s) to '*{new_filename_ends_with}'")
-  else: print(f"\t> There are no '*{old_filename_ends_with}' files in:\n\t", filepath)
+  if len(list_files_in_directory) > 0:
+    if BOOL_CHECK_ONLY: command_arg = "-n"
+    else: command_arg = ""
+    WWTerminal.runCommand(f"rename {command_arg} {old_phrase} {new_phrase} *", directory, bool_print_command=False)
+    print(f"\t> Renamed {len(list_files_in_directory)} '*{old_phrase}*' file(s) to '*{new_phrase}*'")
+  else: print(f"\t> There are no '*{old_phrase}*' files in:\n\t", directory)
 
 
 ## ###############################################################
@@ -103,11 +101,11 @@ class ReorganiseSimFolder():
     num_chk_files_to_keep = 3
     num_chk_files_removed = 0
     if len(list_chk_files) > num_chk_files_to_keep:
-      ## cull chk-files at early simulation times
+      ## cull all but the final few chk-files
       for file_index in range(len(list_chk_files) - num_chk_files_to_keep):
         runCommand(f"rm {self.filepath_sim}/{list_chk_files[file_index]}")
         num_chk_files_removed += 1
-      ## reflect the number of files removed
+      ## indicate the number of chk-files removed
       print(f"\t> Removed {num_chk_files_removed} 'chk' files from:\n\t", self.filepath_sim)
 
   def movePltFiles(self):
@@ -116,45 +114,59 @@ class ReorganiseSimFolder():
       raise Exception("Error: 'plt' sub-folder does not exist")
     ## move plt-files from simulation folder to plt sub-folder
     moveFiles(
-      filepath_from         = self.filepath_sim,
-      filepath_to           = self.filepath_plt,
-      filename_contains     = "plt",
-      filename_not_contains = "spect"
+      directory_from         = self.filepath_sim,
+      directory_to           = self.filepath_plt,
+      filename_contains     = "plt_",
+      filename_not_contains = "spect_"
     )
     ## count number of plt-files in the plt sub-folder
-    countFiles(
-      filepath              = self.filepath_plt,
-      filename_contains     = "plt",
-      filename_not_contains = "spect"
+    self.num_plt_files = countFiles(
+      directory             = self.filepath_plt,
+      filename_contains     = "plt_",
+      filename_not_contains = "spect_"
     )
 
   def moveSpectFiles(self):
     print("Working with spect-files...")
-    if not os.path.exists(self.filepath_plt):
+    if not os.path.exists(self.filepath_spect):
       raise Exception("Error: 'spect' sub-folder does not exist")
-    ## move spect-files from simulation folder to spect sub-folder
-    moveFiles(
-      filepath_from     = self.filepath_sim,
-      filepath_to       = self.filepath_spect,
-      filename_contains = "spect"
+    ## check that there are spectra files to move
+    self.num_spect_files = countFiles(
+      directory         = self.filepath_plt,
+      filename_contains = "spect_"
     )
-    ## move spect-files from plt sub-folder to spect sub-folder
-    moveFiles(
-      filepath_from     = self.filepath_plt,
-      filepath_to       = self.filepath_spect,
-      filename_contains = "spect"
+    if self.num_spect_files == 0: return
+    ## check that current spectra have been computed
+    self.num_current_spect = countFiles(
+      directory         = self.filepath_plt,
+      filename_contains = "dset_curx_cury_curz"
     )
-    ## count number of spect-files in the spect sub-folder
+    if self.num_current_spect < self.num_plt_files:
+      print(f"Note: {self.num_current_spect} of {self.num_plt_files} current spectra have been computed")
+    ## move spectra from the simulation folder to spect sub-folder
+    moveFiles(
+      directory_from     = self.filepath_sim,
+      directory_to       = self.filepath_spect,
+      filename_contains = "spect_"
+    )
+    ## move spectra from plt sub-folder to spect sub-folder
+    moveFiles(
+      directory_from     = self.filepath_plt,
+      directory_to       = self.filepath_spect,
+      filename_contains = "spect_"
+    )
+    ## count number of spectra in the spect sub-folder
     countFiles(
-      filepath          = self.filepath_spect,
-      filename_contains = "spect"
+      directory         = self.filepath_spect,
+      filename_contains = "spect_"
     )
-    ## rename current spectra
+    ## rename current spectra files
     renameFiles(
-      filepath               = self.filepath_spect,
-      old_filename_ends_with = "dset_curx_cury_curz.dat",
-      new_filename_ends_with = "current.dat"
+      directory  = self.filepath_spect,
+      old_phrase = "dset_curx_cury_curz",
+      new_phrase = "current"
     )
+    ""
 
 
 ## ###############################################################
@@ -181,11 +193,12 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_CHECK_ONLY = 1
+BOOL_CHECK_ONLY = 0
 BASEPATH        = "/scratch/ek9/nk7952/"
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
@@ -194,7 +207,7 @@ BASEPATH        = "/scratch/ek9/nk7952/"
 # LIST_SUITE_FOLDERS = [ "Re300" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 # LIST_SIM_FOLDERS   = [ "Pm4" ]
-# LIST_SIM_RES       = [ "36", "72", "144", "288" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
 
 ## ###############################################################
