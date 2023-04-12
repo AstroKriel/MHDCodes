@@ -8,7 +8,7 @@ import numpy as np
 from datetime import datetime
 
 ## load user defined modules
-from TheFlashModule import SimParams, LoadFlashData, FileNames
+from TheFlashModule import LoadData, SimParams, FileNames
 from TheUsefulModule import WWFnF, WWLists, WWTerminal
 
 
@@ -118,11 +118,11 @@ class TurbDrvingFile():
 
   def _loadData(self):
     ## load Mach data
-    data_time, self.data_Mach = LoadFlashData.loadVIData(
-      filepath   = self.filepath_sim,
+    data_time, self.data_Mach = LoadData.loadVIData(
+      directory  = self.filepath_sim,
       field_name = "mach",
       t_turb     = self.t_turb,
-      time_start = 0.1,
+      time_start = 2.0,
       time_end   = np.inf
     )
     ## check that there is sufficient data to look at
@@ -131,19 +131,19 @@ class TurbDrvingFile():
     elif len(data_time) == 0:
       raise Exception("Error: no simulation data")
     ## load kinetic energy
-    _, data_kin_energy = LoadFlashData.loadVIData(
-      filepath   = self.filepath_sim,
+    _, data_kin_energy = LoadData.loadVIData(
+      directory  = self.filepath_sim,
       field_name = "kin",
       t_turb     = self.t_turb,
-      time_start = 0.1,
+      time_start = 2.0,
       time_end   = np.inf
     )
     ## load magnetic energy
-    _, data_mag_energy = LoadFlashData.loadVIData(
-      filepath   = self.filepath_sim,
+    _, data_mag_energy = LoadData.loadVIData(
+      directory  = self.filepath_sim,
       field_name = "mag",
       t_turb     = self.t_turb,
-      time_start = 0.1,
+      time_start = 2.0,
       time_end   = np.inf
     )
     ## compute energy ratio
@@ -253,7 +253,7 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BOOL_CHECK_ONLY = 1
+BOOL_CHECK_ONLY = 0
 BASEPATH        = "/scratch/ek9/nk7952/"
 
 # ## PLASMA PARAMETER SET
@@ -262,11 +262,11 @@ BASEPATH        = "/scratch/ek9/nk7952/"
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
-# ## MACH NUMBER SET
-# LIST_SUITE_FOLDERS = [ "Re300" ]
-# LIST_SONIC_REGIMES = [ "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm4" ]
-# LIST_SIM_RES       = [ "288" ]
+## MACH NUMBER SET
+LIST_SUITE_FOLDERS = [ "Re300" ]
+LIST_SONIC_REGIMES = [ "Mach10" ]
+LIST_SIM_FOLDERS   = [ "Pm4" ]
+LIST_SIM_RES       = [ "36" ]
 
 
 ## ###############################################################

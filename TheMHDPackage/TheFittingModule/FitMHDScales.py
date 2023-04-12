@@ -208,7 +208,7 @@ def fitKinSpectrum(
   ## return fitted parameters
   return fit_params_values, fit_params_errors, fit_rcs
 
-def getScale_kp(list_k, list_power):
+def getSpectrumPeakScale(list_k, list_power):
   array_k_interp = np.logspace(
     start = np.log10(min(list_k)),
     stop  = np.log10(max(list_k)),
@@ -220,12 +220,12 @@ def getScale_kp(list_k, list_power):
     x_interp    = array_k_interp,
     interp_kind = "cubic"
   )
-  k_p   = array_k_interp[np.argmax(array_power_interp)]
-  k_max = list_k[np.argmax(list_power)]
-  return k_p, k_max
+  k_max_interp = array_k_interp[np.argmax(array_power_interp)]
+  k_max_raw    = list_k[np.argmax(list_power)]
+  return k_max_interp, k_max_raw
 
 
-def getScale_keq(
+def getEquipartitionScale(
     list_times, list_k, list_power_mag_group_t, list_power_kin_group_t,
     tol        = 1e-1,
     ax_spectra = None,
@@ -240,18 +240,12 @@ def getScale_keq(
   ## loop through each time realisation
   for time_index in range(len(list_times)):
     ## calculate energy spectrum ratio
-    list_power_ratio = \
-      np.array(list_power_mag_group_t[time_index]) / \
-      np.array(list_power_kin_group_t[time_index])
-    ## plot spectrum ratio
-    if ax_spectra is not None:
-      ax_spectra.plot(
-        list_k,
-        list_power_ratio,
-        color=color, ls="-", lw=1.5, alpha=0.1
-      )
-    ## calculate where to cutoff spectrum ratio
-    ## ignore second point where spectrum ratio peaks
+    list_power_mag = np.array(list_power_mag_group_t[time_index])
+    list_power_kin = np.array(list_power_kin_group_t[time_index])
+    list_power_ratio = list_power_mag / list_power_kin
+    if ax_spectra is not None: ax_spectra.plot(list_k, list_power_ratio, color=color, ls="-", lw=1.5, alpha=0.1)
+    ## calculate where to cutoff the spectrum ratio
+    ## (ignore only measure the first peaks)
     list_index_peaks, _ = find_peaks(list_power_ratio)
     if len(list_index_peaks) > 0:
       index_cutoff = min(list_index_peaks)

@@ -3,7 +3,6 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import subprocess
 import numpy as np
 
 ## load user defined routines
@@ -39,8 +38,8 @@ class ProcessPltFiles():
     args_opt.add_argument("-check_only",        **WWArgparse.opt_bool_arg, default=False)
     args_opt.add_argument("-h5del_dsets",       **WWArgparse.opt_bool_arg, default=False)
     args_opt.add_argument("-compute_all_dsets", **WWArgparse.opt_bool_arg, default=False)
-    args_opt.add_argument("-file_start",        **WWArgparse.opt_arg, type=int, default=0)
-    args_opt.add_argument("-file_end",          **WWArgparse.opt_arg, type=int, default=np.inf)
+    args_opt.add_argument("-file_start_index",  **WWArgparse.opt_arg, type=int, default=0)
+    args_opt.add_argument("-file_end_index",    **WWArgparse.opt_arg, type=int, default=np.inf)
     args_opt.add_argument("-num_procs",         **WWArgparse.opt_arg, type=int, default=8)
     ## ------------------- DEFINE REQUIRED ARGUMENTS
     args_req = parser.add_argument_group(description="Required processing arguments:")
@@ -51,14 +50,14 @@ class ProcessPltFiles():
     self.bool_check_only        = args["check_only"]
     self.bool_h5del_dsets       = args["h5del_dsets"]
     self.bool_compute_all_dsets = args["compute_all_dsets"]
-    self.file_start             = args["file_start"]
-    self.file_end               = args["file_end"]
+    self.file_start_index       = args["file_start_index"]
+    self.file_end_index         = args["file_end_index"]
     self.num_procs              = args["num_procs"]
     self.filepath_data          = args["data_path"]
     ## report input parameters
     WWTerminal.printLine("Processing in directory: "    + self.filepath_data)
-    WWTerminal.printLine("Processing from file index: " + str(self.file_start))
-    WWTerminal.printLine("Processing upto file index: " + str(self.file_end))
+    WWTerminal.printLine("Processing from file index: " + str(self.file_start_index))
+    WWTerminal.printLine("Processing upto file index: " + str(self.file_end_index))
     WWTerminal.printLine("Number of processors: "       + str(self.num_procs))
     if self.bool_check_only:        WWTerminal.printLine("Will only process unprocessed files.")
     if self.bool_compute_all_dsets: WWTerminal.printLine("Will compute extended list of datasets.")
@@ -71,36 +70,36 @@ class ProcessPltFiles():
       filename_contains     = "plt",
       filename_not_contains = "spect",
       loc_file_index        = 4,
-      file_start_index      = self.file_start,
-      file_end_index        = self.file_end
+      file_start_index      = self.file_start_index,
+      file_end_index        = self.file_end_index
     )
 
   def _checkAllPltFilesProcessed(self):
-    ## filename structure: Turb_hdf5_plt_cnt_NUMBER
+    ## filename: Turb_hdf5_plt_cnt_NUMBER
     ## check all spectra files have been successfully computed
     list_filenames_spect_mag = WWFnF.getFilesInDirectory(
       directory          = self.filepath_data,
       filename_contains  = "plt",
       filename_ends_with = "spect_mags.dat",
       loc_file_index     = 4,
-      file_start_index   = self.file_start,
-      file_end_index     = self.file_end
+      file_start_index   = self.file_start_index,
+      file_end_index     = self.file_end_index
     )
     list_filenames_spect_vel = WWFnF.getFilesInDirectory(
       directory          = self.filepath_data,
       filename_contains  = "plt",
       filename_ends_with = "spect_vels.dat",
       loc_file_index     = 4,
-      file_start_index   = self.file_start,
-      file_end_index     = self.file_end
+      file_start_index   = self.file_start_index,
+      file_end_index     = self.file_end_index
     )
     list_filenames_spect_current = WWFnF.getFilesInDirectory(
       directory          = self.filepath_data,
       filename_contains  = "plt",
       filename_ends_with = "spect_dset_curx_cury_curz.dat",
       loc_file_index     = 4,
-      file_start_index   = self.file_start,
-      file_end_index     = self.file_end
+      file_start_index   = self.file_start_index,
+      file_end_index     = self.file_end_index
     )
     ## initialise list of files to (re)process
     self.list_filenames_to_reprocess = []
@@ -130,9 +129,9 @@ class ProcessPltFiles():
       ## compute current spectrum
       WWTerminal.printLine("\n> Processing current (J) spectrum...")
       _runCommand(f"spectra_mpi {filename} -types 0 -dsets curx cury curz")
-      # ## compute velocity, magnetic, and kinetic energy spectra
-      # WWTerminal.printLine("\n> Processing velocity and magnetic power spectra + kinetic energy spectrum...")
-      # _runCommand(f"spectra_mpi {filename} -types 1 2 7") # vels, mags, sqrtrho
+      ## compute velocity, magnetic, and kinetic energy spectra
+      WWTerminal.printLine("\n> Processing velocity and magnetic power spectra + kinetic energy spectrum...")
+      _runCommand(f"spectra_mpi {filename} -types 1 2 7") # vels, mags, sqrtrho
       ## compute other interesting datasets
       if self.bool_compute_all_dsets:
         WWTerminal.printLine("\n> Processing (B cross J), (B dot J), magnetic tension, (div of U), vorticity, viscous dissipation...")

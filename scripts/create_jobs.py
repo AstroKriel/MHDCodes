@@ -7,7 +7,7 @@
 import os, sys
 
 ## load user defined modules
-from TheFlashModule import FileNames, SimParams, RunSimJob, ProcessPltFilesJob, LoadFlashData
+from TheFlashModule import FileNames, LoadData, SimParams, RunSimJob, ProcessPltFilesJob
 from TheUsefulModule import WWFnF
 
 
@@ -83,10 +83,10 @@ def getSimInputDetails():
             "suite_folder"     : suite_folder,
             "sim_folder"       : sim_folder,
             "sim_res"          : sim_res,
-            "desired_Mach"     : LoadFlashData.getNumberFromString(sonic_regime, "Mach"),
-            "Re"               : LoadFlashData.getNumberFromString(suite_folder, "Re"),
-            "Rm"               : LoadFlashData.getNumberFromString(suite_folder, "Rm"),
-            "Pm"               : LoadFlashData.getNumberFromString(sim_folder,   "Pm")
+            "desired_Mach"     : LoadData.getNumberFromString(sonic_regime, "Mach"),
+            "Re"               : LoadData.getNumberFromString(suite_folder, "Re"),
+            "Rm"               : LoadData.getNumberFromString(suite_folder, "Rm"),
+            "Pm"               : LoadData.getNumberFromString(sim_folder,   "Pm")
           })
   return dicts_grouped_sim
 
@@ -131,19 +131,19 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH               = "/scratch/ek9/nk7952/"
-# K_TURB                 = 2.0
+K_TURB                 = None
 BOOL_CREATE_SIM_INPUTS = 0
 BOOL_PREP_SIM_RUN      = 0
 PREP_FROM_LOWER_NRES   = ""
-BOOL_PROCESS_PLT_FILES = 1
+BOOL_PROCESS_PLT_FILES = 0
 
-# ## PLASMA PARAMETER SET
-# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+## PLASMA PARAMETER SET
+LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+LIST_SONIC_REGIMES = [ "Mach0.3" ]
+LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
-# ## MACH NUMBER SET
+## MACH NUMBER SET
 # LIST_SUITE_FOLDERS = [ "Re300" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 # LIST_SIM_FOLDERS   = [ "Pm4" ]

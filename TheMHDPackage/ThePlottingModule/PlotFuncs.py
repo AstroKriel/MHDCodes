@@ -230,6 +230,7 @@ def addLegend(
     loc      = "upper right",
     bbox     = (0.99, 0.99),
     ncol     = 1,
+    lw       = 2.0,
     fontsize = 20,
     alpha    = 0.85,
     zorder   = 10
@@ -239,6 +240,8 @@ def addLegend(
     frameon=True, facecolor="white", edgecolor="grey"
   )
   obj_legend.set_zorder(zorder)
+  for line in obj_legend.get_lines():
+    line.set_linewidth(2.0)
   return obj_legend
 
 def addLegend_fromArtists(
@@ -257,6 +260,7 @@ def addLegend_fromArtists(
     fontsize           = 16,
     alpha              = 0.6
   ):
+  if len(list_artists) + len(list_legend_labels) == 0: return
   ## check that the inputs are the correct length
   WWLists.ensureListLength(list_artists,       list_legend_labels)
   WWLists.ensureListLength(list_marker_colors, list_legend_labels)
@@ -422,7 +426,7 @@ def addBoxOfLabels(
       "color"    : list_colors[index_label]
     })
     for index_label, label in enumerate(list_labels)
-    if label is not None
+    if (label is not None) and len(label) > 0
   ]
   texts_vbox = VPacker(
     children = list_text_areas,

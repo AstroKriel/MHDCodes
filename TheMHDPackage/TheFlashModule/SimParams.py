@@ -10,7 +10,7 @@ import concurrent.futures as cfut
 
 ## import user defined modules
 from TheUsefulModule import WWFnF, WWTerminal, WWVariables, WWObjs
-from TheFlashModule import LoadFlashData, FileNames
+from TheFlashModule import LoadData, FileNames
 from ThePlottingModule import PlotFuncs
 
 
@@ -84,7 +84,7 @@ def callFuncForAllSimulations(
     list_sim_res       = list_sim_res
   )
   if bool_mproc:
-    print(f"Looking at {len(list_filepath_sim_res)} simulations:")
+    print(f"Looking at {len(list_filepath_sim_res)} simulation(s):")
     [
       print("\t> " + filepath_sim_res)
       for filepath_sim_res in list_filepath_sim_res
@@ -186,6 +186,8 @@ def createSimInputs(
     Rm = None,
     Pm = None
   ):
+  ## check that a valid driving scale is defined
+  if k_turb is None: raise Exception(f"Error: you have provided a invalid driving scale = {k_turb}")
   ## number of cells per block that the flash4-exe was compiled with
   if   sim_res in [ "144", "288", "576" ]: num_blocks = [ 36, 36, 48 ]
   elif sim_res in [ "36", "72" ]:          num_blocks = [ 12, 12, 18 ]
@@ -234,7 +236,7 @@ class SimInputParams():
     self.num_procs     = num_procs
     self.k_turb        = k_turb
     self.desired_Mach  = desired_Mach
-    self.num_t_turb    = 100
+    self.max_num_t_turb    = 100
     ## parameters that (may) need to be computed
     self.t_turb        = t_turb
     self.Re            = Re
@@ -265,7 +267,7 @@ class SimInputParams():
     self.sonic_regime = getSonicRegime(self.desired_Mach)
 
   def __definePlasmaParameters(self):
-    dict_params = LoadFlashData.computePlasmaConstants(
+    dict_params = LoadData.computePlasmaConstants(
       Mach   = self.desired_Mach,
       k_turb = self.k_turb,
       Re     = self.Re,

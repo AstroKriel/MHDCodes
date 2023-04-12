@@ -55,16 +55,16 @@ class ListOfModels():
   ## -----------
   def exp_linear(x, a0, a1):
     """ exponential in linear-domain:
-      y = a0 * exp(-a1 * x)
+      y = a0 * exp(a1 * x)
     """
-    return a0 * np.exp(-a1 * np.array(x))
+    return a0 * np.exp(a1 * np.array(x))
 
   def exp_loge(x, a0, a1):
     """ exponential in log(e)-domain:
-      log(y)  = ln(A0) - A1 * x
-              = a0     - a1 * x
+      log(y)  = ln(A0) + A1 * x
+              = a0     + a1 * x
     """
-    return a0 - a1 * np.array(x)
+    return a0 + a1 * np.array(x)
 
   ## -------------
   ## DISTRIBUTIONS

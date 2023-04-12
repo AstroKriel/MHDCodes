@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 from TheFlashModule import SimParams
-from TheFlashModule import LoadFlashData
+from TheFlashModule import LoadData
 from ThePlottingModule import PlotFuncs
 
 class FirstDerivatives():
@@ -113,7 +113,7 @@ def main():
   ## read simulation input parameters
   dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res, True)
   ## load velocity field
-  data_vel_x, data_vel_y, _ = LoadFlashData.loadFlashDataCube(
+  data_vel_x, data_vel_y, _ = LoadData.loadFlashDataCube(
     filepath_file = f"{filepath_plt}/{filename}",
     num_blocks    = dict_sim_inputs["num_blocks"],
     num_procs     = dict_sim_inputs["num_procs"],

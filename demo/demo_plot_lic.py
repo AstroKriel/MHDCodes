@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from numba import njit
 
-from TheFlashModule import LoadFlashData
+from TheFlashModule import LoadData
 from ThePlottingModule import PlotFuncs
 
 
@@ -103,7 +103,7 @@ def test_loadData():
     num_procs = [ 8, 8, 6 ]
   ## load magnitude of velocity field slice
   print("Loading velocity field data...")
-  data_vel_scalar = LoadFlashData.loadPltData_slice_magnitude(
+  data_vel_scalar = LoadData.loadPltData_slice_magnitude(
     filepath_file = f"{filepath_plt}/{filename}",
     num_blocks    = [ 36, 36, 48 ],
     num_procs     = num_procs,
@@ -112,7 +112,7 @@ def test_loadData():
   )
   ## load magnetic field slice
   print("Loading magnetic field data...")
-  data_mag_vecs = LoadFlashData.loadPltData_slice_field(
+  data_mag_vecs = LoadData.loadPltData_slice_field(
     filepath_file = f"{filepath_plt}/{filename}",
     num_blocks    = [ 36, 36, 48 ],
     num_procs     = num_procs,

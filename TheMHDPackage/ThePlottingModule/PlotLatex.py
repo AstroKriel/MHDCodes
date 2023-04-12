@@ -6,6 +6,9 @@
 ## ###############################################################
 import numpy as np
 
+## load user routines
+from TheUsefulModule import WWLists
+
 
 ## ###############################################################
 ## FUNCTIONS
@@ -22,18 +25,21 @@ class GetLabel():
     )
   
   def modes(list_vals, num_sig_digits=1):
-    val_std  = np.std(list_vals)
-    val_mean = np.mean(list_vals)
-    str_std  = getString(val_std, num_sig_digits)
+    if len([val for val in list_vals if val is not None]) < 5: return
+    list_vals = WWLists.replaceNoneWNan(list_vals)
+    val_std   = np.nanstd(list_vals)
+    val_mean  = np.nanmean(list_vals)
+    str_std   = getString(val_std, num_sig_digits)
     num_decimals_val = 0
     if "." in str_std: num_decimals_val = len(str_std.split(".")[1])
     str_mean = ("{:."+str(num_decimals_val)+"f}").format(val_mean)
     return str_mean + r" $\pm$ " + str_std
 
   def percentiles(list_vals, num_sig_digits=1):
-    val_perc_16 = np.percentile(list_vals, 16)
-    val_perc_50 = np.percentile(list_vals, 50)
-    val_perc_84 = np.percentile(list_vals, 84)
+    list_vals = WWLists.replaceNoneWNan(list_vals)
+    val_perc_16 = np.nanpercentile(list_vals, 16)
+    val_perc_50 = np.nanpercentile(list_vals, 50)
+    val_perc_84 = np.nanpercentile(list_vals, 84)
     diff_lo = val_perc_50 - val_perc_16
     diff_hi = val_perc_84 - val_perc_50
     str_minus = "-" + getString(diff_lo, num_sig_digits)

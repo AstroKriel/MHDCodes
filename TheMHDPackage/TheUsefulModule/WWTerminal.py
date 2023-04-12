@@ -11,7 +11,7 @@ import subprocess
 ## HELPFUL FUNCTIONS
 ## ###############################################################
 def printLine(mssg):
-  print(mssg+"\n", flush=True)
+  print(mssg, flush=True)
 
 def runCommand(
     command,

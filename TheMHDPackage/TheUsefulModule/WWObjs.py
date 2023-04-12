@@ -72,7 +72,7 @@ def appendDict2JsonFile(filepath_file, dict2append, bool_verbose=True):
   ## append extra contents to dict
   dict_old.update(dict2append)
   ## update (overwrite) json-file
-  with open(filepath_file, "w") as fp_w:
+  with open(filepath_file, "w+") as fp_w:
     json.dump(
       obj       = dict_old,
       fp        = fp_w,

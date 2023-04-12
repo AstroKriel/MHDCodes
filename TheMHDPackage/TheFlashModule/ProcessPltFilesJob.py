@@ -6,7 +6,9 @@ class ProcessPltFilesJob():
   def __init__(
       self,
       filepath_plt, dict_sim_inputs,
-      bool_verbose = True
+      file_start_index = None,
+      file_end_index   = None,
+      bool_verbose     = True
     ):
     self.filepath_plt = filepath_plt
     self.bool_verbose = bool_verbose
@@ -17,6 +19,9 @@ class ProcessPltFilesJob():
     self.job_name     = FileNames.FILENAME_PROCESS_PLT_JOB
     self.job_output   = FileNames.FILENAME_PROCESS_PLT_OUTPUT
     self.job_tagname  = SimParams.getJobTag(dict_sim_inputs, "plt")
+    self.command      = f"{self.program_name} -data_path {self.filepath_plt} -num_procs {self.num_procs} -check_only"
+    if file_start_index is not None: self.command += f" -file_start_index {int(file_start_index)}"
+    if file_end_index   is not None: self.command += f" -file_end_index {int(file_end_index)}"
     ## perform routine
     self.__createJob()
 
@@ -38,7 +43,7 @@ class ProcessPltFilesJob():
       job_file.write(f"#PBS -M neco.kriel@anu.edu.au\n")
       job_file.write("\n")
       job_file.write(". ~/modules_flash\n")
-      job_file.write(f"{self.program_name} -data_path {self.filepath_plt} -num_procs {self.num_procs} -check_only 1>{self.job_output} 2>&1\n")
+      job_file.write(f"{self.command} 1>{self.job_output} 2>&1\n")
     ## indicate progress
     if self.bool_verbose:
       print(f"Created PBS job:")

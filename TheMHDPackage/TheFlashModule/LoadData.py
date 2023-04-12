@@ -79,7 +79,7 @@ def loadFlashDataCube(
 
 
 def loadAllFlashDataCubes(
-    filepath, field_name, dict_sim_inputs,
+    directory, field_name, dict_sim_inputs,
     start_time     = 0,
     end_time       = np.inf,
     bool_debug     = False
@@ -87,7 +87,7 @@ def loadAllFlashDataCubes(
   outputs_per_t_turb = dict_sim_inputs["outputs_per_t_turb"]
   ## get all plt files in the directory
   filenames = WWFnF.getFilesInDirectory(
-    directory             = filepath,
+    directory             = directory,
     filename_contains     = FileNames.FILENAME_FLASH_DATA_CUBE,
     filename_not_contains = "spect",
     loc_file_index        = -1,
@@ -103,7 +103,7 @@ def loadAllFlashDataCubes(
   for filename, _ in WWLists.loopListWithUpdates(filenames):
     ## load dataset
     field_magnitude = loadFlashDataCube(
-      filepath_file = f"{filepath}/{filename}",
+      filepath_file = f"{directory}/{filename}",
       num_blocks    = dict_sim_inputs["num_blocks"],
       num_procs     = dict_sim_inputs["num_procs"],
       field_name    = field_name
@@ -129,7 +129,7 @@ def loadAllFlashDataCubes(
   return col_min_val, col_max_val, field_group_t, list_turb_times
 
 def loadVIData(
-    filepath, t_turb,
+    directory, t_turb,
     field_index  = None,
     field_name   = None,
     time_start   = 1,
@@ -143,7 +143,7 @@ def loadVIData(
     ## check that a variable name has been provided
     if field_name is None: raise Exception("Error: need to provide either a field-index or field-name")
     ## check which formatting the output file uses
-    with open(f"{filepath}/{FileNames.FILENAME_FLASH_VI_DATA}", "r") as fp:
+    with open(f"{directory}/{FileNames.FILENAME_FLASH_VI_DATA}", "r") as fp:
       file_first_line = fp.readline()
       bool_format_new = "#01_time" in file_first_line.split() # new version of file indexes from 1
     ## get index of field in file
@@ -155,7 +155,7 @@ def loadVIData(
   data_time  = []
   data_field = []
   prev_time  = np.inf
-  with open(f"{filepath}/{FileNames.FILENAME_FLASH_VI_DATA}", "r") as fp:
+  with open(f"{directory}/{FileNames.FILENAME_FLASH_VI_DATA}", "r") as fp:
     num_fields = len(fp.readline().split())
     ## read data in backwards
     for line in reversed(fp.readlines()):
@@ -212,26 +212,27 @@ def loadSpectrum(filepath_file, spect_field, spect_comp="total"):
       if   "vel" in spect_field.lower(): data_power = data_power
       elif "kin" in spect_field.lower(): data_power = data_power / 2
       elif "mag" in spect_field.lower(): data_power = data_power / (8 * np.pi)
+      elif "cur" in spect_field.lower(): data_power = data_power
       else: raise Exception(f"Error: {spect_field} is an invalid spectra field (should be vel, kin, or mag)")
     except: raise Exception("Error: failed to read spectra-file in:", filepath_file)
     return data_k, data_power
 
 def loadAllSpectra(
-    filepath, spect_field, outputs_per_t_turb,
+    directory, spect_field, outputs_per_t_turb,
     spect_comp      = "total",
     file_start_time = 2,
     file_end_time   = np.inf,
     read_every      = 1,
     bool_verbose    = True
   ):
-  if ("vel" in spect_field.lower()) or ("kin" in spect_field.lower()):
-                                      file_end_str = "spect_vels.dat"
-  elif "mag" in spect_field.lower():  file_end_str = "spect_mags.dat"
-  elif "cur" in spect_field.lower():  file_end_str = "spect_current.dat"
+  if   "vel" in spect_field.lower(): file_end_str = "spect_vels.dat"
+  elif "kin" in spect_field.lower(): file_end_str = "spect_sqrtrho.dat"
+  elif "mag" in spect_field.lower(): file_end_str = "spect_mags.dat"
+  elif "cur" in spect_field.lower(): file_end_str = "spect_current.dat"
   else: raise Exception("Error: invalid spectra filename:", spect_field)
   ## get list of spect-filenames in directory
   list_spectra_filenames = WWFnF.getFilesInDirectory(
-    directory          = filepath,
+    directory          = directory,
     filename_ends_with = file_end_str,
     loc_file_index     = -3,
     file_start_index   = outputs_per_t_turb * file_start_time,
@@ -247,7 +248,7 @@ def loadAllSpectra(
     turb_time = float(filename.split("_")[-3]) / outputs_per_t_turb
     ## load data
     list_k, list_power = loadSpectrum(
-      filepath_file = f"{filepath}/{filename}",
+      filepath_file = f"{directory}/{filename}",
       spect_field   = spect_field,
       spect_comp    = spect_comp
     )
@@ -263,7 +264,7 @@ def loadAllSpectra(
   }
 
 def getPlotsPerEddy_fromFlashLog(
-    filepath, num_t_turb,
+    directory, max_num_t_turb,
     bool_verbose = True
   ):
   ## helper functions
@@ -274,7 +275,7 @@ def getPlotsPerEddy_fromFlashLog(
   ## search routine
   bool_tmax_found          = False
   bool_plot_interval_found = None
-  with open(f"{filepath}/{FileNames.FILENAME_FLASH_LOG}", "r") as fp:
+  with open(f"{directory}/{FileNames.FILENAME_FLASH_LOG}", "r") as fp:
     for line in fp.readlines():
       if ("tmax" in getName(line)) and ("dtmax" not in getName(line)):
         tmax = float(getValue(line))
@@ -283,14 +284,15 @@ def getPlotsPerEddy_fromFlashLog(
         plot_file_interval = float(getValue(line))
         bool_plot_interval_found = True
       if bool_tmax_found and bool_plot_interval_found:
-        outputs_per_t_turb = tmax / plot_file_interval / num_t_turb
-        ## TODO: if not integer(?) then error
+        outputs_per_t_turb = tmax / plot_file_interval / max_num_t_turb
+        ## a funny way to check: abs(abs((outputs_per_t_turb % 1) - 0.5) - 0.5) < tol
+        if abs(round(outputs_per_t_turb) - outputs_per_t_turb) > 1e-2: raise Exception(f"Error: the number of plt-files / t_turb (= {outputs_per_t_turb}) should be a whole number:\n\t", directory)
         if bool_verbose:
           print(f"The following has been read from {FileNames.FILENAME_FLASH_LOG}:")
           print("\t> 'tmax'".ljust(25),                 "=", tmax)
           print("\t> 'plotFileIntervalTime'".ljust(25), "=", plot_file_interval)
-          print("\t> # plt-files / t_turb".ljust(25),   "=", outputs_per_t_turb)
-          print(f"\tAssuming the simulation has been setup to run for a max of {num_t_turb} t/t_turb.")
+          print("\t> number of plt-files / t_turb".ljust(25),   "=", outputs_per_t_turb)
+          print(f"\tAssuming the simulation has been setup to run for a max of {max_num_t_turb} t/t_turb.")
           print(" ")
         return outputs_per_t_turb
   ## failed to read quantity
@@ -338,10 +340,10 @@ def computePlasmaNumbers(Re=None, Rm=None, Pm=None):
     "Pm"  : Pm
   }
 
-def getNumberFromString(string, ref):
+def getNumberFromString(string, var_name):
   string_lower = string.lower()
-  ref_lower    = ref.lower()
-  return float(string_lower.replace(ref_lower, "")) if ref_lower in string_lower else None
+  var_name_lower = var_name.lower()
+  return float(string_lower.replace(var_name_lower, "")) if var_name_lower in string_lower else None
 
 
 ## END OF LIBRARY

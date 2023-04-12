@@ -38,7 +38,7 @@ def paramAssignLine(
   if len(comment) > 0:
     space_comment = " " * (nspaces_pre_comment - len(param_assign))
     return f"{param_assign}{space_comment}# {comment}\n"
-  else: return param_assign
+  else: return f"{param_assign}\n"
 
 def addParamAssign(
     dict_assigns, param_name, param_value,
@@ -77,7 +77,7 @@ def processLine(
     return paramAssignLine(param_name, param_value, comment, nspaces_pre_assign, nspaces_pre_comment)
   ## comment that has overflowed to the next line
   ## (* are used as headings)
-  elif (list_line_elems[0] == "#") and ("*" not in list_line_elems):
+  elif (list_line_elems[0] == "#") and ("*" not in ref_line):
     space_pre_comment = " " * nspaces_pre_comment
     comment = " ".join(list_line_elems[1:])
     return f"{space_pre_comment}# {comment}\n"
@@ -171,7 +171,7 @@ def writeFlashParamFile(filepath_ref, filepath_to, dict_sim_inputs, max_num_hour
   ## helper function
   def _addParamAssign(param_name, param_value, comment=""):
     addParamAssign(
-      dict_param_assign   = dict_assigns,
+      dict_assigns        = dict_assigns,
       param_name          = param_name,
       param_value         = param_value,
       comment             = comment,
@@ -240,13 +240,15 @@ def writeFlashParamFile(filepath_ref, filepath_to, dict_sim_inputs, max_num_hour
   )
   _addParamAssign(
     param_name  = "plotFileIntervalTime",
-    param_value = 0.1 * dict_sim_inputs["t_turb"],
+    param_value = "{:.3f}".format(0.1 * dict_sim_inputs["t_turb"]),
     comment     = "0.1 t_turb"
   )
   _addParamAssign(
     param_name  = "tmax",
-    param_value = dict_sim_inputs["num_t_turb"] * dict_sim_inputs["t_turb"],
-    comment     = "{} turb".format(dict_sim_inputs["num_t_turb"])
+    param_value = "{:.3f}".format(
+      dict_sim_inputs["max_num_t_turb"] * dict_sim_inputs["t_turb"]
+    ),
+    comment     = "{} turb".format(dict_sim_inputs["max_num_t_turb"])
   )
   _addParamAssign(
     param_name  = "wall_clock_time_limit",
@@ -318,7 +320,7 @@ class RunSimJob():
       filepath_ref    = filepath_ref_folder,
       filepath_to     = self.filepath_sim,
       dict_sim_inputs = self.dict_sim_inputs,
-      max_hours       = self.max_hours
+      max_num_hours   = self.max_num_hours
     )
     ## create job script
     self._createJob()
@@ -346,8 +348,8 @@ class RunSimJob():
     self.num_procs = int(self.iprocs * self.jprocs * self.kprocs)
     self.max_mem   = int(4 * self.num_procs)
     if self.num_procs > 1000:
-      self.max_hours = 24
-    else: self.max_hours = 48
+      self.max_num_hours = 24
+    else: self.max_num_hours = 48
     self.job_name    = FileNames.FILENAME_RUN_SIM_JOB
     self.job_tagname = SimParams.getJobTag(self.dict_sim_inputs, "sim")
     self.job_output  = FileNames.FILENAME_RUN_SIM_OUTPUT
@@ -409,7 +411,7 @@ class RunSimJob():
       job_file.write("#!/bin/bash\n")
       job_file.write("#PBS -P ek9\n")
       job_file.write("#PBS -q normal\n")
-      job_file.write(f"#PBS -l walltime={self.max_hours}:00:00\n")
+      job_file.write(f"#PBS -l walltime={self.max_num_hours}:00:00\n")
       job_file.write(f"#PBS -l ncpus={self.num_procs}\n")
       job_file.write(f"#PBS -l mem={self.max_mem}GB\n")
       job_file.write("#PBS -l storage=scratch/ek9+gdata/ek9\n")

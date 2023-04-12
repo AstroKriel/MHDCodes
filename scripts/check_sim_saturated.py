@@ -11,7 +11,7 @@ from datetime import datetime
 from organise_folders import removeFiles
 
 ## load user defined modules
-from TheFlashModule import SimParams, LoadFlashData, FileNames
+from TheFlashModule import LoadData, SimParams, FileNames
 from TheUsefulModule import WWLists
 from TheFittingModule import FitFuncs
 
@@ -62,7 +62,7 @@ class CheckDynamoSaturated():
   def __init__(self, filepath_sim):
     self.filepath_sim = filepath_sim
     dict_sim_inputs   = SimParams.readSimInputs(self.filepath_sim, bool_verbose=False)
-    self.num_t_turb   = dict_sim_inputs["num_t_turb"]
+    self.max_num_t_turb   = dict_sim_inputs["max_num_t_turb"]
 
   def performRoutine(self):
     print("Checking dynamo has saturated in:", self.filepath_sim)
