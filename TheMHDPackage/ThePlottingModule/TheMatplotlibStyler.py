@@ -57,7 +57,7 @@ rcParams["legend.frameon"]      = False
 
 ## set figure size/resolution
 rcParams["figure.figsize"] = (8.0, 5.0)
-rcParams["figure.dpi"]     = 200
+# rcParams["figure.dpi"]     = 200
 
 ## set figure saving size/resolution
 rcParams["savefig.dpi"]  = 200

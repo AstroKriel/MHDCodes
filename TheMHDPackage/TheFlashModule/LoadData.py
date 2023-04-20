@@ -48,6 +48,7 @@ def reformatFlashField(field, num_blocks, num_procs):
 
 def loadFlashDataCube(
     filepath_file, num_blocks, num_procs, field_name,
+    bool_norm_rms     = False,
     bool_print_h5keys = False
   ):
   ## open hdf5 file stream
@@ -64,18 +65,23 @@ def loadFlashDataCube(
       print("--------- All the keys stored in the FLASH hdf5 file:\n\t" + "\n\t".join(list_keys_stored))
       print("--------- All the keys that were used: " + str(list_keys_used))
     ## extract fields from hdf5 file
-    data_x, data_y, data_z = np.array([
-      h5file[key]
+    field_group_comp = [
+      np.array(h5file[key])
       for key in list_keys_used
-    ])
+    ]
     ## close file stream
     h5file.close()
   ## reformat data
-  data_sorted_x = reformatFlashField(data_x, num_blocks, num_procs)
-  data_sorted_y = reformatFlashField(data_y, num_blocks, num_procs)
-  data_sorted_z = reformatFlashField(data_z, num_blocks, num_procs)
+  field_sorted_group_comps = []
+  for field_comp in field_group_comp:
+    field_comp_sorted = reformatFlashField(field_comp, num_blocks, num_procs)
+    field_sorted_group_comps.append(field_comp_sorted)
+  ## normalise by rms-value
+  if bool_norm_rms:
+    for field_comp in field_sorted_group_comps:
+      field_comp /= np.sqrt(np.mean(field_comp**2))
   ## return spatial-components of data
-  return data_sorted_x, data_sorted_y, data_sorted_z
+  return np.squeeze(field_sorted_group_comps)
 
 
 def loadAllFlashDataCubes(
@@ -86,7 +92,7 @@ def loadAllFlashDataCubes(
   ):
   outputs_per_t_turb = dict_sim_inputs["outputs_per_t_turb"]
   ## get all plt files in the directory
-  filenames = WWFnF.getFilesInDirectory(
+  list_filenames = WWFnF.getFilesInDirectory(
     directory             = directory,
     filename_contains     = FileNames.FILENAME_FLASH_DATA_CUBE,
     filename_not_contains = "spect",
@@ -95,38 +101,28 @@ def loadAllFlashDataCubes(
     file_end_index        = outputs_per_t_turb * end_time
   )
   ## find min and max colorbar limits
-  col_min_val = np.nan
-  col_max_val = np.nan
+  field_min = np.nan
+  field_max = np.nan
   ## save field slices and simulation times
   field_group_t = []
   list_turb_times = []
-  for filename, _ in WWLists.loopListWithUpdates(filenames):
-    ## load dataset
+  for filename, _ in WWLists.loopListWithUpdates(list_filenames):
     field_magnitude = loadFlashDataCube(
       filepath_file = f"{directory}/{filename}",
       num_blocks    = dict_sim_inputs["num_blocks"],
       num_procs     = dict_sim_inputs["num_procs"],
       field_name    = field_name
     )
-    # ## check the dimensions of 
-    # if bool_debug:
-    #   print( len(field_magnitude) )
-    #   print( len(field_magnitude[0]) )
-    ## append slice of field magnitude
-    field_group_t.append( field_magnitude[:,:] )
-    ## append the simulation time
     list_turb_times.append( float(filename.split("_")[-1]) / outputs_per_t_turb )
-    ## find data magnitude bounds
-    col_min_val = np.nanmin([
-      np.nanmin(field_magnitude[:,:]),
-      col_min_val
-    ])
-    col_max_val = np.nanmax([
-      np.nanmax(field_magnitude[:,:]),
-      col_max_val
-    ])
+    field_group_t.append( field_magnitude[:,:] ) # TODO: this won't work anymore
+    field_min = np.nanmin([ field_min, np.nanmin(field_magnitude[:,:]) ])
+    field_max = np.nanmax([ field_max, np.nanmax(field_magnitude[:,:]) ])
   print(" ")
-  return col_min_val, col_max_val, field_group_t, list_turb_times
+  return {
+    "list_turb_times" : list_turb_times,
+    "field_group_t"   : field_group_t,
+    "field_bounds"    : [ field_min, field_max ]
+  }
 
 def loadVIData(
     directory, t_turb,
@@ -286,7 +282,8 @@ def getPlotsPerEddy_fromFlashLog(
       if bool_tmax_found and bool_plot_interval_found:
         outputs_per_t_turb = tmax / plot_file_interval / max_num_t_turb
         ## a funny way to check: abs(abs((outputs_per_t_turb % 1) - 0.5) - 0.5) < tol
-        if abs(round(outputs_per_t_turb) - outputs_per_t_turb) > 1e-2: raise Exception(f"Error: the number of plt-files / t_turb (= {outputs_per_t_turb}) should be a whole number:\n\t", directory)
+        if abs(round(outputs_per_t_turb) - outputs_per_t_turb) > 1e-2:
+          raise Exception(f"Error: the number of plt-files / t_turb (= {outputs_per_t_turb}) should be a whole number:\n\t", directory)
         if bool_verbose:
           print(f"The following has been read from {FileNames.FILENAME_FLASH_LOG}:")
           print("\t> 'tmax'".ljust(25),                 "=", tmax)
@@ -294,7 +291,7 @@ def getPlotsPerEddy_fromFlashLog(
           print("\t> number of plt-files / t_turb".ljust(25),   "=", outputs_per_t_turb)
           print(f"\tAssuming the simulation has been setup to run for a max of {max_num_t_turb} t/t_turb.")
           print(" ")
-        return outputs_per_t_turb
+        return int(outputs_per_t_turb)
   ## failed to read quantity
   raise Exception(f"Error: failed to read outputs_per_t_turb from {FileNames.FILENAME_FLASH_LOG}")
 

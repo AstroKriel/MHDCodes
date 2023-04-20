@@ -35,9 +35,9 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## HELPER FUNCTIONS
 ## ###############################################################
 def reynoldsSpectrum(list_k, list_power, diss_rate):
-    list_k_reverse = np.array(list_power[::-1])
-    list_sqt_k = np.sqrt(np.cumsum(list_k_reverse))[::-1]
-    return list_sqt_k / (diss_rate * np.array(list_k))
+    list_power_reverse = np.array(list_power[::-1])
+    list_sqt_sum_power = np.sqrt(np.cumsum(list_power_reverse))[::-1]
+    return list_sqt_sum_power / (diss_rate * np.array(list_k))
 
 def plotReynoldsSpectrum(ax, list_k, list_power_group_t, diss_rate, cmap_name, bool_norm=False):
   cmap, norm = PlotFuncs.createCmap(cmap_name, vmin=0, vmax=len(list_power_group_t))
@@ -652,18 +652,20 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC         = 1
-BOOL_CHECK_ONLY    = 0
+BOOL_MPROC         = 0
+BOOL_CHECK_ONLY    = 1
 BASEPATH           = "/scratch/ek9/nk7952/"
 
-## PLASMA PARAMETER SET
-LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-LIST_SONIC_REGIMES = [ "Mach5" ]
-LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# ## PLASMA PARAMETER SET
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
-# LIST_SIM_RES       = [ "18", "36", "72" ]
-LIST_SIM_RES       = [ "144", "288", "576" ]
+LIST_SUITE_FOLDERS = [ "Rm3000" ]
+LIST_SONIC_REGIMES = [ "Mach5" ]
+LIST_SIM_FOLDERS   = [ "Pm10" ]
+LIST_SIM_RES       = [ "288" ]
 
 # ## MACH NUMBER SET
 # LIST_SUITE_FOLDERS = [ "Re300" ]

@@ -40,7 +40,7 @@ def plotScale(ax, x_median, y_median, y_1sig, color, marker, x_1sig=None):
     yerr  = y_1sig,
     color = color,
     fmt   = marker,
-    markersize=7, markeredgecolor="black", capsize=7.5, elinewidth=2,
+    markersize=8, markeredgecolor="black", capsize=7.5, elinewidth=2,
     linestyle="None", zorder=10
   )
 
@@ -73,6 +73,7 @@ class PlotSimScales():
     self.k_p_stats_group_sim       = []
     self.k_eta_cur_stats_group_sim = []
     self.k_eta_mag_stats_group_sim = []
+    self.k_nu_tot_stats_group_sim  = []
     self.k_nu_lgt_stats_group_sim  = []
     self.k_nu_trv_stats_group_sim  = []
     self.__loadAllSimulationData()
@@ -121,22 +122,24 @@ class PlotSimScales():
     self.Re_group_sim.append(Re)
     self.Rm_group_sim.append(Rm)
     self.Pm_group_sim.append(Pm)
+    # self.color_group_sim.append("darkorange")
     self.color_group_sim.append( "cornflowerblue" if Re < 100 else "orangered" )
     ## extract measured scales
     self.k_p_stats_group_sim.append(dict_scales["k_p_stats_nres"])
     self.k_eta_cur_stats_group_sim.append(dict_scales["k_eta_cur_stats_nres"])
     self.k_eta_mag_stats_group_sim.append(dict_scales["k_eta_mag_stats_nres"])
+    self.k_nu_tot_stats_group_sim.append(dict_scales["k_nu_tot_stats_nres"])
     self.k_nu_lgt_stats_group_sim.append(dict_scales["k_nu_lgt_stats_nres"])
     self.k_nu_trv_stats_group_sim.append(dict_scales["k_nu_trv_stats_nres"])
 
   def plotDependance_knu(self):
-    fig, ax = plt.subplots(1, 1, figsize=(7, 4), sharex=True)
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
     for sim_index in range(len(self.Pm_group_sim)):
       plotScale(
         ax       = ax,
         x_median = self.Re_group_sim[sim_index],
-        y_median = self.k_nu_trv_stats_group_sim[sim_index][0],
-        y_1sig   = self.k_nu_trv_stats_group_sim[sim_index][1],
+        y_median = self.k_nu_tot_stats_group_sim[sim_index][0],
+        y_1sig   = self.k_nu_tot_stats_group_sim[sim_index][1],
         color    = self.color_group_sim[sim_index],
         marker   = self.marker_group_sim[sim_index]
       )
@@ -172,14 +175,15 @@ class PlotSimScales():
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(r"Re", fontsize=20)
-    ax.set_ylabel(r"$k_{\nu, \perp}$", fontsize=20)
+    ax.set_ylabel(r"$k_\nu$", fontsize=20)
+    # ax.set_ylabel(r"$k_{\nu, \perp}$", fontsize=20)
     ## save plot
     fig_name = f"fig_dependance_{self.plot_name}_knu.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
     print(" ")
 
   def plotDependance_keta_mag(self):
-    fig, ax = plt.subplots(1, 1, figsize=(7, 4), sharex=True)
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
     for sim_index in range(len(self.Pm_group_sim)):
       v1 = self.k_eta_mag_stats_group_sim[sim_index][0]
       d1 = self.k_eta_mag_stats_group_sim[sim_index][1]
@@ -224,6 +228,7 @@ class PlotSimScales():
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
+    ax.set_ylim([ 0.9, 11 ])
     ax.set_xlabel(r"${\rm Pm}$", fontsize=20)
     ax.set_ylabel(r"$k_{\eta, \mathbf{B}} / k_{\nu, \perp}$", fontsize=20)
     ## save plot
@@ -232,7 +237,7 @@ class PlotSimScales():
     print(" ")
   
   def plotDependance_keta_cur(self):
-    fig, ax = plt.subplots(1, 1, figsize=(7, 4), sharex=True)
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
     for sim_index in range(len(self.Pm_group_sim)):
       v1 = self.k_eta_cur_stats_group_sim[sim_index][0]
       d1 = self.k_eta_cur_stats_group_sim[sim_index][1]
@@ -277,15 +282,16 @@ class PlotSimScales():
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
+    ax.set_ylim([ 0.09, 11 ])
     ax.set_xlabel(r"${\rm Pm}$", fontsize=20)
-    ax.set_ylabel(r"$k_{\eta, \nabla\times\mathbf{B}} / k_{\nu, \perp}$", fontsize=20)
+    ax.set_ylabel(r"$k_{\eta, \nabla\times\mathbf{B}} / k_\nu$", fontsize=20)
     ## save plot
     fig_name = f"fig_dependance_{self.plot_name}_keta_cur.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
     print(" ")
 
   def plotDependance_kp_mag(self):
-    fig, ax = plt.subplots(1, 1, figsize=(7, 4))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
     for sim_index in range(len(self.Pm_group_sim)):
       plotScale(
         ax       = ax,
@@ -317,6 +323,7 @@ class PlotSimScales():
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
+    ax.set_xlim([ 5, 200 ])
     ax.set_ylim([ 1, 30 ])
     ax.set_xlabel(r"$k_{\eta, \mathbf{B}}$", fontsize=20)
     ax.set_ylabel(r"$k_{\rm p}$", fontsize=20)
@@ -326,7 +333,7 @@ class PlotSimScales():
     print(" ")
 
   def plotDependance_kp_cur(self):
-    fig, ax = plt.subplots(1, 1, figsize=(7, 4))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
     for sim_index in range(len(self.Pm_group_sim)):
       plotScale(
         ax       = ax,
@@ -358,11 +365,52 @@ class PlotSimScales():
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
+    ax.set_xlim([ 5, 70 ])
     ax.set_ylim([ 1, 30 ])
     ax.set_xlabel(r"$k_{\eta, \nabla\times\mathbf{B}}$", fontsize=20)
     ax.set_ylabel(r"$k_{\rm p}$", fontsize=20)
     ## save plot
     fig_name = f"fig_dependance_{self.plot_name}_kp_cur.png"
+    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
+    print(" ")
+
+  def plotDependance_kp_Pm(self):
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+    for sim_index in range(len(self.Pm_group_sim)):
+      plotScale(
+        ax       = ax,
+        x_median = self.Pm_group_sim[sim_index],
+        y_median = self.k_p_stats_group_sim[sim_index][0],
+        y_1sig   = self.k_p_stats_group_sim[sim_index][1],
+        color    = self.color_group_sim[sim_index],
+        marker   = self.marker_group_sim[sim_index]
+      )
+    ## plot reference lines
+    x = np.linspace(10**(-2), 10**(4), 100)
+    ax.axhline(y=5.0, ls=":", c="black")
+    # PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.025*x, ls=":")
+    # label figure
+    PlotFuncs.addLegend_fromArtists(
+      ax,
+      list_artists       = [ "s", "D", "o" ],
+      list_legend_labels = [
+        r"$\mathrm{Re} = 10$",
+        r"$\mathrm{Re} = 500$",
+        r"$\mathrm{Rm} = 3000$",
+      ],
+      list_marker_colors = [ "k" ],
+      label_color        = "black",
+      loc                = "upper left",
+      bbox               = (0.0, 1.0)
+    )
+    ## adjust axis
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_ylim([ 1, 30 ])
+    ax.set_xlabel(r"Pm", fontsize=20)
+    ax.set_ylabel(r"$k_{\rm p}$", fontsize=20)
+    ## save plot
+    fig_name = f"fig_dependance_{self.plot_name}_kp_Pm.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
     print(" ")
 
@@ -377,6 +425,7 @@ def main():
   plot_obj.plotDependance_keta_cur()
   plot_obj.plotDependance_kp_mag()
   plot_obj.plotDependance_kp_cur()
+  plot_obj.plotDependance_kp_Pm()
 
 
 ## ###############################################################

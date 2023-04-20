@@ -139,7 +139,7 @@ def test_loadData():
   fig, ax = plt.subplots(figsize=(6,6))
   ## plot LIC/home/586/nk7952/MHDCodes/demo/lic_flash_data.png
   if bool_lic:
-    PlotFuncs.plot2DField(
+    PlotFuncs.plotVectorField(
       fig   = fig,
       ax    = ax,
       data  = data_lic
@@ -149,7 +149,7 @@ def test_loadData():
     # data_scalar_tmp = np.concatenate((data_vel_scalar, data_vel_scalar, data_vel_scalar), axis=1)
     # data_scalar     = np.concatenate((data_scalar_tmp, data_scalar_tmp), axis=0)
     data_scalar = data_vel_scalar
-    PlotFuncs.plot2DField(
+    PlotFuncs.plotVectorField(
       fig           = fig,
       ax            = ax,
       data          = data_scalar,

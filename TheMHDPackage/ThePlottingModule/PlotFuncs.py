@@ -14,6 +14,7 @@ import cmasher as cmr
   ## cmr sequential maps: tropical, ocean, arctic, bubblegum, lavender
   ## cmr diverging maps: iceburn, wildfire, fusion
 
+from scipy.stats import gaussian_kde
 from matplotlib.cm import ScalarMappable
 from matplotlib.lines import Line2D
 from matplotlib.gridspec import GridSpec
@@ -55,10 +56,12 @@ def createFigure_grid(
   fig_grid = GridSpec(num_rows, num_cols, figure=fig)
   return fig, fig_grid
 
-def saveFigure(fig, filepath_fig, bool_verbose=True):
-  if not fig.get_constrained_layout():
+def saveFigure(fig, filepath_fig, bool_tight=True, bool_draft=False, bool_verbose=True):
+  if bool_tight and not(fig.get_constrained_layout()):
     fig.set_tight_layout(True)
-  fig.savefig(filepath_fig)
+  if bool_draft: dpi = 50
+  else: dpi = 200
+  fig.savefig(filepath_fig, dpi=dpi)
   plt.close(fig)
   if bool_verbose: print("Saved figure:", filepath_fig)
 
@@ -132,17 +135,98 @@ def plotErrorBar_1D(
     linestyle="None", zorder=10
   )
 
-def plotPDF(ax, list_data, color):
-  list_dens, list_bin_edges = np.histogram(list_data, bins=10, density=True)
+def plotPDF(
+    ax, list_data,
+    num_bins     = 10,
+    color        = "black",
+    bool_flip_ax = False
+  ):
+  list_dens, list_bin_edges = np.histogram(list_data, bins=num_bins)
   list_dens_norm = np.append(0, list_dens / list_dens.sum())
-  ax.fill_between(list_bin_edges, list_dens_norm, step="pre", alpha=0.2, color=color)
-  ax.plot(list_bin_edges, list_dens_norm, drawstyle="steps", color=color)
+  if bool_flip_ax:
+    ax.plot(list_dens_norm[::-1], list_bin_edges[::-1], drawstyle="steps", color=color)
+    ax.fill_between(list_dens_norm[::-1], list_bin_edges[::-1], step="pre", alpha=0.2, color=color)
+  else:
+    ax.plot(list_bin_edges, list_dens_norm, drawstyle="steps", color=color)
+    ax.fill_between(list_bin_edges, list_dens_norm, step="pre", alpha=0.2, color=color)
+  return list_bin_edges, list_dens_norm
 
 
 ## ###############################################################
 ## PLOT 2D DATA
 ## ###############################################################
-def plot2DField(
+def plotScatter(
+    fig, ax, list_x, list_y,
+    ms                = 1,
+    color             = None,
+    fontsize          = 20,
+    cbar_title        = None,
+    cbar_orientation  = "horizontal",
+    bool_add_colorbar = False
+  ):
+  if color is None:
+    xy_stack = np.vstack([ list_x, list_y ])
+    color = gaussian_kde(xy_stack)(xy_stack) # color by the point density
+  plot_obj = ax.scatter(list_x, list_y, c=color, s=ms)
+  if bool_add_colorbar:
+    addColorbar_fromMappble(
+      fig, ax, plot_obj,
+      cbar_title  = cbar_title,
+      orientation = cbar_orientation,
+      fontsize    = fontsize
+    )
+
+def plotScalarField(
+    field_slice,
+    filepath_fig      = None,
+    fig               = None,
+    ax                = None,
+    cmap_name         = "cmr.arctic",
+    NormType          = colors.LogNorm,
+    cbar_bounds       = None,
+    cbar_title        = None,
+    cbar_orientation  = "horizontal",
+    bool_add_colorbar = False,
+    bool_label_axis   = False
+  ):
+  ## check that a figure object has been passed
+  if (fig is None) or (ax is None):
+    fig, ax = fig, ax = plt.subplots(constrained_layout=True)
+  ## plot scalar field
+  im_obj = ax.imshow(
+    field_slice,
+    extent = [-1.0, 1.0, -1.0, 1.0],
+    cmap   = plt.get_cmap(cmap_name),
+    norm   = NormType(
+      vmin = 0.9*np.min(field_slice) if cbar_bounds is None else cbar_bounds[0],
+      vmax = 1.1*np.max(field_slice) if cbar_bounds is None else cbar_bounds[1]
+    )
+  )
+  ## add colorbar
+  if bool_add_colorbar:
+    addColorbar_fromMappble(
+      fig, ax, im_obj,
+      cbar_title  = cbar_title,
+      orientation = cbar_orientation
+    )
+  ## add axis labels
+  if bool_label_axis:
+    ax.set_xticks([-1, -0.5, 0, 0.5, 1])
+    ax.set_yticks([-1, -0.5, 0, 0.5, 1])
+    ax.set_xticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
+    ax.set_yticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
+  else:
+    # ax.set_axis_off()
+    ax.set_xticks([])
+    ax.set_yticks([])
+  ## save figure
+  if filepath_fig is not None:
+    plt.savefig(filepath_fig)
+    ## clear figure and axis
+    fig.artists.clear()
+    ax.clear()
+
+def plotVectorField(
     field_slice_x1,
     field_slice_x2,
     filepath_fig        = None,
@@ -155,6 +239,7 @@ def plot2DField(
     quiver_step         = 1,
     quiver_width        = 5e-3,
     quiver_color        = "red",
+    cbar_orientation    = "horizontal",
     bool_plot_magnitude = True,
     bool_plot_quiver    = False,
     bool_add_colorbar   = False,
@@ -176,7 +261,12 @@ def plot2DField(
       )
     )
     ## add colorbar
-    if bool_add_colorbar: addColorbar_fromMappble(im_obj, cbar_title)
+    if bool_add_colorbar:
+      addColorbar_fromMappble(
+        fig, ax, im_obj,
+        cbar_title  = cbar_title,
+        orientation = cbar_orientation
+      )
   ## overlay vector field
   if bool_plot_quiver:
     field_vecs_x1 = field_slice_x1[::quiver_step, ::quiver_step]
@@ -340,32 +430,43 @@ def addLegend_withBox(
 def addColorbar_fromCmap(
     fig, ax, cmap,
     norm=None, vmin=0.0, vmax=1.0,
-    label=None, fontsize=16, orientation="horizontal", size=10
+    cbar_title=None, fontsize=16, orientation="horizontal", size=10
   ):
   if norm is None: norm = createNorm(vmin, vmax)
-  smap   = ScalarMappable(cmap=cmap, norm=norm)
+  mappable = ScalarMappable(cmap=cmap, norm=norm)
   ax_div = make_axes_locatable(ax)
-  if   "h" in orientation: cax = ax_div.append_axes(position="top",   size=f"{size:.1f}%", pad="2%")
-  elif "v" in orientation: cax = ax_div.append_axes(position="right", size=f"{size:.1f}%", pad="2%")
+  if   "h" in orientation: ax_cbar = ax_div.append_axes(position="top",   size=f"{size:.1f}%", pad="2%")
+  elif "v" in orientation: ax_cbar = ax_div.append_axes(position="right", size=f"{size:.1f}%", pad="2%")
   else: raise Exception(f"Error: '{orientation}' is not a supported orientation!")
-  # fig.add_axes(cax)
-  cbar = fig.colorbar(mappable=smap, cax=cax, orientation=orientation)
+  # fig.add_axes(ax_cbar)
+  cbar = fig.colorbar(mappable=mappable, cax=ax_cbar, orientation=orientation)
   if "h" in orientation:
-    cax.set_title(label, fontsize=fontsize)
-    cax.xaxis.set_ticks_position("top")
-  else: cbar.ax.set_ylabel(label, rotation=-90, va="bottom", fontsize=fontsize)
+    ax_cbar.set_title(cbar_title, fontsize=fontsize)
+    ax_cbar.xaxis.set_ticks_position("top")
+  else: cbar.ax.set_ylabel(cbar_title, fontsize=fontsize, rotation=-90, va="bottom")
 
-def addColorbar_fromMappble(mappable, cbar_title=None, size=7.5):
+def addColorbar_fromMappble(
+    fig, ax, mappable,
+    orientation = "vertical",
+    cbar_title  = None,
+    size        = 7.5,
+    fontsize    = 20
+  ):
   ''' from: https://joseph-long.com/writing/colorbars/
   '''
-  ax_old  = plt.gca()
-  ax_new  = mappable.axes
-  fig     = ax_new.figure
-  div     = make_axes_locatable(ax_new)
-  ax_cbar = div.append_axes("right", size=f"{size:.1f}%", pad="2%")
-  cbar    = fig.colorbar(mappable, cax=ax_cbar)
-  cbar.ax.set_ylabel(cbar_title, rotation=-90, va="bottom")
-  plt.sca(ax_old)
+  ax_new = mappable.axes
+  if (fig is None) or (ax is None):
+    ax  = plt.gca()
+    fig = ax_new.figure
+  ax_div = make_axes_locatable(ax_new)
+  if   "h" in orientation: ax_cbar = ax_div.append_axes(position="top",   size=f"{size:.1f}%", pad="2%")
+  elif "v" in orientation: ax_cbar = ax_div.append_axes(position="right", size=f"{size:.1f}%", pad="2%")
+  cbar = fig.colorbar(mappable=mappable, cax=ax_cbar, orientation=orientation)
+  if "h" in orientation:
+    ax_cbar.set_title(cbar_title, fontsize=fontsize)
+    ax_cbar.xaxis.set_ticks_position("top")
+  else: cbar.ax.set_ylabel(cbar_title, fontsize=fontsize, rotation=-90, va="bottom")
+  plt.sca(ax)
   return cbar
 
 def addAxisTicks_linear(

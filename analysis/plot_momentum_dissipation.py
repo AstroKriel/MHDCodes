@@ -123,7 +123,7 @@ def main():
   print("Plotting data...")
   fig, ax = plt.subplots(figsize=(6,6))
   ## plot field slice
-  PlotFuncs.plot2DField(
+  PlotFuncs.plotVectorField(
     fig                 = fig,
     ax                  = ax,
     field_slice_x1      = data_vel_x[0,:,:],

@@ -169,7 +169,7 @@ def plot_dfield(field_x, field_y, dfield_exact, dfield_approx, num_cells, method
   print(f"\t> max: {error_max:.3f}")
   print(f"\t> 2-norm: {two_norm:.3f}")
   fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(13,10))
-  PlotFuncs.plot2DField(
+  PlotFuncs.plotVectorField(
     fig                 = fig,
     ax                  = axs[0,0],
     field_slice_x1      = field_x,
@@ -183,7 +183,7 @@ def plot_dfield(field_x, field_y, dfield_exact, dfield_approx, num_cells, method
     bool_add_colorbar   = True,
     cbar_title          = "field magnitude"
   )
-  PlotFuncs.plot2DField(
+  PlotFuncs.plotVectorField(
     fig                 = fig,
     ax                  = axs[0,1],
     field_slice_x1      = dfield_exact,
@@ -195,7 +195,7 @@ def plot_dfield(field_x, field_y, dfield_exact, dfield_approx, num_cells, method
     bool_add_colorbar   = True,
     cbar_title          = r"exact: ${\rm d^" + str(d_order) + r"}f_x/{\rm d}x^" + str(d_order) + "$"
   )
-  PlotFuncs.plot2DField(
+  PlotFuncs.plotVectorField(
     fig                 = fig,
     ax                  = axs[1,1],
     field_slice_x1      = dfield_approx,
@@ -207,7 +207,7 @@ def plot_dfield(field_x, field_y, dfield_exact, dfield_approx, num_cells, method
     bool_add_colorbar   = True,
     cbar_title          = method_name + r": ${\rm d^" + str(d_order) + r"}f_x/{\rm d}x^" + str(d_order) + "$"
   )
-  PlotFuncs.plot2DField(
+  PlotFuncs.plotVectorField(
     fig                 = fig,
     ax                  = axs[1,0],
     field_slice_x1      = rel_error,

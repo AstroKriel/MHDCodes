@@ -13,11 +13,14 @@ import numpy as np
 import tempfile
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import scipy.stats as stats
+
+from scipy.optimize import curve_fit
 
 ## load user defined modules
-from TheFlashModule import LoadData, SimParams, FileNames
-from TheUsefulModule import WWLists, WWFnF, WWObjs
-from TheFittingModule import FitFuncs
+from TheFlashModule import FileNames, LoadData, SimParams
+from TheUsefulModule import WWFnF
 from ThePlottingModule import PlotFuncs
 
 
@@ -28,270 +31,293 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################
+## HELPER FUNCTION
+## ###############################################################
+def divergence(field_group_dim):
+  """
+  Purpose: compute the divergence of the vector field F, corresponding with dFx/dx + dFy/dy + ...
+  Argument: list of ndarrays, where each item of the list is one component (dimension) of the vector field
+  Output: single ndarray (scalar field) of the same shape as each of the items in F
+  """
+  num_dims = len(field_group_dim)
+  return np.ufunc.reduce(
+    np.add, [
+      np.gradient(field_group_dim[dim], axis=dim)
+      for dim in range(num_dims)
+    ]
+  )
+
+# def curl(field_group_dim):
+#   dummy, dFx_dy, dFx_dz = np.gradient(u, dx, dy, dz, axis=[1,0,2])
+#   dFy_dx, dummy, dFy_dz = np.gradient(v, dx, dy, dz, axis=[1,0,2])
+#   dFz_dx, dFz_dy, dummy = np.gradient(w, dx, dy, dz, axis=[1,0,2])
+#   rot_x = dFz_dy - dFy_dz
+#   rot_y = dFx_dz - dFz_dx
+#   rot_z = dFy_dx - dFx_dy
+#   return rot_x, rot_y, rot_z
+
+def gaussian(x, amplitude, x_mean, x_std):
+  return amplitude * np.exp(-(x-x_mean)**2 / (2*x_std**2))
+
+def _plotPDF(
+    ax, field,
+    bool_fit     = True,
+    bool_flip_ax = False
+  ):
+  field_flat = field.flatten()
+  field_mean = np.mean(field_flat)
+  field_std  = np.std(field_flat)
+  bounds = [
+    field_mean - 5*field_std,
+    field_mean + 5*field_std
+  ]
+  list_bin_edges, list_dens_norm = PlotFuncs.plotPDF(
+    ax           = ax,
+    list_data    = field_flat[
+      (field_mean - 3*field_std < field_flat) & (field_flat < field_mean + 3*field_std)
+    ],
+    num_bins     = 30,
+    bool_flip_ax = bool_flip_ax
+  )
+  if bool_fit:
+    list_bin_centers = [
+      (list_bin_edges[bin_index] + list_bin_edges[bin_index+1]) / 2
+      for bin_index in range(len(list_bin_edges)-1)
+    ]
+    ## fit bin centers
+    fit_params, _ = curve_fit(
+      f      = gaussian,
+      xdata  = list_bin_centers,
+      ydata  = list_dens_norm[1:],
+      maxfev = 10**5,
+      p0     = [
+        max(list_dens_norm),
+        field_mean,
+        field_std
+      ]
+    )
+    ## plot fits
+    x = np.linspace(bounds[0], bounds[1], 1000)
+    plot_params = { "color":"red", "ls":"--", "lw":2, "drawstyle":"steps" }
+    if bool_flip_ax: ax.plot(gaussian(x, *fit_params), x, **plot_params)
+    else: ax.plot(x, gaussian(x, *fit_params), **plot_params)
+  ## adjust axis
+  if bool_flip_ax: ax.set_ylim(bounds)
+  else: ax.set_xlim(bounds)
+
+
+## ###############################################################
 ## OPERATOR CLASS
 ## ###############################################################
-class PlotTurbData():
+class PlotBoxData():
   def __init__(
       self,
-      fig, axs, filepath_sim_res, dict_sim_inputs,
+      filepath_file, filepath_vis, dict_sim_inputs,
       bool_verbose = True
     ):
     ## save input arguments
-    self.fig              = fig
-    self.axs              = axs
-    self.filepath_sim_res = filepath_sim_res
-    self.dict_sim_inputs  = dict_sim_inputs
-    self.bool_verbose     = bool_verbose
+    self.filepath_file   = filepath_file
+    self.filepath_vis    = filepath_vis
+    self.dict_sim_inputs = dict_sim_inputs
+    self.bool_verbose    = bool_verbose
 
-  def performRoutines(self):
-    if self.bool_verbose: print("Loading volume integrated data...")
-    self._loadData()
-    if self.bool_verbose: print("Plotting volume integrated data...")
-    self._plotMach()
-    self._plotEnergyRatio()
-    self.bool_fitted = False
-    if max(self.data_time) > 5:
-      self._fitData()
-      self.bool_fitted = True
-    self._labelPlots()
+  def runRoutines(self, lock):
+    ## save figure
+    if self.bool_verbose: print("Initialising figure...")
+    self.fig_fields, self.axs_fields = plt.subplots(ncols=5, nrows=3, figsize=(5*5, 3*5.5))
+    self.fig_comps,  self.axs_comps  = plt.subplots(ncols=3, nrows=3, figsize=(3*5, 3*5.5))
+    ## plot data
+    self._plotMagneticField()
+    self._plotCurrent()
+    self._plotVelocityField()
+    self._plotDensityField()
+    ## save figure
+    if lock is not None: lock.acquire()
+    sim_name = SimParams.getSimName(self.dict_sim_inputs)
+    PlotFuncs.saveFigure(self.fig_fields, f"{self.filepath_vis}/{sim_name}_field_stats.png", bool_draft=True)
+    PlotFuncs.saveFigure(self.fig_comps,  f"{self.filepath_vis}/{sim_name}_comp_stats.png", bool_draft=True)
+    if lock is not None: lock.release()
+    if self.bool_verbose: print(" ")
 
-  def getFittedParams(self):
-    if not self.bool_fitted: self.performRoutines()
-    return {
-      "outputs_per_t_turb" : self.outputs_per_t_turb,
-      "E_growth_rate"      : self.E_growth_rate,
-      "E_growth_percent"   : self.E_growth_percent,
-      "E_ratio_sat"        : self.E_ratio_sat,
-      "rms_Mach_growth"    : self.rms_Mach_growth,
-      "std_Mach_growth"    : self.std_Mach_growth,
-      "time_bounds_growth" : self.time_bounds_growth,
-      "time_start_sat"     : self.time_start_sat,
-    }
-
-  def saveFittedParams(self, filepath_sim):
-    dict_params = self.getFittedParams()
-    WWObjs.saveDict2JsonFile(f"{filepath_sim}/{FileNames.FILENAME_SIM_OUTPUTS}", dict_params, self.bool_verbose)
-
-  def _loadData(self):
-    ## extract the number of plt-files per eddy-turnover-time from 'Turb.log'
-    self.outputs_per_t_turb = LoadData.getPlotsPerEddy_fromFlashLog(
-      directory    = self.filepath_sim_res,
-      max_num_t_turb   = self.dict_sim_inputs["max_num_t_turb"],
-      bool_verbose = False
-    )
-    ## load Mach data
-    _, data_Mach = LoadData.loadVIData(
-      directory  = self.filepath_sim_res,
-      field_name = "mach",
-      t_turb     = self.dict_sim_inputs["t_turb"],
-      time_start = 2.0,
-      time_end   = np.inf
-    )
-    ## load kinetic energy
-    _, data_kin_energy = LoadData.loadVIData(
-      directory  = self.filepath_sim_res,
-      field_name = "kin",
-      t_turb     = self.dict_sim_inputs["t_turb"],
-      time_start = 2.0,
-      time_end   = np.inf
-    )
-    ## load magnetic energy
-    data_time, data_mag_energy = LoadData.loadVIData(
-      directory  = self.filepath_sim_res,
-      field_name = "mag",
-      t_turb     = self.dict_sim_inputs["t_turb"],
-      time_start = 2.0,
-      time_end   = np.inf
-    )
-    ## Only relevant when loading data while the simulation is running.
-    ## Only grab portion of data that has been sefely written, for all quantities.
-    max_len = min([
-      len(data_time),
-      len(data_Mach),
-      len(data_kin_energy),
-      len(data_mag_energy)
-    ])
-    ## save data
-    self.data_time       = data_time[:max_len]
-    self.data_Mach       = data_Mach[:max_len]
-    self.data_mag_energy = data_mag_energy[:max_len]
-    self.data_kin_energy = data_kin_energy[:max_len]
-    ## compute and save energy ratio: 'mag_energy / kin_energy'
-    self.data_E_ratio = [
-      mag_energy / kin_energy
-      for mag_energy, kin_energy in zip(
-        self.data_mag_energy,
-        self.data_kin_energy
-      )
-    ]
-    ## define plot domain
-    self.max_time = max([ 100, max(self.data_time) ])
-
-  def _plotMach(self):
-    self.axs[0].plot(
-      self.data_time,
-      self.data_Mach,
-      color="orange", ls="-", lw=1.5, zorder=3
-    )
-    self.axs[0].set_ylabel(r"$\mathcal{M}$")
-    self.axs[0].set_xlim([ 0, self.max_time ])
-  
-  def _plotEnergyRatio(self):
-    self.axs[1].plot(
-      self.data_time,
-      self.data_E_ratio,
-      color="orange", ls="-", lw=1.5, zorder=3
-    )
-    ## define y-axis range for the energy ratio plot
-    min_E_ratio         = min(self.data_E_ratio)
-    log_min_E_ratio     = np.log10(min_E_ratio)
-    new_log_min_E_ratio = np.floor(log_min_E_ratio)
-    num_decades         = 1 + (-new_log_min_E_ratio)
-    new_min_E_ratio     = 10**new_log_min_E_ratio
-    num_y_major_ticks   = np.ceil(num_decades / 2)
-    ## label axis
-    self.axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
-    self.axs[1].set_ylabel(r"$E_\mathrm{mag} / E_\mathrm{kin}$")
-    self.axs[1].set_yscale("log")
-    self.axs[1].set_xlim([ 0, self.max_time ])
-    self.axs[1].set_ylim([ new_min_E_ratio, 10**(1) ])
-    ## add log axis-ticks
-    PlotFuncs.addAxisTicks_log10(
-      self.axs[1],
-      bool_major_ticks = True,
-      num_major_ticks  = num_y_major_ticks
+  def __plotScatterAgainstBField(self, fig, ax, field, cbar_title=None):
+    PlotFuncs.plotScatter(
+      fig               = fig,
+      ax                = ax,
+      list_x            = field[:,:,0].flatten(),
+      list_y            = np.log(self.mag_magnitude[:,:,0].flatten()),
+      cbar_title        = cbar_title,
+      bool_add_colorbar = True
     )
 
-  def _fitData(self):
-    linestyle_kin  = "--"
-    linestyle_sat  = ":"
-    ## SATURATED REGIME
-    ## ----------------
-    ## get index and time associated with saturated regime
-    time_start_sat      = 0.75 * self.data_time[-1]
-    index_start_sat     = WWLists.getIndexClosestValue(self.data_time, time_start_sat)
-    self.time_start_sat = self.data_time[index_start_sat]
-    index_end_sat       = len(self.data_time)-1
-    ## find saturated energy ratio
-    self.E_ratio_sat, _ = FitFuncs.fitConstFunc(
-      ax              = self.axs[1],
-      data_x          = self.data_time,
-      data_y          = self.data_E_ratio,
-      str_label       = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ ",
-      index_start_fit = index_start_sat,
-      index_end_fit   = index_end_sat,
-      linestyle       = linestyle_sat
+  def _plotMagneticField(self):
+    print("Plotting magntic fields...")
+    mag_x, mag_y, mag_z = LoadData.loadFlashDataCube(
+      filepath_file = self.filepath_file,
+      num_blocks    = self.dict_sim_inputs["num_blocks"],
+      num_procs     = self.dict_sim_inputs["num_procs"],
+      field_name    = "mag",
+      bool_norm_rms = True
     )
-    ## GROWTH REGIME
-    ## -------------
-    t_start_index = WWLists.getIndexClosestValue(self.data_time, 5.0)
-    self.E_growth_percent = self.E_ratio_sat / self.data_E_ratio[t_start_index]
-    if self.E_growth_percent > 10**2:
-      ## get index range corresponding with growth phase
-      index_E_lo = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-8))
-      index_E_hi = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_ratio_sat/100)
-      index_start_growth = max([ t_start_index, min([ index_E_lo, index_E_hi ]) ])
-      index_end_growth   = max([ index_E_lo, index_E_hi ])
-      ## find growth rate of exponential
-      self.E_growth_rate = FitFuncs.fitExpFunc(
-        ax              = self.axs[1],
-        data_x          = self.data_time,
-        data_y          = self.data_E_ratio,
-        index_start_fit = index_start_growth,
-        index_end_fit   = index_end_growth,
-        linestyle       = linestyle_kin
-      )
-      ## store time range of growth
-      self.time_bounds_growth = [
-        self.data_time[index_start_growth],
-        self.data_time[index_end_growth]
-      ]
-      ## when growth occurs, measure Mach number over growth regime
-      index_start_Mach = index_start_growth
-      index_end_Mach   = index_end_growth
-    else:
-      ## undefined growth rate
-      self.E_growth_rate = None
-      ## indicate that there is no time of growth
-      self.time_bounds_growth = [ None, None ]
-      ## when no growth occurs, measure Mach number over saturated regime
-      index_start_Mach = index_start_sat
-      index_end_Mach   = index_end_sat
-    ## MACH NUMBER
-    ## -----------
-    self.rms_Mach_growth, self.std_Mach_growth = FitFuncs.fitConstFunc(
-      ax              = self.axs[0],
-      data_x          = self.data_time,
-      data_y          = self.data_Mach,
-      str_label       = r"$\mathcal{M} =$ ",
-      index_start_fit = index_start_Mach,
-      index_end_fit   = index_end_Mach,
-      linestyle       = linestyle_kin
+    self.mag_magnitude = np.sqrt(mag_x**2 + mag_y**2 + mag_z**2)**2
+    PlotFuncs.plotScalarField(
+      field_slice       = np.log(self.mag_magnitude[:,:,0]),
+      fig               = self.fig_fields,
+      ax                = self.axs_fields[0][0],
+      cmap_name         = "Reds",
+      NormType          = colors.Normalize,
+      cbar_title        = r"$\ln\big(b^2 / b_{\rm rms}^2\big)$",
+      bool_add_colorbar = True
     )
+    _plotPDF(self.axs_fields[1][0], np.log(self.mag_magnitude), bool_flip_ax=True)
+    self.axs_fields[1][0].set_ylabel(r"$\ln\big(b^2 / b_{\rm rms}^2\big)$")
+    _plotPDF(self.axs_comps[0][0], mag_x)
+    _plotPDF(self.axs_comps[1][0], mag_y)
+    _plotPDF(self.axs_comps[2][0], mag_z)
+    self.axs_comps[0][0].set_xlabel(r"$b_x / b_{x, {\rm rms}}$")
+    self.axs_comps[1][0].set_xlabel(r"$b_y / b_{y, {\rm rms}}$")
+    self.axs_comps[2][0].set_xlabel(r"$b_z / b_{z, {\rm rms}}$")
 
-  def _labelPlots(self):
-    ## annotate simulation parameters
-    SimParams.addLabel_simInputs(
-      fig             = self.fig,
-      ax              = self.axs[0],
-      dict_sim_inputs = self.dict_sim_inputs,
-      bbox            = (1,0),
-      vpos            = (0.95, 0.05),
-      bool_show_res   = True
+  def _plotCurrent(self):
+    print("Plotting current density...")
+    cur_x, cur_y, cur_z = LoadData.loadFlashDataCube(
+      filepath_file = self.filepath_file,
+      num_blocks    = self.dict_sim_inputs["num_blocks"],
+      num_procs     = self.dict_sim_inputs["num_procs"],
+      field_name    = "cur",
+      bool_norm_rms = True
     )
-    ## annotate measured quantities
-    if self.bool_fitted:
-      legend_ax0 = self.axs[0].legend(frameon=False, loc="lower left", fontsize=18)
-      legend_ax1 = self.axs[1].legend(frameon=False, loc="lower right", fontsize=18)
-      self.axs[0].add_artist(legend_ax0)
-      self.axs[1].add_artist(legend_ax1)
+    cur_magnitude = np.sqrt(cur_x**2 + cur_y**2 + cur_z**2)**2
+    PlotFuncs.plotScalarField(
+      field_slice       = np.log(cur_magnitude[:,:,0]),
+      fig               = self.fig_fields,
+      ax                = self.axs_fields[0][1],
+      cmap_name         = "Greens",
+      NormType          = colors.Normalize,
+      cbar_title        = r"$\ln\big(j^2 / j_{\rm rms}^2\big)$",
+      bool_add_colorbar = True
+    )
+    x = np.linspace(-100, 100, 100)
+    PlotFuncs.plotData_noAutoAxisScale(self.axs_fields[1][1], x, x, ls=":", lw=2)
+    self.__plotScatterAgainstBField(self.fig_fields, self.axs_fields[1][1], np.log(cur_magnitude), cbar_title=r"$\mathcal{P}(j^2,b^2)$")
+    self.axs_fields[1][1].set_xlim([ -20, 10 ])
+    self.axs_fields[1][1].set_ylim([ -20, 10 ])
+    _plotPDF(self.axs_fields[2][1], np.log(cur_magnitude))
+    self.axs_fields[2][1].set_xlabel(r"$\ln\big(j^2 / j_{\rm rms}^2\big)$")
+    _plotPDF(self.axs_comps[0][1], cur_x)
+    _plotPDF(self.axs_comps[1][1], cur_y)
+    _plotPDF(self.axs_comps[2][1], cur_z)
+    self.axs_comps[0][1].set_xlabel(r"$j_x / j_{x, {\rm rms}}$")
+    self.axs_comps[1][1].set_xlabel(r"$j_y / j_{y, {\rm rms}}$")
+    self.axs_comps[2][1].set_xlabel(r"$j_z / j_{z, {\rm rms}}$")
+
+  def _plotVelocityField(self):
+    print("Plotting velocity fields...")
+    ## plot velocity field
+    vel_x, vel_y, vel_z = LoadData.loadFlashDataCube(
+      filepath_file = self.filepath_file,
+      num_blocks    = self.dict_sim_inputs["num_blocks"],
+      num_procs     = self.dict_sim_inputs["num_procs"],
+      field_name    = "vel",
+      bool_norm_rms = True
+    )
+    vel_magnitude = np.sqrt(vel_x**2 + vel_y**2 + vel_z**2)**2
+    PlotFuncs.plotScalarField(
+      field_slice       = np.log(vel_magnitude[:,:,0]),
+      fig               = self.fig_fields,
+      ax                = self.axs_fields[0][2],
+      cmap_name         = "Blues",
+      NormType          = colors.Normalize,
+      cbar_title        = r"$\ln\big(u^2 / u_{\rm rms}^2\big)$",
+      bool_add_colorbar = True
+    )
+    x = np.linspace(-100, 100, 100)
+    PlotFuncs.plotData_noAutoAxisScale(self.axs_fields[1][2], x, x, ls=":", lw=2)
+    self.__plotScatterAgainstBField(self.fig_fields, self.axs_fields[1][2], np.log(vel_magnitude), cbar_title=r"$\mathcal{P}(u^2,b^2)$")
+    self.axs_fields[1][2].set_xlim([ -10, 10 ])
+    self.axs_fields[1][2].set_ylim([ -20, 10 ])
+    _plotPDF(self.axs_fields[2][2], np.log(vel_magnitude))
+    self.axs_fields[2][2].set_xlabel(r"$\ln\big(u^2 / u_{\rm rms}^2\big)$")
+    _plotPDF(self.axs_comps[0][2], vel_x)
+    _plotPDF(self.axs_comps[1][2], vel_y)
+    _plotPDF(self.axs_comps[2][2], vel_z)
+    self.axs_comps[0][2].set_xlabel(r"$u_x / u_{x, {\rm rms}}$")
+    self.axs_comps[1][2].set_xlabel(r"$u_y / u_{y, {\rm rms}}$")
+    self.axs_comps[2][2].set_xlabel(r"$u_z / u_{z, {\rm rms}}$")
+    ## plot divergence of velocity field
+    vel_x, vel_y, vel_z = LoadData.loadFlashDataCube(
+      filepath_file = self.filepath_file,
+      num_blocks    = self.dict_sim_inputs["num_blocks"],
+      num_procs     = self.dict_sim_inputs["num_procs"],
+      field_name    = "vel"
+    )
+    vel_divergence = divergence([ vel_x, vel_y, vel_z ])
+    PlotFuncs.plotScalarField(
+      field_slice       = vel_divergence[:,:,0],
+      fig               = self.fig_fields,
+      ax                = self.axs_fields[0][3],
+      cmap_name         = "Blues",
+      NormType          = colors.Normalize,
+      cbar_title        = r"$\nabla\cdot\vec{u}$",
+      bool_add_colorbar = True
+    )
+    self.__plotScatterAgainstBField(self.fig_fields, self.axs_fields[1][3], vel_divergence, cbar_title=r"$\mathcal{P}(\nabla\cdot\vec{u},b^2)$")
+    self.axs_fields[1][3].set_xlim([ -15, 15 ])
+    self.axs_fields[1][3].set_ylim([ -20, 10 ])
+    _plotPDF(self.axs_fields[2][3], vel_divergence)
+    self.axs_fields[2][3].set_xlabel(r"$\nabla\cdot\vec{u}$")
+
+  def _plotDensityField(self):
+    print("Plotting density field...")
+    dens = LoadData.loadFlashDataCube(
+      filepath_file = self.filepath_file,
+      num_blocks    = self.dict_sim_inputs["num_blocks"],
+      num_procs     = self.dict_sim_inputs["num_procs"],
+      field_name    = "dens",
+      bool_norm_rms = True
+    )
+    dens_magnitude = dens**2
+    PlotFuncs.plotScalarField(
+      field_slice       = np.log(dens_magnitude[:,:,0]),
+      fig               = self.fig_fields,
+      ax                = self.axs_fields[0][4],
+      cmap_name         = "Greys",
+      NormType          = colors.Normalize,
+      cbar_title        = r"$\ln\big(\rho^2 / \rho_{\rm rms}^2\big)$",
+      bool_add_colorbar = True
+    )
+    x = np.linspace(-100, 100, 100)
+    PlotFuncs.plotData_noAutoAxisScale(self.axs_fields[1][4], x, x, ls=":", lw=2)
+    self.__plotScatterAgainstBField(self.fig_fields, self.axs_fields[1][4], np.log(dens_magnitude), cbar_title=r"$\mathcal{P}(\rho^2,b^2)$")
+    self.axs_fields[1][4].set_xlim([ -20, 10 ])
+    self.axs_fields[1][4].set_ylim([ -20, 10 ])
+    _plotPDF(self.axs_fields[2][4], np.log(dens_magnitude))
+    self.axs_fields[2][4].set_xlabel(r"$\ln\big(\rho^2 / \rho_{\rm rms}^2\big)$")
 
 
 ## ###############################################################
 ## OPPERATOR HANDLING PLOT CALLS
 ## ###############################################################
-def plotSimData(
-    filepath_sim_res,
-    lock            = None,
-    bool_check_only = False,
-    bool_verbose    = True
-  ):
-  print("Looking at:", filepath_sim_res)
+def plotSimData(filepath_sim_res, bool_verbose=True, lock=None, **kwargs):
   ## read simulation input parameters
-  dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res, bool_verbose)
+  dict_sim_inputs  = SimParams.readSimInputs(filepath_sim_res, bool_verbose)
+  dict_sim_outputs = SimParams.readSimOutputs(filepath_sim_res, bool_verbose)
+  index_bounds_growth, index_end_growth = dict_sim_outputs["index_bounds_growth"]
+  print(f"Growth range in [{index_bounds_growth}, {index_end_growth}]")
+  index_file    = int((index_bounds_growth + index_end_growth) // 3)
+  filename      = FileNames.FILENAME_FLASH_DATA_CUBE + str(index_file).zfill(4)
+  filepath_file = f"{filepath_sim_res}/plt/{filename}"
+  print("Looking at:", filepath_file)
   ## make sure a visualisation folder exists
   filepath_vis = f"{filepath_sim_res}/vis_folder/"
   WWFnF.createFolder(filepath_vis, bool_verbose=False)
-  ## INITIALISE FIGURE
-  ## -----------------
-  if bool_verbose: print("Initialising figure...")
-  fig, fig_grid = PlotFuncs.createFigure_grid(
-    fig_scale        = 1.0,
-    fig_aspect_ratio = (5.0, 8.0),
-    num_rows         = 2,
-    num_cols         = 2
+  ## plot quantities
+  obj_plot_box = PlotBoxData(
+    filepath_file   = filepath_file,
+    filepath_vis    = filepath_vis,
+    dict_sim_inputs = dict_sim_inputs,
+    bool_verbose    = bool_verbose
   )
-  ax_Mach         = fig.add_subplot(fig_grid[0, 0])
-  ax_energy_ratio = fig.add_subplot(fig_grid[1, 0])
-  ## PLOT INTEGRATED QUANTITIES
-  ## --------------------------
-  obj_plot_turb = PlotTurbData(
-    fig              = fig,
-    axs              = [ ax_Mach, ax_energy_ratio ],
-    filepath_sim_res = filepath_sim_res,
-    dict_sim_inputs  = dict_sim_inputs,
-    bool_verbose     = bool_verbose
-  )
-  obj_plot_turb.performRoutines()
-  ## SAVE FIGURE + DATASET
-  ## ---------------------
-  if lock is not None: lock.acquire()
-  if not(bool_check_only): obj_plot_turb.saveFittedParams(filepath_sim_res)
-  sim_name = SimParams.getSimName(dict_sim_inputs)
-  fig_name = f"{sim_name}_time_evolution.png"
-  PlotFuncs.saveFigure(fig, f"{filepath_vis}/{fig_name}", bool_verbose=True)
-  if lock is not None: lock.release()
-  if bool_verbose: print(" ")
+  obj_plot_box.runRoutines(lock)
 
 
 ## ###############################################################
@@ -312,8 +338,8 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC         = 0
-BASEPATH           = "/scratch/ek9/nk7952/"
+BOOL_MPROC = 1
+BASEPATH   = "/scratch/ek9/nk7952/"
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
@@ -325,13 +351,14 @@ BASEPATH           = "/scratch/ek9/nk7952/"
 LIST_SUITE_FOLDERS = [ "Re300" ]
 LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 LIST_SIM_FOLDERS   = [ "Pm4" ]
-LIST_SIM_RES       = [ "288" ]
+LIST_SIM_RES       = [ "144" ]
 
 
 ## ###############################################################
 ## PROGRAM ENTRY POINT
 ## ###############################################################
 if __name__ == "__main__":
+  # plotSimData("/scratch/ek9/nk7952/Re300/Mach5/Pm4/144")
   main()
   sys.exit()
 

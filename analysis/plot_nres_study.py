@@ -92,6 +92,7 @@ class PlotConvergence():
       "k_p_stats_nres"       : self.k_p_stats_nres,
       "k_eta_mag_stats_nres" : self.k_eta_mag_stats_nres,
       "k_eta_cur_stats_nres" : self.k_eta_cur_stats_nres,
+      "k_nu_tot_stats_nres"  : self.k_nu_tot_stats_nres,
       "k_nu_lgt_stats_nres"  : self.k_nu_lgt_stats_nres,
       "k_nu_trv_stats_nres"  : self.k_nu_trv_stats_nres
     }
@@ -116,12 +117,14 @@ class PlotConvergence():
       k_p_group_t       = dict_sim_outputs["k_p_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
       k_eta_mag_group_t = dict_sim_outputs["k_eta_mag_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
       k_eta_cur_group_t = dict_sim_outputs["k_eta_cur_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
+      k_nu_tot_group_t  = dict_sim_outputs["k_nu_tot_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
       k_nu_lgt_group_t  = dict_sim_outputs["k_nu_lgt_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
       k_nu_trv_group_t  = dict_sim_outputs["k_nu_trv_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
       self.list_sim_res.append(int(sim_res))
       self.k_p_group_t_group_sim_res.append(k_p_group_t)
       self.k_eta_mag_group_t_group_sim_res.append(k_eta_mag_group_t)
       self.k_eta_cur_group_t_group_sim_res.append(k_eta_cur_group_t)
+      self.k_nu_tot_group_t_group_sim_res.append(k_nu_tot_group_t)
       self.k_nu_lgt_group_t_group_sim_res.append(k_nu_lgt_group_t)
       self.k_nu_trv_group_t_group_sim_res.append(k_nu_trv_group_t)
 
@@ -129,18 +132,20 @@ class PlotConvergence():
     self.fig, fig_grid = PlotFuncs.createFigure_grid(
       fig_scale        = 1.0,
       fig_aspect_ratio = (5.0, 8.0),
-      num_rows         = 2,
-      num_cols         = 3
+      num_rows         = 3,
+      num_cols         = 2
     )
     self.ax_k_p           = self.fig.add_subplot(fig_grid[0, 0])
-    self.ax_k_eta_mag     = self.fig.add_subplot(fig_grid[0, 1])
-    self.ax_k_eta_cur     = self.fig.add_subplot(fig_grid[1, 1])
-    self.ax_k_nu_lgt      = self.fig.add_subplot(fig_grid[0, 2])
-    self.ax_k_nu_trv      = self.fig.add_subplot(fig_grid[1, 2])
+    self.ax_k_eta_mag     = self.fig.add_subplot(fig_grid[1, 0])
+    self.ax_k_eta_cur     = self.fig.add_subplot(fig_grid[2, 0])
+    self.ax_k_nu_tot      = self.fig.add_subplot(fig_grid[0, 1])
+    self.ax_k_nu_lgt      = self.fig.add_subplot(fig_grid[1, 1])
+    self.ax_k_nu_trv      = self.fig.add_subplot(fig_grid[2, 1])
     self.list_axs = [
       self.ax_k_p,
       self.ax_k_eta_mag,
       self.ax_k_eta_cur,
+      self.ax_k_nu_tot,
       self.ax_k_nu_lgt,
       self.ax_k_nu_trv
     ]
@@ -168,6 +173,12 @@ class PlotConvergence():
         ax      = self.ax_k_eta_cur,
         x       = sim_res,
         array_y = self.k_eta_cur_group_t_group_sim_res[res_index],
+        color   = "black"
+      )
+      PlotFuncs.plotErrorBar_1D(
+        ax      = self.ax_k_nu_tot,
+        x       = sim_res,
+        array_y = self.k_nu_tot_group_t_group_sim_res[res_index],
         color   = "black"
       )
       PlotFuncs.plotErrorBar_1D(
@@ -227,6 +238,7 @@ class PlotConvergence():
     self.k_p_stats_nres       = fitData(self.ax_k_p,       self.k_p_group_t_group_sim_res)
     self.k_eta_mag_stats_nres = fitData(self.ax_k_eta_mag, self.k_eta_mag_group_t_group_sim_res)
     self.k_eta_cur_stats_nres = fitData(self.ax_k_eta_cur, self.k_eta_cur_group_t_group_sim_res)
+    self.k_nu_tot_stats_nres  = fitData(self.ax_k_nu_tot,  self.k_nu_tot_group_t_group_sim_res)
     self.k_nu_lgt_stats_nres  = fitData(self.ax_k_nu_lgt,  self.k_nu_lgt_group_t_group_sim_res)
     self.k_nu_trv_stats_nres  = fitData(self.ax_k_nu_trv,  self.k_nu_trv_group_t_group_sim_res)
 
@@ -256,13 +268,14 @@ class PlotConvergence():
       self.list_axs[ax_index].set_xlim([ 10, 10**4 ])
       self.list_axs[ax_index].set_ylim([ 1,  3*10**2 ])
     ## label axis
-    self.list_axs[-1].set_xlabel(r"$N_{\rm res}$")
-    self.list_axs[-1].set_xlabel(r"$N_{\rm res}$")
     self.ax_k_p.set_ylabel(r"$k_{\rm p}$")
     self.ax_k_eta_mag.set_ylabel(r"$k_{\eta, \mathbf{B}}$")
     self.ax_k_eta_cur.set_ylabel(r"$k_{\eta, \nabla\times\mathbf{B}}$")
+    self.ax_k_eta_cur.set_xlabel(r"$N_{\rm res}$")
+    self.ax_k_nu_tot.set_ylabel(r"$k_\nu$")
     self.ax_k_nu_lgt.set_ylabel(r"$k_{\nu, \parallel}$")
     self.ax_k_nu_trv.set_ylabel(r"$k_{\nu, \perp}$")
+    self.ax_k_nu_trv.set_xlabel(r"$N_{\rm res}$")
     ## annotate simulation parameters
     SimParams.addLabel_simInputs(
       filepath      = f"{self.filepath_sim}/288/",
@@ -276,6 +289,7 @@ class PlotConvergence():
     labelAxis(self.ax_k_p,       self.k_p_stats_nres)
     labelAxis(self.ax_k_eta_mag, self.k_eta_mag_stats_nres)
     labelAxis(self.ax_k_eta_cur, self.k_eta_cur_stats_nres)
+    labelAxis(self.ax_k_nu_tot,  self.k_nu_tot_stats_nres)
     labelAxis(self.ax_k_nu_lgt,  self.k_nu_lgt_stats_nres)
     labelAxis(self.ax_k_nu_trv,  self.k_nu_trv_stats_nres)
 
@@ -304,11 +318,11 @@ def main():
 ## ###############################################################
 BASEPATH = "/scratch/ek9/nk7952/"
 
-# ## PLASMA PARAMETER SET
-# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+## PLASMA PARAMETER SET
+LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+LIST_SONIC_REGIMES = [ "Mach5" ]
+LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
 # ## MACH NUMBER SET
 # LIST_SUITE_FOLDERS = [ "Re300" ]
