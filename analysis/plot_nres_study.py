@@ -75,176 +75,203 @@ def fitLogisticModel(
   if ax is not None: ax.plot(data_x, data_y, color=color, ls=ls, lw=1.5)
   return data_y[-1], fit_std
 
+def fitScales(ax, list_sim_res, scales_group_t_res, bool_extend=False, color="black"):
+  list_sim_res = copy.deepcopy(list_sim_res)
+  scales_group_t_res = copy.deepcopy(scales_group_t_res)
+  if bool_extend or True:
+    list_sim_res.append(2*list_sim_res[-1])
+    scales_group_t_res.append(scales_group_t_res[-1])
+  ## check that there is at least five data points to fit to for each resolution run
+  list_bool_fit = [
+    len(scales_group_t) - 5 > sum([
+      1
+      for scale in scales_group_t
+      if scale is None
+    ])
+    for scales_group_t in scales_group_t_res
+  ]
+  data_x = np.array(list_sim_res)[list_bool_fit]
+  data_y_group_x = [
+    [
+      scale
+      for scale in scales_group_t
+      if scale is not None
+    ]
+    for scales_group_t, bool_fit in zip(scales_group_t_res, list_bool_fit)
+    if bool_fit
+  ]
+  ## fit measured scales at different resolution runs
+  if check_mean_within_10_percent(data_y_group_x):
+    stats_converge = np.mean(data_y_group_x[-1]), np.std(data_y_group_x[-1])
+    ax.axhline(y=np.mean(data_y_group_x[-1]), color=color, ls=":", lw=1.5)
+  else:
+    stats_converge = fitLogisticModel(
+      ax                 = ax,
+      list_res           = data_x,
+      scales_group_t_res = data_y_group_x,
+      color              = color,
+      ls                 = ":"
+    )
+  return stats_converge
+
 
 ## ###############################################################
 ## OPERATOR CLASS
 ## ###############################################################
 class PlotConvergence():
-  def __init__(self, filepath_sim_288):
+  def __init__(self, filepath_sim_288, bool_verbose):
     self.filepath_sim = f"{filepath_sim_288}/../"
+    self.bool_verbose = bool_verbose
     self.filepath_vis = f"{self.filepath_sim}/vis_folder/"
     WWFnF.createFolder(self.filepath_vis, bool_verbose=False)
-    dict_sim_inputs = SimParams.readSimInputs(filepath_sim_288, bool_verbose=False)
-    self.sim_name   = SimParams.getSimName(dict_sim_inputs)
+    self.dict_sim_inputs = SimParams.readSimInputs(filepath_sim_288, bool_verbose=False)
+    self.sim_name   = SimParams.getSimName(self.dict_sim_inputs)
+
+  def performRoutine(self):
+    self.fig, fig_grid = PlotFuncs.createFigure_grid(
+      fig_scale        = 0.85,
+      fig_aspect_ratio = (5.0, 8.0),
+      num_rows         = 4,
+      num_cols         = 2
+    )
+    self.ax_k_p_rho      = self.fig.add_subplot(fig_grid[0, 0])
+    self.ax_k_p_mag      = self.fig.add_subplot(fig_grid[1, 0])
+    self.ax_k_eta_mag    = self.fig.add_subplot(fig_grid[2, 0])
+    self.ax_k_eta_cur    = self.fig.add_subplot(fig_grid[3, 0])
+    self.ax_k_nu_kin     = self.fig.add_subplot(fig_grid[0, 1])
+    self.ax_k_nu_vel_lgt = self.fig.add_subplot(fig_grid[1, 1])
+    self.ax_k_nu_vel_trv = self.fig.add_subplot(fig_grid[2, 1])
+    self._readScales()
+    self._fitScales()
+    self._labelFigure()
 
   def saveData(self):
     dict_stats_nres = {
-      "k_p_stats_nres"       : self.k_p_stats_nres,
-      "k_eta_mag_stats_nres" : self.k_eta_mag_stats_nres,
-      "k_eta_cur_stats_nres" : self.k_eta_cur_stats_nres,
-      "k_nu_tot_stats_nres"  : self.k_nu_tot_stats_nres,
-      "k_nu_lgt_stats_nres"  : self.k_nu_lgt_stats_nres,
-      "k_nu_trv_stats_nres"  : self.k_nu_trv_stats_nres
+      "k_p_rho_stats_nres"      : self.k_p_rho_stats_nres,
+      "k_p_mag_stats_nres"      : self.k_p_mag_stats_nres,
+      "k_eta_mag_stats_nres"    : self.k_eta_mag_stats_nres,
+      "k_eta_cur_stats_nres"    : self.k_eta_cur_stats_nres,
+      "k_nu_kin_stats_nres"     : self.k_nu_kin_stats_nres,
+      "k_nu_vel_lgt_stats_nres" : self.k_nu_vel_lgt_stats_nres,
+      "k_nu_vel_trv_stats_nres" : self.k_nu_vel_trv_stats_nres,
     }
     WWObjs.saveDict2JsonFile(
       filepath_file = f"{self.filepath_sim}/{FileNames.FILENAME_SIM_SCALES}",
       input_dict    = dict_stats_nres
     )
 
-  def readData(self):
-    self.list_sim_res                    = []
-    self.k_p_group_t_group_sim_res       = []
-    self.k_eta_mag_group_t_group_sim_res = []
-    self.k_eta_cur_group_t_group_sim_res = []
-    self.k_nu_tot_group_t_group_sim_res  = []
-    self.k_nu_lgt_group_t_group_sim_res  = []
-    self.k_nu_trv_group_t_group_sim_res  = []
-    for sim_res in LIST_SIM_RES:
-      filepath_sim_res = f"{self.filepath_sim}/{sim_res}/"
-      if not(os.path.isdir(filepath_sim_res)): continue
-      dict_sim_outputs = SimParams.readSimOutputs(filepath_sim_res)
-      index_bounds_growth = dict_sim_outputs["index_bounds_growth"]
-      k_p_group_t       = dict_sim_outputs["k_p_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
-      k_eta_mag_group_t = dict_sim_outputs["k_eta_mag_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
-      k_eta_cur_group_t = dict_sim_outputs["k_eta_cur_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
-      k_nu_tot_group_t  = dict_sim_outputs["k_nu_tot_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
-      k_nu_lgt_group_t  = dict_sim_outputs["k_nu_lgt_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
-      k_nu_trv_group_t  = dict_sim_outputs["k_nu_trv_group_t"][index_bounds_growth[0] : index_bounds_growth[1]]
-      self.list_sim_res.append(int(sim_res))
-      self.k_p_group_t_group_sim_res.append(k_p_group_t)
-      self.k_eta_mag_group_t_group_sim_res.append(k_eta_mag_group_t)
-      self.k_eta_cur_group_t_group_sim_res.append(k_eta_cur_group_t)
-      self.k_nu_tot_group_t_group_sim_res.append(k_nu_tot_group_t)
-      self.k_nu_lgt_group_t_group_sim_res.append(k_nu_lgt_group_t)
-      self.k_nu_trv_group_t_group_sim_res.append(k_nu_trv_group_t)
-
-  def plotData(self):
-    self.fig, fig_grid = PlotFuncs.createFigure_grid(
-      fig_scale        = 1.0,
-      fig_aspect_ratio = (5.0, 8.0),
-      num_rows         = 3,
-      num_cols         = 2
-    )
-    self.ax_k_p           = self.fig.add_subplot(fig_grid[0, 0])
-    self.ax_k_eta_mag     = self.fig.add_subplot(fig_grid[1, 0])
-    self.ax_k_eta_cur     = self.fig.add_subplot(fig_grid[2, 0])
-    self.ax_k_nu_tot      = self.fig.add_subplot(fig_grid[0, 1])
-    self.ax_k_nu_lgt      = self.fig.add_subplot(fig_grid[1, 1])
-    self.ax_k_nu_trv      = self.fig.add_subplot(fig_grid[2, 1])
-    self.list_axs = [
-      self.ax_k_p,
-      self.ax_k_eta_mag,
-      self.ax_k_eta_cur,
-      self.ax_k_nu_tot,
-      self.ax_k_nu_lgt,
-      self.ax_k_nu_trv
-    ]
-    self.__plotScales()
-    self.__fitLogisticModel()
-    self.__labelAxis()
+  def saveFigure(self):
     filepath_fig = f"{self.filepath_vis}/{self.sim_name}_nres_scales.png"
     PlotFuncs.saveFigure(self.fig, filepath_fig)
 
-  def __plotScales(self):
+  def _readScales(self):
+    self.list_sim_res                       = []
+    self.k_p_rho_group_t_group_sim_res      = []
+    self.k_p_mag_group_t_group_sim_res      = []
+    self.k_eta_mag_group_t_group_sim_res    = []
+    self.k_eta_cur_group_t_group_sim_res    = []
+    self.k_nu_kin_group_t_group_sim_res     = []
+    self.k_nu_vel_lgt_group_t_group_sim_res = []
+    self.k_nu_vel_trv_group_t_group_sim_res = []
+    for sim_res in LIST_SIM_RES:
+      filepath_sim_res = f"{self.filepath_sim}/{sim_res}/"
+      if not(os.path.isdir(filepath_sim_res)): continue
+      dict_sim_outputs = SimParams.readSimOutputs(filepath_sim_res, bool_verbose=self.bool_verbose)
+      self.list_sim_res.append(int(sim_res))
+      index_growth_start, index_growth_end = dict_sim_outputs["index_bounds_growth"]
+      k_p_rho_group_t      = dict_sim_outputs["k_p_rho_group_t"][index_growth_start : index_growth_end]
+      k_p_mag_group_t      = dict_sim_outputs["k_p_mag_group_t"][index_growth_start : index_growth_end]
+      k_eta_mag_group_t    = dict_sim_outputs["k_eta_mag_group_t"][index_growth_start : index_growth_end]
+      k_eta_cur_group_t    = dict_sim_outputs["k_eta_cur_group_t"][index_growth_start : index_growth_end]
+      k_nu_kin_group_t     = dict_sim_outputs["k_nu_kin_group_t"][index_growth_start : index_growth_end]
+      k_nu_vel_lgt_group_t = dict_sim_outputs["k_nu_vel_lgt_group_t"][index_growth_start : index_growth_end]
+      k_nu_vel_trv_group_t = dict_sim_outputs["k_nu_vel_trv_group_t"][index_growth_start : index_growth_end]
+      self.k_p_rho_group_t_group_sim_res.append(k_p_rho_group_t)
+      self.k_p_mag_group_t_group_sim_res.append(k_p_mag_group_t)
+      self.k_eta_mag_group_t_group_sim_res.append(k_eta_mag_group_t)
+      self.k_eta_cur_group_t_group_sim_res.append(k_eta_cur_group_t)
+      self.k_nu_kin_group_t_group_sim_res.append(k_nu_kin_group_t)
+      self.k_nu_vel_lgt_group_t_group_sim_res.append(k_nu_vel_lgt_group_t)
+      self.k_nu_vel_trv_group_t_group_sim_res.append(k_nu_vel_trv_group_t)
+
+  def _plotScales(self):
     for res_index, sim_res in enumerate(self.list_sim_res):
       PlotFuncs.plotErrorBar_1D(
-        ax      = self.ax_k_p,
+        ax      = self.ax_k_p_rho,
         x       = sim_res,
-        array_y = self.k_p_group_t_group_sim_res[res_index],
-        color   = "black"
+        array_y = self.k_p_rho_group_t_group_sim_res[res_index]
+      )
+      PlotFuncs.plotErrorBar_1D(
+        ax      = self.ax_k_p_mag,
+        x       = sim_res,
+        array_y = self.k_p_mag_group_t_group_sim_res[res_index]
       )
       PlotFuncs.plotErrorBar_1D(
         ax      = self.ax_k_eta_mag,
         x       = sim_res,
-        array_y = self.k_eta_mag_group_t_group_sim_res[res_index],
-        color   = "black"
+        array_y = self.k_eta_mag_group_t_group_sim_res[res_index]
       )
       PlotFuncs.plotErrorBar_1D(
         ax      = self.ax_k_eta_cur,
         x       = sim_res,
-        array_y = self.k_eta_cur_group_t_group_sim_res[res_index],
-        color   = "black"
+        array_y = self.k_eta_cur_group_t_group_sim_res[res_index]
       )
       PlotFuncs.plotErrorBar_1D(
-        ax      = self.ax_k_nu_tot,
+        ax      = self.ax_k_nu_kin,
         x       = sim_res,
-        array_y = self.k_nu_tot_group_t_group_sim_res[res_index],
-        color   = "black"
+        array_y = self.k_nu_kin_group_t_group_sim_res[res_index]
       )
       PlotFuncs.plotErrorBar_1D(
-        ax      = self.ax_k_nu_lgt,
+        ax      = self.ax_k_nu_vel_lgt,
         x       = sim_res,
-        array_y = self.k_nu_lgt_group_t_group_sim_res[res_index],
-        color   = "black"
+        array_y = self.k_nu_vel_lgt_group_t_group_sim_res[res_index]
       )
       PlotFuncs.plotErrorBar_1D(
-        ax      = self.ax_k_nu_trv,
+        ax      = self.ax_k_nu_vel_trv,
         x       = sim_res,
-        array_y = self.k_nu_trv_group_t_group_sim_res[res_index],
-        color   = "black"
+        array_y = self.k_nu_vel_trv_group_t_group_sim_res[res_index]
       )
 
-  def __fitLogisticModel(self):
-    ## define helper function
-    def fitData(ax, scales_group_t_res, bool_extend=False):
-      list_sim_res = copy.deepcopy(self.list_sim_res)
-      scales_group_t_res = copy.deepcopy(scales_group_t_res)
-      if bool_extend or True:
-        list_sim_res.append(2*list_sim_res[-1])
-        scales_group_t_res.append(scales_group_t_res[-1])
-      ## check that there is at least five data points to fit to for each resolution run
-      list_bool_fit = [
-        len(scales_group_t) - 5 > sum([
-          1
-          for scale in scales_group_t
-          if scale is None
-        ])
-        for scales_group_t in scales_group_t_res
-      ]
-      data_x = np.array(list_sim_res)[list_bool_fit]
-      data_y_group_x = [
-        [
-          scale
-          for scale in scales_group_t
-          if scale is not None
-        ]
-        for scales_group_t, bool_fit in zip(scales_group_t_res, list_bool_fit)
-        if bool_fit
-      ]
-      ## fit measured scales at different resolution runs
-      if check_mean_within_10_percent(data_y_group_x):
-        stats_converge = np.mean(data_y_group_x[-1]), np.std(data_y_group_x[-1])
-        ax.axhline(y=np.mean(data_y_group_x[-1]), color="black", ls=":", lw=1.5)
-      else:
-        stats_converge = fitLogisticModel(
-          ax                 = ax,
-          list_res           = data_x,
-          scales_group_t_res = data_y_group_x,
-          color              = "black",
-          ls                 = ":"
-        )
-      return stats_converge
-    ## fit scales
-    self.k_p_stats_nres       = fitData(self.ax_k_p,       self.k_p_group_t_group_sim_res)
-    self.k_eta_mag_stats_nres = fitData(self.ax_k_eta_mag, self.k_eta_mag_group_t_group_sim_res)
-    self.k_eta_cur_stats_nres = fitData(self.ax_k_eta_cur, self.k_eta_cur_group_t_group_sim_res)
-    self.k_nu_tot_stats_nres  = fitData(self.ax_k_nu_tot,  self.k_nu_tot_group_t_group_sim_res)
-    self.k_nu_lgt_stats_nres  = fitData(self.ax_k_nu_lgt,  self.k_nu_lgt_group_t_group_sim_res)
-    self.k_nu_trv_stats_nres  = fitData(self.ax_k_nu_trv,  self.k_nu_trv_group_t_group_sim_res)
+  def _fitScales(self):
+    self.k_p_rho_stats_nres = fitScales(
+      ax                 = self.ax_k_p_rho,
+      list_sim_res       = self.list_sim_res,
+      scales_group_t_res = self.k_p_rho_group_t_group_sim_res
+    )
+    self.k_p_mag_stats_nres = fitScales(
+      ax                 = self.ax_k_p_mag,
+      list_sim_res       = self.list_sim_res,
+      scales_group_t_res = self.k_p_mag_group_t_group_sim_res
+    )
+    self.k_eta_mag_stats_nres = fitScales(
+      ax                 = self.ax_k_eta_mag,
+      list_sim_res       = self.list_sim_res,
+      scales_group_t_res = self.k_eta_mag_group_t_group_sim_res
+    )
+    self.k_eta_cur_stats_nres = fitScales(
+      ax                 = self.ax_k_eta_cur,
+      list_sim_res       = self.list_sim_res,
+      scales_group_t_res = self.k_eta_cur_group_t_group_sim_res
+    )
+    self.k_nu_kin_stats_nres = fitScales(
+      ax                 = self.ax_k_nu_kin,
+      list_sim_res       = self.list_sim_res,
+      scales_group_t_res = self.k_nu_kin_group_t_group_sim_res
+    )
+    self.k_nu_vel_lgt_stats_nres = fitScales(
+      ax                 = self.ax_k_nu_vel_lgt,
+      list_sim_res       = self.list_sim_res,
+      scales_group_t_res = self.k_nu_vel_lgt_group_t_group_sim_res
+    )
+    self.k_nu_vel_trv_stats_nres = fitScales(
+      ax                 = self.ax_k_nu_vel_trv,
+      list_sim_res       = self.list_sim_res,
+      scales_group_t_res = self.k_nu_vel_trv_group_t_group_sim_res
+    )
 
-  def __labelAxis(self):
+  def _labelFigure(self):
     ## define helper function
-    def labelAxis(ax, stats_converge):
+    def _reportFitStats(ax, stats_converge):
       PlotFuncs.addBoxOfLabels(
         fig         = self.fig,
         ax          = ax,
@@ -261,65 +288,99 @@ class PlotConvergence():
         ],
       )
     ## define helper variables
+    self.list_axs = [
+      self.ax_k_p_rho,
+      self.ax_k_p_mag,
+      self.ax_k_eta_mag,
+      self.ax_k_eta_cur,
+      self.ax_k_nu_kin,
+      self.ax_k_nu_vel_lgt,
+      self.ax_k_nu_vel_trv,
+    ]
     ## adjust axis
     for ax_index in range(len(self.list_axs)):
       self.list_axs[ax_index].set_xscale("log")
       self.list_axs[ax_index].set_yscale("log")
-      self.list_axs[ax_index].set_xlim([ 10, 10**4 ])
-      self.list_axs[ax_index].set_ylim([ 1,  3*10**2 ])
-    ## label axis
-    self.ax_k_p.set_ylabel(r"$k_{\rm p}$")
+      self.list_axs[ax_index].set_xlim([ 0.8*10,  1.2*10**4 ])
+      self.list_axs[ax_index].set_ylim([ 0.8*1.0, 1.2*10**2 ])
+    ## label x-axis
+    self.ax_k_nu_vel_trv.set_xlabel(r"$N_{\rm res}$")
+    self.ax_k_eta_cur.set_xlabel(r"$N_{\rm res}$")
+    ## label y-axis
+    self.ax_k_p_rho.set_ylabel(r"$k_{\rm p, \rho}$")
+    self.ax_k_p_mag.set_ylabel(r"$k_{\rm p, \mathbf{B}}$")
     self.ax_k_eta_mag.set_ylabel(r"$k_{\eta, \mathbf{B}}$")
     self.ax_k_eta_cur.set_ylabel(r"$k_{\eta, \nabla\times\mathbf{B}}$")
-    self.ax_k_eta_cur.set_xlabel(r"$N_{\rm res}$")
-    self.ax_k_nu_tot.set_ylabel(r"$k_\nu$")
-    self.ax_k_nu_lgt.set_ylabel(r"$k_{\nu, \parallel}$")
-    self.ax_k_nu_trv.set_ylabel(r"$k_{\nu, \perp}$")
-    self.ax_k_nu_trv.set_xlabel(r"$N_{\rm res}$")
+    self.ax_k_nu_kin.set_ylabel(r"$k_\nu$")
+    self.ax_k_nu_vel_lgt.set_ylabel(r"$k_{\nu, \parallel}$")
+    self.ax_k_nu_vel_trv.set_ylabel(r"$k_{\nu, \perp}$")
     ## annotate simulation parameters
     SimParams.addLabel_simInputs(
-      filepath      = f"{self.filepath_sim}/288/",
-      fig           = self.fig,
-      ax            = self.list_axs[0],
-      bbox          = (0.0, 1.0),
-      vpos          = (0.05, 0.95),
-      bool_show_res = False
+      filepath        = f"{self.filepath_sim}/288/",
+      dict_sim_inputs = self.dict_sim_inputs,
+      fig             = self.fig,
+      ax              = self.list_axs[0],
+      bbox            = (0.0, 1.0),
+      vpos            = (0.05, 0.95),
+      bool_show_res   = False
     )
     ## annotate fitted scales
-    labelAxis(self.ax_k_p,       self.k_p_stats_nres)
-    labelAxis(self.ax_k_eta_mag, self.k_eta_mag_stats_nres)
-    labelAxis(self.ax_k_eta_cur, self.k_eta_cur_stats_nres)
-    labelAxis(self.ax_k_nu_tot,  self.k_nu_tot_stats_nres)
-    labelAxis(self.ax_k_nu_lgt,  self.k_nu_lgt_stats_nres)
-    labelAxis(self.ax_k_nu_trv,  self.k_nu_trv_stats_nres)
+    _reportFitStats(self.ax_k_p_rho,      self.k_p_rho_stats_nres)
+    _reportFitStats(self.ax_k_p_mag,      self.k_p_mag_stats_nres)
+    _reportFitStats(self.ax_k_eta_mag,    self.k_eta_mag_stats_nres)
+    _reportFitStats(self.ax_k_eta_cur,    self.k_eta_cur_stats_nres)
+    _reportFitStats(self.ax_k_nu_kin,     self.k_nu_kin_stats_nres)
+    _reportFitStats(self.ax_k_nu_vel_lgt, self.k_nu_vel_lgt_stats_nres)
+    _reportFitStats(self.ax_k_nu_vel_trv, self.k_nu_vel_trv_stats_nres)
+
+
+## ###############################################################
+## OPPERATOR HANDLING PLOT CALLS
+## ###############################################################
+def plotSimData(
+    filepath_sim_res,
+    lock            = None,
+    bool_check_only = False,
+    bool_verbose    = True
+  ):
+  print("Looking at:", filepath_sim_res)
+  obj = PlotConvergence(filepath_sim_288=filepath_sim_res, bool_verbose=bool_verbose)
+  obj.performRoutine()
+  ## SAVE FIGURE + DATASET
+  ## ---------------------
+  if lock is not None: lock.acquire()
+  if not(bool_check_only): obj.saveData()
+  obj.saveFigure()
+  if lock is not None: lock.release()
+  if bool_verbose: print(" ")
 
 
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  list_sim_filepaths = SimParams.getListOfSimFilepaths(
+  SimParams.callFuncForAllSimulations(
+    func               = plotSimData,
+    bool_mproc         = BOOL_MPROC,
+    bool_check_only    = BOOL_CHECK_ONLY,
     basepath           = BASEPATH,
     list_suite_folders = LIST_SUITE_FOLDERS,
     list_sonic_regimes = LIST_SONIC_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
     list_sim_res       = [ "288" ]
   )
-  for filepath_sim in list_sim_filepaths:
-    obj = PlotConvergence(filepath_sim_288=filepath_sim)
-    obj.readData()
-    obj.plotData()
-    obj.saveData()
-    print(" ")
 
 
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BASEPATH = "/scratch/ek9/nk7952/"
+BOOL_MPROC      = 1
+BOOL_CHECK_ONLY = 1
+BASEPATH        = "/scratch/ek9/nk7952/"
 
 ## PLASMA PARAMETER SET
-LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+LIST_SUITE_FOLDERS = [ "Rm3000" ]
 LIST_SONIC_REGIMES = [ "Mach5" ]
 LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]

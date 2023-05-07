@@ -16,11 +16,11 @@ def printLine(mssg):
 def runCommand(
     command,
     directory          = None,
-    bool_print_command = True,
     bool_debug         = False
   ):
-  if bool_print_command: print(command)
-  if not bool_debug:
+  if bool_debug:
+    print(command)
+  else:
     p = subprocess.Popen(command, shell=True, cwd=directory)
     p.wait()
 

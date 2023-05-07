@@ -44,8 +44,8 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH  = "/scratch/ek9/nk7952/"
-# JOB_NAME  = FileNames.FILENAME_PROCESS_PLT_JOB
-SUBFOLDER = "plt"
+JOB_NAME  = FileNames.FILENAME_RUN_SIM_JOB
+SUBFOLDER = ""
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
@@ -53,11 +53,24 @@ SUBFOLDER = "plt"
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
+# ## RERUN RE=RM=3000
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144" ] # 288
+
 # ## MACH NUMBER SET
-# LIST_SUITE_FOLDERS = [ "Re300" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
-# LIST_SIM_FOLDERS   = [ "Pm4" ]
-# LIST_SIM_RES       = [ "36", "72", "144", "288" ]
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
+# LIST_SIM_RES       = [ "18", "36", "72" ]
+
+# ## BOTTLENECK RUN
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1" ]
+# LIST_SIM_RES       = [ "576", "1152" ]
+
 
 
 ## ###############################################################

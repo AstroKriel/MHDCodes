@@ -280,13 +280,15 @@ def writeFlashParamFile(filepath_ref, filepath_to, dict_sim_inputs, max_num_hour
 ## ###############################################################
 ## PREPARE ALL PARAMETER FILES FOR SIMULATION
 ## ###############################################################
-class RunSimJob():
+class JobRunSim():
   def __init__(
       self,
       filepath_sim, dict_sim_inputs,
+      run_index = 0
     ):
     self.filepath_sim    = filepath_sim
     self.dict_sim_inputs = dict_sim_inputs
+    self.run_index       = run_index
     self.des_velocity    = self.dict_sim_inputs["desired_Mach"] # velocity = Mach / cs
     self.k_turb          = self.dict_sim_inputs["k_turb"]
     if self.k_turb < 2: raise Exception(f"Error: driving mode cannot be larger than 1/2 box size (k_turb < 2). You have requested k_turb = {self.k_turb}")
@@ -352,7 +354,7 @@ class RunSimJob():
     else: self.max_num_hours = 48
     self.job_name    = FileNames.FILENAME_RUN_SIM_JOB
     self.job_tagname = SimParams.getJobTag(self.dict_sim_inputs, "sim")
-    self.job_output  = FileNames.FILENAME_RUN_SIM_OUTPUT
+    self.job_output  = FileNames.FILENAME_RUN_SIM_OUTPUT + str(self.run_index).zfill(2)
     self.filename_flash_exe = "flash4_nxb{}_nyb{}_nzb{}_3.0".format(
       self.dict_sim_inputs["num_blocks"][0],
       self.dict_sim_inputs["num_blocks"][1],

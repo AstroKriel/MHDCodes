@@ -67,14 +67,15 @@ def fitExpFunc(
   index_E_start = WWLists.getIndexClosestValue(data_x_fit, time_start)
   index_E_end   = WWLists.getIndexClosestValue(data_x_fit, time_end)
   ## plot fit
-  gamma_val = -fit_params_log[1]
+  gamma_val = fit_params_log[1]
   gamma_std = max(np.sqrt(np.diag(fit_params_cov))[1], 0.01)
-  str_label = r"$\Gamma =$ " + "{:.2f}".format(gamma_val) + r" $\pm$ " + "{:.2f}".format(gamma_std)
-  ax.plot(
-    data_x_fit[index_E_start : index_E_end],
-    data_y_fit[index_E_start : index_E_end],
-    label=str_label, color="black", ls=linestyle, lw=2, zorder=5
-  )
+  if gamma_val > 10**(-3):
+    str_label = r"$\Gamma =$ " + "{:.2f}".format(gamma_val) + r" $\pm$ " + "{:.2f}".format(gamma_std)
+    ax.plot(
+      data_x_fit[index_E_start : index_E_end],
+      data_y_fit[index_E_start : index_E_end],
+      label=str_label, color="black", ls=linestyle, lw=2, zorder=5
+    )
   return fit_params_linear[1]
 
 def fitConstFunc(

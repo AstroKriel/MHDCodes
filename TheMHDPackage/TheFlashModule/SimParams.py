@@ -30,9 +30,9 @@ def getJobTag(dict_sim_inputs, job_name):
 
 def getSimName(dict_sim_inputs):
   return "{}_{}_{}".format(
+    dict_sim_inputs["sonic_regime"],
     dict_sim_inputs["suite_folder"],
-    dict_sim_inputs["sim_folder"],
-    dict_sim_inputs["sonic_regime"]
+    dict_sim_inputs["sim_folder"]
   )
 
 
@@ -189,9 +189,9 @@ def createSimInputs(
   ## check that a valid driving scale is defined
   if k_turb is None: raise Exception(f"Error: you have provided a invalid driving scale = {k_turb}")
   ## number of cells per block that the flash4-exe was compiled with
-  if   sim_res in [ "144", "288", "576" ]: num_blocks = [ 36, 36, 48 ]
-  elif sim_res in [ "36", "72" ]:          num_blocks = [ 12, 12, 18 ]
-  elif sim_res in [ "18" ]:                num_blocks = [ 6, 6, 6 ]
+  if   sim_res in [ "144", "288", "576", "1152" ]: num_blocks = [ 36, 36, 48 ]
+  elif sim_res in [ "36", "72" ]:                  num_blocks = [ 12, 12, 18 ]
+  elif sim_res in [ "18" ]:                        num_blocks = [ 6, 6, 6 ]
   num_procs = [
     int(int(sim_res) / num_blocks_in_dir)
     for num_blocks_in_dir in num_blocks

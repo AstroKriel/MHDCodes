@@ -15,7 +15,7 @@ class PlotWeakScaling():
   def __init__(self) -> None:
     pass
 
-  def runRoutines(self):
+  def performRoutine(self):
     self._initData()
     self._initFigure()
     self._plotData()
@@ -139,7 +139,7 @@ class PlotStrongScaling():
   def __init__(self) -> None:
     pass
 
-  def runRoutines(self):
+  def performRoutine(self):
     self._initData()
     self._initFigure()
     self._plotData()
@@ -267,13 +267,13 @@ def main():
   ## plot weak scaling
   if BOOL_PLOT_WEAK:
     obj_weak_scaling = PlotWeakScaling()
-    obj_weak_scaling.runRoutines()
+    obj_weak_scaling.performRoutine()
   ## print empty space
   if BOOL_PLOT_WEAK and BOOL_PLOT_STRONG: print(" ")
   ## plot strong scaling
   if BOOL_PLOT_STRONG:
     obj_strong_scaling = PlotStrongScaling()
-    obj_strong_scaling.runRoutines()
+    obj_strong_scaling.performRoutine()
 
 
 ## ########################################################

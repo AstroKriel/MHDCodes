@@ -221,14 +221,14 @@ class TurbDrvingFile():
     _removeFiles("sim_outputs.json")
     _removeFiles("shell_sim.out00")
 
-  def _resetFlashInputFile(self):
-    a = 10 # TODO
-
   def _reRunSimulation(self):
     if BOOL_CHECK_ONLY: return
     ## submit simulation PBS job script
     print("\t> Submitting job to run simulation:")
-    WWTerminal.runCommand(f"qsub {FileNames.FILENAME_RUN_SIM_JOB}", self.filepath_sim)
+    WWTerminal.runCommand(
+      command   = f"qsub {FileNames.FILENAME_RUN_SIM_JOB}",
+      directory = self.filepath_sim
+    )
 
 
 ## ###############################################################
@@ -245,6 +245,7 @@ def main():
   )
   for filepath_sim in list_sim_filepaths:
     print("Tuning driving parameters in:", filepath_sim)
+    if BOOL_CHECK_ONLY: print("DEBUG mode enabled")
     obj_tune_driving = TurbDrvingFile(filepath_sim)
     obj_tune_driving.performRoutine()
     print(" ")
@@ -253,20 +254,36 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BOOL_CHECK_ONLY = 0
+BOOL_CHECK_ONLY = 1
 BASEPATH        = "/scratch/ek9/nk7952/"
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
-## MACH NUMBER SET
-LIST_SUITE_FOLDERS = [ "Re300" ]
+# ## RERUN RE=RM=3000 (PM=1)
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
+
+# ## MACH NUMBER SET
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
+LIST_SUITE_FOLDERS = [ "Rm3000" ]
 LIST_SONIC_REGIMES = [ "Mach10" ]
-LIST_SIM_FOLDERS   = [ "Pm4" ]
-LIST_SIM_RES       = [ "36" ]
+LIST_SIM_FOLDERS   = [ "Pm10" ]
+LIST_SIM_RES       = [ "72" ]
+
+# ## BOTTLENECK RUN
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1" ]
+# LIST_SIM_RES       = [ "576", "1152" ]
 
 
 ## ###############################################################

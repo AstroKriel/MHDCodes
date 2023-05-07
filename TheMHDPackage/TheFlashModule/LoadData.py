@@ -4,7 +4,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import h5py
+import h5py, time
 import numpy as np
 
 ## load user defined modules
@@ -18,32 +18,30 @@ from TheFlashModule import FileNames
 def reformatFlashField(field, num_blocks, num_procs):
   """ reformatFlashField
   PURPOSE:
-    This code reformats a field from being structured as [iprocs*jprocs*kprocs, nzb, nxb, nyb]
-    to: [kprocs*nzb, iprocs*nxb, jprocs*nyb]
+    This code reformats a field structured [ num_cells_per_block, nzb, nxb, nyb ]
+    to [iprocs*nxb, jprocs*nyb, kprocs*nzb], where num_cell_per_block = iprocs*jprocs*kprocs
   INPUTS:
     > field      : FLASH field
-    > num_blocks : number of blocks
+    > num_blocks : number of blocks in each spatial dimension
     > num_procs  : number of processors per block, in each spatial dimension
   """
   ## extract number of blocks in each direction
-  nxb = num_blocks[0]
-  nyb = num_blocks[1]
-  nzb = num_blocks[2]
+  nxb, nyb, nzb = num_blocks
   ## extract number of processors in each direction
-  iprocs = num_procs[0]
-  jprocs = num_procs[1]
-  kprocs = num_procs[2]
+  iprocs, jprocs, kprocs = num_procs
   ## initialise the organised field
-  field_sorted = np.zeros([nxb*iprocs, nyb*jprocs, nzb*kprocs])
-  ## reorganise unsorted field
-  for k in range(kprocs):
-    for j in range(jprocs):
-      for i in range(iprocs):
+  field_sorted = np.zeros([ nxb*iprocs, nyb*jprocs, nzb*kprocs ], dtype=np.float32)
+  ## [ num_cells_per_block, nzb, nxb, nyb ] -> [ kprocs*nzb, iprocs*nxb, jprocs*nyb ]
+  for kproc_index in range(kprocs):
+    for iproc_index in range(iprocs):
+      for jproc_index in range(jprocs):
         field_sorted[
-          k * nzb : (k+1) * nzb,
-          i * nxb : (i+1) * nxb,
-          j * nyb : (j+1) * nyb
-        ] = field[j + (i * iprocs) + (k * jprocs * jprocs)]
+          kproc_index * nzb : (kproc_index+1) * nzb,
+          iproc_index * nxb : (iproc_index+1) * nxb,
+          jproc_index * nyb : (jproc_index+1) * nyb,
+        ] = field[ jproc_index + (iproc_index * iprocs) + (kproc_index * jprocs * jprocs) ]
+  ## rearrange indices -> [ iprocs*nxb, jprocs*nyb, kprocs*nzb ]
+  field_sorted = np.transpose(field_sorted, [1, 2, 0])
   return field_sorted
 
 def loadFlashDataCube(
@@ -94,7 +92,7 @@ def loadAllFlashDataCubes(
   ## get all plt files in the directory
   list_filenames = WWFnF.getFilesInDirectory(
     directory             = directory,
-    filename_contains     = FileNames.FILENAME_FLASH_DATA_CUBE,
+    filename_starts_with  = FileNames.FILENAME_FLASH_PLT_FILES,
     filename_not_contains = "spect",
     loc_file_index        = -1,
     file_start_index      = outputs_per_t_turb * start_time,
@@ -190,27 +188,36 @@ def loadVIData(
 def loadSpectrum(filepath_file, spect_field, spect_comp="total"):
   with open(filepath_file, "r") as fp:
     dataset = fp.readlines()
+    ## find row where header details are printed
+    header_index = next((
+      line_index+1
+      for line_index, line_contents in enumerate(list(dataset))
+      if "#" in line_contents
+    ), None)
+    if header_index is None: raise Exception("Error: no instances of '#' (indicating header file) found in:", filepath_file)
     ## read main dataset
     data = np.array([
       lines.strip().split() # remove leading/trailing whitespace + separate by whitespace-delimiter
-      for lines in dataset[6:] # read from after header
+      for lines in dataset[header_index:] # read from after header
     ])
     ## get the indices assiated with fields of interest
-    k_index = 1
+    kproc_index = 1
     if   "lgt" in spect_comp.lower(): field_index = 11 # longitudinal
     elif "trv" in spect_comp.lower(): field_index = 13 # transverse
-    elif "tot" in spect_comp.lower(): field_index = 15 # total
-    else: raise Exception(f"Error: {spect_comp} is an invalid spectra component (should be lgt, trv, or tot)")
+    elif "tot" in spect_comp.lower():
+      if "SpectFunctTot".lower() in dataset[5].lower():
+        field_index = 15 # total = longitudinal + transverse
+      else: field_index = 7 # if there is no spectrum decomposition
+    else: raise Exception(f"Error: {spect_comp} is an invalid spectra component.")
     ## read fields from file
-    try:
-      data_k     = np.array(list(map(float, data[:, k_index]))) 
-      data_power = np.array(list(map(float, data[:, field_index])))
-      if   "vel" in spect_field.lower(): data_power = data_power
-      elif "kin" in spect_field.lower(): data_power = data_power / 2
-      elif "mag" in spect_field.lower(): data_power = data_power / (8 * np.pi)
-      elif "cur" in spect_field.lower(): data_power = data_power
-      else: raise Exception(f"Error: {spect_field} is an invalid spectra field (should be vel, kin, or mag)")
-    except: raise Exception("Error: failed to read spectra-file in:", filepath_file)
+    data_k     = np.array(data[:, kproc_index],     dtype=float)
+    data_power = np.array(data[:, field_index], dtype=float)
+    if   "vel" in spect_field.lower(): data_power = data_power
+    elif "kin" in spect_field.lower(): data_power = data_power / 2
+    elif "mag" in spect_field.lower(): data_power = data_power / (8 * np.pi)
+    elif "cur" in spect_field.lower(): data_power = data_power
+    elif "rho" in spect_field.lower(): data_power = data_power
+    else: raise Exception(f"Error: {spect_field} is an invalid spectra field. Failed to read and process:", filepath_file)
     return data_k, data_power
 
 def loadAllSpectra(
@@ -225,6 +232,7 @@ def loadAllSpectra(
   elif "kin" in spect_field.lower(): file_end_str = "spect_sqrtrho.dat"
   elif "mag" in spect_field.lower(): file_end_str = "spect_mags.dat"
   elif "cur" in spect_field.lower(): file_end_str = "spect_current.dat"
+  elif "rho" in spect_field.lower(): file_end_str = "spect_varrho.dat"
   else: raise Exception("Error: invalid spectra filename:", spect_field)
   ## get list of spect-filenames in directory
   list_spectra_filenames = WWFnF.getFilesInDirectory(

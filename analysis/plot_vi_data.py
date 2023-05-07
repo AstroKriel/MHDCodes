@@ -44,9 +44,9 @@ class PlotTurbData():
     self.bool_verbose     = bool_verbose
 
   def performRoutines(self):
-    if self.bool_verbose: print("Loading volume integrated data...")
+    if self.bool_verbose: print("Loading volume integrated quantities...")
     self._loadData()
-    if self.bool_verbose: print("Plotting volume integrated data...")
+    if self.bool_verbose: print("Plotting volume integrated quantities...")
     self._plotMach()
     self._plotEnergyRatio()
     self.bool_fitted = False
@@ -186,7 +186,7 @@ class PlotTurbData():
     ## -------------
     t_start_index = WWLists.getIndexClosestValue(self.data_time, 5.0)
     self.E_growth_percent = self.E_ratio_sat / self.data_E_ratio[t_start_index]
-    if self.E_growth_percent > 10**2:
+    if self.E_ratio_sat > 10**(-4):
       ## get index range corresponding with growth phase
       index_E_lo = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-8))
       index_E_hi = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_ratio_sat/100)
@@ -210,13 +210,14 @@ class PlotTurbData():
       index_start_Mach = index_start_growth
       index_end_Mach   = index_end_growth
     else:
-      ## undefined growth rate
+      ## no dynamo growth
       self.E_growth_rate = None
+      self.E_ratio_sat   = None
       ## indicate that there is no time of growth
-      self.time_bounds_growth = [ None, None ]
-      ## when no growth occurs, measure Mach number over saturated regime
-      index_start_Mach = index_start_sat
-      index_end_Mach   = index_end_sat
+      self.time_bounds_growth = [ 5.0, self.data_time[index_start_sat] ]
+      ## when no growth occurs, measure Mach number over the first part of the simulation
+      index_start_Mach = t_start_index
+      index_end_Mach   = index_start_sat
     ## MACH NUMBER
     ## -----------
     self.rms_Mach_growth, self.std_Mach_growth = FitFuncs.fitConstFunc(
@@ -241,10 +242,8 @@ class PlotTurbData():
     )
     ## annotate measured quantities
     if self.bool_fitted:
-      legend_ax0 = self.axs[0].legend(frameon=False, loc="lower left", fontsize=18)
-      legend_ax1 = self.axs[1].legend(frameon=False, loc="lower right", fontsize=18)
-      self.axs[0].add_artist(legend_ax0)
-      self.axs[1].add_artist(legend_ax1)
+      self.axs[0].legend(frameon=False, loc="lower left", fontsize=18)
+      self.axs[1].legend(frameon=False, loc="lower right", fontsize=18)
 
 
 ## ###############################################################
@@ -313,21 +312,33 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC      = 1
-BOOL_CHECK_ONLY = 0
+BOOL_MPROC      = 0
+BOOL_CHECK_ONLY = 1
 BASEPATH        = "/scratch/ek9/nk7952/"
 
-## PLASMA PARAMETER SET
-LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
-LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+# ## PLASMA PARAMETER SET
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+
+## RERUN RM=3000, PM=1
+LIST_SUITE_FOLDERS = [ "Rm3000" ]
+LIST_SONIC_REGIMES = [ "Mach5" ]
+LIST_SIM_FOLDERS   = [ "Pm1" ]
+LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
 # ## MACH NUMBER SET
-# LIST_SUITE_FOLDERS = [ "Re300" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
-# LIST_SIM_FOLDERS   = [ "Pm4" ]
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
+
+# ## BOTTLENECK RUNS
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1" ]
+# LIST_SIM_RES       = [ "576", "1152" ]
 
 
 ## ###############################################################

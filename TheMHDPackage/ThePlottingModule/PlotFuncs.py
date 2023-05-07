@@ -4,7 +4,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os
+import os, functools
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -178,21 +178,23 @@ def plotScatter(
 
 def plotScalarField(
     field_slice,
-    filepath_fig      = None,
-    fig               = None,
-    ax                = None,
-    cmap_name         = "cmr.arctic",
-    NormType          = colors.LogNorm,
-    cbar_bounds       = None,
-    cbar_title        = None,
-    cbar_orientation  = "horizontal",
-    bool_add_colorbar = False,
-    bool_label_axis   = False
+    filepath_fig         = None,
+    fig                  = None,
+    ax                   = None,
+    bool_add_colorbar    = False,
+    bool_log_center_cbar = False,
+    cbar_orientation     = "horizontal",
+    cmap_name            = "cmr.arctic",
+    NormType             = colors.LogNorm,
+    cbar_bounds          = None,
+    cbar_title           = None,
+    bool_label_axis      = False
   ):
   ## check that a figure object has been passed
   if (fig is None) or (ax is None):
     fig, ax = fig, ax = plt.subplots(constrained_layout=True)
   ## plot scalar field
+  if bool_log_center_cbar: NormType = functools.partial(MidpointNormalize, midpoint=0)
   im_obj = ax.imshow(
     field_slice,
     extent = [-1.0, 1.0, -1.0, 1.0],
@@ -229,21 +231,25 @@ def plotScalarField(
 def plotVectorField(
     field_slice_x1,
     field_slice_x2,
-    filepath_fig        = None,
-    fig                 = None,
-    ax                  = None,
-    cmap_name           = "cmr.arctic",
-    NormType            = colors.LogNorm,
-    cbar_bounds         = None,
-    cbar_title          = None,
-    quiver_step         = 1,
-    quiver_width        = 5e-3,
-    quiver_color        = "red",
-    cbar_orientation    = "horizontal",
-    bool_plot_magnitude = True,
-    bool_plot_quiver    = False,
-    bool_add_colorbar   = False,
-    bool_label_axis     = False
+    filepath_fig          = None,
+    fig                   = None,
+    ax                    = None,
+    bool_plot_magnitude   = True,
+    bool_add_colorbar     = False,
+    bool_log_center_cbar  = False,
+    cbar_orientation      = "horizontal",
+    cmap_name             = "cmr.arctic",
+    NormType              = colors.LogNorm,
+    cbar_bounds           = None,
+    cbar_title            = None,
+    bool_plot_quiver      = False,
+    quiver_step           = 1,
+    quiver_width          = 5e-3,
+    field_color           = "white",
+    bool_plot_streamlines = False,
+    streamline_width      = 2.0,
+    streamline_linestyle  = "->",
+    bool_label_axis       = False
   ):
   ## check that a figure object has been passed
   if (fig is None) or (ax is None):
@@ -251,6 +257,9 @@ def plotVectorField(
   ## plot magnitude of vector field
   if bool_plot_magnitude:
     field_magnitude = np.sqrt(field_slice_x1**2 + field_slice_x2**2)
+    if bool_log_center_cbar:
+      field_magnitude = np.log(field_magnitude)
+      NormType = functools.partial(MidpointNormalize, midpoint=0)
     im_obj = ax.imshow(
       field_magnitude,
       extent = [-1.0, 1.0, -1.0, 1.0],
@@ -281,7 +290,21 @@ def plotVectorField(
       field_vecs_x1 / norm,
       field_vecs_x2 / norm,
       width = quiver_width,
-      color = quiver_color
+      color = field_color
+    )
+  if bool_plot_streamlines:
+    x = np.linspace(-1.0, 1.0, len(field_slice_x1[0,:]))
+    y = np.linspace(-1.0, 1.0, len(field_slice_x2[:,0]))
+    X, Y = np.meshgrid(x, -y)
+    ax.streamplot(
+      X, Y,
+      field_slice_x1,
+      field_slice_x2,
+      color      = field_color,
+      linewidth  = streamline_width,
+      density    = 2,
+      arrowstyle = streamline_linestyle,
+      arrowsize  = 1.5
     )
   ## add axis labels
   if bool_label_axis:

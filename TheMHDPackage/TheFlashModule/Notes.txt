@@ -1,0 +1,9 @@
+## TODO:
+- compute field curvature
+- implement script to restart simulations until they reach saturation
+  - relevant for Rm=3000, Pm=1, Mach=5
+- make sure Mach=5, Rm=3000, Pm=1 simulations have correct driving
+  - Nres=72+ are rerunning
+- run Nres>72 Mach=10 simulations with CFL=0.5
+  - in progress
+- setup Nres=576, 1152 bottleneck simulations: Rm=3000, Pm=1 for Mach=0.3 and 5

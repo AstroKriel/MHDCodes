@@ -8,7 +8,7 @@ import numpy as np
 
 ## load user defined modules
 from TheUsefulModule import WWFnF, WWTerminal
-from TheFlashModule import FileNames, SimParams, ProcessPltFilesJob
+from TheFlashModule import FileNames, SimParams, JobProcessFiles
 
 
 ## ###############################################################
@@ -73,7 +73,10 @@ def renameFiles(directory, old_phrase, new_phrase):
   if len(list_files_in_directory) > 0:
     if BOOL_CHECK_ONLY: command_arg = "-n"
     else: command_arg = ""
-    WWTerminal.runCommand(f"rename {command_arg} {old_phrase} {new_phrase} *", directory, bool_print_command=False)
+    WWTerminal.runCommand(
+      command   = f"rename {command_arg} {old_phrase} {new_phrase} *",
+      directory = directory
+    )
     print(f"\t> Renamed {len(list_files_in_directory)} '*{old_phrase}*' file(s) to '*{new_phrase}*'")
   else: print(f"\t> There are no '*{old_phrase}*' files in:\n\t", directory)
 
@@ -118,8 +121,8 @@ class ReorganiseSimFolder():
       raise Exception("Error: 'plt' sub-folder does not exist")
     ## move plt-files from simulation folder to plt sub-folder
     moveFiles(
-      directory_from         = self.filepath_sim,
-      directory_to           = self.filepath_plt,
+      directory_from        = self.filepath_sim,
+      directory_to          = self.filepath_plt,
       filename_contains     = "plt_",
       filename_not_contains = "spect_"
     )
@@ -140,23 +143,16 @@ class ReorganiseSimFolder():
       filename_contains = "spect_"
     )
     if self.num_spect_files_in_plt == 0: return
-    ## check that current spectra have been computed
-    self.num_current_files_in_plt, _ = countFiles(
-      directory         = self.filepath_plt,
-      filename_contains = "dset_curx_cury_curz"
-    )
-    if self.num_current_files_in_plt < self.num_plt_files_in_plt:
-      print(f"Note: only {self.num_current_files_in_plt} of {self.num_plt_files_in_plt} current spectra have been computed")
     ## move spectra from the simulation folder to spect sub-folder
     moveFiles(
-      directory_from     = self.filepath_sim,
-      directory_to       = self.filepath_spect,
+      directory_from    = self.filepath_sim,
+      directory_to      = self.filepath_spect,
       filename_contains = "spect_"
     )
     ## move spectra from plt sub-folder to spect sub-folder
     moveFiles(
-      directory_from     = self.filepath_plt,
-      directory_to       = self.filepath_spect,
+      directory_from    = self.filepath_plt,
+      directory_to      = self.filepath_spect,
       filename_contains = "spect_"
     )
     ## count number of spectra in the spect sub-folder
@@ -175,7 +171,7 @@ class ReorganiseSimFolder():
     print("Checking processed files...")
     bool_submit_job = False
     file_start_index = np.nan
-    for spect_field in [ "current", "mag", "vel", "sqrtrho" ]:
+    for spect_field in [ "_current", "_mag", "_vel", "_sqrtrho", "_varrho" ]:
       num_files_in_spect, list_files_in_spect = countFiles(
         directory         = self.filepath_spect,
         filename_contains = spect_field
@@ -193,7 +189,7 @@ class ReorganiseSimFolder():
       list_filepaths.append(self.filepath_sim)
       if np.isnan(file_start_index): file_start_index = 0
       dict_sim_inputs = SimParams.readSimInputs(self.filepath_sim)
-      ProcessPltFilesJob.ProcessPltFilesJob(
+      JobProcessFiles.JobProcessFiles(
         filepath_plt     = self.filepath_plt,
         dict_sim_inputs  = dict_sim_inputs,
         file_start_index = file_start_index
@@ -201,9 +197,8 @@ class ReorganiseSimFolder():
       job_name = FileNames.FILENAME_PROCESS_PLT_JOB
       print("Submitting job:", job_name)
       WWTerminal.runCommand(
-        command            = f"qsub {job_name}",
-        directory          = self.filepath_plt,
-        bool_print_command = False
+        command   = f"qsub {job_name}",
+        directory = self.filepath_plt
       )
 
 
@@ -241,9 +236,9 @@ BASEPATH        = "/scratch/ek9/nk7952/"
 
 ## PLASMA PARAMETER SET
 LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-LIST_SONIC_REGIMES = [ "Mach0.3" ]
+LIST_SONIC_REGIMES = [ "Mach5" ]
 LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+LIST_SIM_RES       = [ "18", "36", "72", "144", "288" , "576" ]
 
 # ## MACH NUMBER SET
 # LIST_SUITE_FOLDERS = [ "Re300" ]

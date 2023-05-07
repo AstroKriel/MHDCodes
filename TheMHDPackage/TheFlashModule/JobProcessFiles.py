@@ -2,7 +2,7 @@
 
 from TheFlashModule import SimParams, FileNames
 
-class ProcessPltFilesJob():
+class JobProcessFiles():
   def __init__(
       self,
       filepath_plt, dict_sim_inputs,
@@ -19,7 +19,10 @@ class ProcessPltFilesJob():
     self.job_name     = FileNames.FILENAME_PROCESS_PLT_JOB
     self.job_output   = FileNames.FILENAME_PROCESS_PLT_OUTPUT
     self.job_tagname  = SimParams.getJobTag(dict_sim_inputs, "plt")
-    self.command      = f"{self.program_name} -data_path {self.filepath_plt} -num_procs {self.num_procs} -check_only"
+    self.command      = self.program_name
+    self.command      += f" -data_path {self.filepath_plt}"
+    self.command      += f" -num_procs {self.num_procs}"
+    self.command      += f" -check_only"
     if file_start_index is not None: self.command += f" -file_start_index {int(file_start_index)}"
     if file_end_index   is not None: self.command += f" -file_end_index {int(file_end_index)}"
     ## perform routine

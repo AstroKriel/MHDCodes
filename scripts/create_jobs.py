@@ -7,7 +7,7 @@
 import os, sys
 
 ## load user defined modules
-from TheFlashModule import FileNames, LoadData, SimParams, RunSimJob, ProcessPltFilesJob
+from TheFlashModule import FileNames, LoadData, SimParams, JobRunSim, JobProcessFiles
 from TheUsefulModule import WWFnF
 
 
@@ -20,7 +20,7 @@ def createJobs(filepath_sim_res):
   ## --------------
   if BOOL_PREP_SIM_RUN:
   ## --------------
-    obj_prep_sim = RunSimJob.RunSimJob(
+    obj_prep_sim = JobRunSim.JobRunSim(
       filepath_sim    = filepath_sim_res,
       dict_sim_inputs = dict_sim_inputs
     )
@@ -35,7 +35,7 @@ def createJobs(filepath_sim_res):
       obj_prep_sim.fromLowerNres(filepath_ref_sim)
     else:
       ## prepare simulation from template files
-      filepath_ref_folder = f"{BASEPATH}/backup_files/"
+      filepath_ref_folder = f"{BASEPATH}/flash_files/"
       if not os.path.exists(filepath_ref_folder):
         raise Exception("Error: reference folder does not exist:", filepath_ref_folder)
       obj_prep_sim.fromTemplate(filepath_ref_folder)
@@ -45,7 +45,7 @@ def createJobs(filepath_sim_res):
     filepath_plt = f"{filepath_sim_res}/plt/"
     if not os.path.exists(filepath_plt):
       raise Exception("Error: plt sub-folder does not exist")
-    ProcessPltFilesJob.ProcessPltFilesJob(
+    JobProcessFiles.JobProcessFiles(
       filepath_plt    = filepath_plt,
       dict_sim_inputs = dict_sim_inputs
     )
@@ -131,23 +131,35 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BASEPATH               = "/scratch/ek9/nk7952/"
-K_TURB                 = None
-BOOL_CREATE_SIM_INPUTS = 0
-BOOL_PREP_SIM_RUN      = 0
+K_TURB                 = 2
+BOOL_CREATE_SIM_INPUTS = 1
+BOOL_PREP_SIM_RUN      = 1
 PREP_FROM_LOWER_NRES   = ""
 BOOL_PROCESS_PLT_FILES = 0
 
-## PLASMA PARAMETER SET
-LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-LIST_SONIC_REGIMES = [ "Mach0.3" ]
-LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+# ## PLASMA PARAMETER SET
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+
+# ## RERUN RE=RM=3000
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
 ## MACH NUMBER SET
-# LIST_SUITE_FOLDERS = [ "Re300" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
-# LIST_SIM_FOLDERS   = [ "Pm4" ]
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
+
+# ## BOTTLENECK RUN
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SIM_FOLDERS   = [ "Pm1" ]
+# LIST_SIM_RES       = [ "576", "1152" ]
 
 
 ## ###############################################################

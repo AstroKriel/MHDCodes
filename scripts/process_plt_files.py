@@ -36,7 +36,7 @@ class ProcessPltFiles():
     ## ------------------- DEFINE OPTIONAL ARGUMENTS
     args_opt = parser.add_argument_group(description="Optional processing arguments:")
     args_opt.add_argument("-check_only",        **WWArgparse.opt_bool_arg, default=False)
-    args_opt.add_argument("-h5del_dsets",       **WWArgparse.opt_bool_arg, default=False)
+    args_opt.add_argument("-del_h5dsets",       **WWArgparse.opt_bool_arg, default=False)
     args_opt.add_argument("-compute_all_dsets", **WWArgparse.opt_bool_arg, default=False)
     args_opt.add_argument("-file_start_index",  **WWArgparse.opt_arg, type=int, default=0)
     args_opt.add_argument("-file_end_index",    **WWArgparse.opt_arg, type=int, default=np.inf)
@@ -48,7 +48,7 @@ class ProcessPltFiles():
     args = vars(parser.parse_args())
     ## save parameters
     self.bool_check_only        = args["check_only"]
-    self.bool_h5del_dsets       = args["h5del_dsets"]
+    self.bool_del_h5dsets       = args["del_h5dsets"]
     self.bool_compute_all_dsets = args["compute_all_dsets"]
     self.file_start_index       = args["file_start_index"]
     self.file_end_index         = args["file_end_index"]
@@ -61,7 +61,7 @@ class ProcessPltFiles():
     WWTerminal.printLine("Number of processors: "       + str(self.num_procs))
     if self.bool_check_only:        WWTerminal.printLine("Will only process unprocessed files.")
     if self.bool_compute_all_dsets: WWTerminal.printLine("Will compute extended list of datasets.")
-    if self.bool_h5del_dsets:       WWTerminal.printLine("Will cull extraneous datasets from hdf5-files")
+    if self.bool_del_h5dsets:       WWTerminal.printLine("Will cull extraneous datasets from hdf5-files")
     WWTerminal.printLine("")
 
   def _getPltFiles(self):
@@ -123,36 +123,37 @@ class ProcessPltFiles():
     WWTerminal.printLine("Processing plt-files...")
     for filename in list_filenames:
       WWTerminal.printLine(f"--------- Looking at: {filename} -----------------------------------")
-      ## compute current components
-      WWTerminal.printLine("> Processing current components (J = curl of B)...")
-      _runCommand(f"derivative_var {filename} -current")
-      ## compute current spectrum
-      WWTerminal.printLine("\n> Processing current (J) spectrum...")
-      _runCommand(f"spectra_mpi {filename} -types 0 -dsets curx cury curz")
+      # ## compute current components
+      # WWTerminal.printLine("> Processing current components (J = curl of B)...")
+      # _runCommand(f"derivative_var {filename} -current")
+      # ## compute current spectrum
+      # WWTerminal.printLine("\n> Processing current (J) spectrum...")
+      # _runCommand(f"spectra_mpi {filename} -types 0 -dsets curx cury curz")
       ## compute velocity, magnetic, and kinetic energy spectra
-      WWTerminal.printLine("\n> Processing velocity and magnetic power spectra + kinetic energy spectrum...")
-      _runCommand(f"spectra_mpi {filename} -types 1 2 7") # vels, mags, sqrtrho
-      ## compute other interesting datasets
-      if self.bool_compute_all_dsets:
-        WWTerminal.printLine("\n> Processing (B cross J), (B dot J), magnetic tension, (div of U), vorticity, viscous dissipation...")
-        _runCommand(f"derivative_var {filename} -MHD_scales -divv -vort -dissipation")
-      ## delete unused components in plt-file
-      if self.bool_h5del_dsets:
-        list_dsets = [
-          ## B cross J (MHD scales)
-          "mXcx", "mXcy", "mXcz",
-          ## B dot J (MHD scales)
-          "mdc",
-          # magnetic tension (MHD scales)
-          "tenx", "teny", "tenz",
-          ## div of vel field
-          "divv",
-          ## vorticity
-          "vorticity_x", "vorticity_y", "vorticity_z",
-          ## viscous dissipation
-          "diss_rate"
-        ]
-        h5del(filename, list_dsets, self.filepath_data)
+      WWTerminal.printLine("\n> Processing velocity, magnetic, density power spectra + kinetic energy spectrum...")
+      _runCommand(f"spectra_mpi {filename} -types 10") # varrho
+      # _runCommand(f"spectra_mpi {filename} -types 1 2 7 10") # vels, mags, sqrtrho, varrho
+      # ## compute other interesting datasets
+      # if self.bool_compute_all_dsets:
+      #   WWTerminal.printLine("\n> Processing (B cross J), (B dot J), magnetic tension, (div of U), vorticity, viscous dissipation...")
+      #   _runCommand(f"derivative_var {filename} -MHD_scales -divv -vort -dissipation")
+      # ## delete unused components in plt-file
+      # if self.bool_del_h5dsets:
+      #   list_dsets = [
+      #     ## B cross J (MHD scales)
+      #     "mXcx", "mXcy", "mXcz",
+      #     ## B dot J (MHD scales)
+      #     "mdc",
+      #     # magnetic tension (MHD scales)
+      #     "tenx", "teny", "tenz",
+      #     ## div of vel field
+      #     "divv",
+      #     ## vorticity
+      #     "vorticity_x", "vorticity_y", "vorticity_z",
+      #     ## viscous dissipation
+      #     "diss_rate"
+      #   ]
+      #   h5del(filename, list_dsets, self.filepath_data)
       ## add empty space
       WWTerminal.printLine("")
 

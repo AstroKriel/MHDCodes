@@ -4,7 +4,7 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys
+import os, sys, functools
 import numpy as np
 
 ## 'tmpfile' needs to be loaded before any 'matplotlib' libraries,
@@ -14,7 +14,6 @@ import tempfile
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
-import scipy.stats as stats
 
 from scipy.optimize import curve_fit
 
@@ -31,7 +30,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################
-## HELPER FUNCTION
+## HELPER FUNCTIONS
 ## ###############################################################
 def divergence(field_group_dim):
   """
@@ -59,7 +58,7 @@ def divergence(field_group_dim):
 def gaussian(x, amplitude, x_mean, x_std):
   return amplitude * np.exp(-(x-x_mean)**2 / (2*x_std**2))
 
-def _plotPDF(
+def plotPDF(
     ax, field,
     bool_fit     = True,
     bool_flip_ax = False
@@ -94,7 +93,11 @@ def _plotPDF(
         max(list_dens_norm),
         field_mean,
         field_std
-      ]
+      ],
+      bounds = (
+        [ 1e-5, -10.0, 1e-5 ],
+        [ 1.0,   10.0, 10.0 ]
+      )
     )
     ## plot fits
     x = np.linspace(bounds[0], bounds[1], 1000)
@@ -121,7 +124,7 @@ class PlotBoxData():
     self.dict_sim_inputs = dict_sim_inputs
     self.bool_verbose    = bool_verbose
 
-  def runRoutines(self, lock):
+  def performRoutine(self, lock):
     ## save figure
     if self.bool_verbose: print("Initialising figure...")
     self.fig_fields, self.axs_fields = plt.subplots(ncols=5, nrows=3, figsize=(5*5, 3*5.5))
@@ -150,7 +153,7 @@ class PlotBoxData():
     )
 
   def _plotMagneticField(self):
-    print("Plotting magntic fields...")
+    if self.bool_verbose: print("Plotting magntic fields...")
     mag_x, mag_y, mag_z = LoadData.loadFlashDataCube(
       filepath_file = self.filepath_file,
       num_blocks    = self.dict_sim_inputs["num_blocks"],
@@ -163,22 +166,22 @@ class PlotBoxData():
       field_slice       = np.log(self.mag_magnitude[:,:,0]),
       fig               = self.fig_fields,
       ax                = self.axs_fields[0][0],
-      cmap_name         = "Reds",
-      NormType          = colors.Normalize,
+      cmap_name         = "cmr.iceburn",
+      NormType          = functools.partial(PlotFuncs.MidpointNormalize, midpoint=0),
       cbar_title        = r"$\ln\big(b^2 / b_{\rm rms}^2\big)$",
       bool_add_colorbar = True
     )
-    _plotPDF(self.axs_fields[1][0], np.log(self.mag_magnitude), bool_flip_ax=True)
+    plotPDF(self.axs_fields[1][0], np.log(self.mag_magnitude), bool_flip_ax=True)
     self.axs_fields[1][0].set_ylabel(r"$\ln\big(b^2 / b_{\rm rms}^2\big)$")
-    _plotPDF(self.axs_comps[0][0], mag_x)
-    _plotPDF(self.axs_comps[1][0], mag_y)
-    _plotPDF(self.axs_comps[2][0], mag_z)
+    plotPDF(self.axs_comps[0][0], mag_x)
+    plotPDF(self.axs_comps[1][0], mag_y)
+    plotPDF(self.axs_comps[2][0], mag_z)
     self.axs_comps[0][0].set_xlabel(r"$b_x / b_{x, {\rm rms}}$")
     self.axs_comps[1][0].set_xlabel(r"$b_y / b_{y, {\rm rms}}$")
     self.axs_comps[2][0].set_xlabel(r"$b_z / b_{z, {\rm rms}}$")
 
   def _plotCurrent(self):
-    print("Plotting current density...")
+    if self.bool_verbose: print("Plotting current density...")
     cur_x, cur_y, cur_z = LoadData.loadFlashDataCube(
       filepath_file = self.filepath_file,
       num_blocks    = self.dict_sim_inputs["num_blocks"],
@@ -191,27 +194,32 @@ class PlotBoxData():
       field_slice       = np.log(cur_magnitude[:,:,0]),
       fig               = self.fig_fields,
       ax                = self.axs_fields[0][1],
-      cmap_name         = "Greens",
-      NormType          = colors.Normalize,
+      cmap_name         = "cmr.watermelon",
+      NormType          = functools.partial(PlotFuncs.MidpointNormalize, midpoint=0),
       cbar_title        = r"$\ln\big(j^2 / j_{\rm rms}^2\big)$",
       bool_add_colorbar = True
     )
     x = np.linspace(-100, 100, 100)
     PlotFuncs.plotData_noAutoAxisScale(self.axs_fields[1][1], x, x, ls=":", lw=2)
-    self.__plotScatterAgainstBField(self.fig_fields, self.axs_fields[1][1], np.log(cur_magnitude), cbar_title=r"$\mathcal{P}(j^2,b^2)$")
+    self.__plotScatterAgainstBField(
+      fig        = self.fig_fields,
+      ax         = self.axs_fields[1][1],
+      field      = np.log(cur_magnitude),
+      cbar_title = r"$\mathcal{P}(j^2,b^2)$"
+    )
     self.axs_fields[1][1].set_xlim([ -20, 10 ])
     self.axs_fields[1][1].set_ylim([ -20, 10 ])
-    _plotPDF(self.axs_fields[2][1], np.log(cur_magnitude))
+    plotPDF(self.axs_fields[2][1], np.log(cur_magnitude))
     self.axs_fields[2][1].set_xlabel(r"$\ln\big(j^2 / j_{\rm rms}^2\big)$")
-    _plotPDF(self.axs_comps[0][1], cur_x)
-    _plotPDF(self.axs_comps[1][1], cur_y)
-    _plotPDF(self.axs_comps[2][1], cur_z)
+    plotPDF(self.axs_comps[0][1], cur_x)
+    plotPDF(self.axs_comps[1][1], cur_y)
+    plotPDF(self.axs_comps[2][1], cur_z)
     self.axs_comps[0][1].set_xlabel(r"$j_x / j_{x, {\rm rms}}$")
     self.axs_comps[1][1].set_xlabel(r"$j_y / j_{y, {\rm rms}}$")
     self.axs_comps[2][1].set_xlabel(r"$j_z / j_{z, {\rm rms}}$")
 
   def _plotVelocityField(self):
-    print("Plotting velocity fields...")
+    if self.bool_verbose: print("Plotting velocity fields...")
     ## plot velocity field
     vel_x, vel_y, vel_z = LoadData.loadFlashDataCube(
       filepath_file = self.filepath_file,
@@ -225,21 +233,26 @@ class PlotBoxData():
       field_slice       = np.log(vel_magnitude[:,:,0]),
       fig               = self.fig_fields,
       ax                = self.axs_fields[0][2],
-      cmap_name         = "Blues",
-      NormType          = colors.Normalize,
+      cmap_name         = "cmr.viola",
+      NormType          = functools.partial(PlotFuncs.MidpointNormalize, midpoint=0),
       cbar_title        = r"$\ln\big(u^2 / u_{\rm rms}^2\big)$",
       bool_add_colorbar = True
     )
     x = np.linspace(-100, 100, 100)
     PlotFuncs.plotData_noAutoAxisScale(self.axs_fields[1][2], x, x, ls=":", lw=2)
-    self.__plotScatterAgainstBField(self.fig_fields, self.axs_fields[1][2], np.log(vel_magnitude), cbar_title=r"$\mathcal{P}(u^2,b^2)$")
+    self.__plotScatterAgainstBField(
+      fig        = self.fig_fields,
+      ax         = self.axs_fields[1][2],
+      field      = np.log(vel_magnitude),
+      cbar_title = r"$\mathcal{P}(u^2,b^2)$"
+    )
     self.axs_fields[1][2].set_xlim([ -10, 10 ])
     self.axs_fields[1][2].set_ylim([ -20, 10 ])
-    _plotPDF(self.axs_fields[2][2], np.log(vel_magnitude))
+    plotPDF(self.axs_fields[2][2], np.log(vel_magnitude))
     self.axs_fields[2][2].set_xlabel(r"$\ln\big(u^2 / u_{\rm rms}^2\big)$")
-    _plotPDF(self.axs_comps[0][2], vel_x)
-    _plotPDF(self.axs_comps[1][2], vel_y)
-    _plotPDF(self.axs_comps[2][2], vel_z)
+    plotPDF(self.axs_comps[0][2], vel_x)
+    plotPDF(self.axs_comps[1][2], vel_y)
+    plotPDF(self.axs_comps[2][2], vel_z)
     self.axs_comps[0][2].set_xlabel(r"$u_x / u_{x, {\rm rms}}$")
     self.axs_comps[1][2].set_xlabel(r"$u_y / u_{y, {\rm rms}}$")
     self.axs_comps[2][2].set_xlabel(r"$u_z / u_{z, {\rm rms}}$")
@@ -255,19 +268,24 @@ class PlotBoxData():
       field_slice       = vel_divergence[:,:,0],
       fig               = self.fig_fields,
       ax                = self.axs_fields[0][3],
-      cmap_name         = "Blues",
-      NormType          = colors.Normalize,
+      cmap_name         = "cmr.viola",
+      NormType          = functools.partial(PlotFuncs.MidpointNormalize, midpoint=0),
       cbar_title        = r"$\nabla\cdot\vec{u}$",
       bool_add_colorbar = True
     )
-    self.__plotScatterAgainstBField(self.fig_fields, self.axs_fields[1][3], vel_divergence, cbar_title=r"$\mathcal{P}(\nabla\cdot\vec{u},b^2)$")
+    self.__plotScatterAgainstBField(
+      fig        = self.fig_fields,
+      ax         = self.axs_fields[1][3],
+      field      = vel_divergence, 
+      cbar_title = r"$\mathcal{P}(\nabla\cdot\vec{u},b^2)$"
+    )
     self.axs_fields[1][3].set_xlim([ -15, 15 ])
     self.axs_fields[1][3].set_ylim([ -20, 10 ])
-    _plotPDF(self.axs_fields[2][3], vel_divergence)
+    plotPDF(self.axs_fields[2][3], vel_divergence)
     self.axs_fields[2][3].set_xlabel(r"$\nabla\cdot\vec{u}$")
 
   def _plotDensityField(self):
-    print("Plotting density field...")
+    if self.bool_verbose: print("Plotting density field...")
     dens = LoadData.loadFlashDataCube(
       filepath_file = self.filepath_file,
       num_blocks    = self.dict_sim_inputs["num_blocks"],
@@ -280,17 +298,22 @@ class PlotBoxData():
       field_slice       = np.log(dens_magnitude[:,:,0]),
       fig               = self.fig_fields,
       ax                = self.axs_fields[0][4],
-      cmap_name         = "Greys",
+      cmap_name         = "cmr.seasons",
       NormType          = colors.Normalize,
       cbar_title        = r"$\ln\big(\rho^2 / \rho_{\rm rms}^2\big)$",
       bool_add_colorbar = True
     )
     x = np.linspace(-100, 100, 100)
     PlotFuncs.plotData_noAutoAxisScale(self.axs_fields[1][4], x, x, ls=":", lw=2)
-    self.__plotScatterAgainstBField(self.fig_fields, self.axs_fields[1][4], np.log(dens_magnitude), cbar_title=r"$\mathcal{P}(\rho^2,b^2)$")
+    self.__plotScatterAgainstBField(
+      fig        = self.fig_fields,
+      ax         = self.axs_fields[1][4],
+      field      = np.log(dens_magnitude),
+      cbar_title = r"$\mathcal{P}(\rho^2,b^2)$"
+    )
     self.axs_fields[1][4].set_xlim([ -20, 10 ])
     self.axs_fields[1][4].set_ylim([ -20, 10 ])
-    _plotPDF(self.axs_fields[2][4], np.log(dens_magnitude))
+    plotPDF(self.axs_fields[2][4], np.log(dens_magnitude))
     self.axs_fields[2][4].set_xlabel(r"$\ln\big(\rho^2 / \rho_{\rm rms}^2\big)$")
 
 
@@ -302,9 +325,9 @@ def plotSimData(filepath_sim_res, bool_verbose=True, lock=None, **kwargs):
   dict_sim_inputs  = SimParams.readSimInputs(filepath_sim_res, bool_verbose)
   dict_sim_outputs = SimParams.readSimOutputs(filepath_sim_res, bool_verbose)
   index_bounds_growth, index_end_growth = dict_sim_outputs["index_bounds_growth"]
-  print(f"Growth range in [{index_bounds_growth}, {index_end_growth}]")
+  if bool_verbose: print(f"Index range in growth regime: [{index_bounds_growth}, {index_end_growth}]")
   index_file    = int((index_bounds_growth + index_end_growth) // 3)
-  filename      = FileNames.FILENAME_FLASH_DATA_CUBE + str(index_file).zfill(4)
+  filename      = FileNames.FILENAME_FLASH_PLT_FILES + str(index_file).zfill(4)
   filepath_file = f"{filepath_sim_res}/plt/{filename}"
   print("Looking at:", filepath_file)
   ## make sure a visualisation folder exists
@@ -317,7 +340,7 @@ def plotSimData(filepath_sim_res, bool_verbose=True, lock=None, **kwargs):
     dict_sim_inputs = dict_sim_inputs,
     bool_verbose    = bool_verbose
   )
-  obj_plot_box.runRoutines(lock)
+  obj_plot_box.performRoutine(lock)
 
 
 ## ###############################################################
@@ -338,27 +361,31 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC = 1
+BOOL_MPROC = 0
 BASEPATH   = "/scratch/ek9/nk7952/"
 
-# ## PLASMA PARAMETER SET
+## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+# LIST_SONIC_REGIMES = [ "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
+# LIST_SIM_RES       = [ "288" ]
 
-## MACH NUMBER SET
-LIST_SUITE_FOLDERS = [ "Re300" ]
-LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
-LIST_SIM_FOLDERS   = [ "Pm4" ]
+LIST_SUITE_FOLDERS = [ "Rm3000" ]
+LIST_SONIC_REGIMES = [ "Mach5" ]
+LIST_SIM_FOLDERS   = [ "Pm10" ]
 LIST_SIM_RES       = [ "144" ]
+
+# ## MACH NUMBER SET
+# LIST_SUITE_FOLDERS = [ "Re300" ]
+# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
+# LIST_SIM_FOLDERS   = [ "Pm4" ]
+# LIST_SIM_RES       = [ "144" ]
 
 
 ## ###############################################################
 ## PROGRAM ENTRY POINT
 ## ###############################################################
 if __name__ == "__main__":
-  # plotSimData("/scratch/ek9/nk7952/Re300/Mach5/Pm4/144")
   main()
   sys.exit()
 
