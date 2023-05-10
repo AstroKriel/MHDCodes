@@ -264,7 +264,7 @@ PATH_SCRATCH    = "/scratch/ek9/nk7952/"
 # LIST_SUITE_FOLDERS = [ "Re2000" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm5" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576", "1152" ]
 
 
 ## ###############################################################

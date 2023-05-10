@@ -68,16 +68,63 @@ def fitExpFunc(
   ## plot fit
   gamma_val = fit_params_log[1]
   gamma_std = max(np.sqrt(np.diag(fit_params_cov))[1], 0.01)
-  str_label = r"$\Gamma =$ " + "{:.2f}".format(gamma_val) + r" $\pm$ " + "{:.2f}".format(gamma_std)
+  str_label = r"$\gamma_{\rm exp} =$ " + "{:.2f}".format(gamma_val) + r" $\pm$ " + "{:.2f}".format(gamma_std)
   ## find where exponential enters / exists fit range
   index_E_start = WWLists.getIndexClosestValue(data_x_fit, time_start)
   index_E_end   = WWLists.getIndexClosestValue(data_x_fit, time_end)
   ax.plot(
     data_x_fit[index_E_start : index_E_end],
     data_y_fit[index_E_start : index_E_end],
-    label=str_label, color="black", ls=linestyle, lw=2, zorder=5
+    label=str_label, color=color, ls=linestyle, lw=2, zorder=5
   )
   return fit_params_linear[1]
+
+def fitLinearFunc(
+    ax, data_x, data_y, index_start_fit, index_end_fit,
+    color     = "black",
+    linestyle = "-"
+  ):
+  ## define fit domain
+  data_fit_domain = np.linspace(
+    data_x[index_start_fit],
+    data_x[index_end_fit],
+    10**2
+  )[1:-1]
+  ## interpolate the non-uniform data
+  interp_spline = interpolate.interp1d(
+    data_x[index_start_fit : index_end_fit],
+    data_y[index_start_fit : index_end_fit],
+    kind       = "cubic",
+    fill_value = "extrapolate"
+  )
+  ## save time range being fitted to
+  time_start = data_x[index_start_fit]
+  time_end   = data_x[index_end_fit]
+  ## uniformly sample interpolated data
+  data_y_sampled = abs(interp_spline(data_fit_domain))
+  ## fit exponential function to sampled data (in log-linear domain)
+  fit_params, fit_params_cov = curve_fit(
+    UserModels.ListOfModels.linear_offset,
+    data_fit_domain,
+    data_y_sampled
+  )
+  ## initialise the plot domain
+  data_x_fit = np.linspace(-10, 500, 10**3)
+  ## evaluate exponential
+  data_y_fit = UserModels.ListOfModels.linear_offset(data_x_fit, *fit_params)
+  ## plot fit
+  gamma_val = fit_params[1]
+  gamma_std = max(np.sqrt(np.diag(fit_params_cov))[1], 0.01)
+  str_label = r"$\gamma_{\rm lin} =$ " + "{:.2f}".format(gamma_val) + r" $\pm$ " + "{:.2f}".format(gamma_std)
+  ## find where exponential enters / exists fit range
+  index_E_start = WWLists.getIndexClosestValue(data_x_fit, time_start)
+  index_E_end   = WWLists.getIndexClosestValue(data_x_fit, time_end)
+  ax.plot(
+    data_x_fit[index_E_start : index_E_end],
+    data_y_fit[index_E_start : index_E_end],
+    label=str_label, color=color, ls=linestyle, lw=2, zorder=5
+  )
+  return fit_params[1]
 
 def fitConstFunc(
     data_x, data_y, index_start_fit, index_end_fit,

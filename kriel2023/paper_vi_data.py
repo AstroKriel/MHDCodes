@@ -13,6 +13,7 @@ import numpy as np
 import tempfile
 os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
 import matplotlib.pyplot as plt
+from matplotlib.ticker import NullLocator
 
 ## load user defined modules
 from TheFlashModule import LoadData, SimParams
@@ -27,24 +28,37 @@ from ThePlottingModule import PlotFuncs
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
+def addText(ax, pos, text):
+  ax.text(
+    pos[0], pos[1],
+    text,
+    va        = "center",
+    ha        = "left",
+    transform = ax.transAxes,
+    color     = "black",
+    fontsize  = 17,
+    zorder    = 10
+  )
+
 ## ###############################################################
 ## OPERATOR CLASS
 ## ###############################################################
 class PlotTurbData():
   def __init__(
       self,
-      fig, axs, filepath_sim_res, color,
-      time_start_growth, time_end_growth, time_start_sat
+      fig, axs, ax_sub, filepath_sim_res, color,
+      time_start_exp, time_end_exp, time_start_sat
     ):
     print("Looking at:", filepath_sim_res)
     ## save input arguments
-    self.fig               = fig
-    self.axs               = axs
-    self.filepath_sim_res  = filepath_sim_res
-    self.color             = color
-    self.time_start_growth = time_start_growth
-    self.time_end_growth   = time_end_growth
-    self.time_start_sat    = time_start_sat
+    self.fig              = fig
+    self.axs              = axs
+    self.ax_sub           = ax_sub
+    self.filepath_sim_res = filepath_sim_res
+    self.color            = color
+    self.time_start_exp   = time_start_exp
+    self.time_end_exp     = time_end_exp
+    self.time_start_sat   = time_start_sat
     ## read simulation input parameters
     self.dict_sim_inputs  = SimParams.readSimInputs(self.filepath_sim_res)
 
@@ -107,25 +121,26 @@ class PlotTurbData():
     self.axs[0].plot(
       self.data_time,
       self.data_Mach,
-      color=self.color, ls="-", lw=1.5, zorder=3
+      color=self.color, ls="-", lw=2, zorder=3
     )
 
   def _plotEnergyRatio(self):
-    self.axs[1].plot(
-      self.data_time,
-      self.data_E_ratio,
-      color=self.color, ls="-", lw=1.5, zorder=3
-    )
+    for ax in [ self.axs[1], self.ax_sub ]:
+      ax.plot(
+        self.data_time,
+        self.data_E_ratio,
+        color=self.color, ls="-", lw=2, zorder=3
+      )
 
   def _fitData(self):
-    linestyle_kin  = "--"
+    linestyle_exp  = "-"
+    linestyle_lin  = "--"
     linestyle_sat  = ":"
     ## SATURATED REGIME
     ## ----------------
     ## get index and time associated with saturated regime
     index_start_sat = WWLists.getIndexClosestValue(self.data_time, self.time_start_sat)
     index_end_sat   = len(self.data_time)-1
-    ## find saturated energy ratio
     self.E_ratio_sat, _ = FitFuncs.fitConstFunc(
       ax              = self.axs[1],
       data_x          = self.data_time,
@@ -135,18 +150,17 @@ class PlotTurbData():
       index_end_fit   = index_end_sat,
       linestyle       = linestyle_sat
     )
-    ## GROWTH REGIME
-    ## -------------
-    index_start_growth = WWLists.getIndexClosestValue(self.data_time, self.time_start_growth)
-    index_end_growth   = WWLists.getIndexClosestValue(self.data_time, self.time_end_growth)
-    ## find growth rate of exponential
+    ## EXPONENTIAL GROWTH REGIME
+    ## -------------------------
+    index_start_exp = WWLists.getIndexClosestValue(self.data_time, self.time_start_exp)
+    index_end_exp   = WWLists.getIndexClosestValue(self.data_time, self.time_end_exp)
     self.E_growth_rate = FitFuncs.fitExpFunc(
       ax              = self.axs[1],
       data_x          = self.data_time,
       data_y          = self.data_E_ratio,
-      index_start_fit = index_start_growth,
-      index_end_fit   = index_end_growth,
-      linestyle       = linestyle_kin
+      index_start_fit = index_start_exp,
+      index_end_fit   = index_end_exp,
+      linestyle       = linestyle_exp
     )
     ## MACH NUMBER
     ## -----------
@@ -155,9 +169,19 @@ class PlotTurbData():
       data_x          = self.data_time,
       data_y          = self.data_Mach,
       str_label       = r"$\mathcal{M} =$ ",
-      index_start_fit = index_start_growth,
-      index_end_fit   = index_end_growth,
-      linestyle       = linestyle_kin
+      index_start_fit = index_start_exp,
+      index_end_fit   = index_end_exp,
+      linestyle       = linestyle_exp
+    )
+    ## LINEAR GROWTH REGIME
+    ## --------------------
+    self.E_growth_rate = FitFuncs.fitLinearFunc(
+      ax              = self.ax_sub,
+      data_x          = self.data_time,
+      data_y          = self.data_E_ratio,
+      index_start_fit = index_end_exp,
+      index_end_fit   = index_start_sat,
+      linestyle       = linestyle_lin
     )
 
 
@@ -170,26 +194,39 @@ def plotSimData():
   figscale = 1.2
   fig, axs = plt.subplots(nrows=2, figsize=(6*figscale, 2*4*figscale), sharex=True)
   fig.subplots_adjust(hspace=0.075)
+  ## add inset axis
+  ax_sub = PlotFuncs.addInsetAxis(
+    axs[1],
+    ax_inset_bounds = [
+      0.37, 0.05,
+      0.6, 0.33
+    ],
+    label_x         = None,
+    label_y         = None,
+    fontsize        = 20
+  )
   ## plot subsonic data
   obj_plot_turb = PlotTurbData(
-    fig               = fig,
-    axs               = axs,
-    filepath_sim_res  = f"{PATH_SCRATCH}/Rm3000/Mach0.3/Pm5/288/",
-    color             = "#66c2a5",
-    time_start_growth = 5,
-    time_end_growth   = 15,
-    time_start_sat    = 33,
+    fig              = fig,
+    axs              = axs,
+    ax_sub           = ax_sub,
+    filepath_sim_res = f"{PATH_SCRATCH}/Rm3000/Mach0.3/Pm10/288/",
+    color            = "limegreen",
+    time_start_exp   = 5.5,
+    time_end_exp     = 16,
+    time_start_sat   = 26,
   )
   obj_plot_turb.performRoutines()
   ## plot supersonic data
   obj_plot_turb = PlotTurbData(
-    fig               = fig,
-    axs               = axs,
-    filepath_sim_res  = f"{PATH_SCRATCH}/Rm3000/Mach5/Pm5/288/",
-    color             = "#fc8d62",
-    time_start_growth = 5,
-    time_end_growth   = 35,
-    time_start_sat    = 62,
+    fig              = fig,
+    axs              = axs,
+    ax_sub           = ax_sub,
+    filepath_sim_res = f"{PATH_SCRATCH}/Rm3000/Mach5/Pm10/288/",
+    color            = "orange",
+    time_start_exp   = 5.5,
+    time_end_exp     = 38,
+    time_start_sat   = 53,
   )
   obj_plot_turb.performRoutines()
   ## label figure
@@ -207,23 +244,54 @@ def plotSimData():
     bool_major_ticks = True,
     num_major_ticks  = 7
   )
+  ## label inset axis
+  ax_sub.tick_params(axis="x", bottom=True, top=True, labelbottom=False, labeltop=True)
+  ax_sub.set_xlim([ 7, 73 ])
+  ax_sub.set_xticks([ 10, 20, 30, 40, 50, 60, 70 ])
+  ax_sub.set_xticklabels([ 10, "", 30, "", 50, "", 70 ])
+  ax_sub.xaxis.set_minor_locator(NullLocator())
+  ax_sub.set_ylim([ -0.09, 0.8 ])
+  ## annotate figure
+  axs[0].axvspan(0, 5, alpha=0.25, color="grey", ls=None, lw=0)
+  axs[1].axvspan(0, 5, alpha=0.25, color="grey", ls=None, lw=0)
+  addText(axs[0], (0.075, 0.075), r"transient phase")
   ## add legends
+  PlotFuncs.addLegend_fromArtists(
+    axs[0],
+    list_legend_labels = [
+      r"$\mathcal{M}0.3{\rm Re}600{\rm Pm}5$",
+      r"$\mathcal{M}5{\rm Re}600{\rm Pm}5$",
+    ],
+    list_artists       = [ "-" ],
+    list_marker_colors = [ "limegreen", "orange" ],
+    label_color        = "white",
+    loc                = "lower right",
+    bbox               = (1.0, 0.0),
+    fontsize           = 17
+  )
+  addText(axs[0], (0.675, 0.195), r"$\mathcal{M}0.3{\rm Re}600{\rm Pm}5$")
+  addText(axs[0], (0.675, 0.095), r"$\mathcal{M}5{\rm Re}600{\rm Pm}5$")
   PlotFuncs.addLegend_fromArtists(
     axs[1],
     list_artists       = [
+      "-",
       "--",
       ":"
     ],
     list_legend_labels = [
-      r"kinematic phase",
-      r"saturated phase",
+      "exponential growth",
+      "linear growth",
+      "saturated",
     ],
     list_marker_colors = [ "k" ],
-    label_color        = "black",
-    loc                = "lower right",
-    bbox               = (1.0, 0.0),
-    fontsize           = 18
+    label_color        = "white",
+    loc                = "upper right",
+    bbox               = (1.0, 0.825),
+    fontsize           = 17
   )
+  addText(axs[1], (0.64, 0.74), r"exponential growth")
+  addText(axs[1], (0.64, 0.64), r"linear growth")
+  addText(axs[1], (0.64, 0.54), r"saturated")
   ## save figure
   print("Saving figure...")
   fig_name     = f"time_evolution.pdf"

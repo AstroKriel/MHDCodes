@@ -5,8 +5,8 @@ from matplotlib import rcParams
 
 ## enable latex font
 rcParams["text.usetex"]         = True
-# rcParams["text.latex.preamble"] = r"\usepackage{bm, amsmath, mathrsfs, amssymb, url, xfrac}"
-rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
+rcParams["text.latex.preamble"] = r"\usepackage{bm, amsmath, mathrsfs, amssymb, url, xfrac}"
+# rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
 
 ## set default font characteristics
 rcParams["font.family"] = "DejaVu Sans"

@@ -173,31 +173,6 @@ class PlotSpectra():
     self._labelSpectraRatio()
     self._labelScales()
 
-  def getFittedParams(self):
-    if not self.bool_fitted: self.performRoutines()
-    return {
-      "index_bounds_growth"  : [ self.index_start_growth, self.index_end_growth ],
-      "index_start_sat"      : self.index_start_sat,
-      "list_time_growth"     : self.list_time_growth,
-      "list_time_eq"         : self.list_time_eq,
-      "list_time_sat"        : self.list_time_sat,
-      "k_nu_kin_group_t"     : self.k_nu_kin_group_t,
-      "k_nu_vel_tot_group_t" : self.k_nu_vel_tot_group_t,
-      "k_nu_vel_lgt_group_t" : self.k_nu_vel_lgt_group_t,
-      "k_nu_vel_trv_group_t" : self.k_nu_vel_trv_group_t,
-      "k_eta_mag_group_t"    : self.k_eta_mag_group_t,
-      "k_eta_cur_group_t"    : self.k_eta_cur_group_t,
-      "k_p_mag_group_t"      : self.k_p_mag_group_t,
-      "k_p_rho_group_t"      : self.k_p_rho_group_t,
-      "k_max_mag_group_t"    : self.k_max_mag_group_t,
-      "k_max_rho_group_t"    : self.k_max_rho_group_t,
-      "k_eq_group_t"         : self.k_eq_group_t,
-    }
-
-  def saveFittedParams(self, filepath_sim):
-    dict_params = self.getFittedParams()
-    WWObjs.saveDict2JsonFile(f"{filepath_sim}/{FileNames.FILENAME_SIM_OUTPUTS}", dict_params, self.bool_verbose)
-
   def __plotScale(
       self,
       scale_group_t, color_scale, label_scale,
@@ -642,92 +617,74 @@ class PlotSpectra():
 ## ###############################################################
 ## OPPERATOR HANDLING PLOT CALLS
 ## ###############################################################
-def plotSimData(
-    filepath_sim_res,
-    lock            = None,
-    bool_check_only = False,
-    bool_verbose    = True
-  ):
-  print("Looking at:", filepath_sim_res)
-  ## get simulation parameters
-  dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res, bool_verbose=False)
-  ## make sure a visualisation folder exists
-  filepath_vis = f"{filepath_sim_res}/vis_folder/"
-  WWFnF.createFolder(filepath_vis, bool_verbose=False)
-  ## INITIALISE FIGURE
-  ## -----------------
-  if bool_verbose: print("Initialising figure...")
-  fig, fig_grid = PlotFuncs.createFigure_grid(
-    fig_scale        = 0.6,
-    fig_aspect_ratio = (6.0, 10.0), # height, width
-    num_rows         = 7,
-    num_cols         = 3
-  )
-  ## volume integrated qunatities
-  ax_Mach          = fig.add_subplot(fig_grid[0, 0])
-  ax_energy_ratio  = fig.add_subplot(fig_grid[1:3, 0])
-  ## power spectra data
-  ax_spectra_ratio = fig.add_subplot(fig_grid[3:6, 0])
-  axs_spectra      = [
-    fig.add_subplot(fig_grid[0, 1]),
-    fig.add_subplot(fig_grid[1, 1]),
-    fig.add_subplot(fig_grid[2, 1]),
-    fig.add_subplot(fig_grid[3, 1]),
-    fig.add_subplot(fig_grid[4, 1]),
-    fig.add_subplot(fig_grid[5, 1])
-  ]
-  ## reynolds spectra
-  axs_reynolds = [
-    fig.add_subplot(fig_grid[0, 2]),
-    fig.add_subplot(fig_grid[1, 2]),
-    fig.add_subplot(fig_grid[2, 2]),
-    fig.add_subplot(fig_grid[3, 2]),
-    fig.add_subplot(fig_grid[4, 2]),
-    fig.add_subplot(fig_grid[5, 2])
-  ]
-  ## measured scales
-  ax_scales = fig.add_subplot(fig_grid[6, :])
-  ## PLOT INTEGRATED QUANTITIES
-  ## --------------------------
+def plotSimData():
+  ## initialise figure
+  print("Initialising figure...")
+  figscale = 1.2
+  fig, axs = plt.subplots(nrows=2, figsize=(6*figscale, 2*4*figscale), sharex=True)
+  fig.subplots_adjust(hspace=0.075)
+  ## plot subsonic data
   obj_plot_turb = PlotTurbData(
-    fig              = fig,
-    axs              = [ ax_Mach, ax_energy_ratio ],
-    filepath_sim_res = filepath_sim_res,
-    dict_sim_inputs  = dict_sim_inputs,
-    bool_verbose     = bool_verbose
+    fig               = fig,
+    axs               = axs,
+    filepath_sim_res  = f"{PATH_SCRATCH}/Rm3000/Mach0.3/Pm5/288/",
+    color             = "#66c2a5",
+    time_start_growth = 5,
+    time_end_growth   = 15,
+    time_start_sat    = 33,
   )
   obj_plot_turb.performRoutines()
-  if not(bool_check_only): obj_plot_turb.saveFittedParams(filepath_sim_res)
-  dict_turb_params = obj_plot_turb.getFittedParams()
-  ## PLOT SPECTRA + MEASURED SCALES
-  ## ------------------------------
-  obj_plot_spectra = PlotSpectra(
-    fig             = fig,
-    dict_axs        = {
-      "axs_spectra"      : axs_spectra,
-      "axs_reynolds"     : axs_reynolds,
-      "ax_spectra_ratio" : ax_spectra_ratio,
-      "ax_scales"        : ax_scales,
-    },
-    filepath_spect     = f"{filepath_sim_res}/spect/",
-    dict_sim_inputs    = dict_sim_inputs,
-    outputs_per_t_turb = dict_turb_params["outputs_per_t_turb"],
-    time_bounds_growth = dict_turb_params["time_bounds_growth"],
-    time_start_sat     = dict_turb_params["time_start_sat"],
-    bool_verbose       = bool_verbose
+  ## plot supersonic data
+  obj_plot_turb = PlotTurbData(
+    fig               = fig,
+    axs               = axs,
+    filepath_sim_res  = f"{PATH_SCRATCH}/Rm3000/Mach5/Pm5/288/",
+    color             = "#fc8d62",
+    time_start_growth = 5,
+    time_end_growth   = 35,
+    time_start_sat    = 62,
   )
-  obj_plot_spectra.performRoutines()
-  ## SAVE FIGURE + DATASET
-  ## ---------------------
-  if lock is not None: lock.acquire()
-  if not(bool_check_only): obj_plot_spectra.saveFittedParams(filepath_sim_res)
-  sim_name = SimParams.getSimName(dict_sim_inputs)
-  fig_name = f"{sim_name}_dataset.png"
-  PlotFuncs.saveFigure(fig, f"{filepath_vis}/{fig_name}", bool_verbose=True)
-  if lock is not None: lock.release()
-  if bool_verbose: print(" ")
-
-
+  obj_plot_turb.performRoutines()
+  ## label figure
+  axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
+  axs[0].set_ylabel(r"$\mathcal{M}$")
+  axs[1].set_ylabel(r"$E_\mathrm{mag} / E_\mathrm{kin}$")
+  axs[0].set_yscale("log")
+  axs[1].set_yscale("log")
+  axs[0].set_xlim([ -2, 102 ])
+  axs[0].set_ylim([ 10**(-2), 10**(1) ])
+  axs[1].set_ylim([ 10**(-11), 10**(1) ])
+  ## add log axis-ticks
+  PlotFuncs.addAxisTicks_log10(
+    axs[1],
+    bool_major_ticks = True,
+    num_major_ticks  = 7
+  )
+  ## add legends
+  PlotFuncs.addLegend_fromArtists(
+    axs[1],
+    list_artists       = [
+      "--",
+      ":"
+    ],
+    list_legend_labels = [
+      r"kinematic phase",
+      r"saturated phase",
+    ],
+    list_marker_colors = [ "k" ],
+    label_color        = "black",
+    loc                = "lower right",
+    bbox               = (1.0, 0.0),
+    fontsize           = 18
+  )
+  ## save figure
+  print("Saving figure...")
+  fig_name     = f"time_evolution.pdf"
+  filepath_fig = f"{PATH_PLOT}/{fig_name}"
+  fig.savefig(filepath_fig, dpi=100)
+  plt.close(fig)
+  print("Saved figure:", filepath_fig)
+  print(" ")
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################

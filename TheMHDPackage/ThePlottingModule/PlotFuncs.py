@@ -411,7 +411,8 @@ def addLegend_fromArtists(
     fontsize       = fontsize,
     labelcolor     = label_color,
     framealpha     = alpha,
-    facecolor="white", edgecolor="grey"
+    facecolor      = "white",
+    edgecolor      = "grey"
   )
   ## draw legend
   ax.add_artist(legend)
@@ -494,44 +495,50 @@ def addColorbar_fromMappble(
 
 def addAxisTicks_linear(
     ax,
+    bool_y_axis      = True,
     bool_minor_ticks = False,
     bool_major_ticks = False,
-    num_minor_ticks  = 10,
-    num_major_ticks  = 10
+    num_minor_ticks  = None,
+    num_major_ticks  = None
   ):
+  if bool_y_axis: ax_axis = ax.yaxis
+  else:           ax_axis = ax.xaxis
   ## add minor axis ticks
   if bool_minor_ticks:
-    y_minor = mpl.ticker.LinearLocator(numticks=num_minor_ticks)
-    ax.yaxis.set_minor_locator(y_minor)
-    ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+    loc_minor = mpl.ticker.LinearLocator(numticks=num_minor_ticks)
+    ax_axis.set_minor_locator(loc_minor)
+    ax_axis.set_minor_formatter(mpl.ticker.NullFormatter())
   ## add major axis ticks
   if bool_major_ticks:
     y_major = mpl.ticker.LinearLocator(numticks=num_major_ticks)
-    ax.yaxis.set_major_locator(y_major)
+    ax_axis.set_major_locator(y_major)
 
 def addAxisTicks_log10(
     ax,
+    bool_y_axis      = True,
     bool_minor_ticks = False,
     bool_major_ticks = False,
-    num_minor_ticks  = 100,
-    num_major_ticks  = 6
+    num_minor_ticks  = None,
+    num_major_ticks  = None
   ):
+  if bool_y_axis: ax_axis = ax.yaxis
+  else:           ax_axis = ax.xaxis
   ## add minor axis ticks
   if bool_minor_ticks:
-    y_minor = mpl.ticker.LogLocator(
+    loc_minor = mpl.ticker.LogLocator(
       base     = 10.0,
       subs     = np.arange(2, 10) * 0.1,
       numticks = num_minor_ticks
     )
-    ax.yaxis.set_minor_locator(y_minor)
-    ax.yaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+    ax_axis.set_minor_locator(loc_minor)
+    ax_axis.set_minor_formatter(mpl.ticker.NullFormatter())
   ## add major axis ticks
   if bool_major_ticks:
-    y_major = mpl.ticker.LogLocator(
+    loc_major = mpl.ticker.LogLocator(
       base     = 10.0,
       numticks = num_major_ticks
     )
-    ax.yaxis.set_major_locator(y_major)
+    ax_axis.set_major_locator(loc_major)
 
 def addBoxOfLabels(
     fig, ax, list_labels,
