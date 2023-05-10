@@ -88,7 +88,7 @@ class PlotSpectra():
       "cmap_name"   : "Purples",
       "label_spect" : PlotLatex.GetLabel.spectrum("cur"),
       "label_reynolds" : None,
-      "label_k_eta" : r"$k_{\eta,{\rm cur}}$",
+      "label_k_eta" : r"$k_{\eta, {\rm cur}}$",
     }
     self.dict_plot_rho_tot = {
       "ax_spectra"     : self.axs_reynolds[0],
@@ -106,13 +106,13 @@ class PlotSpectra():
       "ax_reynolds"    : self.axs_reynolds[1],
       "diss_rate"      : self.dict_sim_inputs["eta"],
       "color_spect"    : "red",
-      "color_k_p"      : "magenta",
+      "color_k_p"      : "red",
       "color_k_eta"    : "red",
       "cmap_name"      : "Reds",
       "label_spect"    : PlotLatex.GetLabel.spectrum("mag"),
       "label_reynolds" : r"${\rm Rm}(k)$",
       "label_k_p"      : r"$k_{\rm p}$",
-      "label_k_eta"    : r"$k_{\eta,{\rm mag}}$",
+      "label_k_eta"    : r"$k_{\eta, {\rm mag}}$",
     }
     self.dict_plot_kin_tot = {
       "ax_spectra"     : self.axs_spectra[2],
@@ -122,30 +122,41 @@ class PlotSpectra():
       "color_k_nu"     : "black",
       "cmap_name"      : "Greys",
       "label_spect"    : PlotLatex.GetLabel.spectrum("kin"),
-      "label_reynolds" : r"${\rm Re}(k)$",
-      "label_k_nu"     : r"$k_\nu$",
+      "label_reynolds" : r"${\rm Re}_{\rm kin}(k)$",
+      "label_k_nu"     : r"$k_{\nu, {\rm kin}}$",
     }
-    self.dict_plot_vel_lgt = {
+    self.dict_plot_vel_tot = {
       "ax_spectra"     : self.axs_spectra[3],
       "ax_reynolds"    : self.axs_reynolds[3],
+      "diss_rate"      : self.dict_sim_inputs["nu"],
+      "color_spect"    : "magenta",
+      "color_k_nu"     : "magenta",
+      "cmap_name"      : "Greys",
+      "label_spect"    : PlotLatex.GetLabel.spectrum("vel", "tot"),
+      "label_reynolds" : r"${\rm Re}_{\rm vel}(k)$",
+      "label_k_nu"     : r"$k_{\nu, {\rm vel}}$",
+    }
+    self.dict_plot_vel_lgt = {
+      "ax_spectra"     : self.axs_spectra[4],
+      "ax_reynolds"    : self.axs_reynolds[4],
       "diss_rate"      : self.dict_sim_inputs["nu"],
       "color_spect"    : "royalblue",
       "color_k_nu"     : "royalblue",
       "cmap_name"      : "Blues",
       "label_spect"    : PlotLatex.GetLabel.spectrum("vel", "lgt"),
-      "label_reynolds" : r"${\rm Re}_\parallel(k)$",
-      "label_k_nu"     : r"$k_{\nu, \parallel}$",
+      "label_reynolds" : r"${\rm Re}_{{\rm vel}, \parallel}(k)$",
+      "label_k_nu"     : r"$k_{\nu, {\rm vel}, \parallel}$",
     }
     self.dict_plot_vel_trv = {
-      "ax_spectra"     : self.axs_spectra[4],
-      "ax_reynolds"    : self.axs_reynolds[4],
+      "ax_spectra"     : self.axs_spectra[5],
+      "ax_reynolds"    : self.axs_reynolds[5],
       "diss_rate"      : self.dict_sim_inputs["nu"],
       "color_spect"    : "darkgreen",
       "color_k_nu"     : "darkgreen",
       "cmap_name"      : "Greens",
       "label_spect"    : PlotLatex.GetLabel.spectrum("vel", "trv"),
-      "label_reynolds" : r"${\rm Re}_\perp(k)$",
-      "label_k_nu"     : r"$k_{\nu, \perp}$",
+      "label_reynolds" : r"${\rm Re}_{{\rm vel}, \perp}(k)$",
+      "label_k_nu"     : r"$k_{\nu, {\rm vel}, \perp}$",
     }
 
   def performRoutines(self):
@@ -165,20 +176,13 @@ class PlotSpectra():
   def getFittedParams(self):
     if not self.bool_fitted: self.performRoutines()
     return {
-      ## time-averaged energy spectra
-      "list_k"                     : self.list_k,
-      "list_power_mag_tot_group_t" : self.list_power_mag_tot_group_t,
-      "list_power_cur_tot_group_t" : self.list_power_cur_tot_group_t,
-      "list_power_kin_tot_group_t" : self.list_power_kin_tot_group_t,
-      "list_power_vel_lgt_group_t" : self.list_power_vel_lgt_group_t,
-      "list_power_vel_trv_group_t" : self.list_power_vel_trv_group_t,
-      ## measured quantities
       "index_bounds_growth"  : [ self.index_start_growth, self.index_end_growth ],
       "index_start_sat"      : self.index_start_sat,
       "list_time_growth"     : self.list_time_growth,
       "list_time_eq"         : self.list_time_eq,
       "list_time_sat"        : self.list_time_sat,
       "k_nu_kin_group_t"     : self.k_nu_kin_group_t,
+      "k_nu_vel_tot_group_t" : self.k_nu_vel_tot_group_t,
       "k_nu_vel_lgt_group_t" : self.k_nu_vel_lgt_group_t,
       "k_nu_vel_trv_group_t" : self.k_nu_vel_trv_group_t,
       "k_eta_mag_group_t"    : self.k_eta_mag_group_t,
@@ -246,7 +250,7 @@ class PlotSpectra():
   def _loadData(self):
     if self.time_bounds_growth[0] is not None:
       file_start_time = self.time_bounds_growth[0]
-    else: file_start_time = 2
+    else: file_start_time = 5
     ## load total magnetic energy spectra
     dict_mag_tot_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
@@ -278,6 +282,15 @@ class PlotSpectra():
     dict_kin_tot_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
       spect_field        = "kin",
+      spect_comp         = "tot",
+      file_start_time    = file_start_time,
+      outputs_per_t_turb = self.outputs_per_t_turb,
+      bool_verbose       = False
+    )
+    ## load total velocity power spectra
+    dict_vel_tot_data = LoadData.loadAllSpectra(
+      directory          = self.filepath_spect,
+      spect_field        = "vel",
       spect_comp         = "tot",
       file_start_time    = file_start_time,
       outputs_per_t_turb = self.outputs_per_t_turb,
@@ -315,6 +328,7 @@ class PlotSpectra():
     self.list_power_cur_tot_group_t = dict_cur_tot_data["list_power_group_t"]
     self.list_power_rho_tot_group_t = dict_rho_tot_data["list_power_group_t"]
     self.list_power_kin_tot_group_t = dict_kin_tot_data["list_power_group_t"]
+    self.list_power_vel_tot_group_t = dict_vel_tot_data["list_power_group_t"]
     self.list_power_vel_lgt_group_t = dict_vel_lgt_data["list_power_group_t"]
     self.list_power_vel_trv_group_t = dict_vel_trv_data["list_power_group_t"]
 
@@ -330,6 +344,7 @@ class PlotSpectra():
     __plotSpectra(self.dict_plot_cur_tot, self.list_power_cur_tot_group_t, bool_norm=True)
     __plotSpectra(self.dict_plot_rho_tot, self.list_power_rho_tot_group_t)
     __plotSpectra(self.dict_plot_kin_tot, self.list_power_kin_tot_group_t)
+    __plotSpectra(self.dict_plot_vel_tot, self.list_power_vel_tot_group_t)
     __plotSpectra(self.dict_plot_vel_lgt, self.list_power_vel_lgt_group_t)
     __plotSpectra(self.dict_plot_vel_trv, self.list_power_vel_trv_group_t)
 
@@ -409,6 +424,13 @@ class PlotSpectra():
       color_scale        = self.dict_plot_kin_tot["color_k_nu"],
       label_scale        = self.dict_plot_kin_tot["label_k_nu"]
     )
+    ## total velocity power spectrum
+    self.k_nu_vel_tot_group_t = self.__measureReynoldsScale(
+      dict_plot          = self.dict_plot_vel_tot,
+      list_power_group_t = self.list_power_vel_tot_group_t,
+      color_scale        = self.dict_plot_vel_tot["color_k_nu"],
+      label_scale        = self.dict_plot_vel_tot["label_k_nu"]
+    )
     ## longitudinal velocity power spectrum
     self.k_nu_vel_lgt_group_t = self.__measureReynoldsScale(
       dict_plot          = self.dict_plot_vel_lgt,
@@ -467,6 +489,7 @@ class PlotSpectra():
     __labelAxis(self.dict_plot_cur_tot)
     __labelAxis(self.dict_plot_rho_tot)
     __labelAxis(self.dict_plot_kin_tot)
+    __labelAxis(self.dict_plot_vel_tot)
     __labelAxis(self.dict_plot_vel_lgt)
     __labelAxis(self.dict_plot_vel_trv)
     ## annotate spectra plots
@@ -500,6 +523,11 @@ class PlotSpectra():
       scales_group_t = self.k_nu_kin_group_t,
       label          = self.dict_plot_kin_tot["label_k_nu"],
       color          = self.dict_plot_kin_tot["color_k_nu"]
+    )
+    dict_artists_k_nu_vel_tot = __getArtists(
+      scales_group_t = self.k_nu_vel_tot_group_t,
+      label          = self.dict_plot_vel_tot["label_k_nu"],
+      color          = self.dict_plot_vel_tot["color_k_nu"]
     )
     dict_artists_k_nu_vel_lgt = __getArtists(
       scales_group_t = self.k_nu_vel_lgt_group_t,
@@ -537,6 +565,13 @@ class PlotSpectra():
       list_legend_labels = dict_artists_k_nu_kin["list_labels"],
       list_marker_colors = dict_artists_k_nu_kin["list_colors"],
       list_artists       = dict_artists_k_nu_kin["list_markers"],
+      **dict_legend_args
+    )
+    PlotFuncs.addLegend_fromArtists(
+      ax                 = self.dict_plot_vel_tot["ax_spectra"],
+      list_legend_labels = dict_artists_k_nu_vel_tot["list_labels"],
+      list_marker_colors = dict_artists_k_nu_vel_tot["list_colors"],
+      list_artists       = dict_artists_k_nu_vel_tot["list_markers"],
       **dict_legend_args
     )
     PlotFuncs.addLegend_fromArtists(
@@ -590,8 +625,8 @@ class PlotSpectra():
     self.ax_scales.set_xlabel(r"$t/t_{\rm turb}$")
     PlotFuncs.addLegend(
       ax       = self.ax_scales,
-      loc      = "upper right",
-      bbox     = (1.0, 1.0),
+      loc      = "right",
+      bbox     = (1.0, 0.5),
       ncol     = 1,
       lw       = 2.0,
       fontsize = 20,
@@ -625,31 +660,33 @@ def plotSimData(
   fig, fig_grid = PlotFuncs.createFigure_grid(
     fig_scale        = 0.6,
     fig_aspect_ratio = (6.0, 10.0), # height, width
-    num_rows         = 6,
+    num_rows         = 7,
     num_cols         = 3
   )
   ## volume integrated qunatities
-  ax_Mach         = fig.add_subplot(fig_grid[0, 0])
-  ax_energy_ratio = fig.add_subplot(fig_grid[1, 0])
+  ax_Mach          = fig.add_subplot(fig_grid[0, 0])
+  ax_energy_ratio  = fig.add_subplot(fig_grid[1:3, 0])
   ## power spectra data
-  ax_spectra_ratio    = fig.add_subplot(fig_grid[2:5, 0])
-  axs_spectra         = [
+  ax_spectra_ratio = fig.add_subplot(fig_grid[3:6, 0])
+  axs_spectra      = [
     fig.add_subplot(fig_grid[0, 1]),
     fig.add_subplot(fig_grid[1, 1]),
     fig.add_subplot(fig_grid[2, 1]),
     fig.add_subplot(fig_grid[3, 1]),
-    fig.add_subplot(fig_grid[4, 1])
+    fig.add_subplot(fig_grid[4, 1]),
+    fig.add_subplot(fig_grid[5, 1])
   ]
   ## reynolds spectra
-  axs_reynolds        = [
+  axs_reynolds = [
     fig.add_subplot(fig_grid[0, 2]),
     fig.add_subplot(fig_grid[1, 2]),
     fig.add_subplot(fig_grid[2, 2]),
     fig.add_subplot(fig_grid[3, 2]),
-    fig.add_subplot(fig_grid[4, 2])
+    fig.add_subplot(fig_grid[4, 2]),
+    fig.add_subplot(fig_grid[5, 2])
   ]
   ## measured scales
-  ax_scales = fig.add_subplot(fig_grid[5, :])
+  ax_scales = fig.add_subplot(fig_grid[6, :])
   ## PLOT INTEGRATED QUANTITIES
   ## --------------------------
   obj_plot_turb = PlotTurbData(
@@ -699,7 +736,7 @@ def main():
     func               = plotSimData,
     bool_mproc         = BOOL_MPROC,
     bool_check_only    = BOOL_CHECK_ONLY,
-    basepath           = BASEPATH,
+    basepath           = PATH_SCRATCH,
     list_suite_folders = LIST_SUITE_FOLDERS,
     list_sonic_regimes = LIST_SONIC_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
@@ -712,7 +749,8 @@ def main():
 ## ###############################################################
 BOOL_MPROC      = 1
 BOOL_CHECK_ONLY = 0
-BASEPATH        = "/scratch/ek9/nk7952/"
+PATH_SCRATCH    = "/scratch/ek9/nk7952/"
+# PATH_SCRATCH    = "/scratch/jh2/nk7952/"
 
 ## PLASMA PARAMETER SET
 LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
@@ -724,7 +762,7 @@ LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 # LIST_SUITE_FOLDERS = [ "Rm3000" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
-# LIST_SIM_RES       = [ "144" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
 
 ## ###############################################################

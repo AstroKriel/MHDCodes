@@ -76,6 +76,7 @@ class PlotSimScales():
     self.k_eta_cur_stats_group_sim    = []
     self.k_eta_mag_stats_group_sim    = []
     self.k_nu_kin_stats_group_sim     = []
+    self.k_nu_vel_tot_stats_group_sim = []
     self.k_nu_vel_lgt_stats_group_sim = []
     self.k_nu_vel_trv_stats_group_sim = []
     self.__loadAllSimulationData()
@@ -91,7 +92,7 @@ class PlotSimScales():
         for sonic_regime in LIST_SONIC_REGIME:
           ## check that the fitted spectra data exists for the Nres=288 simulation setup
           filepath_sim = WWFnF.createFilepath([
-            BASEPATH, suite_folder, sonic_regime, sim_folder
+            PATH_SCRATCH, suite_folder, sonic_regime, sim_folder
           ])
           if not os.path.isfile(f"{filepath_sim}/{FileNames.FILENAME_SIM_SCALES}"): continue
           ## load scales
@@ -132,16 +133,18 @@ class PlotSimScales():
     self.k_eta_cur_stats_group_sim.append(dict_scales["k_eta_cur_stats_nres"])
     self.k_eta_mag_stats_group_sim.append(dict_scales["k_eta_mag_stats_nres"])
     self.k_nu_kin_stats_group_sim.append(dict_scales["k_nu_kin_stats_nres"])
+    self.k_nu_vel_tot_stats_group_sim.append(dict_scales["k_nu_vel_tot_stats_nres"])
     self.k_nu_vel_lgt_stats_group_sim.append(dict_scales["k_nu_vel_lgt_stats_nres"])
     self.k_nu_vel_trv_stats_group_sim.append(dict_scales["k_nu_vel_trv_stats_nres"])
 
   def plotRoutines(self):
     self.plotDependance_knu_Re(self.k_nu_kin_stats_group_sim,     "knu_kin")
+    self.plotDependance_knu_Re(self.k_nu_vel_tot_stats_group_sim, "knu_vel_tot")
     self.plotDependance_knu_Re(self.k_nu_vel_lgt_stats_group_sim, "knu_vel_lgt")
     self.plotDependance_knu_Re(self.k_nu_vel_trv_stats_group_sim, "knu_vel_trv")
     self.plotDependance_keta_Pm(self.k_eta_mag_stats_group_sim,   "keta_mag")
     self.plotDependance_keta_Pm(self.k_eta_cur_stats_group_sim,   "keta_cur")
-    self.plotDependance_kp_scale(self.k_nu_kin_stats_group_sim,   "knu_kin")
+    self.plotDependance_kp_scale(self.k_nu_kin_stats_group_sim,   "knu_vel_tot")
     self.plotDependance_kp_scale(self.k_eta_mag_stats_group_sim,  "keta_mag")
     self.plotDependance_kp_scale(self.k_eta_cur_stats_group_sim,  "keta_cur")
     self.plotDependance_kp_scale(self.k_p_rho_stats_group_sim,    "krho")
@@ -153,7 +156,7 @@ class PlotSimScales():
 
   def plotDependance_knu_Re(self, k_nu_stats_group_sim, domain_name):
     ## check for valid input paramaters
-    if not("kin" in domain_name.lower()) and not("lgt" in domain_name.lower()) and not("trv" in domain_name.lower()):
+    if not("vel" in domain_name.lower()) and not("kin" in domain_name.lower()):
       raise Exception(f"Error: '{domain_name}' is an invalid input")
     ## plot data
     fig, ax = plt.subplots(1, 1, figsize=(6, 4))
@@ -198,9 +201,10 @@ class PlotSimScales():
     ax.set_yscale("log")
     ax.set_ylim([ 0.9, 200 ])
     ax.set_xlabel(r"Re", fontsize=20)
-    if   "kin" in domain_name.lower(): ax.set_ylabel(r"$k_\nu$", fontsize=20)
-    elif "lgt" in domain_name.lower(): ax.set_ylabel(r"$k_{\nu, \parallel}$", fontsize=20)
-    elif "trv" in domain_name.lower(): ax.set_ylabel(r"$k_{\nu, \perp}$", fontsize=20)
+    if   "kin" in domain_name.lower(): ax.set_ylabel(r"$k_{\nu, {\rm kin}}$", fontsize=20)
+    elif "tot" in domain_name.lower(): ax.set_ylabel(r"$k_{\nu, {\rm vel}}$", fontsize=20)
+    elif "lgt" in domain_name.lower(): ax.set_ylabel(r"$k_{\nu, {\rm vel}, \parallel}$", fontsize=20)
+    elif "trv" in domain_name.lower(): ax.set_ylabel(r"$k_{\nu, {\rm vel}, \perp}$", fontsize=20)
     ## save plot
     fig_name = f"fig_dependance_{self.plot_name}_{domain_name}_Re.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
@@ -261,10 +265,10 @@ class PlotSimScales():
     ax.set_xscale("log")
     ax.set_yscale("log")
     if   "mag" in domain_name.lower(): ax.set_ylim([ 0.9, 11 ])
-    elif "cur" in domain_name.lower(): ax.set_ylim([ 0.09, 11 ])
+    elif "cur" in domain_name.lower(): ax.set_ylim([ 0.3, 11 ])
     ax.set_xlabel(r"${\rm Pm}$", fontsize=20)
-    if   "mag" in domain_name.lower(): ax.set_ylabel(r"$k_{\eta, \mathbf{B}} / k_\nu$", fontsize=20)
-    elif "cur" in domain_name.lower(): ax.set_ylabel(r"$k_{\eta, \nabla\times\mathbf{B}} / k_\nu$", fontsize=20)
+    if   "mag" in domain_name.lower(): ax.set_ylabel(r"$k_{\eta, \mathbf{B}} / k_{\nu, {\rm vel}}$", fontsize=20)
+    elif "cur" in domain_name.lower(): ax.set_ylabel(r"$k_{\eta, \nabla\times\mathbf{B}} / k_{\nu, {\rm vel}}$", fontsize=20)
     ## save plot
     fig_name = f"fig_dependance_{self.plot_name}_{domain_name}_Pm.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
@@ -273,10 +277,11 @@ class PlotSimScales():
   def plotDependance_kp_scale(self, k_stats_group_sim, domain_name):
     ## check for valid input paramaters
     if (
+        not("vel" in domain_name.lower()) and
+        not("kin" in domain_name.lower()) and
         not("mag" in domain_name.lower()) and
         not("cur" in domain_name.lower()) and
-        not("rho" in domain_name.lower()) and
-        not("kin" in domain_name.lower())):
+        not("rho" in domain_name.lower())):
       raise Exception(f"Error: '{domain_name}' is an invalid input")
     ## plot data
     fig, ax = plt.subplots(1, 1, figsize=(6, 4))
@@ -312,10 +317,10 @@ class PlotSimScales():
     if   "mag" in domain_name.lower(): ax.set_xlim([ 5, 200 ])
     elif "cur" in domain_name.lower(): ax.set_xlim([ 5, 70 ])
     ax.set_ylim([ 1, 30 ])
-    if   "mag" in domain_name.lower(): ax.set_xlabel(r"$k_{\eta, \mathbf{B}}$", fontsize=20)
-    elif "cur" in domain_name.lower(): ax.set_xlabel(r"$k_{\eta, \nabla\times\mathbf{B}}$", fontsize=20)
-    elif "rho" in domain_name.lower(): ax.set_xlabel(r"$k_{{\rm p}, \rho}$", fontsize=20)
-    elif "kin" in domain_name.lower(): ax.set_xlabel(r"$k_\nu$", fontsize=20)
+    if   "mag"     in domain_name.lower(): ax.set_xlabel(r"$k_{\eta, \mathbf{B}}$", fontsize=20)
+    elif "cur"     in domain_name.lower(): ax.set_xlabel(r"$k_{\eta, \nabla\times\mathbf{B}}$", fontsize=20)
+    elif "rho"     in domain_name.lower(): ax.set_xlabel(r"$k_{{\rm p}, \rho}$", fontsize=20)
+    elif "vel_tot" in domain_name.lower(): ax.set_xlabel(r"$k_{\nu, {\rm vel}}$", fontsize=20)
     ax.set_ylabel(r"$k_{{\rm p}, \mathbf{B}}$", fontsize=20)
     ## save plot
     fig_name = f"fig_dependance_{self.plot_name}_kp_{domain_name}.png"
@@ -415,7 +420,7 @@ class PlotSimScales():
     ax.set_yscale("log")
     ax.set_xlim([ 0.9, 220 ])
     ax.set_ylim([ 0.9, 5 ])
-    ax.set_xlabel(r"$k_\nu$", fontsize=20)
+    ax.set_xlabel(r"$k_{\nu, {\rm vel}}$", fontsize=20)
     ax.set_ylabel(r"$k_{{\rm p}, \rho}$", fontsize=20)
     ## save plot
     fig_name = f"fig_dependance_{self.plot_name}_krho_knu.png"
@@ -448,14 +453,15 @@ class PlotSimScales():
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  plot_obj = PlotSimScales(f"{BASEPATH}/vis_folder/")
+  plot_obj = PlotSimScales(f"{PATH_SCRATCH}/vis_folder/")
   plot_obj.plotRoutines()
 
 
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BASEPATH = "/scratch/ek9/nk7952/"
+PATH_SCRATCH = "/scratch/ek9/nk7952/"
+# PATH_SCRATCH = "/scratch/jh2/nk7952/"
 
 ## PLASMA PARAMETER SET
 LIST_SONIC_REGIME = [ "Mach5" ]

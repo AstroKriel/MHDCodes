@@ -10,8 +10,9 @@ from scipy.optimize import curve_fit
 from scipy import interpolate
 
 ## load user defined modules
-from TheFittingModule import UserModels
 from TheUsefulModule import WWLists
+from TheFittingModule import UserModels
+from ThePlottingModule import PlotFuncs
 
 ## ###############################################################
 ## FUNCTIONS THAT INTERPOLATE AND FIT
@@ -28,7 +29,8 @@ def interpLogLogData(x, y, x_interp, interp_kind="cubic", ax=None):
 
 def fitExpFunc(
     ax, data_x, data_y, index_start_fit, index_end_fit,
-    linestyle  = "-"
+    color     = "black",
+    linestyle = "-"
   ):
   ## define fit domain
   data_fit_domain = np.linspace(
@@ -60,22 +62,21 @@ def fitExpFunc(
     fit_params_log[1]
   ]
   ## initialise the plot domain
-  data_x_fit = np.linspace(0, 100, 10**3)
+  data_x_fit = np.linspace(-10, 500, 10**3)
   ## evaluate exponential
   data_y_fit = UserModels.ListOfModels.exp_linear(data_x_fit, *fit_params_linear)
-  ## find where exponential enters / exists fit range
-  index_E_start = WWLists.getIndexClosestValue(data_x_fit, time_start)
-  index_E_end   = WWLists.getIndexClosestValue(data_x_fit, time_end)
   ## plot fit
   gamma_val = fit_params_log[1]
   gamma_std = max(np.sqrt(np.diag(fit_params_cov))[1], 0.01)
-  if gamma_val > 10**(-3):
-    str_label = r"$\Gamma =$ " + "{:.2f}".format(gamma_val) + r" $\pm$ " + "{:.2f}".format(gamma_std)
-    ax.plot(
-      data_x_fit[index_E_start : index_E_end],
-      data_y_fit[index_E_start : index_E_end],
-      label=str_label, color="black", ls=linestyle, lw=2, zorder=5
-    )
+  str_label = r"$\Gamma =$ " + "{:.2f}".format(gamma_val) + r" $\pm$ " + "{:.2f}".format(gamma_std)
+  ## find where exponential enters / exists fit range
+  index_E_start = WWLists.getIndexClosestValue(data_x_fit, time_start)
+  index_E_end   = WWLists.getIndexClosestValue(data_x_fit, time_end)
+  ax.plot(
+    data_x_fit[index_E_start : index_E_end],
+    data_y_fit[index_E_start : index_E_end],
+    label=str_label, color="black", ls=linestyle, lw=2, zorder=5
+  )
   return fit_params_linear[1]
 
 def fitConstFunc(

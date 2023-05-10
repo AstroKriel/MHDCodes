@@ -349,9 +349,9 @@ class JobRunSim():
     self.iprocs, self.jprocs, self.kprocs = self.dict_sim_inputs["num_procs"]
     self.num_procs = int(self.iprocs * self.jprocs * self.kprocs)
     self.max_mem   = int(4 * self.num_procs)
-    if self.num_procs > 1000:
-      self.max_num_hours = 24
-    else: self.max_num_hours = 48
+    if   self.num_procs > 9e3: self.max_num_hours = 10
+    elif self.num_procs > 1e3: self.max_num_hours = 24
+    else:                      self.max_num_hours = 48
     self.job_name    = FileNames.FILENAME_RUN_SIM_JOB
     self.job_tagname = SimParams.getJobTag(self.dict_sim_inputs, "sim")
     self.job_output  = FileNames.FILENAME_RUN_SIM_OUTPUT + str(self.run_index).zfill(2)

@@ -13,7 +13,7 @@ class JobProcessFiles():
     self.filepath_plt = filepath_plt
     self.bool_verbose = bool_verbose
     self.max_hours    = int(24)
-    self.num_procs    = int(min(dict_sim_inputs["num_procs"]))
+    self.num_procs    = int(dict_sim_inputs["sim_res"]) // 6
     self.max_mem      = int(4 * self.num_procs)
     self.program_name = FileNames.FILENAME_PROCESS_PLT_SCRIPT
     self.job_name     = FileNames.FILENAME_PROCESS_PLT_JOB

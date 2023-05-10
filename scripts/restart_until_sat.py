@@ -8,7 +8,7 @@ import numpy as np
 
 ## load user defined modules
 from TheFlashModule import JobRunSim, SimParams, FileNames, LoadData
-from TheUsefulModule import WWFnF
+from TheUsefulModule import WWFnF, WWLists
 
 
 ## ###############################################################
@@ -23,30 +23,36 @@ class RestartSim():
   
   def performRoutine(self):
     self._readLastFileIndex()
-    print(self.last_chk_index, self.last_plt_index)
-    self._readLastTimePoint()
-    bool_reach_max_num_t_turb = (self.last_time_point / self.max_num_t_turb) > 0.95
-    print(self.last_time_point, bool_reach_max_num_t_turb)
-    # if bool_reach_max_num_t_turb: self._updateFiles()
+    self._checkEmagSaturated()
+    ## resimulate if unsaturated and the simulation has not yet completed 100 turnover-times
+    if not(self.Emag_converged):
+      self._updateFiles()
+      self._restartSim()
 
   def _readLastFileIndex(self):
     ## define helper function
-    def getLastFileIndex(filename_starts_with):
+    def getLastFileIndex(filename_starts_with, sub_folder=""):
       list_filenames = WWFnF.getFilesInDirectory(
-        directory             = self.filepath_sim_res,
+        directory             = f"{self.filepath_sim_res}/{sub_folder}/",
         filename_starts_with  = filename_starts_with,
         filename_not_contains = "spect",
         loc_file_index        = -1,
       )
+      if len(list_filenames) == 0: return np.nan
       last_index = max([
         int(filename.split("_")[-1])
         for filename in list_filenames
       ])
       return last_index
-    ## get last file indices
+    ## get last output file indices
     self.last_chk_index = getLastFileIndex(FileNames.FILENAME_FLASH_CHK_FILES)
-    self.last_plt_index = getLastFileIndex(FileNames.FILENAME_FLASH_PLT_FILES)
-    ## get simulation job index
+    last_plt_index_sim  = getLastFileIndex(FileNames.FILENAME_FLASH_PLT_FILES)
+    last_plt_index_plt  = getLastFileIndex(FileNames.FILENAME_FLASH_PLT_FILES, "plt")
+    self.last_plt_index = int(np.nanmax([
+      last_plt_index_sim,
+      last_plt_index_plt
+    ]))
+    ## get latest simulation job index
     list_sim_outputs = [
       int(file.split(".out")[1])
       if len(file.split(".out")) > 1 else
@@ -58,24 +64,38 @@ class RestartSim():
       self.last_run_index = np.nanmax(list_sim_outputs)
     else: self.last_run_index = 0
 
-  def _readLastTimePoint(self):
-    data_time, _ = LoadData.loadVIData(
+  def _checkEmagSaturated(self):
+    self.data_time, data_Emag = LoadData.loadVIData(
       directory  = self.filepath_sim_res,
-      field_name = "mach",
+      field_name = "mag",
       t_turb     = self.t_turb,
       time_start = 2.0,
       time_end   = np.inf
     )
-    self.last_time_point = max(data_time)
+    data_log_Eratio = np.log10(data_Emag)
+    list_std = []
+    for time_start in range(10, int(max(self.data_time)), 10):
+      index_start = WWLists.getIndexClosestValue(self.data_time, time_start)
+      index_end   = WWLists.getIndexClosestValue(self.data_time, time_start+5)
+      data_window = data_log_Eratio[index_start : index_end]
+      list_std.append(np.std(data_window))
+    ## check that Emag has been saturated for 30 t_turb
+    self.Emag_converged = all([
+      val < 5e-2
+      for val in list_std[-3:]
+    ])
+
 
   def _updateFiles(self):
     ## update simulation job index
     obj_prep_sim = JobRunSim.JobRunSim(
       filepath_sim    = self.filepath_sim_res,
       dict_sim_inputs = self.dict_sim_inputs,
-      run_index       = self.last_run_index
+      run_index       = self.last_run_index+1
     )
     ## update chk and plt file indices in flash.par file
+    ## make sure that the simulation can run for another 100 t_turb
+    (max(self.data_time) / self.max_num_t_turb) > 0.95
 
 
 ## ###############################################################
@@ -83,7 +103,7 @@ class RestartSim():
 ## ###############################################################
 def main():
   list_sim_filepaths = SimParams.getListOfSimFilepaths(
-    basepath           = BASEPATH,
+    basepath           = PATH_SCRATCH,
     list_suite_folders = LIST_SUITE_FOLDERS,
     list_sonic_regimes = LIST_SONIC_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
@@ -100,13 +120,14 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BOOL_CHECK_ONLY = 1
-BASEPATH        = "/scratch/ek9/nk7952/"
+PATH_SCRATCH    = "/scratch/ek9/nk7952/"
+# PATH_SCRATCH    = "/scratch/jh2/nk7952/"
 
 ## PLASMA PARAMETER SET
 LIST_SUITE_FOLDERS = [ "Rm3000" ]
 LIST_SONIC_REGIMES = [ "Mach5" ]
-LIST_SIM_FOLDERS   = [ "Pm1" ]
-LIST_SIM_RES       = [ "18" ] # , "36", "72", "144"
+LIST_SIM_FOLDERS   = [ "Pm250" ]
+LIST_SIM_RES       = [ "18", "144" ]
 
 
 ## ###############################################################

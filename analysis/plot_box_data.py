@@ -350,7 +350,7 @@ def main():
   SimParams.callFuncForAllSimulations(
     func               = plotSimData,
     bool_mproc         = BOOL_MPROC,
-    basepath           = BASEPATH,
+    basepath           = PATH_SCRATCH,
     list_suite_folders = LIST_SUITE_FOLDERS,
     list_sonic_regimes = LIST_SONIC_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
@@ -361,8 +361,9 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC = 0
-BASEPATH   = "/scratch/ek9/nk7952/"
+BOOL_MPROC   = 0
+PATH_SCRATCH = "/scratch/ek9/nk7952/"
+# PATH_SCRATCH = "/scratch/jh2/nk7952/"
 
 ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]

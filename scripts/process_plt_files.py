@@ -123,37 +123,44 @@ class ProcessPltFiles():
     WWTerminal.printLine("Processing plt-files...")
     for filename in list_filenames:
       WWTerminal.printLine(f"--------- Looking at: {filename} -----------------------------------")
-      # ## compute current components
-      # WWTerminal.printLine("> Processing current components (J = curl of B)...")
-      # _runCommand(f"derivative_var {filename} -current")
-      # ## compute current spectrum
-      # WWTerminal.printLine("\n> Processing current (J) spectrum...")
-      # _runCommand(f"spectra_mpi {filename} -types 0 -dsets curx cury curz")
-      ## compute velocity, magnetic, and kinetic energy spectra
-      WWTerminal.printLine("\n> Processing velocity, magnetic, density power spectra + kinetic energy spectrum...")
-      _runCommand(f"spectra_mpi {filename} -types 10") # varrho
-      # _runCommand(f"spectra_mpi {filename} -types 1 2 7 10") # vels, mags, sqrtrho, varrho
-      # ## compute other interesting datasets
-      # if self.bool_compute_all_dsets:
-      #   WWTerminal.printLine("\n> Processing (B cross J), (B dot J), magnetic tension, (div of U), vorticity, viscous dissipation...")
-      #   _runCommand(f"derivative_var {filename} -MHD_scales -divv -vort -dissipation")
-      # ## delete unused components in plt-file
-      # if self.bool_del_h5dsets:
-      #   list_dsets = [
-      #     ## B cross J (MHD scales)
-      #     "mXcx", "mXcy", "mXcz",
-      #     ## B dot J (MHD scales)
-      #     "mdc",
-      #     # magnetic tension (MHD scales)
-      #     "tenx", "teny", "tenz",
-      #     ## div of vel field
-      #     "divv",
-      #     ## vorticity
-      #     "vorticity_x", "vorticity_y", "vorticity_z",
-      #     ## viscous dissipation
-      #     "diss_rate"
-      #   ]
-      #   h5del(filename, list_dsets, self.filepath_data)
+      ## compute current components
+      WWTerminal.printLine("> Processing current components (J = curl of B)...")
+      _runCommand(f"derivative_var {filename} -current")
+      ## compute current spectrum
+      WWTerminal.printLine("\n> Processing current (J) spectrum...")
+      _runCommand(f"spectra_mpi {filename} -types 0 -dsets curx cury curz")
+      ## compute spectra
+      for types_index, type_name in zip(
+          [ 1, 2, 7, 10 ], # vels, mags, sqrtrho, varrho
+          [ "velocity power", "magnetic energy", "kinetic energy", "density power" ]
+        ):
+        WWTerminal.printLine(f"\n> Processing {type_name} spectrum...")
+        _runCommand(f"spectra_mpi {filename} -types {types_index:d}")
+      ## compute other interesting datasets
+      if self.bool_compute_all_dsets:
+        for type_flag, type_name in zip(
+            [ "MHD_scales", "divv", "vort" ],
+            [ "(B cross J), (B dot J), and magnetic tension", "div. of velocity", "vorticity" ]
+          ):
+          WWTerminal.printLine(f"\n> Processing {type_name}...")
+          _runCommand(f"derivative_var {filename} -{type_flag}")
+      ## delete unused components in plt-file
+      if self.bool_del_h5dsets:
+        list_dsets = [
+          ## B cross J (MHD scales)
+          "mXcx", "mXcy", "mXcz",
+          ## B dot J (MHD scales)
+          "mdc",
+          # magnetic tension (MHD scales)
+          "tenx", "teny", "tenz",
+          ## div of vel field
+          "divv",
+          ## vorticity
+          "vorticity_x", "vorticity_y", "vorticity_z",
+          ## viscous dissipation
+          "diss_rate"
+        ]
+        h5del(filename, list_dsets, self.filepath_data)
       ## add empty space
       WWTerminal.printLine("")
 

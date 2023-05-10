@@ -139,9 +139,11 @@ class PlotConvergence():
     self.ax_k_eta_mag    = self.fig.add_subplot(fig_grid[2, 0])
     self.ax_k_eta_cur    = self.fig.add_subplot(fig_grid[3, 0])
     self.ax_k_nu_kin     = self.fig.add_subplot(fig_grid[0, 1])
-    self.ax_k_nu_vel_lgt = self.fig.add_subplot(fig_grid[1, 1])
-    self.ax_k_nu_vel_trv = self.fig.add_subplot(fig_grid[2, 1])
+    self.ax_k_nu_vel_tot = self.fig.add_subplot(fig_grid[1, 1])
+    self.ax_k_nu_vel_lgt = self.fig.add_subplot(fig_grid[2, 1])
+    self.ax_k_nu_vel_trv = self.fig.add_subplot(fig_grid[3, 1])
     self._readScales()
+    self._plotScales()
     self._fitScales()
     self._labelFigure()
 
@@ -152,12 +154,14 @@ class PlotConvergence():
       "k_eta_mag_stats_nres"    : self.k_eta_mag_stats_nres,
       "k_eta_cur_stats_nres"    : self.k_eta_cur_stats_nres,
       "k_nu_kin_stats_nres"     : self.k_nu_kin_stats_nres,
+      "k_nu_vel_tot_stats_nres" : self.k_nu_vel_tot_stats_nres,
       "k_nu_vel_lgt_stats_nres" : self.k_nu_vel_lgt_stats_nres,
       "k_nu_vel_trv_stats_nres" : self.k_nu_vel_trv_stats_nres,
     }
     WWObjs.saveDict2JsonFile(
       filepath_file = f"{self.filepath_sim}/{FileNames.FILENAME_SIM_SCALES}",
-      input_dict    = dict_stats_nres
+      input_dict    = dict_stats_nres,
+      bool_verbose  = False
     )
 
   def saveFigure(self):
@@ -171,6 +175,7 @@ class PlotConvergence():
     self.k_eta_mag_group_t_group_sim_res    = []
     self.k_eta_cur_group_t_group_sim_res    = []
     self.k_nu_kin_group_t_group_sim_res     = []
+    self.k_nu_vel_tot_group_t_group_sim_res = []
     self.k_nu_vel_lgt_group_t_group_sim_res = []
     self.k_nu_vel_trv_group_t_group_sim_res = []
     for sim_res in LIST_SIM_RES:
@@ -184,6 +189,7 @@ class PlotConvergence():
       k_eta_mag_group_t    = dict_sim_outputs["k_eta_mag_group_t"][index_growth_start : index_growth_end]
       k_eta_cur_group_t    = dict_sim_outputs["k_eta_cur_group_t"][index_growth_start : index_growth_end]
       k_nu_kin_group_t     = dict_sim_outputs["k_nu_kin_group_t"][index_growth_start : index_growth_end]
+      k_nu_vel_tot_group_t = dict_sim_outputs["k_nu_vel_tot_group_t"][index_growth_start : index_growth_end]
       k_nu_vel_lgt_group_t = dict_sim_outputs["k_nu_vel_lgt_group_t"][index_growth_start : index_growth_end]
       k_nu_vel_trv_group_t = dict_sim_outputs["k_nu_vel_trv_group_t"][index_growth_start : index_growth_end]
       self.k_p_rho_group_t_group_sim_res.append(k_p_rho_group_t)
@@ -191,6 +197,7 @@ class PlotConvergence():
       self.k_eta_mag_group_t_group_sim_res.append(k_eta_mag_group_t)
       self.k_eta_cur_group_t_group_sim_res.append(k_eta_cur_group_t)
       self.k_nu_kin_group_t_group_sim_res.append(k_nu_kin_group_t)
+      self.k_nu_vel_tot_group_t_group_sim_res.append(k_nu_vel_tot_group_t)
       self.k_nu_vel_lgt_group_t_group_sim_res.append(k_nu_vel_lgt_group_t)
       self.k_nu_vel_trv_group_t_group_sim_res.append(k_nu_vel_trv_group_t)
 
@@ -220,6 +227,11 @@ class PlotConvergence():
         ax      = self.ax_k_nu_kin,
         x       = sim_res,
         array_y = self.k_nu_kin_group_t_group_sim_res[res_index]
+      )
+      PlotFuncs.plotErrorBar_1D(
+        ax      = self.ax_k_nu_vel_tot,
+        x       = sim_res,
+        array_y = self.k_nu_vel_tot_group_t_group_sim_res[res_index]
       )
       PlotFuncs.plotErrorBar_1D(
         ax      = self.ax_k_nu_vel_lgt,
@@ -258,6 +270,11 @@ class PlotConvergence():
       list_sim_res       = self.list_sim_res,
       scales_group_t_res = self.k_nu_kin_group_t_group_sim_res
     )
+    self.k_nu_vel_tot_stats_nres = fitScales(
+      ax                 = self.ax_k_nu_vel_tot,
+      list_sim_res       = self.list_sim_res,
+      scales_group_t_res = self.k_nu_vel_tot_group_t_group_sim_res
+    )
     self.k_nu_vel_lgt_stats_nres = fitScales(
       ax                 = self.ax_k_nu_vel_lgt,
       list_sim_res       = self.list_sim_res,
@@ -294,6 +311,7 @@ class PlotConvergence():
       self.ax_k_eta_mag,
       self.ax_k_eta_cur,
       self.ax_k_nu_kin,
+      self.ax_k_nu_vel_tot,
       self.ax_k_nu_vel_lgt,
       self.ax_k_nu_vel_trv,
     ]
@@ -311,9 +329,10 @@ class PlotConvergence():
     self.ax_k_p_mag.set_ylabel(r"$k_{\rm p, \mathbf{B}}$")
     self.ax_k_eta_mag.set_ylabel(r"$k_{\eta, \mathbf{B}}$")
     self.ax_k_eta_cur.set_ylabel(r"$k_{\eta, \nabla\times\mathbf{B}}$")
-    self.ax_k_nu_kin.set_ylabel(r"$k_\nu$")
-    self.ax_k_nu_vel_lgt.set_ylabel(r"$k_{\nu, \parallel}$")
-    self.ax_k_nu_vel_trv.set_ylabel(r"$k_{\nu, \perp}$")
+    self.ax_k_nu_kin.set_ylabel(r"$k_{\nu, {\rm kin}}$")
+    self.ax_k_nu_vel_tot.set_ylabel(r"$k_{\nu, {\rm vel}}$")
+    self.ax_k_nu_vel_lgt.set_ylabel(r"$k_{\nu, {\rm vel}, \parallel}$")
+    self.ax_k_nu_vel_trv.set_ylabel(r"$k_{\nu, {\rm vel}, \perp}$")
     ## annotate simulation parameters
     SimParams.addLabel_simInputs(
       filepath        = f"{self.filepath_sim}/288/",
@@ -330,6 +349,7 @@ class PlotConvergence():
     _reportFitStats(self.ax_k_eta_mag,    self.k_eta_mag_stats_nres)
     _reportFitStats(self.ax_k_eta_cur,    self.k_eta_cur_stats_nres)
     _reportFitStats(self.ax_k_nu_kin,     self.k_nu_kin_stats_nres)
+    _reportFitStats(self.ax_k_nu_vel_tot, self.k_nu_vel_tot_stats_nres)
     _reportFitStats(self.ax_k_nu_vel_lgt, self.k_nu_vel_lgt_stats_nres)
     _reportFitStats(self.ax_k_nu_vel_trv, self.k_nu_vel_trv_stats_nres)
 
@@ -363,7 +383,7 @@ def main():
     func               = plotSimData,
     bool_mproc         = BOOL_MPROC,
     bool_check_only    = BOOL_CHECK_ONLY,
-    basepath           = BASEPATH,
+    basepath           = PATH_SCRATCH,
     list_suite_folders = LIST_SUITE_FOLDERS,
     list_sonic_regimes = LIST_SONIC_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
@@ -375,12 +395,12 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BOOL_MPROC      = 1
-BOOL_CHECK_ONLY = 1
-BASEPATH        = "/scratch/ek9/nk7952/"
+BOOL_CHECK_ONLY = 0
+PATH_SCRATCH    = "/scratch/ek9/nk7952/"
+# PATH_SCRATCH    = "/scratch/jh2/nk7952/"
 
 ## PLASMA PARAMETER SET
-# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-LIST_SUITE_FOLDERS = [ "Rm3000" ]
+LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
 LIST_SONIC_REGIMES = [ "Mach5" ]
 LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]

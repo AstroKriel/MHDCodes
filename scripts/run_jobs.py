@@ -27,7 +27,7 @@ def runJob(filepath_sim_res):
 ## ###############################################################
 def main():
   list_sim_filepaths = SimParams.getListOfSimFilepaths(
-    basepath           = BASEPATH,
+    basepath           = PATH_SCRATCH,
     list_suite_folders = LIST_SUITE_FOLDERS,
     list_sonic_regimes = LIST_SONIC_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
@@ -43,9 +43,10 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BASEPATH  = "/scratch/ek9/nk7952/"
-JOB_NAME  = FileNames.FILENAME_RUN_SIM_JOB
-SUBFOLDER = ""
+PATH_SCRATCH = "/scratch/ek9/nk7952/"
+# PATH_SCRATCH = "/scratch/jh2/nk7952/"
+JOB_NAME     = FileNames.FILENAME_RUN_SIM_JOB
+SUBFOLDER    = ""
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
@@ -65,11 +66,12 @@ SUBFOLDER = ""
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
 # LIST_SIM_RES       = [ "18", "36", "72" ]
 
-# ## BOTTLENECK RUN
-# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# ## BOTTLENECK RUNS
+# LIST_SUITE_FOLDERS = [ "Re2000" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm1" ]
-# LIST_SIM_RES       = [ "576", "1152" ]
+# LIST_SIM_FOLDERS   = [ "Pm5" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "576" ]
+# LIST_SIM_RES       = [ "1152" ]
 
 
 

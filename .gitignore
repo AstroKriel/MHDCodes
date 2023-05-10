@@ -8,13 +8,15 @@
 */__pycache__
 */.DS_STore
 */.ipynb_checkpoints
+*/*.pdf
 */*.png
 */*.json
 
-# things to ignore in sub-sub-folders
-*/*/__pycache__
-*/*/.DS_STore
-*/*/.ipynb_checkpoints
-*/*/*.png
-*/*/*.json
+# # things to ignore in sub-sub-folders
+# */*/__pycache__
+# */*/.DS_STore
+# */*/.ipynb_checkpoints
+# */*/*.pdf
+# */*/*.png
+# */*/*.json
 

@@ -70,27 +70,22 @@ class TurbDrvingFile():
     self.std_Mach               = None
     self.old_driving_amplitude  = None
     self.new_driving_amplitude  = None
-    self.bool_history_converged = False
     self.bool_Mach_converged    = False
     self.bool_repeating         = False
 
   def performRoutine(self):
-    ## make sure a driving history file exists
     if os.path.isfile(f"{self.filepath_sim}/{FileNames.FILENAME_DRIVING_HISTORY}"):
       self._checkIfAlreadyConverged()
     else: self._createDrivingHistory()
-    ## check whether the driving paramaters need to be updated
-    if not(self.bool_history_converged):
-      self._loadData()
-      self._measureMach()
-      if self.bool_repeating:
-        print("\t> Measured Mach number is too similar to a previous entry.")
-        return
-      if not(self.bool_Mach_converged):
-        self._tuneDriving()
-        self._removeOldData()
-        self._reRunSimulation()
-    else: print(f"\t> Driving parameters have already converged on the desired Mach = {self.desired_Mach}")
+    self._loadData()
+    self._measureMach()
+    if self.bool_repeating:
+      print("\t> Measured Mach number is too similar to a previous entry.")
+      return
+    if not(self.bool_Mach_converged):
+      self._tuneDriving()
+      self._removeOldData()
+      self._reRunSimulation()
 
   def __round(self, value):
     return round(value, self.num_decimals_rounded)
@@ -112,7 +107,6 @@ class TurbDrvingFile():
         old_coef = float(line.split()[4])
         self.list_old_Mach.append(old_Mach)
         self.list_old_coef.append(old_coef)
-        if ("converged" in line.lower()): self.bool_history_converged = True
     print("\t> Previous Mach numbers:",       self.list_old_Mach)
     print("\t> Previous driving amplitudes:", self.list_old_coef)
 
@@ -177,7 +171,7 @@ class TurbDrvingFile():
     self.std_Mach = self.__round(np.std(self.data_Mach[self.index_start_Mach : self.index_end_Mach]))
     print(f"\t> Measured Mach = {self.ave_Mach} +/- {self.std_Mach}")
     rel_Mach_err = self.__relErr(self.desired_Mach, self.ave_Mach)
-    self.bool_Mach_converged = rel_Mach_err < 0.05
+    self.bool_Mach_converged = rel_Mach_err < 2.5 / 100
     print(f"\t> Measured Mach {100*rel_Mach_err:.3f}% off from desired Mach = {self.desired_Mach:.1f}")
     self.bool_repeating = any([
       self.__relErr(self.ave_Mach, old_Mach) < 0.01
@@ -235,9 +229,8 @@ class TurbDrvingFile():
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  if BOOL_CHECK_ONLY: print("Running in debug mode.")
   list_sim_filepaths = SimParams.getListOfSimFilepaths(
-    basepath           = BASEPATH,
+    basepath           = PATH_SCRATCH,
     list_suite_folders = LIST_SUITE_FOLDERS,
     list_sonic_regimes = LIST_SONIC_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
@@ -255,7 +248,8 @@ def main():
 ## PROGRAM PARAMETERS
 ## ###############################################################
 BOOL_CHECK_ONLY = 1
-BASEPATH        = "/scratch/ek9/nk7952/"
+PATH_SCRATCH    = "/scratch/ek9/nk7952/"
+# PATH_SCRATCH    = "/scratch/jh2/nk7952/"
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
@@ -274,16 +268,14 @@ BASEPATH        = "/scratch/ek9/nk7952/"
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
-LIST_SUITE_FOLDERS = [ "Rm3000" ]
-LIST_SONIC_REGIMES = [ "Mach10" ]
-LIST_SIM_FOLDERS   = [ "Pm10" ]
-LIST_SIM_RES       = [ "72" ]
 
-# ## BOTTLENECK RUN
-# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+## BOTTLENECK RUN
+LIST_SUITE_FOLDERS = [ "Re2000" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm1" ]
-# LIST_SIM_RES       = [ "576", "1152" ]
+LIST_SIM_FOLDERS   = [ "Pm5" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576", "1152" ]
+LIST_SONIC_REGIMES = [ "Mach0.3" ]
+LIST_SIM_RES       = [ "18" ]
 
 
 ## ###############################################################

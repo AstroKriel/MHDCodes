@@ -189,9 +189,10 @@ def createSimInputs(
   ## check that a valid driving scale is defined
   if k_turb is None: raise Exception(f"Error: you have provided a invalid driving scale = {k_turb}")
   ## number of cells per block that the flash4-exe was compiled with
-  if   sim_res in [ "144", "288", "576", "1152" ]: num_blocks = [ 36, 36, 48 ]
-  elif sim_res in [ "36", "72" ]:                  num_blocks = [ 12, 12, 18 ]
-  elif sim_res in [ "18" ]:                        num_blocks = [ 6, 6, 6 ]
+  if   sim_res in [ "1152" ]:              num_blocks = [ 48, 48, 72 ]
+  elif sim_res in [ "144", "288", "576" ]: num_blocks = [ 36, 36, 48 ]
+  elif sim_res in [ "36", "72" ]:          num_blocks = [ 12, 12, 18 ]
+  elif sim_res in [ "18" ]:                num_blocks = [ 6, 6, 6 ]
   num_procs = [
     int(int(sim_res) / num_blocks_in_dir)
     for num_blocks_in_dir in num_blocks
@@ -222,30 +223,30 @@ class SimInputParams():
   def __init__(
       self,
       suite_folder, sim_folder, sim_res, num_blocks, num_procs, k_turb, desired_Mach,
-      t_turb       = None,
-      Re           = None,
-      Rm           = None,
-      Pm           = None,
+      t_turb = None,
+      Re     = None,
+      Rm     = None,
+      Pm     = None,
       **kwargs # unused arguments
     ):
     ## required parameters
-    self.suite_folder  = suite_folder
-    self.sim_folder    = sim_folder
-    self.sim_res       = sim_res
-    self.num_blocks    = num_blocks
-    self.num_procs     = num_procs
-    self.k_turb        = k_turb
-    self.desired_Mach  = desired_Mach
-    self.max_num_t_turb    = 100
+    self.suite_folder   = suite_folder
+    self.sim_folder     = sim_folder
+    self.sim_res        = sim_res
+    self.num_blocks     = num_blocks
+    self.num_procs      = num_procs
+    self.k_turb         = k_turb
+    self.desired_Mach   = desired_Mach
+    self.max_num_t_turb = 100
     ## parameters that (may) need to be computed
-    self.t_turb        = t_turb
-    self.Re            = Re
-    self.Rm            = Rm
-    self.Pm            = Pm
+    self.t_turb         = t_turb
+    self.Re             = Re
+    self.Rm             = Rm
+    self.Pm             = Pm
     ## parameters that need to be computed
-    self.sonic_regime  = None
-    self.nu            = None
-    self.eta           = None
+    self.sonic_regime   = None
+    self.nu             = None
+    self.eta            = None
 
   def defineParams(self):
     ## check input parameters are of the right type

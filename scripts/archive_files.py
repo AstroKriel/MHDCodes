@@ -13,7 +13,7 @@ from TheUsefulModule import WWFnF
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
-BASEPATH     = "/scratch/ek9/nk7952"
+PATH_SCRATCH     = "/scratch/ek9/nk7952"
 SONIC_REGIME = "super_sonic"
 
 def main():
@@ -43,7 +43,7 @@ def main():
         ## ---------------------------------------
         ## create filepath to simulation folder
         sim_filepath_plt = WWFnF.createFilepath([
-          BASEPATH, suite_folder, sim_res, SONIC_REGIME, sim_folder, "plt"
+          PATH_SCRATCH, suite_folder, sim_res, SONIC_REGIME, sim_folder, "plt"
         ])
         ## check that the filepath exists
         if not os.path.exists(sim_filepath_plt):

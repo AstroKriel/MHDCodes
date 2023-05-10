@@ -35,7 +35,7 @@ def createJobs(filepath_sim_res):
       obj_prep_sim.fromLowerNres(filepath_ref_sim)
     else:
       ## prepare simulation from template files
-      filepath_ref_folder = f"{BASEPATH}/flash_files/"
+      filepath_ref_folder = f"{PATH_SCRATCH}/flash_files/"
       if not os.path.exists(filepath_ref_folder):
         raise Exception("Error: reference folder does not exist:", filepath_ref_folder)
       obj_prep_sim.fromTemplate(filepath_ref_folder)
@@ -68,7 +68,7 @@ def getSimInputDetails():
         ## CHECK THE SIMULATION CONFIGURATION EXISTS
         ## -----------------------------------------
         filepath_sim = WWFnF.createFilepath([
-          BASEPATH, suite_folder, sonic_regime, sim_folder
+          PATH_SCRATCH, suite_folder, sonic_regime, sim_folder
         ])
         if not os.path.exists(filepath_sim): continue
         ## loop over the different resolution runs
@@ -125,12 +125,17 @@ def main():
     ## create empty space
     if bool_printed_something:
       print(" ")
+  ## check something was done
+  if index_job == 0: print("There are no simulations in your specified paramater range")
 
 
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BASEPATH               = "/scratch/ek9/nk7952/"
+PATH_SCRATCH           = "/scratch/ek9/nk7952/"
+# PATH_SCRATCH           = "/scratch/jh2/nk7952/"
+
+## SETUP DETAILS
 K_TURB                 = 2
 BOOL_CREATE_SIM_INPUTS = 1
 BOOL_PREP_SIM_RUN      = 1
@@ -155,11 +160,11 @@ BOOL_PROCESS_PLT_FILES = 0
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
-# ## BOTTLENECK RUN
-# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# ## BOTTLENECK RUNS
+# LIST_SUITE_FOLDERS = [ "Re2000" ]
 # LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm1" ]
-# LIST_SIM_RES       = [ "576", "1152" ]
+# LIST_SIM_FOLDERS   = [ "Pm5" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "576", "1152" ]
 
 
 ## ###############################################################

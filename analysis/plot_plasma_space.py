@@ -32,7 +32,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 def main():
   list_filepath_sim_res = SimParams.getListOfSimFilepaths(
-    basepath           = BASEPATH,
+    basepath           = PATH_SCRATCH,
     list_suite_folders = LIST_SUITE_FOLDERS,
     list_sonic_regimes = [ "Mach5" ],
     list_sim_folders   = LIST_SIM_FOLDERS,
@@ -82,13 +82,13 @@ def main():
   ax_E_ratio_sat.set_xscale("log")
   ax_E_ratio_sat.set_yscale("log")
   fig_name = f"fig_Mach5_plasma_space.png"
-  PlotFuncs.saveFigure(fig, f"{BASEPATH}/{fig_name}", bool_verbose=True)
+  PlotFuncs.saveFigure(fig, f"{PATH_SCRATCH}/{fig_name}", bool_verbose=True)
 
 
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BASEPATH = "/scratch/ek9/nk7952/"
+PATH_SCRATCH = "/scratch/ek9/nk7952/"
 
 ## PLASMA PARAMETER SET
 LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
