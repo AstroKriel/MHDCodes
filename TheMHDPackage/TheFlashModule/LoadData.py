@@ -73,11 +73,9 @@ def loadFlashDataCube(
   field_sorted_group_comps = []
   for field_comp in field_group_comp:
     field_comp_sorted = reformatFlashField(field_comp, num_blocks, num_procs)
+    ## normalise by rms-value
+    if bool_norm_rms: field_comp_sorted /= np.sqrt(np.mean(field_comp_sorted**2))
     field_sorted_group_comps.append(field_comp_sorted)
-  ## normalise by rms-value
-  if bool_norm_rms:
-    for field_comp in field_sorted_group_comps:
-      field_comp /= np.sqrt(np.mean(field_comp**2))
   ## return spatial-components of data
   return np.squeeze(field_sorted_group_comps)
 

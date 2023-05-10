@@ -1,8 +1,8 @@
 ## TODO:
-- compute characteristic field curvature
+- correlation plot of B^2/8pi vs rho u^2
+- compute field curvature: Frenet-Serret basis
 - implement script to restart simulations until they reach saturation
   - relevant for Rm=3000, Pm=1, Mach=5 and bottleneck runs
-- run Nres=18, Mach=0.3 bottleneck sim
 - finish 10t_turb of Mach=0.3, Nres=1152 bottleneck sim
 - process bottleneck data
 - organise bottleneck data
