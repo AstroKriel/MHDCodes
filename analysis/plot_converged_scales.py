@@ -56,10 +56,10 @@ class PlotSimScales():
     print(" ")
     ## INITIALISE DATA CONTAINERS
     ## --------------------------
-    if len(LIST_SONIC_REGIME) == 1:
-      self.plot_name = LIST_SONIC_REGIME[0]
-      self.bool_supersonic = LoadData.getNumberFromString(LIST_SONIC_REGIME[0], "Mach") > 1
-    elif len(LIST_SONIC_REGIME) > 1:
+    if len(LIST_MACH_REGIMES) == 1:
+      self.plot_name = LIST_MACH_REGIMES[0]
+      self.bool_supersonic = LoadData.getNumberFromString(LIST_MACH_REGIMES[0], "Mach") > 1
+    elif len(LIST_MACH_REGIMES) > 1:
       self.plot_name = "Mach_varied"
       self.bool_supersonic = None
     else: raise Exception("Error: you need to specify which sonic-regimes to look at")
@@ -83,20 +83,22 @@ class PlotSimScales():
 
   def __loadAllSimulationData(self):
     ## loop over the simulation suites
-    for suite_folder in LIST_SUITE_FOLDER:
+    for suite_folder in LIST_SUITE_FOLDERS:
       str_message = f"Loading datasets from suite: {suite_folder}"
       print(str_message)
       print("=" * len(str_message))
       ## loop over the simulation folders
-      for sim_folder in LIST_SIM_FOLDER:
-        for sonic_regime in LIST_SONIC_REGIME:
+      for sim_folder in LIST_SIM_FOLDERS:
+        for mach_regime in LIST_MACH_REGIMES:
           ## check that the fitted spectra data exists for the Nres=288 simulation setup
           filepath_sim = WWFnF.createFilepath([
-            PATH_SCRATCH, suite_folder, sonic_regime, sim_folder
+            PATH_SCRATCH, suite_folder, mach_regime, sim_folder
           ])
-          if not os.path.isfile(f"{filepath_sim}/{FileNames.FILENAME_SIM_SCALES}"): continue
+          if not os.path.isfile(f"{filepath_sim}/{FileNames.FILENAME_SIM_SCALES}"):
+            print(filepath_sim)
+            continue
           ## load scales
-          print(f"\t> Loading {sim_folder}, {sonic_regime} dataset")
+          print(f"\t> Loading {sim_folder}, {mach_regime} dataset")
           self.__getParams(filepath_sim)
           if suite_folder == "Re10":     self.marker_group_sim.append("s")
           elif suite_folder == "Re500":  self.marker_group_sim.append("D")
@@ -117,14 +119,10 @@ class PlotSimScales():
       bool_verbose = False
     )
     ## extract plasma Reynolds numbers
-    Re = int(dict_sim_inputs["Re"])
-    Rm = int(dict_sim_inputs["Rm"])
-    Pm = int(dict_sim_inputs["Pm"])
-    Mach = dict_sim_inputs["desired_Mach"]
-    self.Mach_group_sim.append(Mach)
-    self.Re_group_sim.append(Re)
-    self.Rm_group_sim.append(Rm)
-    self.Pm_group_sim.append(Pm)
+    self.Mach_group_sim.append(float(dict_sim_inputs["desired_Mach"]))
+    self.Re_group_sim.append(int(dict_sim_inputs["Re"]))
+    self.Rm_group_sim.append(int(dict_sim_inputs["Rm"]))
+    self.Pm_group_sim.append(int(dict_sim_inputs["Pm"]))
     self.color_group_sim.append("darkorange")
     # self.color_group_sim.append( "cornflowerblue" if Re < 100 else "orangered" )
     ## extract measured scales
@@ -144,7 +142,7 @@ class PlotSimScales():
     self.plotDependance_knu_Re(self.k_nu_vel_trv_stats_group_sim, "knu_vel_trv")
     self.plotDependance_keta_Pm(self.k_eta_mag_stats_group_sim,   "keta_mag")
     self.plotDependance_keta_Pm(self.k_eta_cur_stats_group_sim,   "keta_cur")
-    self.plotDependance_kp_scale(self.k_nu_kin_stats_group_sim,   "knu_vel_tot")
+    self.plotDependance_kp_scale(self.k_nu_kin_stats_group_sim,   "knu_kin")
     self.plotDependance_kp_scale(self.k_eta_mag_stats_group_sim,  "keta_mag")
     self.plotDependance_kp_scale(self.k_eta_cur_stats_group_sim,  "keta_cur")
     self.plotDependance_kp_scale(self.k_p_rho_stats_group_sim,    "krho")
@@ -172,6 +170,9 @@ class PlotSimScales():
     ## plot reference lines
     x = np.linspace(10**(-1), 10**(5), 10**4)
     PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.6*x**(2/3), ls=":")
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.5*x**(2/3), ls=":")
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.3*x**(3/4), ls="--")
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.75*x**(1/2), ls="-")
     ## label figure
     PlotFuncs.addLegend_fromArtists(
       ax,
@@ -199,7 +200,7 @@ class PlotSimScales():
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_ylim([ 0.9, 200 ])
+    # if self.bool_supersonic is not None: ax.set_ylim([ 0.9, 200 ])
     ax.set_xlabel(r"Re", fontsize=20)
     if   "kin" in domain_name.lower(): ax.set_ylabel(r"$k_{\nu, {\rm kin}}$", fontsize=20)
     elif "tot" in domain_name.lower(): ax.set_ylabel(r"$k_{\nu, {\rm vel}}$", fontsize=20)
@@ -234,9 +235,12 @@ class PlotSimScales():
     if   "mag" in domain_name.lower():
       label_ref_line = r"$= {\rm Pm}^{1/3}$"
       PlotFuncs.plotData_noAutoAxisScale(ax, x, x**(1/3), ls=":")
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, x**(1/4), ls="--")
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, x**(0.1), ls="-")
     elif "cur" in domain_name.lower():
       label_ref_line = r"$\propto {\rm Pm}^{1/2}$"
       PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.4*x**(1/2), ls=":")
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, 1.5*x**(1/2), ls=":")
     ## label figure
     PlotFuncs.addLegend_fromArtists(
       ax,
@@ -264,8 +268,9 @@ class PlotSimScales():
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
-    if   "mag" in domain_name.lower(): ax.set_ylim([ 0.9, 11 ])
-    elif "cur" in domain_name.lower(): ax.set_ylim([ 0.3, 11 ])
+    # if self.bool_supersonic is not None:
+    #   if   "mag" in domain_name.lower(): ax.set_ylim([ 0.9, 11 ])
+    #   elif "cur" in domain_name.lower(): ax.set_ylim([ 0.3, 11 ])
     ax.set_xlabel(r"${\rm Pm}$", fontsize=20)
     if   "mag" in domain_name.lower(): ax.set_ylabel(r"$k_{\eta, \mathbf{B}} / k_{\nu, {\rm vel}}$", fontsize=20)
     elif "cur" in domain_name.lower(): ax.set_ylabel(r"$k_{\eta, \nabla\times\mathbf{B}} / k_{\nu, {\rm vel}}$", fontsize=20)
@@ -297,6 +302,8 @@ class PlotSimScales():
       )
     ## plot reference lines
     ax.axhline(y=5.0, ls=":", c="black")
+    x = np.linspace(10**(-1), 10**(5), 10**4)
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.41*x, ls="--")
     # label figure
     PlotFuncs.addLegend_fromArtists(
       ax,
@@ -314,9 +321,10 @@ class PlotSimScales():
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
-    if   "mag" in domain_name.lower(): ax.set_xlim([ 5, 200 ])
-    elif "cur" in domain_name.lower(): ax.set_xlim([ 5, 70 ])
-    ax.set_ylim([ 1, 30 ])
+    # if self.bool_supersonic is not None:
+    #   if   "mag" in domain_name.lower(): ax.set_xlim([ 5, 200 ])
+    #   elif "cur" in domain_name.lower(): ax.set_xlim([ 5, 70 ])
+    # if self.bool_supersonic is not None: ax.set_ylim([ 1, 30 ])
     if   "mag"     in domain_name.lower(): ax.set_xlabel(r"$k_{\eta, \mathbf{B}}$", fontsize=20)
     elif "cur"     in domain_name.lower(): ax.set_xlabel(r"$k_{\eta, \nabla\times\mathbf{B}}$", fontsize=20)
     elif "rho"     in domain_name.lower(): ax.set_xlabel(r"$k_{{\rm p}, \rho}$", fontsize=20)
@@ -379,7 +387,7 @@ class PlotSimScales():
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_ylim([ 1, 30 ])
+    # if self.bool_supersonic is not None: ax.set_ylim([ 1, 30 ])
     if   "Re".lower() in domain_name.lower(): ax.set_xlabel(r"Re", fontsize=20)
     elif "Rm".lower() in domain_name.lower(): ax.set_xlabel(r"Rm", fontsize=20)
     elif "Pm".lower() in domain_name.lower(): ax.set_xlabel(r"Pm", fontsize=20)
@@ -418,8 +426,8 @@ class PlotSimScales():
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlim([ 0.9, 220 ])
-    ax.set_ylim([ 0.9, 5 ])
+    # if self.bool_supersonic is not None: ax.set_xlim([ 0.9, 220 ])
+    # if self.bool_supersonic is not None: ax.set_ylim([ 0.9, 5 ])
     ax.set_xlabel(r"$k_{\nu, {\rm vel}}$", fontsize=20)
     ax.set_ylabel(r"$k_{{\rm p}, \rho}$", fontsize=20)
     ## save plot
@@ -440,7 +448,6 @@ class PlotSimScales():
       )
     ## adjust axis
     ax.set_yscale("log")
-    ax.set_ylim([ 1, 30 ])
     ax.set_xlabel(r"$\mathcal{M}$", fontsize=20)
     ax.set_ylabel(r"$k_{\rm p}$", fontsize=20)
     ## save plot
@@ -463,11 +470,15 @@ def main():
 PATH_SCRATCH = "/scratch/ek9/nk7952/"
 # PATH_SCRATCH = "/scratch/jh2/nk7952/"
 
-## PLASMA PARAMETER SET
-LIST_SONIC_REGIME = [ "Mach5" ]
-LIST_SUITE_FOLDER = [ "Re10", "Re500", "Rm3000" ]
-LIST_SIM_FOLDER   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
+# ## PLASMA PARAMETER SET
+# LIST_MACH_REGIMES = [ "Mach5" ]
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 
+## MACH NUMBER SET
+LIST_SUITE_FOLDERS = [ "Rm3000" ]
+LIST_MACH_REGIMES = [ "Mach0.3" ] # , "Mach1", "Mach5", "Mach10"
+LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
 
 ## ###############################################################
 ## PROGRAM ENTRY POINT

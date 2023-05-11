@@ -105,7 +105,7 @@ def main():
   list_sim_filepaths = SimParams.getListOfSimFilepaths(
     basepath           = PATH_SCRATCH,
     list_suite_folders = LIST_SUITE_FOLDERS,
-    list_sonic_regimes = LIST_SONIC_REGIMES,
+    list_sonic_regimes = LIST_MACH_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
     list_sim_res       = LIST_SIM_RES
   )
@@ -125,7 +125,7 @@ PATH_SCRATCH    = "/scratch/ek9/nk7952/"
 
 ## PLASMA PARAMETER SET
 LIST_SUITE_FOLDERS = [ "Rm3000" ]
-LIST_SONIC_REGIMES = [ "Mach5" ]
+LIST_MACH_REGIMES = [ "Mach5" ]
 LIST_SIM_FOLDERS   = [ "Pm250" ]
 LIST_SIM_RES       = [ "18", "144" ]
 

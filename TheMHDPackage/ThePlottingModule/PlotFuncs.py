@@ -110,7 +110,12 @@ def plotData_noAutoAxisScale(
 
 def plotErrorBar_1D(
     ax, x, array_y,
-    color="k", marker="o", label=None
+    label   = None,
+    color   = "k",
+    marker  = "o",
+    capsize = 7.5,
+    alpha   = 1.0,
+    zorder  = 5
   ):
   array_y = [
     y
@@ -127,12 +132,15 @@ def plotErrorBar_1D(
   ])
   ax.errorbar(
     x, y_p50,
-    yerr  = y_1sig,
-    color = color,
-    fmt   = marker,
-    label = label,
-    markersize=7, markeredgecolor="black", capsize=7.5, elinewidth=2,
-    linestyle="None", zorder=10
+    yerr    = y_1sig,
+    color   = color,
+    fmt     = marker,
+    label   = label,
+    alpha   = alpha,
+    capsize = capsize,
+    zorder  = zorder,
+    markersize=7, markeredgecolor="black",
+    elinewidth=2, linestyle="None"
   )
 
 def plotPDF(

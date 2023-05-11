@@ -61,14 +61,14 @@ def getSimInputDetails():
   for suite_folder in LIST_SUITE_FOLDERS:
     ## LOOK AT EACH SONIC REGIME
     ## -------------------------
-    for sonic_regime in LIST_SONIC_REGIMES:
+    for mach_regime in LIST_MACH_REGIMES:
       ## LOOK AT EACH SIMULATION FOLDER
       ## -----------------------------
       for sim_folder in LIST_SIM_FOLDERS:
         ## CHECK THE SIMULATION CONFIGURATION EXISTS
         ## -----------------------------------------
         filepath_sim = WWFnF.createFilepath([
-          PATH_SCRATCH, suite_folder, sonic_regime, sim_folder
+          PATH_SCRATCH, suite_folder, mach_regime, sim_folder
         ])
         if not os.path.exists(filepath_sim): continue
         ## loop over the different resolution runs
@@ -83,7 +83,7 @@ def getSimInputDetails():
             "suite_folder"     : suite_folder,
             "sim_folder"       : sim_folder,
             "sim_res"          : sim_res,
-            "desired_Mach"     : LoadData.getNumberFromString(sonic_regime, "Mach"),
+            "desired_Mach"     : LoadData.getNumberFromString(mach_regime, "Mach"),
             "Re"               : LoadData.getNumberFromString(suite_folder, "Re"),
             "Rm"               : LoadData.getNumberFromString(suite_folder, "Rm"),
             "Pm"               : LoadData.getNumberFromString(sim_folder,   "Pm")
@@ -132,39 +132,42 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-PATH_SCRATCH           = "/scratch/ek9/nk7952/"
-# PATH_SCRATCH           = "/scratch/jh2/nk7952/"
+# PATH_SCRATCH           = "/scratch/ek9/nk7952/"
+PATH_SCRATCH           = "/scratch/jh2/nk7952/"
 
 ## SETUP DETAILS
 K_TURB                 = 2
 BOOL_CREATE_SIM_INPUTS = 1
-BOOL_PREP_SIM_RUN      = 1
+BOOL_PREP_SIM_RUN      = 0
 PREP_FROM_LOWER_NRES   = ""
 BOOL_PROCESS_PLT_FILES = 0
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3" ]
+# LIST_MACH_REGIMES = [ "Mach0.3" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
 # ## RERUN RE=RM=3000
 # LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_MACH_REGIMES = [ "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm1" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
 ## MACH NUMBER SET
 # LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+# LIST_MACH_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
-# ## BOTTLENECK RUNS
-# LIST_SUITE_FOLDERS = [ "Re2000" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
+## BOTTLENECK RUNS
+LIST_SUITE_FOLDERS = [ "Re2000" ]
+# LIST_MACH_REGIMES = [ "Mach0.3", "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm5" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "576", "1152" ]
+LIST_MACH_REGIMES = [ "Mach0.3" ]
+LIST_SIM_FOLDERS   = [ "Pm5" ]
+LIST_SIM_RES       = [ "1152" ]
 
 
 ## ###############################################################

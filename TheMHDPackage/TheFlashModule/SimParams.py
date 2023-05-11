@@ -9,7 +9,7 @@ import multiprocessing as mproc
 import concurrent.futures as cfut
 
 ## import user defined modules
-from TheUsefulModule import WWFnF, WWTerminal, WWVariables, WWObjs
+from TheUsefulModule import WWFnF, WWVariables, WWObjs
 from TheFlashModule import LoadData, FileNames
 from ThePlottingModule import PlotFuncs
 
@@ -22,15 +22,15 @@ def getSonicRegime(Mach):
   return f"Mach{int(Mach):d}"
 
 def getJobTag(dict_sim_inputs, job_name):
-  sonic_regime = getSonicRegime(dict_sim_inputs["desired_Mach"])
+  mach_regime = getSonicRegime(dict_sim_inputs["desired_Mach"])
   suite_folder = dict_sim_inputs["suite_folder"]
   sim_folder   = dict_sim_inputs["sim_folder"]
   sim_res      = dict_sim_inputs["sim_res"]
-  return f"{sonic_regime}{suite_folder}{sim_folder}{job_name}{sim_res}"
+  return f"{mach_regime}{suite_folder}{sim_folder}{job_name}{sim_res}"
 
 def getSimName(dict_sim_inputs):
   return "{}_{}_{}".format(
-    dict_sim_inputs["sonic_regime"],
+    dict_sim_inputs["mach_regime"],
     dict_sim_inputs["suite_folder"],
     dict_sim_inputs["sim_folder"]
   )
@@ -46,14 +46,14 @@ def getListOfSimFilepaths(basepath, list_suite_folders, list_sonic_regimes, list
   for suite_folder in list_suite_folders:
     ## LOOK AT EACH SONIC REGIME
     ## -------------------------
-    for sonic_regime in list_sonic_regimes:
+    for mach_regime in list_sonic_regimes:
       ## LOOK AT EACH SIMULATION FOLDER
       ## -----------------------------
       for sim_folder in list_sim_folders:
         ## CHECK THE SIMULATION CONFIGURATION EXISTS
         ## -----------------------------------------
         filepath_sim = WWFnF.createFilepath([
-          basepath, suite_folder, sonic_regime, sim_folder
+          basepath, suite_folder, mach_regime, sim_folder
         ])
         if not os.path.exists(filepath_sim): continue
         ## loop over the different resolution runs
@@ -189,7 +189,7 @@ def createSimInputs(
   ## check that a valid driving scale is defined
   if k_turb is None: raise Exception(f"Error: you have provided a invalid driving scale = {k_turb}")
   ## number of cells per block that the flash4-exe was compiled with
-  if   sim_res in [ "1152" ]:              num_blocks = [ 48, 48, 72 ]
+  if   sim_res in [ "1152" ]:              num_blocks = [ 96, 96, 72 ]
   elif sim_res in [ "144", "288", "576" ]: num_blocks = [ 36, 36, 48 ]
   elif sim_res in [ "36", "72" ]:          num_blocks = [ 12, 12, 18 ]
   elif sim_res in [ "18" ]:                num_blocks = [ 6, 6, 6 ]
@@ -244,7 +244,7 @@ class SimInputParams():
     self.Rm             = Rm
     self.Pm             = Pm
     ## parameters that need to be computed
-    self.sonic_regime   = None
+    self.mach_regime   = None
     self.nu             = None
     self.eta            = None
 
@@ -265,7 +265,7 @@ class SimInputParams():
   def __defineSonicRegime(self):
     ## t_turb = ell_turb / (Mach * c_s)
     self.t_turb = 1 / (self.k_turb * self.desired_Mach)
-    self.sonic_regime = getSonicRegime(self.desired_Mach)
+    self.mach_regime = getSonicRegime(self.desired_Mach)
 
   def __definePlasmaParameters(self):
     dict_params = LoadData.computePlasmaConstants(
@@ -283,7 +283,7 @@ class SimInputParams():
 
   def __checkSimParamsDefined(self):
     list_check_params_defined = [
-      "sonic_regime" if self.sonic_regime is None else "",
+      "mach_regime" if self.mach_regime is None else "",
       "t_turb"       if self.t_turb       is None else "",
       "Re"           if self.Re           is None else "",
       "Rm"           if self.Rm           is None else "",

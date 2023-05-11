@@ -3,9 +3,7 @@
 - compute field curvature: Frenet-Serret basis
 - implement script to restart simulations until they reach saturation
   - relevant for Rm=3000, Pm=1, Mach=5 and bottleneck runs
-- finish 10t_turb of Mach=0.3, Nres=1152 bottleneck sim
-- process bottleneck data
-- organise bottleneck data
+- Mach=0.3, Nres=1152 bottleneck sim
+  - finish 10 t_turb of 
+  - process bottleneck data
 - delete saturated data?
-
-## DONE:

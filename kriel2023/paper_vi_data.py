@@ -28,6 +28,9 @@ from ThePlottingModule import PlotFuncs
 plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
+## ###############################################################
+## HELPER FUNCTION
+## ###############################################################
 def addText(ax, pos, text):
   ax.text(
     pos[0], pos[1],
@@ -192,7 +195,11 @@ def plotSimData():
   ## initialise figure
   print("Initialising figure...")
   figscale = 1.2
-  fig, axs = plt.subplots(nrows=2, figsize=(6*figscale, 2*4*figscale), sharex=True)
+  fig, axs = plt.subplots(
+    nrows   = 2,
+    figsize = (6*figscale, 2*4*figscale),
+    sharex  = True
+  )
   fig.subplots_adjust(hspace=0.075)
   ## add inset axis
   ax_sub = PlotFuncs.addInsetAxis(

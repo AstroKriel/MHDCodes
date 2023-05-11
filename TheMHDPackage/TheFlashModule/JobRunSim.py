@@ -235,17 +235,17 @@ def writeFlashParamFile(filepath_ref, filepath_to, dict_sim_inputs, max_num_hour
   )
   _addParamAssign(
     param_name  = "checkpointFileIntervalTime",
-    param_value = dict_sim_inputs["t_turb"],
+    param_value = "{:.6f}".format(dict_sim_inputs["t_turb"]),
     comment     = "1 t_turb"
   )
   _addParamAssign(
     param_name  = "plotFileIntervalTime",
-    param_value = "{:.3f}".format(0.1 * dict_sim_inputs["t_turb"]),
+    param_value = "{:.6f}".format(0.1 * dict_sim_inputs["t_turb"]),
     comment     = "0.1 t_turb"
   )
   _addParamAssign(
     param_name  = "tmax",
-    param_value = "{:.3f}".format(
+    param_value = "{:.6f}".format(
       dict_sim_inputs["max_num_t_turb"] * dict_sim_inputs["t_turb"]
     ),
     comment     = "{} turb".format(dict_sim_inputs["max_num_t_turb"])

@@ -60,7 +60,6 @@ class PlotTurbData():
     return {
       "outputs_per_t_turb" : self.outputs_per_t_turb,
       "E_growth_rate"      : self.E_growth_rate,
-      "E_growth_percent"   : self.E_growth_percent,
       "E_ratio_sat"        : self.E_ratio_sat,
       "rms_Mach_growth"    : self.rms_Mach_growth,
       "std_Mach_growth"    : self.std_Mach_growth,
@@ -167,32 +166,31 @@ class PlotTurbData():
     linestyle_sat  = ":"
     ## SATURATED REGIME
     ## ----------------
-    ## get index and time associated with saturated regime
-    time_start_sat      = 0.75 * self.data_time[-1]
-    index_start_sat     = WWLists.getIndexClosestValue(self.data_time, time_start_sat)
-    self.time_start_sat = self.data_time[index_start_sat]
-    index_end_sat       = len(self.data_time)-1
-    ## find saturated energy ratio
-    self.E_ratio_sat, _ = FitFuncs.fitConstFunc(
-      ax              = self.axs[1],
-      data_x          = self.data_time,
-      data_y          = self.data_E_ratio,
-      str_label       = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ ",
-      index_start_fit = index_start_sat,
-      index_end_fit   = index_end_sat,
-      linestyle       = linestyle_sat
-    )
+    if np.max(self.data_E_ratio) > 10**(-4):
+      ## get index and time associated with saturated regime
+      time_start_sat      = 0.75 * self.data_time[-1]
+      index_start_sat     = WWLists.getIndexClosestValue(self.data_time, time_start_sat)
+      self.time_start_sat = self.data_time[index_start_sat]
+      index_end_sat       = len(self.data_time)-1
+      ## find saturated energy ratio
+      self.E_ratio_sat, _ = FitFuncs.fitConstFunc(
+        ax              = self.axs[1],
+        data_x          = self.data_time,
+        data_y          = self.data_E_ratio,
+        str_label       = r"$\left(E_{\rm kin} / E_{\rm mag}\right)_{\rm sat} =$ ",
+        index_start_fit = index_start_sat,
+        index_end_fit   = index_end_sat,
+        linestyle       = linestyle_sat
+      )
+    else:
+      self.time_start_sat = None
+      self.E_ratio_sat    = None
     ## GROWTH REGIME
     ## -------------
-    t_start_index = WWLists.getIndexClosestValue(self.data_time, 5.0)
-    self.E_growth_percent = self.E_ratio_sat / self.data_E_ratio[t_start_index]
-    ## get index range corresponding with growth phase
-    index_E_lo = WWLists.getIndexClosestValue(self.data_E_ratio, 10**(-8))
-    if self.E_ratio_sat > 10**(-4):
-      index_E_hi = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_ratio_sat/100)
-    else: index_E_hi = index_start_sat * 8 // 10
-    index_start_growth = max([ t_start_index, min([ index_E_lo, index_E_hi ]) ])
-    index_end_growth   = max([ index_E_lo, index_E_hi ])
+    index_start_growth = WWLists.getIndexClosestValue(self.data_time, 5.0)
+    if self.time_start_sat is not None:
+      index_end_growth = WWLists.getIndexClosestValue(self.data_E_ratio, self.E_ratio_sat / 100)
+    else: index_end_growth = len(self.data_E_ratio)-1
     ## find growth rate of exponential
     self.E_growth_rate = FitFuncs.fitExpFunc(
       ax              = self.axs[1],
@@ -232,7 +230,7 @@ class PlotTurbData():
     ## annotate measured quantities
     if self.bool_fitted:
       self.axs[0].legend(frameon=False, loc="lower left", fontsize=18)
-      if self.E_ratio_sat > 10**(-4):
+      if self.time_start_sat is not None:
         self.axs[1].legend(frameon=False, loc="lower right", fontsize=18)
       else: self.axs[1].legend(frameon=False, loc="upper right", fontsize=18)
 
@@ -294,7 +292,7 @@ def main():
     bool_check_only    = BOOL_CHECK_ONLY,
     basepath           = PATH_SCRATCH,
     list_suite_folders = LIST_SUITE_FOLDERS,
-    list_sonic_regimes = LIST_SONIC_REGIMES,
+    list_sonic_regimes = LIST_MACH_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
     list_sim_res       = LIST_SIM_RES
   )
@@ -303,37 +301,34 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-BOOL_MPROC      = 0
-BOOL_CHECK_ONLY = 1
-# PATH_SCRATCH    = "/scratch/ek9/nk7952/"
-PATH_SCRATCH    = "/scratch/jh2/nk7952/"
+BOOL_MPROC      = 1
+BOOL_CHECK_ONLY = 0
+PATH_SCRATCH    = "/scratch/ek9/nk7952/"
+# PATH_SCRATCH    = "/scratch/jh2/nk7952/"
 
 # ## PLASMA PARAMETER SET
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_MACH_REGIMES = [ "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
 
 # ## RERUN RM=3000, PM=1
 # LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach5" ]
+# LIST_MACH_REGIMES = [ "Mach5" ]
 # LIST_SIM_FOLDERS   = [ "Pm1" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
 # ## MACH NUMBER SET
 # LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
+# LIST_MACH_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
 # LIST_SIM_FOLDERS   = [ "Pm1" ]
 # LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
 
 ## BOTTLENECK RUN
 LIST_SUITE_FOLDERS = [ "Re2000" ]
-# LIST_SONIC_REGIMES = [ "Mach0.3", "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm5" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576", "1152" ]
-LIST_SONIC_REGIMES = [ "Mach0.3" ]
+LIST_MACH_REGIMES = [ "Mach0.3", "Mach5" ]
 LIST_SIM_FOLDERS   = [ "Pm5" ]
-LIST_SIM_RES       = [ "1152" ]
+LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576", "1152" ]
 
 
 ## ###############################################################
