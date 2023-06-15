@@ -3,12 +3,22 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys
+import os, sys, random
 import numpy as np
 
+## 'tmpfile' needs to be loaded before any 'matplotlib' libraries,
+## so matplotlib stores its cache in a temporary directory.
+## (necessary when plotting in parallel)
+import tempfile
+os.environ["MPLCONFIGDIR"] = tempfile.mkdtemp()
+import matplotlib.pyplot as plt
+
+from scipy import interpolate
+
 ## load user defined modules
-from TheFlashModule import JobRunSim, SimParams, FileNames, LoadData
+from TheFlashModule import SimParams, FileNames, LoadData
 from TheUsefulModule import WWFnF, WWLists
+from TheFittingModule import FitFuncs
 
 
 ## ###############################################################
@@ -17,17 +27,16 @@ from TheUsefulModule import WWFnF, WWLists
 class RestartSim():
   def __init__(self, filepath_sim_res):
     self.filepath_sim_res = filepath_sim_res
+    self.filepath_vis     = f"{filepath_sim_res}/vis_folder/"
+    WWFnF.createFolder(self.filepath_vis, bool_verbose=False)
     self.dict_sim_inputs  = SimParams.readSimInputs(self.filepath_sim_res, False)
     self.max_num_t_turb   = self.dict_sim_inputs["max_num_t_turb"]
     self.t_turb           = self.dict_sim_inputs["t_turb"]
+    self.growth_rate_tol  = 5e-2
   
   def performRoutine(self):
     self._readLastFileIndex()
     self._checkEmagSaturated()
-    ## resimulate if unsaturated and the simulation has not yet completed 100 turnover-times
-    if not(self.Emag_converged):
-      self._updateFiles()
-      self._restartSim()
 
   def _readLastFileIndex(self):
     ## define helper function
@@ -47,7 +56,7 @@ class RestartSim():
     ## get last output file indices
     self.last_chk_index = getLastFileIndex(FileNames.FILENAME_FLASH_CHK_FILES)
     last_plt_index_sim  = getLastFileIndex(FileNames.FILENAME_FLASH_PLT_FILES)
-    last_plt_index_plt  = getLastFileIndex(FileNames.FILENAME_FLASH_PLT_FILES, "plt")
+    last_plt_index_plt  = getLastFileIndex(FileNames.FILENAME_FLASH_PLT_FILES, sub_folder="plt")
     self.last_plt_index = int(np.nanmax([
       last_plt_index_sim,
       last_plt_index_plt
@@ -72,30 +81,44 @@ class RestartSim():
       time_start = 2.0,
       time_end   = np.inf
     )
-    data_log_Eratio = np.log10(data_Emag)
-    list_std = []
-    for time_start in range(10, int(max(self.data_time)), 10):
-      index_start = WWLists.getIndexClosestValue(self.data_time, time_start)
-      index_end   = WWLists.getIndexClosestValue(self.data_time, time_start+5)
-      data_window = data_log_Eratio[index_start : index_end]
-      list_std.append(np.std(data_window))
-    ## check that Emag has been saturated for 30 t_turb
-    self.Emag_converged = all([
-      val < 5e-2
-      for val in list_std[-3:]
-    ])
-
-
-  def _updateFiles(self):
-    ## update simulation job index
-    obj_prep_sim = JobRunSim.JobRunSim(
-      filepath_sim    = self.filepath_sim_res,
-      dict_sim_inputs = self.dict_sim_inputs,
-      run_index       = self.last_run_index+1
-    )
-    ## update chk and plt file indices in flash.par file
-    ## make sure that the simulation can run for another 100 t_turb
-    (max(self.data_time) / self.max_num_t_turb) > 0.95
+    ## determine if Emag has saturated
+    time_grouped        = []
+    growth_rate_grouped = []
+    fig, axs = plt.subplots(nrows=2, figsize=(6, 2*4), sharex=True)
+    for time_start_fit in sorted([ random.uniform(5, max(self.data_time))-10 for _ in range(50) ]):
+      index_start_fit = WWLists.getIndexClosestValue(self.data_time, time_start_fit)
+      index_end_fit   = -2
+      time_start_fit  = self.data_time[index_start_fit]
+      time_end_fit    = self.data_time[index_end_fit]
+      ## fit linear model in log-linear space
+      growth_rate, _ = FitFuncs.fitExpFunc(
+        data_x            = self.data_time,
+        data_y            = data_Emag,
+        index_start_fit   = index_start_fit,
+        index_end_fit     = index_end_fit,
+        num_interp_points = 10 # * (time_end_fit - time_start_fit),
+      )
+      ## measure variation
+      time_grouped.append(time_start_fit)
+      growth_rate_grouped.append(abs(growth_rate))
+    ## plot data to check
+    axs[0].plot(self.data_time, data_Emag, color="black", ls="-")
+    axs[1].plot(time_grouped, growth_rate_grouped, color="green", marker="o", ls="-")
+    ## label axis
+    axs[0].set_yscale("log")
+    axs[1].set_yscale("log")
+    axs[0].set_ylabel(r"$E_{\rm mag}$")
+    axs[1].set_ylabel(r"$|\Gamma|$")
+    axs[1].set_xlabel(r"$t / t_{\rm turb}$")
+    axs[1].axhline(y=self.growth_rate_tol, ls=":", lw=2, color="black")
+    ## save figure
+    print("Saving figure...")
+    fig_name     = f"Emag_check.png"
+    filepath_fig = f"{self.filepath_vis}/{fig_name}"
+    fig.savefig(filepath_fig, dpi=75)
+    plt.close(fig)
+    print("Saved figure:", filepath_fig)
+    print(" ")
 
 
 ## ###############################################################
@@ -119,15 +142,13 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BOOL_CHECK_ONLY = 1
-PATH_SCRATCH    = "/scratch/ek9/nk7952/"
-# PATH_SCRATCH    = "/scratch/jh2/nk7952/"
+PATH_SCRATCH = "/scratch/ek9/nk7952/"
 
 ## PLASMA PARAMETER SET
 LIST_SUITE_FOLDERS = [ "Rm3000" ]
 LIST_MACH_REGIMES  = [ "Mach5" ]
-LIST_SIM_FOLDERS   = [ "Pm250" ]
-LIST_SIM_RES       = [ "18", "144" ]
+LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm25", "Pm125" ]
+LIST_SIM_RES       = [ "144", "288", "576" ]
 
 
 ## ###############################################################

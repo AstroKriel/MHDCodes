@@ -32,9 +32,9 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 def main():
   list_filepath_sim_res = SimParams.getListOfSimFilepaths(
-    basepath           = PATH_SCRATCH,
+    list_base_paths    = [ PATH_SCRATCH ],
     list_suite_folders = LIST_SUITE_FOLDERS,
-    list_sonic_regimes = [ "Mach5" ],
+    list_mach_regimes  = [ "Mach5" ],
     list_sim_folders   = LIST_SIM_FOLDERS,
     list_sim_res       = [ "288" ]
   )

@@ -451,7 +451,7 @@ class PlotSimScales():
     ax.set_xlabel(r"$\mathcal{M}$", fontsize=20)
     ax.set_ylabel(r"$k_{\rm p}$", fontsize=20)
     ## save plot
-    fig_name = f"fig_dependance_{self.plot_name}_kp_Mach.png"
+    fig_name = f"dependance_{self.plot_name}_kp_Mach.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
     print(" ")
 
@@ -471,13 +471,13 @@ PATH_SCRATCH = "/scratch/ek9/nk7952/"
 # PATH_SCRATCH = "/scratch/jh2/nk7952/"
 
 # ## PLASMA PARAMETER SET
-# LIST_MACH_REGIMES = [ "Mach5" ]
+# LIST_MACH_REGIMES  = [ "Mach5" ]
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 
-## MACH NUMBER SET
+## MACH NUMBER STUDY
 LIST_SUITE_FOLDERS = [ "Rm3000" ]
-LIST_MACH_REGIMES = [ "Mach0.3" ] # , "Mach1", "Mach5", "Mach10"
+LIST_MACH_REGIMES  = [ "Mach0.3" ] # , "Mach1", "Mach5", "Mach10"
 LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
 
 ## ###############################################################

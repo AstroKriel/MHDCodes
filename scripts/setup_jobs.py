@@ -35,7 +35,7 @@ def createJobs(filepath_sim_res):
       obj_prep_sim.fromLowerNres(filepath_ref_sim)
     else:
       ## prepare simulation from template files
-      filepath_ref_folder = f"{PATH_SCRATCH}/flash_files/"
+      filepath_ref_folder = "/scratch/ek9/nk7952/flash_files/"
       if not os.path.exists(filepath_ref_folder):
         raise Exception("Error: reference folder does not exist:", filepath_ref_folder)
       obj_prep_sim.fromTemplate(filepath_ref_folder)
@@ -55,40 +55,26 @@ def createJobs(filepath_sim_res):
 ## LOOP OVER AND GET ALL SIMULATION DETAILS
 ## ###############################################################
 def getSimInputDetails():
-  dicts_grouped_sim = []
-  ## LOOK AT EACH SIMULATION SUITE
-  ## -----------------------------
-  for suite_folder in LIST_SUITE_FOLDERS:
-    ## LOOK AT EACH SONIC REGIME
-    ## -------------------------
-    for mach_regime in LIST_MACH_REGIMES:
-      ## LOOK AT EACH SIMULATION FOLDER
-      ## -----------------------------
-      for sim_folder in LIST_SIM_FOLDERS:
-        ## CHECK THE SIMULATION CONFIGURATION EXISTS
-        ## -----------------------------------------
-        filepath_sim = WWFnF.createFilepath([
-          PATH_SCRATCH, suite_folder, mach_regime, sim_folder
-        ])
-        if not os.path.exists(filepath_sim): continue
-        ## loop over the different resolution runs
-        for sim_res in LIST_SIM_RES:
-          ## CHECK THE RESOLUTION RUN EXISTS
-          ## -------------------------------
-          filepath_sim_res = f"{filepath_sim}/{sim_res}/"
-          if not os.path.exists(filepath_sim_res): continue
-          ## store for looking at later
-          dicts_grouped_sim.append({
-            "filepath_sim_res" : filepath_sim_res,
-            "suite_folder"     : suite_folder,
-            "sim_folder"       : sim_folder,
-            "sim_res"          : sim_res,
-            "desired_Mach"     : LoadData.getNumberFromString(mach_regime, "Mach"),
-            "Re"               : LoadData.getNumberFromString(suite_folder, "Re"),
-            "Rm"               : LoadData.getNumberFromString(suite_folder, "Rm"),
-            "Pm"               : LoadData.getNumberFromString(sim_folder,   "Pm")
-          })
-  return dicts_grouped_sim
+  return [
+    {
+      "filepath_sim_res" : WWFnF.createFilepath([ base_path, suite_folder, mach_regime, sim_folder, sim_res ]),
+      "suite_folder"     : suite_folder,
+      "sim_folder"       : sim_folder,
+      "sim_res"          : sim_res,
+      "desired_Mach"     : LoadData.getNumberFromString(mach_regime, "Mach"),
+      "Re"               : LoadData.getNumberFromString(suite_folder, "Re"),
+      "Rm"               : LoadData.getNumberFromString(suite_folder, "Rm"),
+      "Pm"               : LoadData.getNumberFromString(sim_folder,   "Pm")
+    }
+    for base_path in LIST_BASE_PATHS
+    for suite_folder in LIST_SUITE_FOLDERS
+    for mach_regime in LIST_MACH_REGIMES
+    for sim_folder in LIST_SIM_FOLDERS
+    for sim_res in LIST_SIM_RES
+    if os.path.exists(
+      WWFnF.createFilepath([ base_path, suite_folder, mach_regime, sim_folder, sim_res ])
+    )
+  ]
 
 
 ## ###############################################################
@@ -132,42 +118,18 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-# PATH_SCRATCH           = "/scratch/ek9/nk7952/"
-PATH_SCRATCH           = "/scratch/jh2/nk7952/"
-
 ## SETUP DETAILS
 K_TURB                 = 2
-BOOL_CREATE_SIM_INPUTS = 1
+BOOL_CREATE_SIM_INPUTS = 0
 BOOL_PREP_SIM_RUN      = 0
 PREP_FROM_LOWER_NRES   = ""
 BOOL_PROCESS_PLT_FILES = 0
 
-# ## PLASMA PARAMETER SET
-# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_MACH_REGIMES = [ "Mach0.3" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
-
-# ## RERUN RE=RM=3000
-# LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_MACH_REGIMES = [ "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm1" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
-
-## MACH NUMBER SET
-# LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_MACH_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
-
-## BOTTLENECK RUNS
-LIST_SUITE_FOLDERS = [ "Re2000" ]
-# LIST_MACH_REGIMES = [ "Mach0.3", "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm5" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "576", "1152" ]
-LIST_MACH_REGIMES = [ "Mach0.3" ]
-LIST_SIM_FOLDERS   = [ "Pm5" ]
-LIST_SIM_RES       = [ "1152" ]
+# LIST_BASE_PATHS    = [ "/scratch/jh2/nk7952/" ]
+# LIST_MACH_REGIMES  = [ ]
+# LIST_SUITE_FOLDERS = [ ]
+# LIST_SIM_FOLDERS   = [ ]
+# LIST_SIM_RES       = [ ]
 
 
 ## ###############################################################

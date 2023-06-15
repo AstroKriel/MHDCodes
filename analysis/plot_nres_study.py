@@ -52,7 +52,7 @@ def fitLogisticModel(
     ax     = None,
     color  = "black",
     ls     = ":",
-    bounds = ( (1.0, 0.1, 0.0), (1e3, 1e4, 5.0) ) # amplitude, turnover scale, turnover rate
+    bounds = ( (1.0, 0.1, 0.0), (1e4, 1e5, 5.0) ) # amplitude, turnover scale, turnover rate
   ):
   ## check if measured scales increase or decrease with resolution
   if np.nanmedian(scales_group_t_res[1]) <= np.nanmedian(scales_group_t_res[-1]):
@@ -78,7 +78,7 @@ def fitLogisticModel(
 def fitScales(ax, list_sim_res, scales_group_t_res, bool_extend=False, color="black"):
   list_sim_res = copy.deepcopy(list_sim_res)
   scales_group_t_res = copy.deepcopy(scales_group_t_res)
-  if bool_extend or True:
+  if bool_extend:
     list_sim_res.append(2*list_sim_res[-1])
     scales_group_t_res.append(scales_group_t_res[-1])
   ## check that there is at least five data points to fit to for each resolution run
@@ -120,12 +120,17 @@ def fitScales(ax, list_sim_res, scales_group_t_res, bool_extend=False, color="bl
 ## ###############################################################
 class PlotConvergence():
   def __init__(self, filepath_sim_288, bool_verbose):
-    self.filepath_sim = f"{filepath_sim_288}/../"
-    self.bool_verbose = bool_verbose
-    self.filepath_vis = f"{self.filepath_sim}/vis_folder/"
+    self.filepath_sim_288 = filepath_sim_288
+    self.dict_sim_inputs  = SimParams.readSimInputs(self.filepath_sim_288, bool_verbose=False)
+    suite_folder = self.dict_sim_inputs["suite_folder"]
+    mach_regime  = self.dict_sim_inputs["mach_regime"]
+    sim_folder   = self.dict_sim_inputs["sim_folder"]
+    self.filepath_sim_wo_base = f"{suite_folder}/{mach_regime}/{sim_folder}/"
+    self.filepath_output = f"{filepath_sim_288}/../"
+    self.filepath_vis    = f"{self.filepath_output}/vis_folder/"
     WWFnF.createFolder(self.filepath_vis, bool_verbose=False)
-    self.dict_sim_inputs = SimParams.readSimInputs(filepath_sim_288, bool_verbose=False)
-    self.sim_name   = SimParams.getSimName(self.dict_sim_inputs)
+    self.sim_name     = SimParams.getSimName(self.dict_sim_inputs)
+    self.bool_verbose = bool_verbose
 
   def performRoutine(self):
     self.fig, fig_grid = PlotFuncs.createFigure_grid(
@@ -159,7 +164,7 @@ class PlotConvergence():
       "k_nu_vel_trv_stats_nres" : self.k_nu_vel_trv_stats_nres,
     }
     WWObjs.saveDict2JsonFile(
-      filepath_file = f"{self.filepath_sim}/{FileNames.FILENAME_SIM_SCALES}",
+      filepath_file = f"{self.filepath_output}/{FileNames.FILENAME_SIM_SCALES}",
       input_dict    = dict_stats_nres,
       bool_verbose  = False
     )
@@ -178,28 +183,29 @@ class PlotConvergence():
     self.k_nu_vel_tot_group_t_group_sim_res = []
     self.k_nu_vel_lgt_group_t_group_sim_res = []
     self.k_nu_vel_trv_group_t_group_sim_res = []
-    for sim_res in LIST_SIM_RES:
-      filepath_sim_res = f"{self.filepath_sim}/{sim_res}/"
-      if not(os.path.isdir(filepath_sim_res)): continue
-      dict_sim_outputs = SimParams.readSimOutputs(filepath_sim_res, bool_verbose=self.bool_verbose)
-      self.list_sim_res.append(int(sim_res))
-      index_growth_start, index_growth_end = dict_sim_outputs["index_bounds_growth"]
-      k_p_rho_group_t      = dict_sim_outputs["k_p_rho_group_t"][index_growth_start : index_growth_end]
-      k_p_mag_group_t      = dict_sim_outputs["k_p_mag_group_t"][index_growth_start : index_growth_end]
-      k_eta_mag_group_t    = dict_sim_outputs["k_eta_mag_group_t"][index_growth_start : index_growth_end]
-      k_eta_cur_group_t    = dict_sim_outputs["k_eta_cur_group_t"][index_growth_start : index_growth_end]
-      k_nu_kin_group_t     = dict_sim_outputs["k_nu_kin_group_t"][index_growth_start : index_growth_end]
-      k_nu_vel_tot_group_t = dict_sim_outputs["k_nu_vel_tot_group_t"][index_growth_start : index_growth_end]
-      k_nu_vel_lgt_group_t = dict_sim_outputs["k_nu_vel_lgt_group_t"][index_growth_start : index_growth_end]
-      k_nu_vel_trv_group_t = dict_sim_outputs["k_nu_vel_trv_group_t"][index_growth_start : index_growth_end]
-      self.k_p_rho_group_t_group_sim_res.append(k_p_rho_group_t)
-      self.k_p_mag_group_t_group_sim_res.append(k_p_mag_group_t)
-      self.k_eta_mag_group_t_group_sim_res.append(k_eta_mag_group_t)
-      self.k_eta_cur_group_t_group_sim_res.append(k_eta_cur_group_t)
-      self.k_nu_kin_group_t_group_sim_res.append(k_nu_kin_group_t)
-      self.k_nu_vel_tot_group_t_group_sim_res.append(k_nu_vel_tot_group_t)
-      self.k_nu_vel_lgt_group_t_group_sim_res.append(k_nu_vel_lgt_group_t)
-      self.k_nu_vel_trv_group_t_group_sim_res.append(k_nu_vel_trv_group_t)
+    for base_path in LIST_BASE_PATHS:
+      for sim_res in LIST_SIM_RES:
+        filepath_sim_res = f"{base_path}/{self.filepath_sim_wo_base}/{sim_res}"
+        if not(os.path.isdir(filepath_sim_res)): continue
+        dict_sim_outputs = SimParams.readSimOutputs(filepath_sim_res, bool_verbose=self.bool_verbose)
+        self.list_sim_res.append(int(sim_res))
+        index_growth_start, index_growth_end = dict_sim_outputs["index_bounds_growth"]
+        k_p_rho_group_t      = dict_sim_outputs["k_p_rho_group_t"][index_growth_start : index_growth_end]
+        k_p_mag_group_t      = dict_sim_outputs["k_p_mag_group_t"][index_growth_start : index_growth_end]
+        k_eta_mag_group_t    = dict_sim_outputs["k_eta_mag_group_t"][index_growth_start : index_growth_end]
+        k_eta_cur_group_t    = dict_sim_outputs["k_eta_cur_group_t"][index_growth_start : index_growth_end]
+        k_nu_kin_group_t     = dict_sim_outputs["k_nu_kin_group_t"][index_growth_start : index_growth_end]
+        k_nu_vel_tot_group_t = dict_sim_outputs["k_nu_vel_tot_group_t"][index_growth_start : index_growth_end]
+        k_nu_vel_lgt_group_t = dict_sim_outputs["k_nu_vel_lgt_group_t"][index_growth_start : index_growth_end]
+        k_nu_vel_trv_group_t = dict_sim_outputs["k_nu_vel_trv_group_t"][index_growth_start : index_growth_end]
+        self.k_p_rho_group_t_group_sim_res.append(k_p_rho_group_t)
+        self.k_p_mag_group_t_group_sim_res.append(k_p_mag_group_t)
+        self.k_eta_mag_group_t_group_sim_res.append(k_eta_mag_group_t)
+        self.k_eta_cur_group_t_group_sim_res.append(k_eta_cur_group_t)
+        self.k_nu_kin_group_t_group_sim_res.append(k_nu_kin_group_t)
+        self.k_nu_vel_tot_group_t_group_sim_res.append(k_nu_vel_tot_group_t)
+        self.k_nu_vel_lgt_group_t_group_sim_res.append(k_nu_vel_lgt_group_t)
+        self.k_nu_vel_trv_group_t_group_sim_res.append(k_nu_vel_trv_group_t)
 
   def _plotScales(self):
     for res_index, sim_res in enumerate(self.list_sim_res):
@@ -263,7 +269,8 @@ class PlotConvergence():
     self.k_eta_cur_stats_nres = fitScales(
       ax                 = self.ax_k_eta_cur,
       list_sim_res       = self.list_sim_res,
-      scales_group_t_res = self.k_eta_cur_group_t_group_sim_res
+      scales_group_t_res = self.k_eta_cur_group_t_group_sim_res,
+      bool_extend        = True
     )
     self.k_nu_kin_stats_nres = fitScales(
       ax                 = self.ax_k_nu_kin,
@@ -335,7 +342,7 @@ class PlotConvergence():
     self.ax_k_nu_vel_trv.set_ylabel(r"$k_{\nu, {\rm vel}, \perp}$")
     ## annotate simulation parameters
     SimParams.addLabel_simInputs(
-      filepath        = f"{self.filepath_sim}/288/",
+      filepath        = self.filepath_sim_288,
       dict_sim_inputs = self.dict_sim_inputs,
       fig             = self.fig,
       ax              = self.list_axs[0],
@@ -383,9 +390,9 @@ def main():
     func               = plotSimData,
     bool_mproc         = BOOL_MPROC,
     bool_check_only    = BOOL_CHECK_ONLY,
-    basepath           = PATH_SCRATCH,
+    list_base_paths    = LIST_BASE_PATHS,
     list_suite_folders = LIST_SUITE_FOLDERS,
-    list_sonic_regimes = LIST_MACH_REGIMES,
+    list_mach_regimes  = LIST_MACH_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
     list_sim_res       = [ "288" ]
   )
@@ -394,22 +401,20 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BOOL_MPROC      = 1
+BOOL_MPROC      = 0
 BOOL_CHECK_ONLY = 0
-PATH_SCRATCH    = "/scratch/ek9/nk7952/"
-# PATH_SCRATCH    = "/scratch/jh2/nk7952/"
 
-# ## PLASMA PARAMETER SET
-# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_MACH_REGIMES = [ "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
-
-# ## MACH NUMBER SET
-# LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_MACH_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
+LIST_BASE_PATHS = [
+  "/scratch/ek9/nk7952/",
+  "/scratch/jh2/nk7952/"
+]
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Re2000", "Rm500", "Rm3000" ]
+LIST_SUITE_FOLDERS = [ "Re2000"]
+LIST_MACH_REGIMES  = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
+LIST_SIM_FOLDERS   = [
+  "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm30", "Pm50", "Pm125", "Pm250", "Pm300"
+]
+LIST_SIM_RES = [ "18", "36", "72", "144", "288", "576", "1152" ]
 
 
 ## ###############################################################

@@ -39,32 +39,18 @@ def getSimName(dict_sim_inputs):
 ## ###############################################################
 ## CREATE A LIST OF SIMULATION DIRECTORIES
 ## ###############################################################
-def getListOfSimFilepaths(basepath, list_suite_folders, list_sonic_regimes, list_sim_folders, list_sim_res):
-  list_filepath_sim_res = []
-  ## LOOK AT EACH SIMULATION SUITE
-  ## -----------------------------
-  for suite_folder in list_suite_folders:
-    ## LOOK AT EACH SONIC REGIME
-    ## -------------------------
-    for mach_regime in list_sonic_regimes:
-      ## LOOK AT EACH SIMULATION FOLDER
-      ## -----------------------------
-      for sim_folder in list_sim_folders:
-        ## CHECK THE SIMULATION CONFIGURATION EXISTS
-        ## -----------------------------------------
-        filepath_sim = WWFnF.createFilepath([
-          basepath, suite_folder, mach_regime, sim_folder
-        ])
-        if not os.path.exists(filepath_sim): continue
-        ## loop over the different resolution runs
-        for sim_res in list_sim_res:
-          ## CHECK THE RESOLUTION RUN EXISTS
-          ## -------------------------------
-          filepath_sim_res = f"{filepath_sim}/{sim_res}/"
-          if not os.path.exists(filepath_sim_res): continue
-          ## store for looking at later
-          list_filepath_sim_res.append(filepath_sim_res)
-  return list_filepath_sim_res
+def getListOfSimFilepaths(list_base_paths, list_suite_folders, list_mach_regimes, list_sim_folders, list_sim_res):
+  return [
+    WWFnF.createFilepath([ base_path, suite_folder, mach_regime, sim_folder, sim_res ])
+    for base_path in list_base_paths
+    for suite_folder in list_suite_folders
+    for mach_regime in list_mach_regimes
+    for sim_folder in list_sim_folders
+    for sim_res in list_sim_res
+    if os.path.exists(
+      WWFnF.createFilepath([ base_path, suite_folder, mach_regime, sim_folder, sim_res ])
+    )
+  ]
 
 
 ## ###############################################################
@@ -72,14 +58,14 @@ def getListOfSimFilepaths(basepath, list_suite_folders, list_sonic_regimes, list
 ## ###############################################################
 def callFuncForAllSimulations(
     func,
-    basepath, list_suite_folders, list_sonic_regimes, list_sim_folders, list_sim_res,
+    list_base_paths, list_suite_folders, list_mach_regimes, list_sim_folders, list_sim_res,
     bool_mproc      = False,
     bool_check_only = False
   ):
   list_filepath_sim_res = getListOfSimFilepaths(
-    basepath           = basepath,
+    list_base_paths    = list_base_paths,
     list_suite_folders = list_suite_folders,
-    list_sonic_regimes = list_sonic_regimes,
+    list_mach_regimes  = list_mach_regimes,
     list_sim_folders   = list_sim_folders,
     list_sim_res       = list_sim_res
   )

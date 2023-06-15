@@ -16,15 +16,6 @@ from TheFlashModule import FileNames
 ## FUNCTIONS FOR LOADING FLASH DATA
 ## ###############################################################
 def reformatFlashField(field, num_blocks, num_procs):
-  """ reformatFlashField
-  PURPOSE:
-    This code reformats a field structured [ num_cells_per_block, nzb, nxb, nyb ]
-    to [iprocs*nxb, jprocs*nyb, kprocs*nzb], where num_cell_per_block = iprocs*jprocs*kprocs
-  INPUTS:
-    > field      : FLASH field
-    > num_blocks : number of blocks in each spatial dimension
-    > num_procs  : number of processors per block, in each spatial dimension
-  """
   ## extract number of blocks in each direction
   nxb, nyb, nzb = num_blocks
   ## extract number of processors in each direction
@@ -82,9 +73,8 @@ def loadFlashDataCube(
 
 def loadAllFlashDataCubes(
     directory, field_name, dict_sim_inputs,
-    start_time     = 0,
-    end_time       = np.inf,
-    bool_debug     = False
+    start_time = 0,
+    end_time   = np.inf
   ):
   outputs_per_t_turb = dict_sim_inputs["outputs_per_t_turb"]
   ## get all plt files in the directory
@@ -231,7 +221,7 @@ def loadAllSpectra(
   elif "mag" in spect_field.lower(): file_end_str = "spect_mags.dat"
   elif "cur" in spect_field.lower(): file_end_str = "spect_current.dat"
   elif "rho" in spect_field.lower(): file_end_str = "spect_varrho.dat"
-  else: raise Exception("Error: invalid spectra filename:", spect_field)
+  else: raise Exception("Error: invalid spectra field-type provided:", spect_field)
   ## get list of spect-filenames in directory
   list_spectra_filenames = WWFnF.getFilesInDirectory(
     directory          = directory,
@@ -287,7 +277,7 @@ def getPlotsPerEddy_fromFlashLog(
         bool_plot_interval_found = True
       if bool_tmax_found and bool_plot_interval_found:
         outputs_per_t_turb = tmax / plot_file_interval / max_num_t_turb
-        ## a funny way to check: abs(abs((outputs_per_t_turb % 1) - 0.5) - 0.5) < tol
+        ## a funny way to check this is also: abs(abs((outputs_per_t_turb % 1) - 0.5) - 0.5) < tol
         if abs(round(outputs_per_t_turb) - outputs_per_t_turb) > 1e-2:
           raise Exception(f"Error: the number of plt-files / t_turb (= {outputs_per_t_turb}) should be a whole number:\n\t", directory)
         if bool_verbose:

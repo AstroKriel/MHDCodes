@@ -31,13 +31,15 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 ## HELPER FUNCTION
 ## ###############################################################
-def addText(ax, pos, text):
+def addText(ax, pos, text, rotation=0):
   ax.text(
     pos[0], pos[1],
     text,
+    transform = ax.transAxes,
     va        = "center",
     ha        = "left",
-    transform = ax.transAxes,
+    rotation  = rotation,
+    rotation_mode = "anchor",
     color     = "black",
     fontsize  = 17,
     zorder    = 10
@@ -49,14 +51,14 @@ def addText(ax, pos, text):
 class PlotTurbData():
   def __init__(
       self,
-      fig, axs, ax_sub, filepath_sim_res, color,
+      fig, axs, ax_inset, filepath_sim_res, color,
       time_start_exp, time_end_exp, time_start_sat
     ):
     print("Looking at:", filepath_sim_res)
     ## save input arguments
     self.fig              = fig
     self.axs              = axs
-    self.ax_sub           = ax_sub
+    self.ax_inset         = ax_inset
     self.filepath_sim_res = filepath_sim_res
     self.color            = color
     self.time_start_exp   = time_start_exp
@@ -128,7 +130,7 @@ class PlotTurbData():
     )
 
   def _plotEnergyRatio(self):
-    for ax in [ self.axs[1], self.ax_sub ]:
+    for ax in [ self.axs[1], self.ax_inset ]:
       ax.plot(
         self.data_time,
         self.data_E_ratio,
@@ -144,7 +146,7 @@ class PlotTurbData():
     ## get index and time associated with saturated regime
     index_start_sat = WWLists.getIndexClosestValue(self.data_time, self.time_start_sat)
     index_end_sat   = len(self.data_time)-1
-    self.E_ratio_sat, _ = FitFuncs.fitConstFunc(
+    FitFuncs.fitConstFunc(
       ax              = self.axs[1],
       data_x          = self.data_time,
       data_y          = self.data_E_ratio,
@@ -157,7 +159,7 @@ class PlotTurbData():
     ## -------------------------
     index_start_exp = WWLists.getIndexClosestValue(self.data_time, self.time_start_exp)
     index_end_exp   = WWLists.getIndexClosestValue(self.data_time, self.time_end_exp)
-    self.E_growth_rate = FitFuncs.fitExpFunc(
+    FitFuncs.fitExpFunc(
       ax              = self.axs[1],
       data_x          = self.data_time,
       data_y          = self.data_E_ratio,
@@ -167,7 +169,7 @@ class PlotTurbData():
     )
     ## MACH NUMBER
     ## -----------
-    self.rms_Mach_growth, self.std_Mach_growth = FitFuncs.fitConstFunc(
+    FitFuncs.fitConstFunc(
       ax              = self.axs[0],
       data_x          = self.data_time,
       data_y          = self.data_Mach,
@@ -178,8 +180,8 @@ class PlotTurbData():
     )
     ## LINEAR GROWTH REGIME
     ## --------------------
-    self.E_growth_rate = FitFuncs.fitLinearFunc(
-      ax              = self.ax_sub,
+    FitFuncs.fitLinearFunc(
+      ax              = self.ax_inset,
       data_x          = self.data_time,
       data_y          = self.data_E_ratio,
       index_start_fit = index_end_exp,
@@ -189,9 +191,9 @@ class PlotTurbData():
 
 
 ## ###############################################################
-## OPPERATOR HANDLING PLOT CALLS
+## MAIN PROGRAM
 ## ###############################################################
-def plotSimData():
+def main():
   ## initialise figure
   print("Initialising figure...")
   figscale = 1.2
@@ -202,7 +204,7 @@ def plotSimData():
   )
   fig.subplots_adjust(hspace=0.075)
   ## add inset axis
-  ax_sub = PlotFuncs.addInsetAxis(
+  ax_inset = PlotFuncs.addInsetAxis(
     axs[1],
     ax_inset_bounds = [
       0.37, 0.05,
@@ -216,9 +218,9 @@ def plotSimData():
   obj_plot_turb = PlotTurbData(
     fig              = fig,
     axs              = axs,
-    ax_sub           = ax_sub,
+    ax_inset         = ax_inset,
     filepath_sim_res = f"{PATH_SCRATCH}/Rm3000/Mach0.3/Pm10/288/",
-    color            = "limegreen",
+    color            = COLOR_SUBSONIC,
     time_start_exp   = 5.5,
     time_end_exp     = 16,
     time_start_sat   = 26,
@@ -228,16 +230,16 @@ def plotSimData():
   obj_plot_turb = PlotTurbData(
     fig              = fig,
     axs              = axs,
-    ax_sub           = ax_sub,
+    ax_inset         = ax_inset,
     filepath_sim_res = f"{PATH_SCRATCH}/Rm3000/Mach5/Pm10/288/",
-    color            = "orange",
+    color            = COLOR_SUPERSONIC,
     time_start_exp   = 5.5,
     time_end_exp     = 38,
     time_start_sat   = 53,
   )
   obj_plot_turb.performRoutines()
   ## label figure
-  axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
+  axs[1].set_xlabel(r"$t / T_\mathrm{turb}$")
   axs[0].set_ylabel(r"$\mathcal{M}$")
   axs[1].set_ylabel(r"$E_\mathrm{mag} / E_\mathrm{kin}$")
   axs[0].set_yscale("log")
@@ -252,16 +254,15 @@ def plotSimData():
     num_major_ticks  = 7
   )
   ## label inset axis
-  ax_sub.tick_params(axis="x", bottom=True, top=True, labelbottom=False, labeltop=True)
-  ax_sub.set_xlim([ 7, 73 ])
-  ax_sub.set_xticks([ 10, 20, 30, 40, 50, 60, 70 ])
-  ax_sub.set_xticklabels([ 10, "", 30, "", 50, "", 70 ])
-  ax_sub.xaxis.set_minor_locator(NullLocator())
-  ax_sub.set_ylim([ -0.09, 0.8 ])
+  ax_inset.tick_params(axis="x", bottom=True, top=True, labelbottom=False, labeltop=True)
+  ax_inset.set_xlim([ 7, 73 ])
+  ax_inset.set_xticks([ 10, 20, 30, 40, 50, 60, 70 ])
+  ax_inset.set_xticklabels([ 10, "", 30, "", 50, "", 70 ])
+  ax_inset.xaxis.set_minor_locator(NullLocator())
+  ax_inset.set_ylim([ -0.09, 0.8 ])
   ## annotate figure
   axs[0].axvspan(0, 5, alpha=0.25, color="grey", ls=None, lw=0)
   axs[1].axvspan(0, 5, alpha=0.25, color="grey", ls=None, lw=0)
-  addText(axs[0], (0.075, 0.075), r"transient phase")
   ## add legends
   PlotFuncs.addLegend_fromArtists(
     axs[0],
@@ -270,7 +271,7 @@ def plotSimData():
       r"$\mathcal{M}5{\rm Re}600{\rm Pm}5$",
     ],
     list_artists       = [ "-" ],
-    list_marker_colors = [ "limegreen", "orange" ],
+    list_marker_colors = [ COLOR_SUBSONIC, COLOR_SUPERSONIC ],
     label_color        = "white",
     loc                = "lower right",
     bbox               = (1.0, 0.0),
@@ -296,6 +297,7 @@ def plotSimData():
     bbox               = (1.0, 0.825),
     fontsize           = 17
   )
+  addText(axs[1], (0.049, 0.55), r"transient phase", rotation=90)
   addText(axs[1], (0.64, 0.74), r"exponential growth")
   addText(axs[1], (0.64, 0.64), r"linear growth")
   addText(axs[1], (0.64, 0.54), r"saturated")
@@ -312,16 +314,17 @@ def plotSimData():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-PATH_SCRATCH = "/scratch/ek9/nk7952/"
-# PATH_SCRATCH = "/scratch/jh2/nk7952/"
-PATH_PLOT    = "/home/586/nk7952/MHDCodes/kriel2023/"
+COLOR_SUBSONIC   = "#C85DEF"
+COLOR_SUPERSONIC = "#FFAB1A"
+PATH_SCRATCH     = "/scratch/ek9/nk7952/"
+PATH_PLOT        = "/home/586/nk7952/MHDCodes/kriel2023/"
 
 
 ## ###############################################################
 ## PROGRAM ENTRY POINT
 ## ###############################################################
 if __name__ == "__main__":
-  plotSimData()
+  main()
   sys.exit()
 
 

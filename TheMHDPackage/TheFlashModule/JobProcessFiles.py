@@ -15,6 +15,10 @@ class JobProcessFiles():
     self.max_hours    = int(24)
     self.num_procs    = int(dict_sim_inputs["sim_res"]) // 6
     self.max_mem      = int(4 * self.num_procs)
+    ## check group project
+    if   "ek9" in self.filepath_plt: self.group_project = "ek9"
+    elif "jh2" in self.filepath_plt: self.group_project = "jh2"
+    else: raise Exception("Error: undefined group project.")
     self.program_name = FileNames.FILENAME_PROCESS_PLT_SCRIPT
     self.job_name     = FileNames.FILENAME_PROCESS_PLT_JOB
     self.job_output   = FileNames.FILENAME_PROCESS_PLT_OUTPUT
@@ -33,7 +37,7 @@ class JobProcessFiles():
     with open(f"{self.filepath_plt}/{self.job_name}", "w") as job_file:
       ## write contents
       job_file.write("#!/bin/bash\n")
-      job_file.write("#PBS -P ek9\n")
+      job_file.write(f"#PBS -P {self.group_project}\n")
       job_file.write("#PBS -q normal\n")
       job_file.write(f"#PBS -l walltime={self.max_hours}:00:00\n")
       job_file.write(f"#PBS -l ncpus={self.num_procs}\n")

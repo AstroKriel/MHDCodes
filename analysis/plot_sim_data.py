@@ -35,9 +35,9 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## HELPER FUNCTIONS
 ## ###############################################################
 def reynoldsSpectrum(list_k, list_power, diss_rate):
-    list_power_reverse = np.array(list_power[::-1])
-    list_sqt_sum_power = np.sqrt(np.cumsum(list_power_reverse))[::-1]
-    return list_sqt_sum_power / (diss_rate * np.array(list_k))
+  list_power_reverse = np.array(list_power[::-1])
+  list_sqt_sum_power = np.sqrt(np.cumsum(list_power_reverse))[::-1]
+  return list_sqt_sum_power / (diss_rate * np.array(list_k))
 
 def plotReynoldsSpectrum(ax, list_k, list_power_group_t, diss_rate, cmap_name, bool_norm=False):
   cmap, norm = PlotFuncs.createCmap(cmap_name, vmin=0, vmax=len(list_power_group_t))
@@ -736,9 +736,9 @@ def main():
     func               = plotSimData,
     bool_mproc         = BOOL_MPROC,
     bool_check_only    = BOOL_CHECK_ONLY,
-    basepath           = PATH_SCRATCH,
+    list_base_paths    = LIST_BASE_PATHS,
     list_suite_folders = LIST_SUITE_FOLDERS,
-    list_sonic_regimes = LIST_MACH_REGIMES,
+    list_mach_regimes  = LIST_MACH_REGIMES,
     list_sim_folders   = LIST_SIM_FOLDERS,
     list_sim_res       = LIST_SIM_RES
   )
@@ -747,28 +747,17 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-BOOL_MPROC      = 0
+BOOL_MPROC      = 1
 BOOL_CHECK_ONLY = 0
-PATH_SCRATCH    = "/scratch/ek9/nk7952/"
-# PATH_SCRATCH    = "/scratch/jh2/nk7952/"
 
-# ## PLASMA PARAMETER SET
-# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_MACH_REGIMES = [ "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576" ]
-
-# ## MACH NUMBER SET
-# LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_MACH_REGIMES = [ "Mach0.3", "Mach1", "Mach10" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
-# LIST_SIM_RES       = [ "18", "36", "72", "144", "288" ]
-
-## BOTTLENECK RUN
-LIST_SUITE_FOLDERS = [ "Re2000" ]
-LIST_MACH_REGIMES = [ "Mach0.3", "Mach5" ]
-LIST_SIM_FOLDERS   = [ "Pm5" ]
-LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576", "1152" ]
+# LIST_BASE_PATHS = [
+#   "/scratch/ek9/nk7952/",
+#   "/scratch/jh2/nk7952/"
+# ]
+# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm500", "Rm3000", "Re2000" ]
+# LIST_MACH_REGIMES  = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
+# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm30", "Pm50", "Pm125", "Pm250", "Pm300" ]
+# LIST_SIM_RES       = [ "18", "36", "72", "144", "288", "576", "1152" ]
 
 
 ## ###############################################################

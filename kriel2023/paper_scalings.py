@@ -3,13 +3,13 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import os, sys
+import sys, math
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 
 ## load user defined modules
-from TheFlashModule import SimParams, FileNames
-from TheUsefulModule import WWLists, WWFnF, WWObjs
+from TheUsefulModule import WWFnF, WWObjs
 from ThePlottingModule import PlotFuncs
 
 
@@ -22,20 +22,38 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 ## HELPER FUNCTIONS
 ## ###############################################################
+def getShockWidth(Mach, Re):
+  return (Re * (1 + 1/Mach**2))
+
 def addLegend_Re(ax):
   args = { "va":"bottom", "ha":"right", "transform":ax.transAxes, "fontsize":15 }
-  ax.text(0.925, 0.225, r"Re $< 100$", color="blue", **args)
-  ax.text(0.925, 0.1,   r"Re $> 100$", color="red",  **args)
+  ax.text(0.925, 0.225, r"Re $< 100$", color="cornflowerblue", **args)
+  ax.text(0.925, 0.1,   r"Re $> 100$", color="orangered",  **args)
 
-def plotScale(ax, x_median, y_median, y_1sig, color, marker, x_1sig=None):
+def plotScale(ax, x_median, y_median, color, marker, x_1sig=None, y_1sig=None, zorder=5):
   ax.errorbar(
     x_median, y_median,
-    xerr  = x_1sig,
-    yerr  = y_1sig,
-    color = color,
-    fmt   = marker,
-    markersize=8, markeredgecolor="black", capsize=7.5, elinewidth=2,
-    linestyle="None", zorder=10
+    xerr   = x_1sig,
+    yerr   = y_1sig,
+    fmt    = marker,
+    mfc    = "whitesmoke" if color is None else color,
+    ecolor = "black" if color is None else color, 
+    zorder = zorder,
+    mec="black", elinewidth=1.5, markersize=7, capsize=7.5, linestyle="None"
+  )
+
+def addText(ax, pos, text, rotation=0):
+  ax.text(
+    pos[0], pos[1],
+    text,
+    transform = ax.transAxes,
+    va        = "center",
+    ha        = "left",
+    rotation  = rotation,
+    rotation_mode = "anchor",
+    color     = "black",
+    fontsize  = 17,
+    zorder    = 10
   )
 
 
@@ -44,206 +62,254 @@ def plotScale(ax, x_median, y_median, y_1sig, color, marker, x_1sig=None):
 ## ###############################################################
 class PlotSimScales():
   def __init__(self):
-    if len(LIST_MACH_REGIMES) > 1:
+    ## load simulationd data
+    self._loadAllSimulationData()
+    ## check the number of different Mach numbers
+    self.Mach_group_sim = [
+      self._getMachString(sim_name)
+      for sim_name in self.dict_scales_group_sim
+      if self._meetsSimCondition(sim_name)
+    ]
+    ## define name of figures
+    self.bool_Mach_varied = len(set(self.Mach_group_sim)) > 1
+    if self.bool_Mach_varied:
       self.plot_name = "Mach_varied"
-      self.bool_supersonic = None
-    else:
-      self.plot_name = LIST_MACH_REGIMES[0]
-      self.bool_supersonic = float(LIST_MACH_REGIMES[0].split("Mach")[1]) > 1
-    self.filepath_vis = f"{PATH_PLOT}/{self.plot_name}/"
+    else: self.plot_name = self.Mach_group_sim[0]
+    self.filepath_vis = f"{PATH_PAPER}/{self.plot_name}/"
     WWFnF.createFolder(self.filepath_vis, bool_verbose=False)
     print("Saving figures in:", self.filepath_vis)
     print(" ")
-    ## simulation parameters
-    self.Mach_group_sim   = []
-    self.Re_group_sim     = []
-    self.Rm_group_sim     = []
-    self.Pm_group_sim     = []
-    self.color_group_sim  = []
-    self.marker_group_sim = []
-    ## measured quantities
-    self.k_p_mag_stats_group_sim   = []
-    self.k_eta_cur_stats_group_sim = []
-    self.k_eta_mag_stats_group_sim = []
-    self.k_nu_kin_stats_group_sim  = []
-    self.__loadAllSimulationData()
 
-  def __loadAllSimulationData(self):
-    ## loop over mach regimes
-    for scratch_path in LIST_SCRATCH_PATHS:
-      ## loop over the simulation suites
-      for suite_folder in LIST_SUITE_FOLDERS:
-        str_message = f"Loading datasets from suite: {suite_folder}"
-        print(str_message)
-        print("=" * len(str_message))
-        ## loop over the simulation folders
-        for sim_folder in LIST_SIM_FOLDERS:
-          for mach_regime in LIST_MACH_REGIMES:
-            ## check that the fitted spectra data exists for the Nres=288 simulation setup
-            filepath_sim = WWFnF.createFilepath([
-              scratch_path, suite_folder, mach_regime, sim_folder
-            ])
-            if not os.path.isfile(f"{filepath_sim}/{FileNames.FILENAME_SIM_SCALES}"): continue
-            ## load scales
-            print(f"\t> Loading {sim_folder}, {mach_regime} dataset")
-            self.__getParams(filepath_sim)
-            if self.bool_supersonic is not None:
-              if   suite_folder == "Re10":   self.marker_group_sim.append("s")
-              elif suite_folder == "Re500":  self.marker_group_sim.append("D")
-              elif suite_folder == "Rm3000": self.marker_group_sim.append("o")
-            else:
-              if   mach_regime == "Mach0.3": self.marker_group_sim.append("s")
-              elif mach_regime == "Mach1":   self.marker_group_sim.append("D")
-              elif mach_regime == "Mach5":   self.marker_group_sim.append("o")
-              elif mach_regime == "Mach10":  self.marker_group_sim.append("^")
-        ## create empty space
-        print(" ")
+  def _getShockWidth(self, sim_name):
+    Mach = self.dict_scales_group_sim[sim_name]["Mach"]["val"]
+    Re = self.dict_scales_group_sim[sim_name]["Re"]
+    if Mach < 1.1:
+      return np.nan
+    else: return getShockWidth(Mach, Re)
 
-  def __getParams(self, filepath_data):
-    ## load spectra-fit data as a dictionary
-    dict_sim_inputs = SimParams.readSimInputs(
-      filepath     = f"{filepath_data}/288/",
-      bool_verbose = False
-    )
-    dict_scales = WWObjs.readJsonFile2Dict(
-      filepath     = filepath_data,
-      filename     = FileNames.FILENAME_SIM_SCALES,
-      bool_verbose = False
-    )
-    ## extract plasma Reynolds numbers
-    self.Mach_group_sim.append(float(dict_sim_inputs["desired_Mach"]))
-    Re = int(dict_sim_inputs["Re"])
-    self.Re_group_sim.append(Re)
-    self.Rm_group_sim.append(int(dict_sim_inputs["Rm"]))
-    self.Pm_group_sim.append(int(dict_sim_inputs["Pm"]))
-    if self.bool_supersonic is not None:
-      self.color_group_sim.append("darkorange")
-    else:
-      cmap, norm = PlotFuncs.createCmap(
-        cmap_name = "Blues",
-        cmin      = 0.1,
-        vmin      = 0.0,
-        vmax      = 4
+  def _getMachString(self, sim_name):
+    Mach = self.dict_scales_group_sim[sim_name]["Mach"]["val"]
+    if Mach < 0.7:
+      return f"Mach{float(Mach):.1f}"
+    else: return f"Mach{int(round(Mach)):d}"
+
+  def _meetsSimCondition(self, sim_name):
+    Mach = self.dict_scales_group_sim[sim_name]["Mach"]["val"]
+    Mach_string = self._getMachString(sim_name)
+    Rm_string = str(int(self.dict_scales_group_sim[sim_name]["Rm"]))
+    # return (Mach_string == "Mach5") and (Rm_string == "3000")
+    return True
+
+  def _addLabel(self, ax):
+    ## add Mach annotation
+    if not(self.bool_Mach_varied):
+      Mach_string = self.Mach_group_sim[0].replace("Mach", "")
+      ax.text(
+        0.05, 0.9,
+        r"$\mathcal{M} =$ " + Mach_string,
+        transform = ax.transAxes, va="top", ha="left", fontsize=16
       )
-      list_Re = [ 24, 300, 600, 300 ]
-      mach_index = WWLists.getIndexClosestValue(list_Re, Re)
-      self.color_group_sim.append(cmap(norm(mach_index)))
-    ## extract measured scales
-    self.k_p_mag_stats_group_sim.append(dict_scales["k_p_mag_stats_nres"])
-    self.k_eta_cur_stats_group_sim.append(dict_scales["k_eta_cur_stats_nres"])
-    self.k_eta_mag_stats_group_sim.append(dict_scales["k_eta_mag_stats_nres"])
-    self.k_nu_kin_stats_group_sim.append(dict_scales["k_nu_kin_stats_nres"])
 
-  def plotRoutines(self):
-    self.plotDependance_knu_Re()
-    self.plotDependance_keta_Pm(self.k_eta_mag_stats_group_sim,  "keta_mag")
-    self.plotDependance_keta_Pm(self.k_eta_cur_stats_group_sim,  "keta_cur")
-    self.plotDependance_kp_keta()
+  def _loadAllSimulationData(self):
+    print("Loading datasets...")
+    self.dict_scales_group_sim = WWObjs.readJsonFile2Dict(
+      filepath     = PATH_PAPER,
+      filename     = "dataset.json",
+      bool_verbose = False
+    )
+    ## get list of simulation names
+    self.sim_name_group_sim = list(self.dict_scales_group_sim.keys())
+    ## define simulation markers based on Mach number
+    self.marker_group_sim = [
+      "o" if self.dict_scales_group_sim[sim_name]["Mach"]["val"] < 1.1 else "D"
+      for sim_name in self.dict_scales_group_sim
+    ]
+    ## color simulations by Mach number
+    self.color_by_Mach_group_sim = [
+      "cornflowerblue"
+      if self.dict_scales_group_sim[sim_name]["Mach"]["val"] < 0.7 else
+      "orangered"
+      for sim_name in self.dict_scales_group_sim
+    ]
+    ## color simulations by shockwidth
+    shockwidth_group_sim = [
+      self._getShockWidth(sim_name)
+      for sim_name in self.dict_scales_group_sim
+    ]
+    self.cmap, self.norm = PlotFuncs.createCmap(
+      cmap_name = "coolwarm",
+      # vmin = np.nanmin(np.log10(shockwidth_group_sim)),
+      # vmid = np.log10(200),
+      # vmax = np.nanmax(np.log10(shockwidth_group_sim))
+      vmin = 1.0,
+      vmid = np.log10(200),
+      vmax = 3.5
+    )
+    self.color_by_shockwidth_group_sim = [
+      self.cmap(self.norm(np.log10(shockwidth)))
+      if not np.isnan(shockwidth) else
+      None
+      for shockwidth in shockwidth_group_sim
+    ]
+    ## create empty space
+    print(" ")
 
-  def plotDependance_knu_Re(self):
+  def _plotDependance_knu_Re(self):
     ## plot data
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
-    for sim_index in range(len(self.Pm_group_sim)):
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4.75))
+    list_colors = ["#C85DEF", "white", "#FFAB1A", "black"]
+    list_zorder = [7, 9, 5, 3]
+    cmap = colors.ListedColormap(list_colors)
+    for sim_index, sim_name in enumerate(self.sim_name_group_sim):
+      if not(self._meetsSimCondition(sim_name)): continue
+      Mach = self.dict_scales_group_sim[sim_name]["Mach"]["val"]
+      if Mach < 0.7: order_index = 0 # Mach = 0.3
+      elif Mach > 7: order_index = 3 # Mach = 10
+      elif Mach > 2: order_index = 2 # Mach = 5
+      else:          order_index = 1 # Mach = 1
       plotScale(
         ax       = ax,
-        x_median = self.Re_group_sim[sim_index],
-        y_median = self.k_nu_kin_stats_group_sim[sim_index][0],
-        y_1sig   = self.k_nu_kin_stats_group_sim[sim_index][1],
-        color    = self.color_group_sim[sim_index],
-        marker   = self.marker_group_sim[sim_index]
+        x_median = self.dict_scales_group_sim[sim_name]["Re"],
+        y_median = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["val"],
+        y_1sig   = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["std"],
+        # marker   = self.marker_group_sim[sim_index],
+        # color    = self.color_by_Mach_group_sim[sim_index],
+        marker   = "o",
+        color    = list_colors[order_index],
+        zorder   = list_zorder[order_index]
       )
     ## plot reference lines
     x = np.linspace(10**(-1), 10**(5), 10**4)
-    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.6*x**(2/3), ls=":")
-    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.25*x**(0.7), ls="--")
-    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.2*x**(3/4), ls="-")
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.6*x**(2/3), ls="-", zorder=0)
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.235*x**(3/4), ls="--", zorder=0)
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, 1.25*x**(3/8), ls=":", zorder=0)
     ## label figure
     PlotFuncs.addLegend_fromArtists(
       ax,
-      list_artists       = [ ":", "--", "-" ],
+      list_artists       = [ "-", "--", ":" ],
       list_legend_labels = [
         r"$\propto {\rm Re}^{2/3}$",
-        r"$\propto {\rm Re}^{0.7}$",
-        r"$\propto {\rm Re}^{3/4}$"
+        r"$\propto {\rm Re}^{3/4}$",
+        r"$\propto {\rm Re}^{3/8}$",
       ],
       list_marker_colors = [ "k" ],
       label_color        = "black",
-      loc                = "lower right",
-      bbox               = (1.0, 0.0),
+      loc                = "upper left",
+      bbox               = (0.0, 1.0),
       lw                 = 1
     )
-    if self.bool_supersonic is not None:
-      PlotFuncs.addLegend_fromArtists(
-        ax,
-        list_artists       = [ "s", "D", "o" ],
-        list_legend_labels = [
-          r"$\mathrm{Re} = 10$",
-          r"$\mathrm{Re} = 500$",
-          r"$\mathrm{Rm} = 3000$",
-        ],
-        list_marker_colors = [ "k" ],
-        label_color        = "black",
-        loc                = "upper left",
-        bbox               = (-0.05, 1.025)
-      )
-    else:
-      PlotFuncs.addLegend_fromArtists(
-        ax,
-        list_artists       = [ "s", "D", "o", "^" ],
-        list_legend_labels = [
-          r"$\mathcal{M} = 0.3$",
-          r"$\mathcal{M} = 1$",
-          r"$\mathcal{M} = 5$",
-          r"$\mathcal{M} = 10$",
-        ],
-        list_marker_colors = [ "k" ],
-        label_color        = "black",
-        loc                = "upper left",
-        bbox               = (-0.05, 1.025)
-      )
+    cbar = PlotFuncs.addColorbar_fromCmap(
+      fig        = ax.get_figure(),
+      ax         = ax,
+      cmap       = cmap,
+      cbar_title = r"$\mathcal{M}$",
+      cbar_title_pad=7, orientation="horizontal", size=8, fontsize=20
+    )
+    tick_placement = [0.3, 1, 5, 10]
+    cbar.set_ticks(np.arange(0.125, 1, 0.25))
+    cbar.set_ticklabels([ f"{val:.1f}" for val in tick_placement ])
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_ylim([ 0.9, 200 ])
+    ax.set_xlim([ 7, 5000 ])
+    ax.set_ylim([ 1.9, 210 ])
     ax.set_xlabel(r"Re", fontsize=20)
-    ax.set_ylabel(r"$k_{\nu, {\rm kin}}$", fontsize=20)
+    ax.set_ylabel(r"$k_\nu$", fontsize=20)
     ## save plot
-    fig_name = f"fig_dependance_{self.plot_name}_knu_kin_Re.png"
-    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
+    name = f"dependance_{self.plot_name}_knu_Re.pdf"
+    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{name}")
     print(" ")
 
-  def plotDependance_keta_Pm(self, k_eta_stats_group_sim, domain_name):
+  def _plotDependance_knu_comparison(self):
     ## plot data
     fig, ax = plt.subplots(1, 1, figsize=(6, 4))
-    for sim_index in range(len(self.Pm_group_sim)):
-      v1 = k_eta_stats_group_sim[sim_index][0]
-      d1 = k_eta_stats_group_sim[sim_index][1]
-      v2 = self.k_nu_kin_stats_group_sim[sim_index][0]
-      d2 = self.k_nu_kin_stats_group_sim[sim_index][1]
+    for sim_index, sim_name in enumerate(self.sim_name_group_sim):
+      if not(self._meetsSimCondition(sim_name)): continue
       plotScale(
         ax       = ax,
-        x_median = self.Pm_group_sim[sim_index],
-        y_median = v1 / v2,
-        y_1sig   = (v1 / v2) * np.sqrt((d1 / v1)**2 + (d2 / v2)**2),
-        color    = self.color_group_sim[sim_index],
-        marker   = self.marker_group_sim[sim_index]
+        x_median = self.dict_scales_group_sim[sim_name]["k_nu_kin"]["inf"]["val"],
+        x_1sig   = self.dict_scales_group_sim[sim_name]["k_nu_kin"]["inf"]["std"],
+        y_median = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["val"],
+        y_1sig   = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["std"],
+        marker   = "o",
+        color    = "black"
       )
     ## plot reference lines
     x = np.linspace(10**(-1), 10**(5), 10**4)
-    if   "mag" in domain_name.lower():
-      PlotFuncs.plotData_noAutoAxisScale(ax, x, x**(1/3), ls=":")
-      PlotFuncs.plotData_noAutoAxisScale(ax, x, x**(1/4), ls="--")
-      list_artists = [ ":", "--" ]
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, x, ls="-", zorder=0)
+    ## adjust axis
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    # ax.set_xlim([ 7, 5000 ])
+    # ax.set_ylim([ 1.9, 210 ])
+    ax.set_xlabel(r"$k_\nu$ density weighted spectrum", fontsize=20)
+    ax.set_ylabel(r"$k_\nu$ velocity spectrum", fontsize=20)
+    ## save plot
+    name = f"dependance_{self.plot_name}_knu_comparison.pdf"
+    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{name}")
+    print(" ")
+
+  def _plotDependance_keta_Pm(self, domain_name):
+    keta_type = domain_name.split("_")[-1]
+    ## plot data
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4.75))
+    list_colors = ["#C85DEF", "white", "#FFAB1A", "black"]
+    list_zorder = [7, 9, 5, 3]
+    cmap = colors.ListedColormap(list_colors)
+    for sim_index, sim_name in enumerate(self.sim_name_group_sim):
+      if not(self._meetsSimCondition(sim_name)): continue
+      Mach = self.dict_scales_group_sim[sim_name]["Mach"]["val"]
+      Re = self.dict_scales_group_sim[sim_name]["Re"]
+      if Mach < 0.7: order_index = 0 # Mach = 0.3
+      elif Mach > 7: order_index = 3 # Mach = 10
+      elif Mach > 2: order_index = 2 # Mach = 5
+      else:          order_index = 1 # Mach = 1
+      v1 = self.dict_scales_group_sim[sim_name][domain_name]["inf"]["val"]
+      d1 = self.dict_scales_group_sim[sim_name][domain_name]["inf"]["std"]
+      v2 = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["val"]
+      d2 = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["std"]
+      plotScale(
+        ax       = ax,
+        x_median = self.dict_scales_group_sim[sim_name]["Pm"],
+        y_median = v1 / v2,
+        y_1sig   = (v1 / v2) * np.sqrt((d1 / v1)**2 + (d2 / v2)**2),
+        # marker   = self.marker_group_sim[sim_index],
+        # color    = self.color_by_Mach_group_sim[sim_index],
+        marker   = "D" if Re > 100 else "o",
+        color    = list_colors[order_index],
+        zorder   = list_zorder[order_index]
+      )
+    ## plot reference lines
+    x = np.linspace(10**(-1), 10**(5), 10**4)
+    if "cur" in keta_type.lower():
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.385*x**(1/2), ls="-")
+      list_artists = [ "-" ]
+      list_labels = [ r"$\propto {\rm Pm}^{1/2}$" ]
+    elif "mag" in keta_type.lower():
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, x**(1/3), ls="-")
+      PlotFuncs.plotData_noAutoAxisScale(ax, x, x**(1/7), ls="--")
+      list_artists = [ "-", "--" ]
       list_labels = [
         r"$= {\rm Pm}^{1/3}$",
-        r"$= {\rm Pm}^{1/4}$",
+        r"$= {\rm Pm}^{1/7}$",
       ]
-    elif "cur" in domain_name.lower():
-      PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.35*x**(1/2), ls=":")
-      PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.45*x**(1/2), ls=":")
-      list_artists = [ ":" ]
-      list_labels = [ r"$\propto {\rm Pm}^{1/2}$" ]
     ## label figure
+    if self.bool_Mach_varied:
+      PlotFuncs.addLegend_fromArtists(
+        ax,
+        list_artists       = [ "o", "D" ],
+        list_marker_colors = [ "black" ],
+        list_legend_labels = [
+          r"$\mathrm{Re} < 100$",
+          r"$\mathrm{Re} > 100$"
+        ],
+        label_color   = "black",
+        loc           = "upper left",
+        bbox          = (-0.025, 1.0),
+        lw            = 1,
+        handletextpad = 0.01
+      )
+    else: self._addLabel(ax)
     PlotFuncs.addLegend_fromArtists(
       ax,
       list_artists       = list_artists,
@@ -254,152 +320,146 @@ class PlotSimScales():
       bbox               = (1.0, 0.0),
       lw                 = 1
     )
-    if self.bool_supersonic is not None:
-      PlotFuncs.addLegend_fromArtists(
-        ax,
-        list_artists       = [ "s", "D", "o" ],
-        list_legend_labels = [
-          r"$\mathrm{Re} = 10$",
-          r"$\mathrm{Re} = 500$",
-          r"$\mathrm{Rm} = 3000$",
-        ],
-        list_marker_colors = [ "k" ],
-        label_color        = "black",
-        loc                = "upper left",
-        bbox               = (-0.05, 1.025)
-      )
-    else:
-      PlotFuncs.addLegend_fromArtists(
-        ax,
-        list_artists       = [ "s", "D", "o", "^" ],
-        list_legend_labels = [
-          r"$\mathcal{M} = 0.3$",
-          r"$\mathcal{M} = 1$",
-          r"$\mathcal{M} = 5$",
-          r"$\mathcal{M} = 10$",
-        ],
-        list_marker_colors = [ "k" ],
-        label_color        = "black",
-        loc                = "upper left",
-        bbox               = (-0.05, 1.025)
-      )
+    cbar = PlotFuncs.addColorbar_fromCmap(
+      fig        = ax.get_figure(),
+      ax         = ax,
+      cmap       = cmap,
+      cbar_title = r"$\mathcal{M}$",
+      cbar_title_pad=7, orientation="horizontal", size=8, fontsize=20
+    )
+    tick_placement = [0.3, 1, 5, 10]
+    cbar.set_ticks(np.arange(0.125, 1, 0.25))
+    cbar.set_ticklabels([ f"{val:.1f}" for val in tick_placement ])
     ## adjust axis
     ax.set_xscale("log")
     ax.set_yscale("log")
-    if   "mag" in domain_name.lower(): ax.set_ylim([ 0.9, 11 ])
-    elif "cur" in domain_name.lower(): ax.set_ylim([ 0.3, 11 ])
+    ax.set_xlim([ 0.7, 400 ])
+    if   "cur" in keta_type.lower(): ax.set_ylim([ 0.19, 11 ])
+    elif "mag" in keta_type.lower(): ax.set_ylim([ 0.7, 11 ])
     ax.set_xlabel(r"${\rm Pm}$", fontsize=20)
-    if   "mag" in domain_name.lower(): ax.set_ylabel(r"$k_{\eta, {\rm mag}} / k_{\nu, {\rm kin}}$", fontsize=20)
-    elif "cur" in domain_name.lower(): ax.set_ylabel(r"$k_{\eta, {\rm cur}} / k_{\nu, {\rm kin}}$", fontsize=20)
+    if   "cur" in keta_type.lower(): ax.set_ylabel(r"$k_\eta / k_\nu$", fontsize=20)
+    elif "mag" in keta_type.lower(): ax.set_ylabel(r"$k_\mathrm{Rm} / k_\nu$", fontsize=20)
     ## save plot
-    fig_name = f"fig_dependance_{self.plot_name}_{domain_name}_Pm.png"
-    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
+    name = f"dependance_{self.plot_name}_keta_{keta_type}_Pm.pdf"
+    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{name}")
     print(" ")
 
-  def plotDependance_kp_keta(self):
+  def _plotDependance_kp_keta(self):
     ## plot data
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
-    for sim_index in range(len(self.Pm_group_sim)):
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4.75))
+    ax_inset = ax.inset_axes([ 0.035, 0.65, 0.435, 0.3 ])
+    ax_inset.tick_params(left=True, right=True, labelleft=False, labelright=True)
+    ax_inset.yaxis.set_label_position("right")
+    for sim_index, sim_name in enumerate(self.sim_name_group_sim):
+      if not(self._meetsSimCondition(sim_name)): continue
       plotScale(
         ax       = ax,
-        x_median = self.k_eta_cur_stats_group_sim[sim_index][0],
-        x_1sig   = self.k_eta_cur_stats_group_sim[sim_index][1],
-        y_median = self.k_p_mag_stats_group_sim[sim_index][0],
-        y_1sig   = self.k_p_mag_stats_group_sim[sim_index][1],
-        color    = self.color_group_sim[sim_index],
+        x_median = self.dict_scales_group_sim[sim_name]["k_eta_cur"]["inf"]["val"],
+        x_1sig   = self.dict_scales_group_sim[sim_name]["k_eta_cur"]["inf"]["std"],
+        y_median = self.dict_scales_group_sim[sim_name]["k_p"]["inf"]["val"],
+        y_1sig   = self.dict_scales_group_sim[sim_name]["k_p"]["inf"]["std"],
+        color    = self.color_by_shockwidth_group_sim[sim_index],
         marker   = self.marker_group_sim[sim_index]
       )
+      Mach_string = self._getMachString(sim_name)
+      Rm_string = str(int(self.dict_scales_group_sim[sim_name]["Rm"]))
+      if (Mach_string == "Mach5") and (Rm_string == "3000"):
+        plotScale(
+          ax       = ax_inset,
+          x_median = self.dict_scales_group_sim[sim_name]["k_eta_cur"]["inf"]["val"],
+          x_1sig   = self.dict_scales_group_sim[sim_name]["k_eta_cur"]["inf"]["std"],
+          y_median = self.dict_scales_group_sim[sim_name]["k_p"]["inf"]["val"],
+          y_1sig   = self.dict_scales_group_sim[sim_name]["k_p"]["inf"]["std"],
+          color    = self.color_by_shockwidth_group_sim[sim_index],
+          marker   = self.marker_group_sim[sim_index]
+        )
     ## plot reference lines
-    ax.axhline(y=5.0, ls=":", c="black")
     x = np.linspace(10**(-1), 10**(5), 10**4)
-    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.4*x, ls="--")
-    # label figure
+    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.42*x, ls="-")
+    PlotFuncs.plotData_noAutoAxisScale(ax_inset, x, 0.42*x, ls="-")
+    ## label figure
+    if self.bool_Mach_varied:
+      PlotFuncs.addLegend_fromArtists(
+        ax,
+        list_artists       = [ "o", "D" ],
+        list_marker_colors = [
+          "whitesmoke",
+          "black"
+        ],
+        list_legend_labels = [
+          r"$\mathcal{M} \leq 1$",
+          r"$\mathcal{M} > 1$"
+        ],
+        label_color   = "black",
+        loc           = "lower right",
+        bbox          = (1.0, -0.025),
+        lw            = 1,
+        handletextpad = 0.01
+      )
+    else: self._addLabel(ax)
+    PlotFuncs.addColorbar_fromCmap(
+      fig        = ax.get_figure(),
+      ax         = ax,
+      cmap       = self.cmap,
+      norm       = self.norm,
+      cbar_title = r"${\rm Re} \, (1 + 1/\mathcal{M}^2)$",
+      cbar_title_pad=12, orientation="horizontal", size=8, fontsize=16
+    )
     PlotFuncs.addLegend_fromArtists(
       ax,
-      list_artists       = [ ":", "--" ],
-      list_legend_labels = [
-        r"$= k_{\rm p} = 5$",
-        r"$\propto k_{\eta, {\rm cur}}$"
-      ],
+      list_artists       = [ "-" ],
+      list_legend_labels = [ r"$\propto k_\eta$" ],
       list_marker_colors = [ "k" ],
       label_color        = "black",
-      loc                = "lower right",
-      bbox               = (1.0, 0.0),
+      loc                = "lower left",
+      bbox               = (0.0, -0.025),
       lw                 = 1
     )
-    if self.bool_supersonic is not None:
-      PlotFuncs.addLegend_fromArtists(
-        ax,
-        list_artists       = [ "s", "D", "o" ],
-        list_legend_labels = [
-          r"$\mathrm{Re} = 10$",
-          r"$\mathrm{Re} = 500$",
-          r"$\mathrm{Rm} = 3000$",
-        ],
-        list_marker_colors = [ "k" ],
-        label_color        = "black",
-        loc                = "upper left",
-        bbox               = (-0.05, 1.025)
-      )
-    else:
-      PlotFuncs.addLegend_fromArtists(
-        ax,
-        list_artists       = [ "s", "D", "o", "^" ],
-        list_legend_labels = [
-          r"$\mathcal{M} = 0.3$",
-          r"$\mathcal{M} = 1$",
-          r"$\mathcal{M} = 5$",
-          r"$\mathcal{M} = 10$",
-        ],
-        list_marker_colors = [ "k" ],
-        label_color        = "black",
-        loc                = "upper left",
-        bbox               = (-0.05, 1.025)
-      )
-    ## adjust axis
+    ## adjust main axis
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_ylim([ 0.9, 30 ])
-    ax.set_xlim([ 5, 70 ])
-    ax.set_xlabel(r"$k_{\eta, {\rm cur}}$", fontsize=20)
+    ax.set_xlim([ 5, 130 ])
+    ax.set_ylim([ 0.9, 80 ])
+    ax.set_xlabel(r"$k_\eta$", fontsize=20)
     ax.set_ylabel(r"$k_{\rm p}$", fontsize=20)
+    ## adjust inset axis
+    ax_inset.set_xlim([ 13, 55 ])
+    ax_inset.set_ylim([ 0, 16 ])
+    ax_inset.set_xticks([ 20, 40 ])
+    ax_inset.text(40, 9, r"Re", ha="center", fontsize=16)
+    ax_inset.arrow(
+      x  = 50,
+      y  = 8,
+      dx = -20,
+      dy = 0,
+      color = "black",
+      head_width = 1.5
+    )
     ## save plot
-    fig_name = f"fig_dependance_{self.plot_name}_kp_keta_cur.png"
-    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{fig_name}")
+    name = f"dependance_{self.plot_name}_kp_keta_cur.pdf"
+    PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{name}")
     print(" ")
+
+  def plotRoutines(self):
+    # self._plotDependance_knu_Re()
+    self._plotDependance_knu_comparison()
+    # self._plotDependance_keta_Pm("k_eta_cur")
+    # self._plotDependance_keta_Pm("k_eta_mag")
+    # self._plotDependance_kp_keta()
 
 
 ## ###############################################################
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  plot_obj_mach5 = PlotSimScales()
-  plot_obj_mach5.plotRoutines()
+  obj = PlotSimScales()
+  obj.plotRoutines()
 
 
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-PATH_PLOT = "/home/586/nk7952/MHDCodes/kriel2023/"
-LIST_SCRATCH_PATHS = [
-  "/scratch/ek9/nk7952/",
-  # "/scratch/jh2/nk7952/"
-]
-
-# ## PLASMA PARAMETER SET
-# LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm3000" ]
-# LIST_MACH_REGIMES = [ "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
-
-## MACH NUMBER SET
-LIST_SUITE_FOLDERS = [ "Rm3000" ]
-LIST_MACH_REGIMES  = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
-LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm125" ]
-
-# ## BOTTLENECK RUN
-# LIST_SUITE_FOLDERS = [ "Re2000" ]
-# LIST_MACH_REGIMES = [ "Mach0.3", "Mach5" ]
-# LIST_SIM_FOLDERS   = [ "Pm5" ]
+PATH_PAPER = "/home/586/nk7952/MHDCodes/kriel2023/"
 
 
 ## ###############################################################

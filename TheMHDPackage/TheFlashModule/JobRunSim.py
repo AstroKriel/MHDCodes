@@ -352,6 +352,10 @@ class JobRunSim():
     if   self.num_procs > 9e3: self.max_num_hours = 10
     elif self.num_procs > 1e3: self.max_num_hours = 24
     else:                      self.max_num_hours = 48
+    ## check group project
+    if   "ek9" in self.filepath_sim: self.group_project = "ek9"
+    elif "jh2" in self.filepath_sim: self.group_project = "jh2"
+    else: raise Exception("Error: undefined group project.")
     self.job_name    = FileNames.FILENAME_RUN_SIM_JOB
     self.job_tagname = SimParams.getJobTag(self.dict_sim_inputs, "sim")
     self.job_output  = FileNames.FILENAME_RUN_SIM_OUTPUT + str(self.run_index).zfill(2)
@@ -411,7 +415,7 @@ class JobRunSim():
     with open(f"{self.filepath_sim}/{self.job_name}", "w") as job_file:
       ## write contents
       job_file.write("#!/bin/bash\n")
-      job_file.write("#PBS -P ek9\n")
+      job_file.write(f"#PBS -P {self.group_project}\n")
       job_file.write("#PBS -q normal\n")
       job_file.write(f"#PBS -l walltime={self.max_num_hours}:00:00\n")
       job_file.write(f"#PBS -l ncpus={self.num_procs}\n")

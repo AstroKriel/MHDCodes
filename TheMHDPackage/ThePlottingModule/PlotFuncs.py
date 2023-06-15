@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import matplotlib.ticker as ticker
 import cmasher as cmr
   ## https://cmasher.readthedocs.io/user/introduction.html#colormap-overview
   ## cmr sequential maps: tropical, ocean, arctic, bubblegum, lavender
@@ -71,9 +72,11 @@ def createNorm(vmin=0.0, vmax=1.0, NormType=colors.Normalize):
 def createCmap(
     cmap_name,
     cmin=0.0, cmax=1.0,
-    vmin=0.0, vmax=1.0,
+    vmin=0.0, vmid=None, vmax=1.0,
     NormType = colors.Normalize
   ):
+  if vmid is not None:
+    NormType = functools.partial(MidpointNormalize, vmid=vmid)
   ## cmaps span cmin=0.0 to cmax=1.0, so pass (cmin, cmax) to subset a cmap color-range
   cmap = cmr.get_sub_cmap(cmap_name, cmin, cmax)
   ## define value range of colorbar: [vmin, vmax]
@@ -81,13 +84,16 @@ def createCmap(
   return cmap, norm
 
 class MidpointNormalize(colors.Normalize):
-  def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-    self.midpoint = midpoint
+  def __init__(self, vmin=None, vmid=None, vmax=None, clip=False):
+    self.vmid = vmid
     colors.Normalize.__init__(self, vmin, vmax, clip)
 
   def __call__(self, value, clip=None):
-    x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-    return np.ma.masked_array(np.interp(value, x, y))
+    return np.ma.masked_array(np.interp(
+      value,
+      [ self.vmin, self.vmid, self.vmax ],
+      [ 0, 0.5, 1 ]
+    ))
 
 
 ## ###############################################################
@@ -140,16 +146,17 @@ def plotErrorBar_1D(
     capsize = capsize,
     zorder  = zorder,
     markersize=7, markeredgecolor="black",
-    elinewidth=2, linestyle="None"
+    elinewidth=1.5, linestyle="None"
   )
 
 def plotPDF(
     ax, list_data,
     num_bins     = 10,
+    weights      = None,
     color        = "black",
     bool_flip_ax = False
   ):
-  list_dens, list_bin_edges = np.histogram(list_data, bins=num_bins)
+  list_dens, list_bin_edges = np.histogram(list_data, bins=num_bins, weights=weights)
   list_dens_norm = np.append(0, list_dens / list_dens.sum())
   if bool_flip_ax:
     ax.plot(list_dens_norm[::-1], list_bin_edges[::-1], drawstyle="steps", color=color)
@@ -173,8 +180,9 @@ def plotScatter(
     bool_add_colorbar = False
   ):
   if color is None:
+    ## color by the point density
     xy_stack = np.vstack([ list_x, list_y ])
-    color = gaussian_kde(xy_stack)(xy_stack) # color by the point density
+    color = gaussian_kde(xy_stack)(xy_stack)
   plot_obj = ax.scatter(list_x, list_y, c=color, s=ms)
   if bool_add_colorbar:
     addColorbar_fromMappble(
@@ -183,29 +191,29 @@ def plotScatter(
       orientation = cbar_orientation,
       fontsize    = fontsize
     )
+  return plot_obj
 
 def plotScalarField(
     field_slice,
-    filepath_fig         = None,
-    fig                  = None,
-    ax                   = None,
-    bool_add_colorbar    = False,
-    bool_log_center_cbar = False,
-    cbar_orientation     = "horizontal",
-    cmap_name            = "cmr.arctic",
-    NormType             = colors.LogNorm,
-    cbar_bounds          = None,
-    cbar_title           = None,
-    bool_label_axis      = False
+    fig               = None,
+    ax                = None,
+    bool_add_colorbar = False,
+    bool_center_cbar  = False,
+    cbar_orientation  = "horizontal",
+    cmap_name         = "cmr.arctic",
+    NormType          = colors.LogNorm,
+    cbar_bounds       = None,
+    cbar_title        = None,
+    bool_label_axis   = False
   ):
   ## check that a figure object has been passed
   if (fig is None) or (ax is None):
     fig, ax = fig, ax = plt.subplots(constrained_layout=True)
   ## plot scalar field
-  if bool_log_center_cbar: NormType = functools.partial(MidpointNormalize, midpoint=0)
+  if bool_center_cbar: NormType = functools.partial(MidpointNormalize, vmid=0)
   im_obj = ax.imshow(
     field_slice,
-    extent = [-1.0, 1.0, -1.0, 1.0],
+    extent = [-1, 1, -1, 1],
     cmap   = plt.get_cmap(cmap_name),
     norm   = NormType(
       vmin = 0.9*np.min(field_slice) if cbar_bounds is None else cbar_bounds[0],
@@ -229,17 +237,10 @@ def plotScalarField(
     # ax.set_axis_off()
     ax.set_xticks([])
     ax.set_yticks([])
-  ## save figure
-  if filepath_fig is not None:
-    plt.savefig(filepath_fig)
-    ## clear figure and axis
-    fig.artists.clear()
-    ax.clear()
 
 def plotVectorField(
     field_slice_x1,
     field_slice_x2,
-    filepath_fig          = None,
     fig                   = None,
     ax                    = None,
     bool_plot_magnitude   = True,
@@ -255,7 +256,7 @@ def plotVectorField(
     quiver_width          = 5e-3,
     field_color           = "white",
     bool_plot_streamlines = False,
-    streamline_width      = 2.0,
+    streamline_width      = 1.0,
     streamline_linestyle  = "->",
     bool_label_axis       = False
   ):
@@ -267,7 +268,7 @@ def plotVectorField(
     field_magnitude = np.sqrt(field_slice_x1**2 + field_slice_x2**2)
     if bool_log_center_cbar:
       field_magnitude = np.log(field_magnitude)
-      NormType = functools.partial(MidpointNormalize, midpoint=0)
+      NormType = functools.partial(MidpointNormalize, vmid=0)
     im_obj = ax.imshow(
       field_magnitude,
       extent = [-1.0, 1.0, -1.0, 1.0],
@@ -310,9 +311,9 @@ def plotVectorField(
       field_slice_x2,
       color      = field_color,
       linewidth  = streamline_width,
-      density    = 2,
+      density    = 1,
       arrowstyle = streamline_linestyle,
-      arrowsize  = 1.5
+      arrowsize  = 1
     )
   ## add axis labels
   if bool_label_axis:
@@ -321,15 +322,10 @@ def plotVectorField(
     ax.set_xticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
     ax.set_yticklabels([r"$-L/2$", r"$-L/4$", r"$0$", r"$L/4$", r"$L/2$"])
   else:
-    # ax.set_axis_off()
-    ax.set_xticks([])
-    ax.set_yticks([])
-  ## save figure
-  if filepath_fig is not None:
-    plt.savefig(filepath_fig)
-    ## clear figure and axis
-    fig.artists.clear()
-    ax.clear()
+    a = 10
+    # # ax.set_axis_off()
+    # ax.set_xticks([])
+    # ax.set_yticks([])
 
 
 ## ###############################################################
@@ -362,7 +358,7 @@ def addLegend(
   )
   obj_legend.set_zorder(zorder)
   for line in obj_legend.get_lines():
-    line.set_linewidth(2.0)
+    line.set_linewidth(lw)
   return obj_legend
 
 def addLegend_fromArtists(
@@ -376,6 +372,7 @@ def addLegend_fromArtists(
     lw                 = 2,
     title              = None,
     ncol               = 1,
+    handletextpad      = 0.5,
     rspacing           = 0.5,
     cspacing           = 0.5,
     fontsize           = 16,
@@ -394,7 +391,7 @@ def addLegend_fromArtists(
     ## if the artist is a marker
     if artist in list_markers:
       list_legend_artists.append( 
-        Line2D([0], [0], marker=artist, color=marker_color, linewidth=0, markeredgecolor="white", markersize=ms)
+        Line2D([0], [0], marker=artist, color=marker_color, linewidth=0, markeredgecolor="black", markersize=ms)
       )
     ## if the artist is a line
     elif artist in list_lines:
@@ -413,7 +410,7 @@ def addLegend_fromArtists(
     bbox_to_anchor = bbox,
     ncol           = ncol,
     borderpad      = 0.45,
-    handletextpad  = 0.5,
+    handletextpad  = handletextpad,
     labelspacing   = rspacing,
     columnspacing  = cspacing,
     fontsize       = fontsize,
@@ -459,10 +456,20 @@ def addLegend_withBox(
     frameon=True, facecolor="white", edgecolor="grey"
   ).set_zorder(zorder)
 
+def labelLogFormatter(x, pos):
+  if x % 1 == 0:
+    return r"$10^{" + f"{x:.0f}" + "}$"
+  else: return r"$10^{" + f"{x:.1f}" + "}$"
+
 def addColorbar_fromCmap(
     fig, ax, cmap,
     norm=None, vmin=0.0, vmax=1.0,
-    cbar_title=None, fontsize=16, orientation="horizontal", size=10
+    orientation    = "horizontal",
+    bool_log_ticks = False,
+    cbar_title     = None,
+    cbar_title_pad = 10,
+    fontsize       = 16,
+    size           = 10
   ):
   if norm is None: norm = createNorm(vmin, vmax)
   mappable = ScalarMappable(cmap=cmap, norm=norm)
@@ -473,9 +480,15 @@ def addColorbar_fromCmap(
   # fig.add_axes(ax_cbar)
   cbar = fig.colorbar(mappable=mappable, cax=ax_cbar, orientation=orientation)
   if "h" in orientation:
-    ax_cbar.set_title(cbar_title, fontsize=fontsize)
+    ax_cbar.set_title(cbar_title, fontsize=fontsize, pad=cbar_title_pad)
     ax_cbar.xaxis.set_ticks_position("top")
-  else: cbar.ax.set_ylabel(cbar_title, fontsize=fontsize, rotation=-90, va="bottom")
+    if bool_log_ticks:
+      cbar.ax.xaxis.set_major_formatter(ticker.FuncFormatter(labelLogFormatter))
+  else:
+    cbar.ax.set_ylabel(cbar_title, fontsize=fontsize, rotation=-90, va="bottom")
+    if bool_log_ticks:
+      cbar.ax.yaxis.set_major_formatter(ticker.FuncFormatter(labelLogFormatter))
+  return cbar
 
 def addColorbar_fromMappble(
     fig, ax, mappable,
@@ -592,7 +605,7 @@ def addInsetAxis(
   ):
   ## create inset axis
   ax_inset = ax.inset_axes(ax_inset_bounds)
-  ax_inset.xaxis.tick_top()
+  ax_inset.tick_params(top=True, bottom=True, labeltop=True, labelbottom=False)
   ## add axis label
   ax_inset.set_xlabel(label_x, fontsize=fontsize)
   ax_inset.set_ylabel(label_y, fontsize=fontsize)
