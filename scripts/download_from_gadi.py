@@ -106,21 +106,22 @@ def main():
 ## ###############################################################
 BASEPATH_MAC             = "/Users/necoturb/Documents/Studies/MHDScales"
 BASEPATH_GADI            = "/scratch/ek9/nk7952"
-SONIC_REGIME             = "super_sonic"
-# LIST_SUITE_FOLDER        = [ "Re10", "Re500", "Rm3000" ]
+## simulation paarmeters
+SONIC_REGIME             = "Mach5"
+LIST_SUITE_FOLDER        = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER          = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 LIST_SIM_RES             = [ "18", "36", "72", "144", "288", "576" ]
-## plots of convergence data
-BOOL_GET_PLOTS_CONVERGED = 1
-FILENAME_PLOTS_CONVERGED = "*_nres_scales.png"
-## plots of simulations at a Nres
+## simulations plots
 BOOL_GET_PLOTS_NRES      = 0
 FILENAME_PLOTS_NRES      = "*.png"
-## animated spectra at a Nres
+## converged data
+BOOL_GET_PLOTS_CONVERGED = 1
+FILENAME_PLOTS_CONVERGED = "*_nres_scales.png"
+## animated spectra
 BOOL_GET_VIDEOS_NRES     = 0
 FILENAME_VIDEOS_NRES     = "*.mp4"
 
-LIST_SUITE_FOLDER        = [ "Rm3000" ]
+# LIST_SUITE_FOLDER        = [ "Rm3000" ]
 # LIST_SIM_RES             = [ "18", "36", "72" ]
 # LIST_SIM_RES             = [ "144", "288", "576" ]
 
