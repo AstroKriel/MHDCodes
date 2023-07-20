@@ -240,17 +240,11 @@ def main():
 ## ###############################################################
 BOOL_CHECK_ONLY = 1
 
-# PATH_SCRATCH       = "/scratch/jh2/nk7952/"
-
-# LIST_MACH_REGIMES  = [ "Mach0.3" ]
-# LIST_SUITE_FOLDERS = [ "Rm500" ]
-# LIST_SIM_FOLDERS   = [ "Pm1", "Pm5", "Pm10", "Pm50" ]
-# LIST_SIM_RES       = [ "288" ]
-
-# LIST_MACH_REGIMES  = [ "Mach0.3" ]
-# LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_SIM_FOLDERS   = [ "Pm30", "Pm300" ]
-# LIST_SIM_RES       = [ "288" ]
+# PATH_SCRATCH       = "/scratch/ek9/nk7952/"
+# LIST_SUITE_FOLDERS = [ ]
+# LIST_MACH_REGIMES  = [ ]
+# LIST_SIM_FOLDERS   = [ ]
+# LIST_SIM_RES       = [ ]
 
 
 ## ###############################################################

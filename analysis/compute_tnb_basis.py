@@ -28,7 +28,7 @@ plt.switch_backend("agg") # use a non-interactive plotting backend
 ## ###############################################################
 ## HELPER FUNCTION
 ## ###############################################################
-def initFigure(ncols, nrows):
+def initFigure(ncols=1, nrows=1):
   return plt.subplots(
     ncols   = ncols,
     nrows   = nrows,
@@ -53,28 +53,23 @@ def plotFieldPDF(
   ax.axvline(x=bin_peak, color="black", ls="--", lw=2.0)
   ax.set_xlabel(label_xaxis)
 
-def plotScatter(ax, list_x, list_y, cutofff=0.6):
+def plotScatter(ax, list_x, list_y, cutofff=None):
   list_x = np.array(list_x).flatten()
   list_y = np.array(list_y).flatten()
   xy_stack = np.vstack([ list_x, list_y ])
   density = gaussian_kde(xy_stack)(xy_stack)
   ax.scatter(list_x, list_y, c=density, s=1)
-  # max_density = np.max(density)
-  # mask = (density >= cutofff * max_density)
-  # slope, intercept = np.polyfit(list_x[mask], list_y[mask], 1)
-  # x_range = np.linspace(np.nanmin(list_x), np.nanmax(list_x), 100)
-  # y_range = slope*x_range + intercept
-  # ax.plot(x_range, y_range, color="black", ls="--", lw=2.0)
-  # ax.text(
-  #   0.05, 0.95,
-  #   f"slope: {slope:.2f}",
-  #   transform=ax.transAxes, ha="left", va="top"
-  # )
-  func = lambda x, a0: a0 - 0.5 * x
-  params, _ = curve_fit(func, list_x, list_y)
+  func_shallow = lambda x, a0: a0 - 0.5 * x
+  func_steep   = lambda x, a0: a0 - 7 * x
   x_range = np.linspace(np.nanmin(list_x), np.nanmax(list_x), 100)
-  y_range = func(x_range, *params)
-  ax.plot(x_range, y_range, color="black", ls="--", lw=2.0)
+  params_shallow, _ = curve_fit(func_shallow, list_x, list_y)
+  y_shallow = func_shallow(x_range, *params_shallow)
+  ax.plot(x_range, y_shallow, color="black", ls="--", lw=2.0)
+  if cutofff is not None:
+    mask = (density >= cutofff * np.max(density))
+    params_steep, _ = curve_fit(func_steep, list_x[mask], list_y[mask])
+    y_steep = func_steep(x_range, *params_steep)
+    ax.plot(x_range, y_steep, color="black", ls="-", lw=2.0)
 
 
 ## ###############################################################
@@ -125,9 +120,10 @@ class PlotTNBBasis():
     )
 
   def performRoutine(self):
-    self.fig, self.axs = initFigure(ncols=2, nrows=2)
-    
+    # self.fig, self.axs = initFigure(ncols=3)
+    self.fig, self.axs = plt.subplots(figsize=(6,6))
     index_file = (self.index_bounds_growth + self.index_end_growth) // 3
+    # index_file = self.index_end_growth
     filename = FileNames.FILENAME_FLASH_PLT_FILES + str(int(index_file)).zfill(4)
     filepath_file = f"{self.filepath_sim_res}/plt/{filename}"
     b_field = LoadData.loadFlashDataCube(
@@ -158,39 +154,47 @@ class PlotTNBBasis():
     ## magnetic field slice
     print("Plotting magnetic field...")
     t_basis_B, n_basis_B, b_basis_B, kappa_B = WWFields.computeTNBBasis(b_field)
-    PlotFuncs.plotScalarField(
-      field_slice       = np.log10(Bmagn / Brms)[:,:,0],
-      fig               = self.fig,
-      ax                = self.axs[0,0],
-      bool_add_colorbar = True,
-      bool_center_cbar  = True,
-      NormType          = colors.Normalize,
-      cbar_orientation  = "horizontal",
-      cmap_name         = "cmr.iceburn",
-    )
-    self._plotStreamline(self.axs[0,0], t_basis_B, "red")
-    self._plotStreamline(self.axs[0,0], n_basis_B, "green")
-    self._plotStreamline(self.axs[0,0], b_basis_B, "blue")
-    self._plotContours(self.axs[0,0], dens_field, "white")
+    # PlotFuncs.plotScalarField(
+    #   field_slice       = np.log10(Bmagn / Brms)[:,:,0],
+    #   fig               = self.fig,
+    #   ax                = self.axs[0],
+    #   bool_add_colorbar = True,
+    #   bool_center_cbar  = True,
+    #   NormType          = colors.Normalize,
+    #   cbar_orientation  = "horizontal",
+    #   cmap_name         = "cmr.iceburn",
+    # )
+    # self._plotContours(self.axs[0], dens_field, "white")
     ## magnetic field curvature
     print("Plotting field curvature...")
+    Mach = self.dict_sim_inputs["desired_Mach"]
     plotScatter(
-      ax      = self.axs[1,0],
+      ax      = self.axs,
       list_x  = np.log10(kappa_B)[:,:,0],
       list_y  = np.log10(Bmagn / Brms)[:,:,0],
-      cutofff = 0.2
+      cutofff = 0.75 if (Mach > 1) else None
     )
-    self.axs[1,0].set_xlim([ -1, 3.5 ])
-    self.axs[1,0].set_ylim([ -2.5, 1 ])
-    ## density field slice
-    print("Plotting density field...")
-    t_basis_D, n_basis_D, b_basis_D, kappa_D = WWFields.computeTNBBasis(gradDens)
-    self._plotStreamline(self.axs[0,1], t_basis_D, "red")
-    self._plotStreamline(self.axs[0,1], n_basis_D, "green")
-    self._plotStreamline(self.axs[0,1], b_basis_D, "blue")
-    self._plotContours(self.axs[0,1], dens_field, "black")
+    self.axs.set_xlim([ -1, 3.5 ])
+    self.axs.set_ylim([ -2.5, 1 ])
+    self.axs.set_xlabel(r"$\kappa / \kappa_{\rm rms}$")
+    self.axs.set_ylabel(r"$b / b_{\rm rms}$")
+    # ## velocity
+    # PlotFuncs.plotScalarField(
+    #   field_slice       = Umagn[:,:,0],
+    #   fig               = self.fig,
+    #   ax                = self.axs[2],
+    #   bool_add_colorbar = True,
+    #   bool_center_cbar  = True,
+    #   NormType          = colors.Normalize,
+    #   cbar_orientation  = "horizontal",
+    #   cmap_name         = "cmr.iceburn",
+    # )
     ## save figure
-    PlotFuncs.saveFigure(self.fig, f"{self.filepath_vis}/{self.sim_name}_tnb.png", bool_draft=False)
+    # PlotFuncs.saveFigure(self.fig, f"{self.filepath_vis}/{self.sim_name}_tnb.png", bool_draft=True)
+    filepath_fig = f"/home/586/nk7952/MHDCodes/ii6/curvature/{self.sim_name}_kappa.png"
+    self.fig.savefig(filepath_fig, dpi=200)
+    plt.close(self.fig)
+    print("Saved figure:", filepath_fig)
     print(" ")
 
 
@@ -227,9 +231,8 @@ LIST_BASE_PATHS = [
 ]
 
 LIST_SUITE_FOLDERS = [ "Rm3000" ]
-# LIST_MACH_REGIMES  = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 LIST_MACH_REGIMES  = [ "Mach0.3", "Mach5" ]
-LIST_SIM_FOLDERS   = [ "Pm1", "Pm125" ] # "Pm2", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", 
+LIST_SIM_FOLDERS   = [ "Pm1", "Pm125" ]
 LIST_SIM_RES       = [ "144" ]
 
 

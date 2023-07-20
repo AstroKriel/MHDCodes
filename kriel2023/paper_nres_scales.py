@@ -196,13 +196,11 @@ def main():
     ],
     list_artists       = [ "-" ],
     list_marker_colors = [ COLOR_SUBSONIC, COLOR_SUPERSONIC ],
-    label_color        = "white",
-    loc                = "lower right",
-    bbox               = (1.0, 0.0),
+    label_color        = "black",
+    loc                = "upper right",
+    bbox               = (1.0, 1.0),
     fontsize           = 17
   )
-  addText(axs[0], (0.6, 0.23), r"$\mathcal{M}0.3{\rm Re}600{\rm Pm}5$")
-  addText(axs[0], (0.6, 0.115), r"$\mathcal{M}5{\rm Re}600{\rm Pm}5$")
   ## save figure
   print("Saving figure...")
   fig_name     = f"nres_scales.pdf"

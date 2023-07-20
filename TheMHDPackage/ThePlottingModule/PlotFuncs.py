@@ -172,6 +172,8 @@ def plotPDF(
 ## ###############################################################
 def plotScatter(
     fig, ax, list_x, list_y,
+    vmin              = None,
+    vmax              = None,
     ms                = 1,
     color             = None,
     fontsize          = 20,
@@ -184,14 +186,16 @@ def plotScatter(
     xy_stack = np.vstack([ list_x, list_y ])
     color = gaussian_kde(xy_stack)(xy_stack)
   plot_obj = ax.scatter(list_x, list_y, c=color, s=ms)
+  plot_obj.set_clim(vmin=vmin, vmax=vmax)
   if bool_add_colorbar:
-    addColorbar_fromMappble(
+    cbar = addColorbar_fromMappble(
       fig, ax, plot_obj,
       cbar_title  = cbar_title,
       orientation = cbar_orientation,
       fontsize    = fontsize
     )
-  return plot_obj
+  else: cbar = None
+  return plot_obj, cbar
 
 def plotScalarField(
     field_slice,
@@ -495,6 +499,7 @@ def addColorbar_fromMappble(
     orientation = "vertical",
     cbar_title  = None,
     size        = 7.5,
+    title_pad   = 12.5,
     fontsize    = 20
   ):
   ''' from: https://joseph-long.com/writing/colorbars/
@@ -508,7 +513,7 @@ def addColorbar_fromMappble(
   elif "v" in orientation: ax_cbar = ax_div.append_axes(position="right", size=f"{size:.1f}%", pad="2%")
   cbar = fig.colorbar(mappable=mappable, cax=ax_cbar, orientation=orientation)
   if "h" in orientation:
-    ax_cbar.set_title(cbar_title, fontsize=fontsize)
+    ax_cbar.set_title(cbar_title, fontsize=fontsize, pad=title_pad)
     ax_cbar.xaxis.set_ticks_position("top")
   else: cbar.ax.set_ylabel(cbar_title, fontsize=fontsize, rotation=-90, va="bottom")
   plt.sca(ax)

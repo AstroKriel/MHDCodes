@@ -322,7 +322,7 @@ LIST_MACH_REGIMES  = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 LIST_SIM_FOLDERS   = [
   "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm30", "Pm50", "Pm125", "Pm250", "Pm300"
 ]
-LIST_SIM_RES = [ "288" ]
+LIST_SIM_RES = [ "576" ]
 
 
 ## ###############################################################

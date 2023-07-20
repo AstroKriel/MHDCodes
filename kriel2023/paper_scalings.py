@@ -39,7 +39,7 @@ def plotScale(ax, x_median, y_median, color, marker, x_1sig=None, y_1sig=None, z
     mfc    = "whitesmoke" if color is None else color,
     ecolor = "black" if color is None else color, 
     zorder = zorder,
-    mec="black", elinewidth=1.5, markersize=7, capsize=7.5, linestyle="None"
+    mec="black", elinewidth=1.5, markersize=8, capsize=7.5, linestyle="None"
   )
 
 def addText(ax, pos, text, rotation=0):
@@ -156,7 +156,7 @@ class PlotSimScales():
 
   def _plotDependance_knu_Re(self):
     ## plot data
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4.75))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 5))
     list_colors = ["#C85DEF", "white", "#FFAB1A", "black"]
     list_zorder = [7, 9, 5, 3]
     cmap = colors.ListedColormap(list_colors)
@@ -180,7 +180,7 @@ class PlotSimScales():
       )
     ## plot reference lines
     x = np.linspace(10**(-1), 10**(5), 10**4)
-    PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.6*x**(2/3), ls="-", zorder=0)
+    # PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.6*x**(2/3), ls="-", zorder=0)
     PlotFuncs.plotData_noAutoAxisScale(ax, x, 0.235*x**(3/4), ls="--", zorder=0)
     PlotFuncs.plotData_noAutoAxisScale(ax, x, 1.25*x**(3/8), ls=":", zorder=0)
     ## label figure
@@ -212,25 +212,25 @@ class PlotSimScales():
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlim([ 7, 5000 ])
-    ax.set_ylim([ 1.9, 210 ])
+    ax.set_ylim([ 0.9, 210 ])
     ax.set_xlabel(r"Re", fontsize=20)
     ax.set_ylabel(r"$k_\nu$", fontsize=20)
     ## save plot
-    name = f"dependance_{self.plot_name}_knu_Re.pdf"
+    name = f"dependance_{self.plot_name}_knu_Re.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{name}")
     print(" ")
 
   def _plotDependance_knu_comparison(self):
     ## plot data
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 5))
     for sim_index, sim_name in enumerate(self.sim_name_group_sim):
       if not(self._meetsSimCondition(sim_name)): continue
       plotScale(
         ax       = ax,
-        x_median = self.dict_scales_group_sim[sim_name]["k_nu_kin"]["inf"]["val"],
-        x_1sig   = self.dict_scales_group_sim[sim_name]["k_nu_kin"]["inf"]["std"],
-        y_median = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["val"],
-        y_1sig   = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["std"],
+        x_median = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["val"],
+        x_1sig   = self.dict_scales_group_sim[sim_name]["k_nu_vel"]["inf"]["std"],
+        y_median = self.dict_scales_group_sim[sim_name]["k_nu_kin"]["inf"]["val"],
+        y_1sig   = self.dict_scales_group_sim[sim_name]["k_nu_kin"]["inf"]["std"],
         marker   = "o",
         color    = "black"
       )
@@ -242,17 +242,17 @@ class PlotSimScales():
     ax.set_yscale("log")
     # ax.set_xlim([ 7, 5000 ])
     # ax.set_ylim([ 1.9, 210 ])
-    ax.set_xlabel(r"$k_\nu$ density weighted spectrum", fontsize=20)
-    ax.set_ylabel(r"$k_\nu$ velocity spectrum", fontsize=20)
+    ax.set_xlabel(r"$k_\nu$ velocity spectrum", fontsize=20)
+    ax.set_ylabel(r"$k_\nu$ density weighted spectrum", fontsize=20)
     ## save plot
-    name = f"dependance_{self.plot_name}_knu_comparison.pdf"
+    name = f"dependance_{self.plot_name}_knu_comparison.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{name}")
     print(" ")
 
   def _plotDependance_keta_Pm(self, domain_name):
     keta_type = domain_name.split("_")[-1]
     ## plot data
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4.75))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 5))
     list_colors = ["#C85DEF", "white", "#FFAB1A", "black"]
     list_zorder = [7, 9, 5, 3]
     cmap = colors.ListedColormap(list_colors)
@@ -334,19 +334,19 @@ class PlotSimScales():
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlim([ 0.7, 400 ])
-    if   "cur" in keta_type.lower(): ax.set_ylim([ 0.19, 11 ])
+    if   "cur" in keta_type.lower(): ax.set_ylim([ 0.09, 11 ])
     elif "mag" in keta_type.lower(): ax.set_ylim([ 0.7, 11 ])
     ax.set_xlabel(r"${\rm Pm}$", fontsize=20)
     if   "cur" in keta_type.lower(): ax.set_ylabel(r"$k_\eta / k_\nu$", fontsize=20)
     elif "mag" in keta_type.lower(): ax.set_ylabel(r"$k_\mathrm{Rm} / k_\nu$", fontsize=20)
     ## save plot
-    name = f"dependance_{self.plot_name}_keta_{keta_type}_Pm.pdf"
+    name = f"dependance_{self.plot_name}_keta_{keta_type}_Pm.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{name}")
     print(" ")
 
   def _plotDependance_kp_keta(self):
     ## plot data
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4.75))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 5))
     ax_inset = ax.inset_axes([ 0.035, 0.65, 0.435, 0.3 ])
     ax_inset.tick_params(left=True, right=True, labelleft=False, labelright=True)
     ax_inset.yaxis.set_label_position("right")
@@ -426,26 +426,25 @@ class PlotSimScales():
     ax_inset.set_xlim([ 13, 55 ])
     ax_inset.set_ylim([ 0, 16 ])
     ax_inset.set_xticks([ 20, 40 ])
-    ax_inset.text(40, 9, r"Re", ha="center", fontsize=16)
-    ax_inset.arrow(
-      x  = 50,
-      y  = 8,
-      dx = -20,
-      dy = 0,
-      color = "black",
-      head_width = 1.5
-    )
+    # ax_inset.arrow(
+    #   x  = 50,
+    #   y  = 8,
+    #   dx = -20,
+    #   dy = 0,
+    #   color = "black",
+    #   head_width = 1.5
+    # )
     ## save plot
-    name = f"dependance_{self.plot_name}_kp_keta_cur.pdf"
+    name = f"dependance_{self.plot_name}_kp_keta_cur.png"
     PlotFuncs.saveFigure(fig, f"{self.filepath_vis}/{name}")
     print(" ")
 
   def plotRoutines(self):
     # self._plotDependance_knu_Re()
-    self._plotDependance_knu_comparison()
+    # self._plotDependance_knu_comparison()
     # self._plotDependance_keta_Pm("k_eta_cur")
     # self._plotDependance_keta_Pm("k_eta_mag")
-    # self._plotDependance_kp_keta()
+    self._plotDependance_kp_keta()
 
 
 ## ###############################################################

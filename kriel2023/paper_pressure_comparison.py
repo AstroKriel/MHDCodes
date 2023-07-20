@@ -37,8 +37,7 @@ def getSimLabel(dict_sim_inputs):
 ## OPERATOR CLASS
 ## ###############################################################
 def plotSimData(filepath_sim_res):
-  filepath_vis       = f"{PATH_PLOT}/preassure/"
-  WWFnF.createFolder(filepath_vis, bool_verbose=False)
+  WWFnF.createFolder(PATH_PLOT, bool_verbose=False)
   filepath_plt_files = f"{filepath_sim_res}/plt"
   filename = "Turb_hdf5_plt_cnt_0100"
   dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res)
@@ -72,13 +71,15 @@ def plotSimData(filepath_sim_res):
   mag_magn = WWFields.fieldMagnitude(mag_field)
   kin = np.array(rho) * np.array(vel_magn)
   print("Plotting...")
-  cbar = PlotFuncs.plotScatter(
+  _, cbar = PlotFuncs.plotScatter(
     fig, ax,
     list_x            = kin[:,:,0].flatten(),
     list_y            = mag_magn[:,:,0].flatten(),
     color             = np.log10(rho[:,:,0].flatten()),
+    vmin              = -2,
     ms                = 1,
-    cbar_title        = "density",
+    cbar_title        = "point density",
+    fontsize          = 24,
     cbar_orientation  = "horizontal",
     bool_add_colorbar = True
   )
@@ -89,7 +90,7 @@ def plotSimData(filepath_sim_res):
   ax.set_xscale("log")
   ax.set_yscale("log")
   ax.set_xlim([ 10**(-2), 10**(2) ])
-  ax.set_ylim([ 10**(-7), 1 ])
+  ax.set_ylim([ 10**(-6), 1 ])
   ax.set_xlabel("kinetic energy")
   ax.set_ylabel("magnetic energy")
   ax.text(
@@ -102,11 +103,22 @@ def plotSimData(filepath_sim_res):
     fontsize  = 20,
     zorder    = 10
   )
+  PlotFuncs.addLegend_fromArtists(
+    ax,
+    list_artists       = [ "-" ],
+    list_legend_labels = [ "1:1" ],
+    list_marker_colors = [ "k" ],
+    label_color        = "black",
+    loc                = "upper left",
+    bbox               = (0.0, 1.01),
+    lw                 = 1,
+    fontsize           = 20
+  )
   ## save figure
   print("Saving figure...")
   sim_name     = SimParams.getSimName(dict_sim_inputs)
-  fig_name     = f"{sim_name}_preassure_comparison.png"
-  filepath_fig = f"{filepath_vis}/{fig_name}"
+  fig_name     = f"{sim_name}_pressure_comparison.pdf"
+  filepath_fig = f"{PATH_PLOT}/{fig_name}"
   fig.savefig(filepath_fig, dpi=100)
   plt.close(fig)
   print("Saved figure:", filepath_fig)
@@ -132,7 +144,7 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
-PATH_PLOT = "/home/586/nk7952/MHDCodes/kriel2023/"
+PATH_PLOT = "/home/586/nk7952/MHDCodes/kriel2023/pressure/"
 PATH_SCRATCH_EK9 = "/scratch/ek9/nk7952/"
 PATH_SCRATCH_JH2 = "/scratch/jh2/nk7952/"
 

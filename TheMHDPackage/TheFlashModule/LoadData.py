@@ -198,12 +198,12 @@ def loadSpectrum(filepath_file, spect_field, spect_comp="total"):
       else: field_index = 7 # if there is no spectrum decomposition
     else: raise Exception(f"Error: {spect_comp} is an invalid spectra component.")
     ## read fields from file
-    data_k     = np.array(data[:, kproc_index],     dtype=float)
+    data_k     = np.array(data[:, kproc_index], dtype=float)
     data_power = np.array(data[:, field_index], dtype=float)
-    if   "vel" in spect_field.lower(): data_power = data_power
+    if   "vel" in spect_field.lower(): data_power = data_power / 2
     elif "kin" in spect_field.lower(): data_power = data_power / 2
     elif "mag" in spect_field.lower(): data_power = data_power / (8 * np.pi)
-    elif "cur" in spect_field.lower(): data_power = data_power
+    elif "cur" in spect_field.lower(): data_power = data_power / (4 * np.pi)
     elif "rho" in spect_field.lower(): data_power = data_power
     else: raise Exception(f"Error: {spect_field} is an invalid spectra field. Failed to read and process:", filepath_file)
     return data_k, data_power

@@ -118,18 +118,17 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
-## SETUP DETAILS
 K_TURB                 = 2
-BOOL_CREATE_SIM_INPUTS = 0
-BOOL_PREP_SIM_RUN      = 0
-PREP_FROM_LOWER_NRES   = ""
+BOOL_CREATE_SIM_INPUTS = 1
+BOOL_PREP_SIM_RUN      = 1
+PREP_FROM_LOWER_NRES   = "288"
 BOOL_PROCESS_PLT_FILES = 0
 
-# LIST_BASE_PATHS    = [ "/scratch/jh2/nk7952/" ]
-# LIST_MACH_REGIMES  = [ ]
-# LIST_SUITE_FOLDERS = [ ]
-# LIST_SIM_FOLDERS   = [ ]
-# LIST_SIM_RES       = [ ]
+# LIST_BASE_PATHS    = [ "/scratch/ek9/nk7952/" ]
+# LIST_MACH_REGIMES  = [ "Mach0.3", "Mach1", "Mach10" ]
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SIM_FOLDERS   = [ "Pm1" ]
+# LIST_SIM_RES       = [ "576" ]
 
 
 ## ###############################################################

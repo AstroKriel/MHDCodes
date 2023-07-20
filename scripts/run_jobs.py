@@ -52,6 +52,12 @@ SUBFOLDER       = ""
 # LIST_SIM_FOLDERS   = [ ]
 # LIST_SIM_RES       = [ ]
 
+# LIST_BASE_PATHS    = [ "/scratch/ek9/nk7952/" ]
+# LIST_MACH_REGIMES  = [ "Mach0.3", "Mach1", "Mach10" ]
+# LIST_SUITE_FOLDERS = [ "Rm3000" ]
+# LIST_SIM_FOLDERS   = [ "Pm1" ]
+# LIST_SIM_RES       = [ "576" ]
+
 
 ## ###############################################################
 ## PROGRAM ENTRY POINT

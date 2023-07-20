@@ -179,6 +179,14 @@ def plotSpectrumRatio(ax, list_k, list_power_1_group_t, list_power_2_group_t, co
       zorder  = 3
     )
 
+def plotSpectraRatios(ax, list_k, list_power_1_group_t, list_power_2_group_t, color, zorder):
+  for list_power_1, list_power_2 in zip(
+      list_power_1_group_t,
+      list_power_2_group_t
+    ):
+    array_power_ratio = np.array(list_power_1) / np.array(list_power_2)
+    ax.plot(list_k, array_power_ratio, color=color, ls="-", lw=1.0, zorder=zorder, alpha=0.25)
+
 
 ## ###############################################################
 ## OPERATOR CLASS
@@ -203,10 +211,124 @@ class PlotSpectra():
     ax.axvline(x=kscale_ave, color=color, ls="--", lw=1.5, zorder=2)
     ax.axvspan(kscale_ave-kscale_std, kscale_ave+kscale_std, color=color, alpha=0.25, zorder=1)
 
+  def plotEnergySpectraRatios(self, ax, color="black"):
+    index_start = self.dict_sim_outputs["index_bounds_growth"][0]
+    index_end   = self.dict_sim_outputs["index_bounds_growth"][1]
+    k_nu = np.mean(self.dict_sim_outputs["k_nu_kin_group_t"][index_start : index_end])
+    k_eta = np.mean(self.dict_sim_outputs["k_eta_cur_group_t"][index_start : index_end])
+    ax.axvline(x=k_nu, ls="-", lw=2, color="black")
+    ax.axvline(x=k_eta, ls="-", lw=2, color="black")
+    ## initial phase
+    print("initial phase")
+    dict_mag_data = LoadData.loadAllSpectra(
+      directory          = self.filepath_spect,
+      spect_field        = "mag",
+      file_end_time      = 3,
+      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
+      bool_verbose       = False
+    )
+    dict_kin_data = LoadData.loadAllSpectra(
+      directory          = self.filepath_spect,
+      spect_field        = "kin",
+      file_end_time      = 3,
+      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
+      bool_verbose       = False
+    )
+    list_k = dict_mag_data["list_k_group_t"][0]
+    plotSpectraRatios(
+      ax                   = ax,
+      list_k               = list_k,
+      list_power_1_group_t = dict_mag_data["list_power_group_t"],
+      list_power_2_group_t = dict_kin_data["list_power_group_t"],
+      color  = "black",
+      zorder = 3
+    )
+    ## kinematic phase
+    print("kinematic phase")
+    dict_mag_data = LoadData.loadAllSpectra(
+      directory          = self.filepath_spect,
+      spect_field        = "mag",
+      file_start_time    = 3,
+      file_end_time      = 10,
+      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
+      bool_verbose       = False
+    )
+    dict_kin_data = LoadData.loadAllSpectra(
+      directory          = self.filepath_spect,
+      spect_field        = "kin",
+      file_start_time    = 3,
+      file_end_time      = 10,
+      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
+      bool_verbose       = False
+    )
+    list_k = dict_mag_data["list_k_group_t"][0]
+    plotSpectraRatios(
+      ax                   = ax,
+      list_k               = list_k,
+      list_power_1_group_t = dict_mag_data["list_power_group_t"],
+      list_power_2_group_t = dict_kin_data["list_power_group_t"],
+      color  = "dodgerblue",
+      zorder = 5
+    )
+    ## nonlinear phase
+    print("nonlinear phase")
+    dict_mag_data = LoadData.loadAllSpectra(
+      directory          = self.filepath_spect,
+      spect_field        = "mag",
+      file_start_time    = 10,
+      file_end_time      = 25,
+      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
+      bool_verbose       = False
+    )
+    dict_kin_data = LoadData.loadAllSpectra(
+      directory          = self.filepath_spect,
+      spect_field        = "kin",
+      file_start_time    = 10,
+      file_end_time      = 25,
+      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
+      bool_verbose       = False
+    )
+    list_k = dict_mag_data["list_k_group_t"][0]
+    plotSpectraRatios(
+      ax                   = ax,
+      list_k               = list_k,
+      list_power_1_group_t = dict_mag_data["list_power_group_t"],
+      list_power_2_group_t = dict_kin_data["list_power_group_t"],
+      color  = "limegreen",
+      zorder = 3
+    )
+    ## saturated phase
+    print("saturated phase")
+    dict_mag_data = LoadData.loadAllSpectra(
+      directory          = self.filepath_spect,
+      spect_field        = "mag",
+      file_start_time    = 25,
+      read_every         = 10,
+      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
+      bool_verbose       = False
+    )
+    dict_kin_data = LoadData.loadAllSpectra(
+      directory          = self.filepath_spect,
+      spect_field        = "kin",
+      file_start_time    = 25,
+      read_every         = 10,
+      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
+      bool_verbose       = False
+    )
+    list_k = dict_mag_data["list_k_group_t"][0]
+    plotSpectraRatios(
+      ax                   = ax,
+      list_k               = list_k,
+      list_power_1_group_t = dict_mag_data["list_power_group_t"],
+      list_power_2_group_t = dict_kin_data["list_power_group_t"],
+      color  = "red",
+      zorder = 3
+    )
+
   def plotKinSpectrumRatios(self, ax, color="black"):
     dict_lgt_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "lgt",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -215,7 +337,7 @@ class PlotSpectra():
     )
     dict_trv_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "trv",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -257,7 +379,7 @@ class PlotSpectra():
   def plotKinLgtSpectrum(self, ax, label="lgt", color="#bc5090", comp_factor=None, zorder=3):
     dict_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "lgt",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -277,7 +399,7 @@ class PlotSpectra():
   def plotKinTrvSpectrum(self, ax, label="trv", color="#ffa600", comp_factor=None, zorder=3):
     dict_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "trv",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -297,7 +419,7 @@ class PlotSpectra():
   def plotKinReynoldsSpectrum(self, ax, color="black", bool_plot_scale=False, zorder=5):
     dict_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "tot",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -361,94 +483,86 @@ class PlotSpectra():
 
 
 ## ###############################################################
-## PLOT KINETIC ENERGY SPECTRA
+## PLOT ENERGY SPECTRA RATIO
 ## ###############################################################
-def plotKinSpectra():
+def plotSpectraRatio(filepath_sim_res):
   ## initialise figure
   print("Initialising figure...")
   fig, ax = initFigure()
-  list_filepath_sim_res = []
-  for mach_regime in [ "Mach0.3", "Mach5" ]:
-    for scratch_path in LIST_SCRATCH_PATHS:
-      for sim_res in LIST_SIM_RES:
-        filepath_sim_res = getSimPath(scratch_path, "Re2000", mach_regime, sim_res)
-        if not os.path.exists(filepath_sim_res): continue
-        list_filepath_sim_res.append(filepath_sim_res)
-    if len(list_filepath_sim_res) == 0: raise Exception(f"Error: there are no {mach_regime} runs")
-    filepath_highest_sim_res = list_filepath_sim_res[-1]
-    print("Looking at:", filepath_highest_sim_res)
-    obj_plot = PlotSpectra(filepath_highest_sim_res)
-    label = getSimLabel(mach_regime, obj_plot.dict_sim_inputs["Re"])
-    if obj_plot.desired_Mach < 1:
-      obj_plot.plotKinTotSpectrum(ax, label=label, color=COLOR_SUBSONIC, bool_plot_scale=True, zorder=7)
-    else: obj_plot.plotKinTotSpectrum(ax, label=label, color=COLOR_SUPERSONIC, bool_plot_scale=True, zorder=5)
   ## label main axis
   ax.set_xscale("log")
   ax.set_yscale("log")
-  ax.set_xlim([ 0.9, 200 ])
-  ax.set_ylim([ 1e-7, 1 ])
+  # ax.set_xlim([ 0.9, 200 ])
+  # ax.set_ylim([ 1e-7, 1 ])
   ax.set_xlabel(r"$k L_{\rm box} / 2\pi$", fontsize=22)
-  ax.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$", fontsize=22)
-  ax.legend(loc="lower left", fontsize=18)
-  plotPowerLawPassingThroughPoint(
-    ax,
-    slope    = -5/2,
-    x_domain = (2, 40),
-    coord    = (5, 2e-2),
-    ls       = "--",
-    lw       = 1.75
-  )
-  plotPowerLawPassingThroughPoint(
-    ax,
-    slope    = -3/2,
-    x_domain = (2, 40),
-    coord    = (5, 2e-2),
-    ls       = "-",
-    lw       = 1.75
-  )
-  ax.text(
-    0.225, 0.75,
-    r"$k^{-3/2}$",
-    va        = "top",
-    ha        = "right",
-    transform = ax.transAxes,
-    color     = "black",
-    fontsize  = 20,
-    zorder    = 10
-  )
+  ax.set_ylabel(r"$\mathcal{P}_{\rm mag}(k) / \mathcal{P}_{\rm kin}(k)$", fontsize=22)
+  ## plot spectra
+  obj_plot = PlotSpectra(filepath_sim_res)
+  if obj_plot.desired_Mach < 0.75:
+    obj_plot.plotEnergySpectraRatios(ax, color=COLOR_SUBSONIC)
+  else: obj_plot.plotEnergySpectraRatios(ax, color=COLOR_SUPERSONIC)
+  ax.axhline(y=1, color="red", ls="--", lw=1.5, zorder=15)
+  ## save figure
+  print("Saving figure...")
+  if obj_plot.desired_Mach < 0.75:
+    sim_name = "subsonic"
+  else: sim_name = "supersonic"
+  fig_name = f"spectra_{sim_name}_spectra_ratio.png"
+  filepath_fig = f"{PATH_PLOT}/{fig_name}"
+  fig.savefig(filepath_fig, dpi=200)
+  plt.close(fig)
+  print("Saved figure:", filepath_fig)
+  print(" ")
+
+
+## ###############################################################
+## PLOT KINETIC ENERGY SPECTRA
+## ###############################################################
+def plotKinSpectra(filepath_sim_res):
+  ## initialise figure
+  print("Initialising figure...")
+  fig, ax = initFigure()
+  print("Looking at:", filepath_sim_res)
+  obj_plot = PlotSpectra(filepath_sim_res)
+  if obj_plot.desired_Mach < 1:
+    obj_plot.plotKinTotSpectrum(ax, color=COLOR_SUBSONIC, bool_plot_scale=True)
+  else: obj_plot.plotKinTotSpectrum(ax, color=COLOR_SUPERSONIC, bool_plot_scale=True)
+  ## label main axis
+  ax.set_xscale("log")
+  ax.set_yscale("log")
+  ax.set_xlabel(r"$k L_{\rm box} / 2\pi$", fontsize=22)
+  ax.set_ylabel(r"$\mathcal{P}_{\rm kin}(k)$", fontsize=22)
+  if obj_plot.desired_Mach < 0.75:
+    domain = (2, 10)
+  else: domain = (2, 30)
   plotPowerLawPassingThroughPoint(
     ax,
     slope    = -5/3,
-    x_domain = (2.5, 10),
-    coord    = (5, 1.25e-1),
-    ls       = ":",
-    lw       = 1.75
+    x_domain = domain,
+    coord    = (2, 5e-2),
+    ls       = "-",
+    lw       = 1.5
   )
-  ax.text(
-    0.375, 0.85,
-    r"$k^{-5/3}$",
-    va        = "bottom",
-    ha        = "left",
-    transform = ax.transAxes,
-    color     = "black",
-    fontsize  = 20,
-    zorder    = 10
-  )
-  ax.text(
-    0.75, 0.95,
-    r"$k_\nu$",
-    va        = "top",
-    ha        = "left",
-    transform = ax.transAxes,
-    color     = "black",
-    fontsize  = 20,
-    zorder    = 10
+  plotPowerLawPassingThroughPoint(
+    ax,
+    slope    = -2,
+    x_domain = domain,
+    coord    = (2, 5e-2),
+    ls       = "--",
+    lw       = 1.5
   )
   ## save figure
+  ax.set_xlim([0.8, 200])
   print("Saving figure...")
-  fig_name     = f"spectra_kin_spectra.pdf"
+  if obj_plot.desired_Mach < 0.75:
+    sim_name = "subsonic"
+    ax.set_ylim([10**(-9), 10**(0)])
+  else:
+    sim_name = "supersonic"
+    ax.set_ylim([10**(-7), 10**(0)])
+  fig_name = f"spectra_{sim_name}_spectra_kin.png"
   filepath_fig = f"{PATH_PLOT}/{fig_name}"
-  fig.savefig(filepath_fig, dpi=100)
+  fig.savefig(filepath_fig, dpi=200)
   plt.close(fig)
   print("Saved figure:", filepath_fig)
   print(" ")
@@ -752,16 +866,12 @@ def plotMagCurSpectra_supersonic():
 ## ###############################################################
 def main():
   WWFnF.createFolder(PATH_PLOT, bool_verbose=False)
-  ## main study
-  plotKinSpectra()
-  # plotKinReynoldsSpectra()
-  # plotMagCurSpectra_subsonic()
-  # plotMagCurSpectra_supersonic()
-  # ## resolution study
-  # plotKinCompRatioNres("Mach0.3")
-  # plotKinCompRatioNres("Mach5")
-  # plotKinReynoldsSpectraNres("Mach0.3")
-  # plotKinReynoldsSpectraNres("Mach5")
+  for filepath in [
+      "/scratch/ek9/nk7952/Re2000/Mach0.3/Pm5/576",
+      # "/scratch/ek9/nk7952/Re2000/Mach5/Pm5/576"
+    ]:
+    plotSpectraRatio(filepath)
+    # plotKinSpectra(filepath)
 
 
 ## ###############################################################
@@ -769,7 +879,7 @@ def main():
 ## ###############################################################
 COLOR_SUBSONIC   = "#B80EF6"
 COLOR_SUPERSONIC = "#F4A123"
-PATH_PLOT = "/home/586/nk7952/MHDCodes/kriel2023/spectra/"
+PATH_PLOT = "/home/586/nk7952/MHDCodes/ii6/spectra/"
 LIST_SIM_RES = [ 18, 36, 72, 144, 288, 576, 1152 ]
 LIST_SCRATCH_PATHS = [
   "/scratch/ek9/nk7952/",
