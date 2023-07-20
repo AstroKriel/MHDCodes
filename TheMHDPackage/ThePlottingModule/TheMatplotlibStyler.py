@@ -3,9 +3,15 @@ from matplotlib import rcParams
 ## uncomment to see all options
 # rcParams.keys()
 
+<<<<<<< HEAD
 # ## enable latex font
 # rcParams["text.usetex"]         = True
 # # rcParams["text.latex.preamble"] = r"\usepackage{bm, amsmath, mathrsfs, amssymb, url, xfrac}"
+=======
+## enable latex font
+rcParams["text.usetex"]         = True
+rcParams["text.latex.preamble"] = r"\usepackage{bm, amsmath, mathrsfs, amssymb, url, xfrac}"
+>>>>>>> b35453710df7c9f2c3b9104ae36fe4d557a3f5e3
 # rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
 
 # ## set default font characteristics
@@ -57,7 +63,7 @@ rcParams["legend.frameon"]      = False
 
 ## set figure size/resolution
 rcParams["figure.figsize"] = (8.0, 5.0)
-rcParams["figure.dpi"]     = 200
+# rcParams["figure.dpi"]     = 200
 
 ## set figure saving size/resolution
 rcParams["savefig.dpi"]  = 200

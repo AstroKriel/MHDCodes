@@ -8,12 +8,6 @@ from TheUsefulModule import WWFnF
 
 
 ## ###############################################################
-## PREPARE WORKSPACE
-##################################################################
-os.system("clear") # clear terminal window
-
-
-## ###############################################################
 ## HELPER FUNCTION
 ##################################################################
 def downloadFromGadiToMac(filepath_gadi, filepath_mac, filename):
@@ -111,7 +105,14 @@ SONIC_REGIME             = "Mach5"
 LIST_SUITE_FOLDER        = [ "Re10", "Re500", "Rm3000" ]
 LIST_SIM_FOLDER          = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm50", "Pm125", "Pm250" ]
 LIST_SIM_RES             = [ "18", "36", "72", "144", "288", "576" ]
+<<<<<<< HEAD
 ## simulations plots
+=======
+## plots of convergence data
+BOOL_GET_PLOTS_CONVERGED = 0
+FILENAME_PLOTS_CONVERGED = "*_nres_*.png"
+## plots of simulations at a Nres
+>>>>>>> b35453710df7c9f2c3b9104ae36fe4d557a3f5e3
 BOOL_GET_PLOTS_NRES      = 0
 FILENAME_PLOTS_NRES      = "*.png"
 ## converged data

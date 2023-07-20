@@ -10,9 +10,9 @@ from tqdm.auto import tqdm
 class FileRecovery():
   def __init__(self):
     ## create filenames
-    self.filename_quarantined = f"list_quarantined_files_{date.today()}.txt"
+    self.filename_quarantined    = f"list_quarantined_files_{date.today()}.txt"
     self.filename_batch_recovery = f"list_quarantined_files_{date.today()}_batch_request.txt"
-  
+
   def fetchQuarantinedFiles(self):
     ## pipe the list of quarantined files into a text-file
     print("Fetching list of quarantined files...")
@@ -54,8 +54,7 @@ class FileRecovery():
             ## if the file has not already been returned
             if not os.path.isfile(file_destination):
               file_batch.write(f"{file_id} {file_destination}\n")
-            else:
-              num_files_already_put_back += 1
+            else: num_files_already_put_back += 1
         print(f"There are {num_files_already_put_back} quarantined files that have already been put back.")
     return (num_quarantined_files - num_files_already_put_back) > 0
 
@@ -72,8 +71,8 @@ class FileRecovery():
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  obj_fr = FileRecovery()
-  obj_fr.requestBatchRecovery()
+  obj = FileRecovery()
+  obj.requestBatchRecovery()
 
 
 ## ###############################################################

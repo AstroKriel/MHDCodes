@@ -7,6 +7,9 @@
 import os, json
 import numpy as np
 
+## import user defined modules
+from TheUsefulModule import WWFnF
+
 
 ## ###############################################################
 ## WORKING WITH JSON-FILES
@@ -69,7 +72,7 @@ def appendDict2JsonFile(filepath_file, dict2append, bool_verbose=True):
   ## append extra contents to dict
   dict_old.update(dict2append)
   ## update (overwrite) json-file
-  with open(filepath_file, "w") as fp_w:
+  with open(filepath_file, "w+") as fp_w:
     json.dump(
       obj       = dict_old,
       fp        = fp_w,
@@ -87,7 +90,7 @@ def readJsonFile2Dict(filepath, filename, bool_verbose=True):
     with open(filepath_file, "r") as input:
       return json.load(input)
   ## indicate the file was not found
-  else: raise Exception(f"Error: No json-file found: {filepath_file}.")
+  else: raise Exception(f"Error: No json-file found: {filepath_file}")
 
 
 ## ###############################################################

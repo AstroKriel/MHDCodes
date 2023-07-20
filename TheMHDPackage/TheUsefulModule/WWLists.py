@@ -11,6 +11,9 @@ from tqdm.auto import tqdm
 ## ###############################################################
 ## WORKING WITH LISTS
 ## ###############################################################
+def replaceNoneWNan(list_elems):
+  return [ np.nan if elem is None else elem for elem in list_elems ]
+
 def getCommonElements(list1, list2):
   return sorted( list( set(list1).intersection(set(list2)) ) )
 
@@ -22,6 +25,7 @@ def getIndexClosestValue(input_vals, target_value):
   ## check there are sufficient points
   if array_vals.shape[0] < 3:
     raise Exception(f"Error: There is an insuffient number of elements in:", input_vals)
+  if target_value is None:    return None
   if target_value ==  np.inf: return np.nanargmax(array_vals)
   if target_value == -np.inf: return np.nanargmin(array_vals)
   return np.nanargmin(np.abs(array_vals - target_value))
@@ -51,6 +55,13 @@ def getElemFromLoL(list_of_list, index_elem):
     list_elems[index_elem]
     for list_elems in list_of_list
   ]
+
+def countElemsFromList(list_elems):
+  return len([
+    elem
+    for elem in list_elems
+    if (elem is not None) and not(np.isnan(elem))
+  ])
 
 
 ## END OF LIBRARY

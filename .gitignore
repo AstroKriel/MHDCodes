@@ -1,14 +1,22 @@
 # things to ignore in the main repo
-.DS_STore
 .vscode
+.DS_STore
+*.png
+*.json
 
-# things to ignore in the sub-folders
-*/*/__pycache__
-*/*/.ipynb_checkpoints
+# things to ignore in sub-folders
+*/__pycache__/
+*/.DS_STore
+*/.ipynb_checkpoints
+*/*.pdf
+*/*.png
+*/*.json
+
+# things to ignore in sub-sub-folders
+*/*/__pycache__/
 */*/.DS_STore
+*/*/.ipynb_checkpoints
+*/*/*.pdf
 */*/*.png
 */*/*.json
 
-*/__pycache__
-*/.ipynb_checkpoints
-*/.DS_STore

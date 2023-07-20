@@ -4,62 +4,40 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-from scipy import stats
-from scipy.stats import norm
-
-## load user defined modules
-from TheUsefulModule import WWLists
+import numpy as np
 
 
 ## ###############################################################
 ## FUNCTIONS
 ## ###############################################################
-def resampleFrom1DKDE(
-    input_distributions,
-    num_resamp = 10**3
-  ):
-  ## initialise list of resampled points
-  list_resampled = []
-  ## if resampling from a list of distributions
-  if isinstance(input_distributions[0], list):
-    ## then for each distribution in the list of distributions
-    for sub_list_points in input_distributions:
-      ## resample from the distribution (KDE)
-      resampled_points = WWLists.flattenList(
-        stats.gaussian_kde(sub_list_points).resample(size=num_resamp).tolist()
-      )
-      ## append resampled points
-      list_resampled.append(resampled_points) # returns a list of lists
-  ## otherwise resample from a single distribution
-  else:
-    ## resample from the distribution (KDE)
-    resampled_points = WWLists.flattenList(
-      stats.gaussian_kde(input_distributions).resample(size=num_resamp).tolist()
-    )
-    ## append resampled points
-    list_resampled.append(resampled_points)
-  ## save resampled points
-  return list_resampled
-
-def sampleGaussFromQuantiles(
-    p1, p2,
-    x1, x2,
-    num_samples = 10**3
-  ):
-  ## calculate the inverse of the CFD
-  cdf_inv_p1 = stats.norm.ppf(p1)
-  cdf_inv_p2 = stats.norm.ppf(p2)
-  ## calculate mean of the normal distribution
-  norm_mean = (
-      (x1 * cdf_inv_p2) - (x2 * cdf_inv_p1)
-    ) / (cdf_inv_p2 - cdf_inv_p1)
-  ## calculate standard deviation of the normal distribution
+def sampleGaussFromQuantiles(p1, p2, x1, x2,num_samples=10**3):
+  ## calculate the inverse of the cumulative distribution function (CDF)
+  cdf_inv_p1 = np.sqrt(2) * np.erfinv(2 * p1 - 1)
+  cdf_inv_p2 = np.sqrt(2) * np.erfinv(2 * p2 - 1)
+  ## calculate the mean and standard deviation of the normal distribution
+  norm_mean = ((x1 * cdf_inv_p2) - (x2 * cdf_inv_p1)) / (cdf_inv_p2 - cdf_inv_p1)
   norm_std = (x2 - x1) / (cdf_inv_p2 - cdf_inv_p1)
-  ## return sampled points
-  return stats.norm(
-    loc   = norm_mean,
-    scale = norm_std
-  ).rvs(size=num_samples)
+  ## generate sampled points from the normal distribution
+  samples = norm_mean + norm_std * np.random.randn(num_samples)
+  return samples
+
+def computePDF(data, num_bins, weights=None):
+  min_value = np.min(data)
+  max_value = np.max(data)
+  ## generate bin edges
+  bin_edges = np.linspace(min_value, max_value, num_bins+1)
+  ## initialise an array to store the counts for each quantized bin
+  bin_counts = np.zeros(num_bins, dtype=float)
+  ## use binary search to determine the bin index for each element in the data
+  bin_indices = np.searchsorted(bin_edges, data) - 1
+  ## increment the corresponding bin count for each element
+  if weights is None:
+    np.add.at(bin_counts, bin_indices, 1)
+  else: np.add.at(bin_counts, bin_indices, weights)
+  ## compute the probability density function
+  pdf = np.append(0, bin_counts / np.sum(bin_counts))
+  ## return the bin edges and the computed pdf
+  return bin_edges, pdf
 
 
 ## END OF LIBRARY

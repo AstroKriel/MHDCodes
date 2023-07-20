@@ -1,0 +1,5 @@
+## TODO:
+- add correlation plot of B^2/8pi vs rho u^2 in paper
+- use Frenet-Serret basis for science
+- implement script to restart simulations until they reach saturation
+  - relevant for Rm=3000, Pm=1, Mach=5 and bottleneck runs
