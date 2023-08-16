@@ -42,9 +42,9 @@ def fieldRMS(scalar_field):
 def fieldGradient(scalar_field):
   ## format: (x, y, z)
   scalar_field = np.array(scalar_field)
-  grid_size = 1 / scalar_field.shape[0]
+  cell_width = 1 / scalar_field.shape[0]
   field_gradient = [
-    gradient_2ocd(scalar_field, grid_size, gradient_dir)
+    gradient_2ocd(scalar_field, cell_width, gradient_dir)
     for gradient_dir in [0, 1, 2]
   ]
   return np.array(field_gradient)
@@ -65,8 +65,8 @@ def computeTNBBasis(vector_field):
   n_basis_term1 = np.einsum("ixyz,jixyz->jxyz", vector_field, gradient_tensor)
   ## f_i f_j f_m df_m/dx_i
   n_basis_term2 = np.einsum("ixyz,jxyz,mxyz,mixyz->jxyz", vector_field, vector_field, vector_field, gradient_tensor)
-  ## [f_i df_j/dx_i]/(f_k f_k) - [f_i f_j f_m df_m/dx_i]/(f_k f_k)^2
-  n_basis = (n_basis_term1 / field_magn**2) - (n_basis_term2 / field_magn**4)
+  ## (f_i df_j/dx_i) / (f_k f_k) - (f_i f_j f_m df_m/dx_i) / (f_k f_k)^2
+  n_basis = n_basis_term1 / field_magn**2 - n_basis_term2 / field_magn**4
   ## field curvature
   kappa = fieldMagnitude(n_basis)
   ## normal basis

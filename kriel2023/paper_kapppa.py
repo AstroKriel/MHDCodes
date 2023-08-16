@@ -4,11 +4,10 @@
 ## ###############################################################
 ## MODULES
 ## ###############################################################
-import sys
+import os, sys
 import numpy as np
-import cmasher as cmr
 import matplotlib.pyplot as plt
-import seaborn as sns
+import matplotlib.colors as colors
 
 from scipy.stats import gaussian_kde
 from scipy.optimize import curve_fit
@@ -54,27 +53,24 @@ def plotFieldPDF(
   ax.axvline(x=bin_peak, color="black", ls="--", lw=2.0)
   ax.set_xlabel(label_xaxis)
 
-def plotScatter(ax, list_x, list_y, color=None, cutofff=None, bool_fit=False):
+def plotScatter(ax, list_x, list_y, cutofff=None):
   list_x = np.array(list_x).flatten()
   list_y = np.array(list_y).flatten()
   xy_stack = np.vstack([ list_x, list_y ])
-  if color is None:
-    density = gaussian_kde(xy_stack)(xy_stack)
-    color = density
-  sns.kdeplot(list_x, list_y, ax=ax, color=color, levels=5)
-  # ax.scatter(list_x, list_y, c=color, s=1)
-  if bool_fit:
-    func_shallow = lambda x, a0: a0 - 0.5 * x
-    func_steep   = lambda x, a0: a0 - 7 * x
-    x_range = np.linspace(np.nanmin(list_x), np.nanmax(list_x), 100)
-    params_shallow, _ = curve_fit(func_shallow, list_x, list_y)
-    y_shallow = func_shallow(x_range, *params_shallow)
-    ax.plot(x_range, y_shallow, color="black", ls="--", lw=2.0)
-    if cutofff is not None:
-      mask = (density >= cutofff * np.max(density))
-      params_steep, _ = curve_fit(func_steep, list_x[mask], list_y[mask])
-      y_steep = func_steep(x_range, *params_steep)
-      ax.plot(x_range, y_steep, color="black", ls="-", lw=2.0)
+  density = gaussian_kde(xy_stack)(xy_stack)
+  ax.scatter(list_x, list_y, c=density, s=1)
+  func_shallow = lambda x, a0: a0 - 0.5 * x
+  func_steep   = lambda x, a0: a0 - 7 * x
+  # x_range = np.linspace(np.nanmin(list_x), np.nanmax(list_x), 100)
+  x_range = np.linspace(-2, 4, 100)
+  params_shallow, _ = curve_fit(func_shallow, list_x, list_y)
+  y_shallow = func_shallow(x_range, *params_shallow)
+  PlotFuncs.plotData_noAutoAxisScale(ax, x_range, y_shallow, color="black", ls="--", lw=2.0)
+  if cutofff is not None:
+    mask = (density >= cutofff * np.max(density))
+    params_steep, _ = curve_fit(func_steep, list_x[mask], list_y[mask])
+    y_steep = func_steep(x_range, *params_steep)
+    PlotFuncs.plotData_noAutoAxisScale(ax, x_range, y_steep, color="black", ls="-", lw=2.0)
 
 
 ## ###############################################################
@@ -127,43 +123,36 @@ class PlotTNBBasis():
   def performRoutine(self):
     # self.fig, self.axs = initFigure(ncols=3)
     self.fig, self.axs = plt.subplots(figsize=(6,6))
-    cmap, norm = PlotFuncs.createCmap(
-      cmr.cm.emerald,
-      vmin = 5,
-      vmax = self.index_end_growth
+    index_file = (self.index_bounds_growth + self.index_end_growth) // 3
+    # index_file = self.index_end_growth
+    filename = FileNames.FILENAME_FLASH_PLT_FILES + str(int(index_file)).zfill(4)
+    filepath_file = f"{self.filepath_sim_res}/plt/{filename}"
+    b_field = LoadData.loadFlashDataCube(
+      filepath_file = filepath_file,
+      num_blocks    = self.dict_sim_inputs["num_blocks"],
+      num_procs     = self.dict_sim_inputs["num_procs"],
+      field_name    = "mag"
     )
-    step_size = (self.index_end_growth - 5) // 5
-    for file_index in range(5, self.index_end_growth, step_size):
-      print(file_index)
-      filename = FileNames.FILENAME_FLASH_PLT_FILES + str(int(file_index)).zfill(4)
-      filepath_file = f"{self.filepath_sim_res}/plt/{filename}"
-      b_field = LoadData.loadFlashDataCube(
-        filepath_file = filepath_file,
-        num_blocks    = self.dict_sim_inputs["num_blocks"],
-        num_procs     = self.dict_sim_inputs["num_procs"],
-        field_name    = "mag"
-      )
-      Bmagn = WWFields.fieldMagnitude(b_field)
-      Brms = WWFields.fieldRMS(Bmagn)
-      ## magnetic field slice
-      print("Plotting magnetic field...")
-      _, _, _, kappa_B = WWFields.computeTNBBasis(b_field)
-      ## magnetic field curvature
-      print("Plotting field curvature...")
-      Mach = self.dict_sim_inputs["desired_Mach"]
-      plotScatter(
-        ax      = self.axs,
-        list_x  = np.log10(kappa_B)[:,:,0],
-        list_y  = np.log10(Bmagn)[:,:,0],
-        # cutofff = 0.75 if (Mach > 1) else None
-        color = cmap(norm(file_index))
-      )
-    # self.axs.set_xlim([ -1, 3.5 ])
-    # self.axs.set_ylim([ -2.5, 1 ])
-    self.axs.set_xlabel(r"$\kappa$")
-    self.axs.set_ylabel(r"$b$")
+    Bmagn = WWFields.fieldMagnitude(b_field)
+    Brms = WWFields.fieldRMS(Bmagn)
+    ## magnetic field slice
+    print("Plotting magnetic field...")
+    _, _, _, kappa_B = WWFields.computeTNBBasis(b_field)
+    ## magnetic field curvature
+    print("Plotting field curvature...")
+    Mach = self.dict_sim_inputs["desired_Mach"]
+    plotScatter(
+      ax      = self.axs,
+      list_x  = np.log10(kappa_B)[:,:,:3],
+      list_y  = np.log10(Bmagn / Brms)[:,:,:3],
+      cutofff = 0.75 #if (Mach > 1) else None
+    )
+    self.axs.set_xlim([ -1, 3.5 ])
+    self.axs.set_ylim([ -2.5, 1 ])
+    self.axs.set_xlabel(r"$\kappa / \kappa_{\rm rms}$")
+    self.axs.set_ylabel(r"$b / b_{\rm rms}$")
     ## save figure
-    filepath_fig = f"/home/586/nk7952/MHDCodes/ii6/curvature/{self.sim_name}_kappa.png"
+    filepath_fig = f"/{PATH_PLOT}/{self.sim_name}_kappa.png"
     self.fig.savefig(filepath_fig, dpi=200)
     plt.close(self.fig)
     print("Saved figure:", filepath_fig)
@@ -182,6 +171,7 @@ def plotSimData(filepath_sim_res, bool_verbose=True, lock=None, **kwargs):
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
+  WWFnF.createFolder(PATH_PLOT, bool_verbose=False)
   SimParams.callFuncForAllSimulations(
     func               = plotSimData,
     bool_mproc         = BOOL_MPROC,
@@ -196,6 +186,8 @@ def main():
 ## ###############################################################
 ## PROGRAM PARAMTERS
 ## ###############################################################
+PATH_PLOT = "/home/586/nk7952/MHDCodes/kriel2023/kappa/"
+
 BOOL_MPROC      = 0
 LIST_BASE_PATHS = [
   "/scratch/ek9/nk7952/",

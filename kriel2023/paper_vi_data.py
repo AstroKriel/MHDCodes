@@ -196,7 +196,7 @@ class PlotTurbData():
 def main():
   ## initialise figure
   print("Initialising figure...")
-  figscale = 1.2
+  figscale = 1.1
   fig, axs = plt.subplots(
     nrows   = 2,
     figsize = (6*figscale, 2*4*figscale),
@@ -239,7 +239,7 @@ def main():
   )
   obj_plot_turb.performRoutines()
   ## label figure
-  axs[1].set_xlabel(r"$t / T_\mathrm{turb}$")
+  axs[1].set_xlabel(r"$t / t_\mathrm{turb}$")
   axs[0].set_ylabel(r"$\mathcal{M}$")
   axs[1].set_ylabel(r"$E_\mathrm{mag} / E_\mathrm{kin}$")
   axs[0].set_yscale("log")
@@ -294,13 +294,13 @@ def main():
     list_marker_colors = [ "k" ],
     label_color        = "white",
     loc                = "upper right",
-    bbox               = (1.0, 0.825),
+    bbox               = (1.0, 0.835),
     fontsize           = 17
   )
-  addText(axs[1], (0.049, 0.55), r"transient phase", rotation=90)
-  addText(axs[1], (0.64, 0.74), r"exponential growth")
-  addText(axs[1], (0.64, 0.64), r"linear growth")
-  addText(axs[1], (0.64, 0.54), r"saturated")
+  addText(axs[1], (0.047, 0.5), r"transient phase", rotation=90)
+  addText(axs[1], (0.62, 0.74), r"exponential growth")
+  addText(axs[1], (0.62, 0.63), r"linear growth")
+  addText(axs[1], (0.62, 0.53), r"saturated")
   ## save figure
   print("Saving figure...")
   fig_name     = f"time_evolution.pdf"

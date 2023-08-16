@@ -54,12 +54,17 @@ def createFigure_grid(
       fig_scale * fig_aspect_ratio[1] * num_cols,
       fig_scale * fig_aspect_ratio[0] * num_rows
   ))
-  fig_grid = GridSpec(num_rows, num_cols, figure=fig)
+  fig_grid = GridSpec(
+    num_rows, num_cols,
+    figure = fig,
+    wspace = -1,
+    hspace = -1
+  )
   return fig, fig_grid
 
 def saveFigure(fig, filepath_fig, bool_tight=True, bool_draft=False, bool_verbose=True):
-  if bool_tight and not(fig.get_constrained_layout()):
-    fig.set_tight_layout(True)
+  # if bool_tight and not(fig.get_constrained_layout()):
+  fig.set_tight_layout(True)
   if bool_draft: dpi = 50
   else: dpi = 200
   fig.savefig(filepath_fig, dpi=dpi)
@@ -495,7 +500,9 @@ def addColorbar_fromCmap(
   return cbar
 
 def addColorbar_fromMappble(
-    fig, ax, mappable,
+    mappable,
+    fig         = None,
+    ax          = None,
     orientation = "vertical",
     cbar_title  = None,
     size        = 7.5,
@@ -504,11 +511,10 @@ def addColorbar_fromMappble(
   ):
   ''' from: https://joseph-long.com/writing/colorbars/
   '''
-  ax_new = mappable.axes
   if (fig is None) or (ax is None):
-    ax  = plt.gca()
-    fig = ax_new.figure
-  ax_div = make_axes_locatable(ax_new)
+    ax  = mappable.axes
+    fig = ax.figure
+  ax_div = make_axes_locatable(ax)
   if   "h" in orientation: ax_cbar = ax_div.append_axes(position="top",   size=f"{size:.1f}%", pad="2%")
   elif "v" in orientation: ax_cbar = ax_div.append_axes(position="right", size=f"{size:.1f}%", pad="2%")
   cbar = fig.colorbar(mappable=mappable, cax=ax_cbar, orientation=orientation)

@@ -206,7 +206,7 @@ class PlotSpectra():
   def plotKinSpectrumRatios(self, ax, color="black"):
     dict_lgt_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "lgt",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -215,7 +215,7 @@ class PlotSpectra():
     )
     dict_trv_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "trv",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -229,7 +229,7 @@ class PlotSpectra():
       list_power_1_group_t = dict_lgt_data["list_power_group_t"],
       list_power_2_group_t = dict_trv_data["list_power_group_t"],
       color                = color,
-      label                = r"$\frac{\mathcal{P}_{\rm vel, \parallel}(k)}{\mathcal{P}_{\rm vel, \perp}(k)}$"
+      label                = r"$\frac{E_{\rm kin, \parallel}(k)}{E_{\rm kin, \perp}(k)}$"
     )
 
   def plotKinTotSpectrum(self, ax, label="tot", color="#003f5c", comp_factor=None, zorder=3, bool_plot_scale=False):
@@ -252,12 +252,12 @@ class PlotSpectra():
       color              = color,
       label              = label
     )
-    if bool_plot_scale: self._plotScales(ax, self.dict_sim_outputs["k_nu_vel_tot_group_t"], color)
+    if bool_plot_scale: self._plotScales(ax, self.dict_sim_outputs["k_nu_kin_group_t"], color)
 
   def plotKinLgtSpectrum(self, ax, label="lgt", color="#bc5090", comp_factor=None, zorder=3):
     dict_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "lgt",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -277,7 +277,7 @@ class PlotSpectra():
   def plotKinTrvSpectrum(self, ax, label="trv", color="#ffa600", comp_factor=None, zorder=3):
     dict_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "trv",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -297,7 +297,7 @@ class PlotSpectra():
   def plotKinReynoldsSpectrum(self, ax, color="black", bool_plot_scale=False, zorder=5):
     dict_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "vel",
+      spect_field        = "kin",
       spect_comp         = "tot",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -313,7 +313,7 @@ class PlotSpectra():
       label              = r"$" + self.dict_sim_inputs["sim_res"] + r"^3$",
       zorder             = zorder
     )
-    if bool_plot_scale: self._plotScales(ax, self.dict_sim_outputs["k_nu_vel_tot_group_t"], color)
+    if bool_plot_scale: self._plotScales(ax, self.dict_sim_outputs["k_nu_kin_group_t"], color)
 
   def plotMagSpectrum(self, ax, color="black", label="mag", zorder=3):
     dict_mag_tot_data = LoadData.loadAllSpectra(
@@ -334,7 +334,7 @@ class PlotSpectra():
       label              = label,
       zorder             = zorder
     )
-    self._plotScales(ax, self.dict_sim_outputs["k_p_mag_group_t"], "red")
+    self._plotScales(ax, self.dict_sim_outputs["k_p_mag_group_t"], color)
 
   def plotCurSpectrum(self, ax, color="black", label="cur", zorder=3):
     dict_cur_tot_data = LoadData.loadAllSpectra(
@@ -357,7 +357,7 @@ class PlotSpectra():
       label              = label,
       zorder             = zorder
     )
-    self._plotScales(ax, self.dict_sim_outputs["k_eta_cur_group_t"], "green")
+    self._plotScales(ax, self.dict_sim_outputs["k_eta_cur_group_t"], color)
 
 
 ## ###############################################################
@@ -371,7 +371,7 @@ def plotKinSpectra():
   for mach_regime in [ "Mach0.3", "Mach5" ]:
     for scratch_path in LIST_SCRATCH_PATHS:
       for sim_res in LIST_SIM_RES:
-        filepath_sim_res = getSimPath(scratch_path, "Re2000", mach_regime, sim_res)
+        filepath_sim_res = getSimPath(scratch_path, "Rm3000", mach_regime, sim_res)
         if not os.path.exists(filepath_sim_res): continue
         list_filepath_sim_res.append(filepath_sim_res)
     if len(list_filepath_sim_res) == 0: raise Exception(f"Error: there are no {mach_regime} runs")
@@ -387,30 +387,22 @@ def plotKinSpectra():
   ax.set_yscale("log")
   ax.set_xlim([ 0.9, 200 ])
   ax.set_ylim([ 1e-7, 1 ])
-  ax.set_xlabel(r"$k L_{\rm box} / 2\pi$", fontsize=22)
-  ax.set_ylabel(r"$\widehat{\mathcal{P}}_{\rm kin}(k)$", fontsize=22)
+  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
+  ax.set_ylabel(r"$\widehat{E}_{\rm kin}(k)$", fontsize=22)
   ax.legend(loc="lower left", fontsize=18)
   plotPowerLawPassingThroughPoint(
     ax,
-    slope    = -5/2,
-    x_domain = (2, 40),
-    coord    = (5, 2e-2),
+    slope    = -2,
+    x_domain = (1.5, 10),
+    coord    = (1.5, 5e-3),
     ls       = "--",
     lw       = 1.75
   )
-  plotPowerLawPassingThroughPoint(
-    ax,
-    slope    = -3/2,
-    x_domain = (2, 40),
-    coord    = (5, 2e-2),
-    ls       = "-",
-    lw       = 1.75
-  )
   ax.text(
-    0.225, 0.75,
-    r"$k^{-3/2}$",
+    0.375, 0.4,
+    r"$k^{-2}$",
     va        = "top",
-    ha        = "right",
+    ha        = "left",
     transform = ax.transAxes,
     color     = "black",
     fontsize  = 20,
@@ -419,13 +411,13 @@ def plotKinSpectra():
   plotPowerLawPassingThroughPoint(
     ax,
     slope    = -5/3,
-    x_domain = (2.5, 10),
-    coord    = (5, 1.25e-1),
+    x_domain = (1.5, 10),
+    coord    = (1.5, 5e-3),
     ls       = ":",
     lw       = 1.75
   )
   ax.text(
-    0.375, 0.85,
+    0.375, 0.525,
     r"$k^{-5/3}$",
     va        = "bottom",
     ha        = "left",
@@ -435,7 +427,7 @@ def plotKinSpectra():
     zorder    = 10
   )
   ax.text(
-    0.75, 0.95,
+    0.65, 0.95,
     r"$k_\nu$",
     va        = "top",
     ha        = "left",
@@ -446,7 +438,7 @@ def plotKinSpectra():
   )
   ## save figure
   print("Saving figure...")
-  fig_name     = f"spectra_kin_spectra.pdf"
+  fig_name     = f"spectra_kin.pdf"
   filepath_fig = f"{PATH_PLOT}/{fig_name}"
   fig.savefig(filepath_fig, dpi=100)
   plt.close(fig)
@@ -480,11 +472,11 @@ def plotKinReynoldsSpectra():
   ax.set_yscale("log")
   ax.set_xlim([ 0.9, 200 ])
   ax.set_ylim([ 1e-2, 1e4 ])
-  ax.set_xlabel(r"$k L_{\rm box} / 2\pi$", fontsize=22)
-  ax.set_ylabel(r"$\mathrm{Re}(k)$", fontsize=22)
+  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
+  ax.set_ylabel(r"${\rm Re}(k)$", fontsize=22)
   ax.axhline(y=1, color="black", ls=":", lw=2, zorder=15)
   ax.text(
-    0.75, 0.95,
+    0.65, 0.95,
     r"$k_\nu$",
     va        = "top",
     ha        = "left",
@@ -495,7 +487,7 @@ def plotKinReynoldsSpectra():
   )
   ## save figure
   print("Saving figure...")
-  fig_name     = f"spectra_kin_reynolds_spectra.pdf"
+  fig_name     = f"spectra_reynolds.pdf"
   filepath_fig = f"{PATH_PLOT}/{fig_name}"
   fig.savefig(filepath_fig, dpi=100)
   plt.close(fig)
@@ -526,8 +518,8 @@ def plotKinCompRatioNres(mach_regime):
       obj_plot = PlotSpectra(filepath_sim_res)
       obj_plot.plotKinSpectrumRatios(ax, cmap(norm(sim_index)))
   ## label figure
-  ax.set_xlabel(r"$k L_\mathrm{box} / 2\pi$", fontsize=22)
-  ax.set_ylabel(r"$\mathcal{P}_{{\rm vel}, \parallel}(k) / \mathcal{P}_{{\rm vel}, \perp}(k)$", fontsize=22)
+  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
+  ax.set_ylabel(r"$E_{{\rm kin}, \parallel}(k) / E_{{\rm kin}, \perp}(k)$", fontsize=22)
   ax.set_xscale("log")
   ax.set_yscale("log")
   ax.set_ylim(top=1.2*10**(1))
@@ -544,7 +536,7 @@ def plotKinCompRatioNres(mach_regime):
   )
   ## save figure
   print("Saving figure...")
-  fig_name     = f"spectra_{mach_regime}_kin_component_ratios_Nres.pdf"
+  fig_name     = f"Nres_spectra_kin_{mach_regime}.pdf"
   filepath_fig = f"{PATH_PLOT}/{fig_name}"
   fig.savefig(filepath_fig, dpi=100)
   plt.close(fig)
@@ -575,7 +567,7 @@ def plotKinReynoldsSpectraNres(mach_regime):
       obj_plot = PlotSpectra(filepath_sim_res)
       obj_plot.plotKinReynoldsSpectrum(ax, cmap(norm(sim_index)), bool_plot_scale=False)
   ## label figure
-  ax.set_xlabel(r"$k L_\mathrm{box} / 2\pi$", fontsize=22)
+  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
   ax.set_ylabel(r"${\rm Re}(k)$", fontsize=22)
   ax.set_xscale("log")
   ax.set_yscale("log")
@@ -603,7 +595,7 @@ def plotKinReynoldsSpectraNres(mach_regime):
   )
   ## save figure
   print("Saving figure...")
-  fig_name     = f"spectra_{mach_regime}_reyonolds_Nres.pdf"
+  fig_name     = f"Nres_reyonolds_{mach_regime}.pdf"
   filepath_fig = f"{PATH_PLOT}/{fig_name}"
   fig.savefig(filepath_fig, dpi=100)
   plt.close(fig)
@@ -612,52 +604,38 @@ def plotKinReynoldsSpectraNres(mach_regime):
 
 
 ## ###############################################################
-## PLOT SUBRSONIC MAGNETIC ENERGY + CURRENT DENSITY SPECTRA
+## PLOT CURRENT DENSITY SPECTRA
 ## ###############################################################
-def plotMagCurSpectra_subsonic():
-  mach_regime = "Mach0.3"
+def plotCurSpectra():
   ## initialise figure
   print("Initialising figure...")
   fig, ax = initFigure()
   list_filepath_sim_res = []
-  for scratch_path in LIST_SCRATCH_PATHS:
-    for sim_res in LIST_SIM_RES:
-      filepath_sim_res = getSimPath(scratch_path, "Rm3000", mach_regime, sim_res)
-      if not os.path.exists(filepath_sim_res): continue
-      list_filepath_sim_res.append(filepath_sim_res)
-  if len(list_filepath_sim_res) == 0: raise Exception(f"Error: there are no {mach_regime} runs")
-  filepath_highest_sim_res = list_filepath_sim_res[-1]
-  print("Looking at:", filepath_highest_sim_res)
-  obj_plot = PlotSpectra(filepath_highest_sim_res)
-  obj_plot.plotMagSpectrum(ax, color="red", label=r"$\widehat{\mathcal{P}}_{\rm mag}(k)$")
-  obj_plot.plotCurSpectrum(ax, color="green", label=r"$\widehat{\mathcal{P}}_{\rm cur}(k)$")
+  for mach_regime in [ "Mach0.3", "Mach5" ]:
+    for scratch_path in LIST_SCRATCH_PATHS:
+      for sim_res in LIST_SIM_RES:
+        filepath_sim_res = getSimPath(scratch_path, "Rm3000", mach_regime, sim_res)
+        if not os.path.exists(filepath_sim_res): continue
+        list_filepath_sim_res.append(filepath_sim_res)
+    if len(list_filepath_sim_res) == 0: raise Exception(f"Error: there are no {mach_regime} runs")
+    filepath_highest_sim_res = list_filepath_sim_res[-1]
+    print("Looking at:", filepath_highest_sim_res)
+    obj_plot = PlotSpectra(filepath_highest_sim_res)
+    label = getSimLabel(mach_regime, obj_plot.dict_sim_inputs["Re"])
+    if obj_plot.desired_Mach < 1:
+      obj_plot.plotCurSpectrum(ax, label=label, color=COLOR_SUBSONIC)
+    else: obj_plot.plotCurSpectrum(ax, label=label, color=COLOR_SUPERSONIC)
   ## label axis
-  ax.set_xlabel(r"$k L_\mathrm{box} / 2\pi$", fontsize=22)
-  ax.set_ylabel(r"$\widehat{\mathcal{P}}(k)$", fontsize=22)
+  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
+  ax.set_ylabel(r"$\widehat{E}_{\rm cur}(k)$", fontsize=22)
   ax.set_xscale("log")
   ax.set_yscale("log")
-  ax.set_xlim([ 0.9, 400 ])
-  ax.set_ylim([ 0.9*10**(-5), 1.1*10**(-1) ])
+  ax.set_xlim([ 0.9, 300 ])
+  ax.set_ylim([ 0.9*10**(-5), 2.5*10**(-1) ])
+  ax.legend(loc="upper left", fontsize=18)
   ax.text(
-    0.95, 0.935,
-    getSimLabel(mach_regime, obj_plot.dict_sim_inputs["Re"]),
-    va        = "top",
-    ha        = "right",
-    transform = ax.transAxes,
-    color     = "black",
-    fontsize  = 20,
-    zorder    = 10
-  )
-  plotPowerLawPassingThroughPoint(
-    ax       = ax,
-    slope    = 3/2,
-    x_domain = ( 1.5, 6 ),
-    coord    = ( 1, 1e-3 ),
-    ls       = ":"
-  )
-  ax.text(
-    0.15, 0.6,
-    "$k^{3/2}$",
+    0.655, 0.95,
+    r"$k_\eta$",
     va        = "top",
     ha        = "left",
     transform = ax.transAxes,
@@ -667,7 +645,7 @@ def plotMagCurSpectra_subsonic():
   )
   ## save figure
   print("Saving figure...")
-  fig_name     = f"spectra_{mach_regime}_mag_cur_power.pdf"
+  fig_name     = f"spectra_cur.pdf"
   filepath_fig = f"{PATH_PLOT}/{fig_name}"
   fig.savefig(filepath_fig, dpi=100)
   plt.close(fig)
@@ -678,43 +656,37 @@ def plotMagCurSpectra_subsonic():
 ## ###############################################################
 ## PLOT SUPERSONIC MAGNETIC ENERGY + CURRENT DENSITY SPECTRA
 ## ###############################################################
-def plotMagCurSpectra_supersonic():
-  mach_regime = "Mach5"
-  ## initialise figure
+def plotMagSpectra():
+    ## initialise figure
   print("Initialising figure...")
   fig, ax = initFigure()
   list_filepath_sim_res = []
-  for scratch_path in LIST_SCRATCH_PATHS:
-    for sim_res in LIST_SIM_RES:
-      filepath_sim_res = getSimPath(scratch_path, "Rm3000", mach_regime, sim_res)
-      if not os.path.exists(filepath_sim_res): continue
-      list_filepath_sim_res.append(filepath_sim_res)
-  if len(list_filepath_sim_res) == 0: raise Exception(f"Error: there are no {mach_regime} runs")
-  filepath_highest_sim_res = list_filepath_sim_res[-1]
-  print("Looking at:", filepath_highest_sim_res)
-  obj_plot = PlotSpectra(filepath_highest_sim_res)
-  obj_plot.plotMagSpectrum(ax, color="red", label=r"$\widehat{\mathcal{P}}_{\rm mag}(k)$")
-  obj_plot.plotCurSpectrum(ax, color="green", label=r"$\widehat{\mathcal{P}}_{\rm cur}(k)$")
+  for mach_regime in [ "Mach0.3", "Mach5" ]:
+    for scratch_path in LIST_SCRATCH_PATHS:
+      for sim_res in LIST_SIM_RES:
+        filepath_sim_res = getSimPath(scratch_path, "Rm3000", mach_regime, sim_res)
+        if not os.path.exists(filepath_sim_res): continue
+        list_filepath_sim_res.append(filepath_sim_res)
+    if len(list_filepath_sim_res) == 0: raise Exception(f"Error: there are no {mach_regime} runs")
+    filepath_highest_sim_res = list_filepath_sim_res[-1]
+    print("Looking at:", filepath_highest_sim_res)
+    obj_plot = PlotSpectra(filepath_highest_sim_res)
+    label = getSimLabel(mach_regime, obj_plot.dict_sim_inputs["Re"])
+    if obj_plot.desired_Mach < 1:
+      obj_plot.plotMagSpectrum(ax, label=label, color=COLOR_SUBSONIC)
+    else: obj_plot.plotMagSpectrum(ax, label=label, color=COLOR_SUPERSONIC)
   ## label axis
-  ax.set_xlabel(r"$k L_\mathrm{box} / 2\pi$", fontsize=22)
-  ax.set_ylabel(r"$\widehat{\mathcal{P}}(k)$", fontsize=22)
+  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
+  ax.set_ylabel(r"$\widehat{E}_{\rm mag}(k)$", fontsize=22)
   ax.set_xscale("log")
   ax.set_yscale("log")
-  ax.set_xlim([ 0.9, 400 ])
-  ax.set_ylim([ 0.9*10**(-5), 1.1*10**(-1) ])
-  ax.legend(
-    loc           = "lower right",
-    fontsize      = 20,
-    labelspacing  = 0.35,
-    handletextpad = 0.5,
-    frameon       = True,
-    framealpha    = 0.75
-  )
+  ax.set_xlim([ 0.9, 300 ])
+  ax.set_ylim([ 0.9*10**(-5), 2.5*10**(-1) ])
   ax.text(
-    0.95, 0.935,
-    getSimLabel(mach_regime, obj_plot.dict_sim_inputs["Re"]),
+    0.325, 0.95,
+    r"$k_{\rm p}$",
     va        = "top",
-    ha        = "right",
+    ha        = "left",
     transform = ax.transAxes,
     color     = "black",
     fontsize  = 20,
@@ -723,13 +695,13 @@ def plotMagCurSpectra_supersonic():
   plotPowerLawPassingThroughPoint(
     ax       = ax,
     slope    = 3/2,
-    x_domain = ( 1, 3 ),
-    coord    = ( 1, 3e-3 ),
+    x_domain = ( 1.25, 7 ),
+    coord    = ( 1.25, 5e-4 ),
     ls       = ":"
   )
   ax.text(
-    0.05, 0.6,
-    "$k^{3/2}$",
+    0.075, 0.55,
+    r"$k^{3/2}$",
     va        = "top",
     ha        = "left",
     transform = ax.transAxes,
@@ -739,7 +711,7 @@ def plotMagCurSpectra_supersonic():
   )
   ## save figure
   print("Saving figure...")
-  fig_name     = f"spectra_{mach_regime}_mag_cur_power.pdf"
+  fig_name     = f"spectra_mag.pdf"
   filepath_fig = f"{PATH_PLOT}/{fig_name}"
   fig.savefig(filepath_fig, dpi=100)
   plt.close(fig)
@@ -754,10 +726,10 @@ def main():
   WWFnF.createFolder(PATH_PLOT, bool_verbose=False)
   ## main study
   plotKinSpectra()
-  # plotKinReynoldsSpectra()
-  # plotMagCurSpectra_subsonic()
-  # plotMagCurSpectra_supersonic()
-  # ## resolution study
+  plotKinReynoldsSpectra()
+  # plotCurSpectra()
+  # plotMagSpectra()
+  ## resolution study
   # plotKinCompRatioNres("Mach0.3")
   # plotKinCompRatioNres("Mach5")
   # plotKinReynoldsSpectraNres("Mach0.3")
@@ -773,7 +745,7 @@ PATH_PLOT = "/home/586/nk7952/MHDCodes/kriel2023/spectra/"
 LIST_SIM_RES = [ 18, 36, 72, 144, 288, 576, 1152 ]
 LIST_SCRATCH_PATHS = [
   "/scratch/ek9/nk7952/",
-  "/scratch/jh2/nk7952/"
+  # "/scratch/jh2/nk7952/"
 ]
 
 

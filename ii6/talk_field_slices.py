@@ -57,8 +57,8 @@ def plotSimData(filepath_sim_res, bool_mag=True):
   filename = "Turb_hdf5_plt_cnt_0100"
   dict_sim_inputs = SimParams.readSimInputs(filepath_sim_res)
   num_cells = dict_sim_inputs["num_blocks"][0] * dict_sim_inputs["num_procs"][0]
-  x = np.linspace(-1.0, 1.0, num_cells)
-  y = np.linspace(-1.0, 1.0, num_cells)
+  x = np.linspace(-1.0, 1.0, int(num_cells))
+  y = np.linspace(-1.0, 1.0, int(num_cells))
   X, Y = np.meshgrid(x, -y)
   fig, ax = plt.subplots(figsize=(12, 12))
   ## ------------- VELOCITY FIELD
@@ -81,7 +81,8 @@ def plotSimData(filepath_sim_res, bool_mag=True):
     np.log10(vel_magn[:,:,0]),
     extent = [-1, 1, -1, 1],
     cmap   = cmap_vel,
-    norm   = norm_vel
+    norm   = norm_vel,
+    aspect = "equal"
   )
   ## ------------- MAGNETIC FIELD
   if bool_mag:
@@ -93,24 +94,35 @@ def plotSimData(filepath_sim_res, bool_mag=True):
       field_name    = "mag",
       bool_norm_rms = True
     )
-    logBmagn_slice = np.log10(WWFields.fieldMagnitude(mag_field))[:,:,0]
-    logBmagn_slice[logBmagn_slice < -0.25] = np.nan
-    cmap_mag, norm_mag = PlotFuncs.createCmap(
-      cmap_name = "Reds",
-      vmin      = -2.0,
-      vmid      =  0.0,
-      vmax      =  1.5,
-      NormType  = colors.Normalize
-    )
-    ax.scatter(
+    ax.streamplot(
       X, Y,
-      s      = 2,
-      c      = logBmagn_slice,
-      cmap   = cmap_mag,
-      norm   = norm_mag,
-      zorder = 5,
-      alpha  = 0.8,
+      mag_field[0][:,:,0],
+      mag_field[1][:,:,0],
+      color      = "red",
+      arrowstyle = "->",
+      linewidth  = 4.0,
+      density    = 1,
+      arrowsize  = 1,
+      zorder     = 5
     )
+    # logBmagn_slice = np.log10(WWFields.fieldMagnitude(mag_field))[:,:,0]
+    # logBmagn_slice[logBmagn_slice < -0.25] = np.nan
+    # cmap_mag, norm_mag = PlotFuncs.createCmap(
+    #   cmap_name = "Reds",
+    #   vmin      = -2.0,
+    #   vmid      =  0.0,
+    #   vmax      =  1.5,
+    #   NormType  = colors.Normalize
+    # )
+    # ax.scatter(
+    #   X, Y,
+    #   s      = 2,
+    #   c      = logBmagn_slice,
+    #   cmap   = cmap_mag,
+    #   norm   = norm_mag,
+    #   zorder = 5,
+    #   alpha  = 0.8,
+    # )
   ## ------------- DENSITY FIELD
   print("Loading density field data...")
   rho = LoadData.loadFlashDataCube(
@@ -133,9 +145,10 @@ def plotSimData(filepath_sim_res, bool_mag=True):
   ax.set_yticks([ ])
   ## save figure
   print("Saving figure...")
+  ax.axis("off")
   sim_name = SimParams.getSimName(dict_sim_inputs)
-  if bool_mag: sim_name += "_combined"
-  fig_name = f"{sim_name}_field_slice.png"
+  # if bool_mag: sim_name += "_combined"
+  fig_name = f"{sim_name}_field_streamlines.png"
   filepath_fig = f"{filepath_vis}/{fig_name}"
   fig.savefig(filepath_fig, dpi=200)
   plt.close(fig)
@@ -147,13 +160,14 @@ def plotSimData(filepath_sim_res, bool_mag=True):
 ## MAIN PROGRAM
 ## ###############################################################
 def main():
-  for bool_mag in [True, False]:
-    plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach0.3/Pm125/288/", bool_mag)
-    plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach0.3/Pm5/576/", bool_mag)
-    plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach0.3/Pm1/576/", bool_mag)
-    plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach5/Pm125/576/", bool_mag)
-    plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach5/Pm5/576/", bool_mag)
-    plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach5/Pm1/576/", bool_mag)
+  # for bool_mag in [True, False]:
+  bool_mag = True
+  plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach0.3/Pm125/288/", bool_mag)
+  # plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach0.3/Pm5/288/", bool_mag)
+  plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach0.3/Pm1/288/", bool_mag)
+  plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach5/Pm125/576/", bool_mag)
+  # plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach5/Pm5/288/", bool_mag)
+  plotSimData(f"{PATH_SCRATCH_EK9}/Rm3000/Mach5/Pm1/288/", bool_mag)
 
 
 ## ###############################################################

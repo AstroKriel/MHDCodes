@@ -46,7 +46,7 @@ def plotScale(ax, x, y_median, y_1sig, color):
     yerr   = y_1sig,
     mfc    = "whitesmoke" if color is None else color,
     ecolor = "black" if color is None else color,
-    fmt="o", mec="black", elinewidth=1, markersize=7, capsize=7.5, linestyle="None", zorder=5
+    fmt="o", mec="black", elinewidth=1, markersize=8, capsize=7.5, linestyle="None", zorder=5
   )
 
 def plotLogisticModel(ax, fit_params, color):
@@ -73,9 +73,9 @@ def fitLogisticModel(ax, list_nres, val_group_nres, std_group_nres, color="black
 
 def fitScales(ax, list_nres, scales_group_nres, color="black"):
   list_nres = copy.deepcopy(list_nres)
-  list_nres.append(2*list_nres[-1])
+  # list_nres.append(2*list_nres[-1])
   scales_group_nres = copy.deepcopy(scales_group_nres)
-  scales_group_nres.append(scales_group_nres[-1])
+  # scales_group_nres.append(scales_group_nres[-1])
   list_nres = [
     list_nres[nres_index]
     for nres_index in range(len(list_nres))
@@ -197,8 +197,8 @@ def main():
     list_artists       = [ "-" ],
     list_marker_colors = [ COLOR_SUBSONIC, COLOR_SUPERSONIC ],
     label_color        = "black",
-    loc                = "upper right",
-    bbox               = (1.0, 1.0),
+    loc                = "upper left",
+    bbox               = (0.0, 1.0),
     fontsize           = 17
   )
   ## save figure

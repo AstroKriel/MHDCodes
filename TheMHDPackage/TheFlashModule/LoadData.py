@@ -8,6 +8,7 @@ import h5py, time
 import numpy as np
 
 ## load user defined modules
+from TheAnalysisModule import WWFields
 from TheUsefulModule import WWFnF, WWLists
 from TheFlashModule import FileNames
 
@@ -65,7 +66,7 @@ def loadFlashDataCube(
   for field_comp in field_group_comp:
     field_comp_sorted = reformatFlashField(field_comp, num_blocks, num_procs)
     ## normalise by rms-value
-    if bool_norm_rms: field_comp_sorted /= np.sqrt(np.mean(field_comp_sorted**2))
+    if bool_norm_rms: field_comp_sorted /= WWFields.fieldRMS(field_comp_sorted)
     field_sorted_group_comps.append(field_comp_sorted)
   ## return spatial-components of data
   return np.squeeze(field_sorted_group_comps)

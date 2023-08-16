@@ -65,15 +65,15 @@ def fitLogisticModel(
     sigma = [ np.nanstd(scales_group_t)+1e-3       for scales_group_t in scales_group_t_res ],
     absolute_sigma=True, bounds=bounds, maxfev=10**5
   )
-  fit_std = np.nanmean([
+  fit_std = np.sqrt(np.diag(fit_cov)) # confidence in fit
+  fit_std[0] = np.nanmean([
     np.nanstd(sub_list)
     for sub_list in scales_group_t_res
   ])
-  # fit_std = np.sqrt(np.diag(fit_cov))[0] # confidence in fit
   data_x  = np.logspace(np.log10(1), np.log10(10**4), 100)
   data_y  = func(data_x, *fit_params)
   if ax is not None: ax.plot(data_x, data_y, color=color, ls=ls, lw=1.5)
-  return data_y[-1], fit_std
+  return data_y[-1], fit_std, fit_params
 
 def fitScales(ax, list_sim_res, scales_group_t_res, color="black"):
   list_sim_res = copy.deepcopy(list_sim_res)
@@ -101,10 +101,13 @@ def fitScales(ax, list_sim_res, scales_group_t_res, color="black"):
   ]
   ## fit measured scales at different resolution runs
   if check_mean_within_10_percent(data_y_group_x):
-    stats_converge = np.mean(data_y_group_x[-1]), np.std(data_y_group_x[-1])
+    val = np.mean(data_y_group_x[-1])
+    std = np.std(data_y_group_x[-1])
+    fit_params = val, list_sim_res[0], np.nan
+    fit_std = std, np.nan, np.nan
     ax.axhline(y=np.mean(data_y_group_x[-1]), color=color, ls=":", lw=1.5)
   else:
-    stats_converge = fitLogisticModel(
+    val, fit_std, fit_params = fitLogisticModel(
       ax                 = ax,
       list_res           = data_x,
       scales_group_t_res = data_y_group_x,
@@ -112,8 +115,10 @@ def fitScales(ax, list_sim_res, scales_group_t_res, color="black"):
       ls                 = ":"
     )
   return {
-    "val" : stats_converge[0],
-    "std" : stats_converge[1]
+    "val" : fit_params[0],
+    "std" : fit_std[0],
+    "fit_params" : fit_params,
+    "fit_std" : fit_std
   }
 
 def getScaleStats(list_scales):

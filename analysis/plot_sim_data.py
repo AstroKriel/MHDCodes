@@ -750,10 +750,16 @@ def main():
 BOOL_MPROC      = 1
 BOOL_CHECK_ONLY = 0
 
-# LIST_BASE_PATHS = [
-#   "/scratch/ek9/nk7952/",
-#   "/scratch/jh2/nk7952/"
-# ]
+LIST_BASE_PATHS = [
+  "/scratch/ek9/nk7952/",
+  "/scratch/jh2/nk7952/"
+]
+
+LIST_SUITE_FOLDERS = [ "Rm3000" ]
+LIST_MACH_REGIMES  = [ "Mach10" ]
+LIST_SIM_FOLDERS   = [ "Pm1" ]
+LIST_SIM_RES       = [ "576" ]
+
 # LIST_SUITE_FOLDERS = [ "Re10", "Re500", "Rm500", "Rm3000", "Re2000" ]
 # LIST_MACH_REGIMES  = [ "Mach0.3", "Mach1", "Mach5", "Mach10" ]
 # LIST_SIM_FOLDERS   = [ "Pm1", "Pm2", "Pm4", "Pm5", "Pm10", "Pm25", "Pm30", "Pm50", "Pm125", "Pm250", "Pm300" ]
