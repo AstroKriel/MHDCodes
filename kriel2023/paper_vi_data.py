@@ -22,10 +22,10 @@ from TheFittingModule import FitFuncs
 from ThePlottingModule import PlotFuncs
 
 
-## ###############################################################
-## PREPARE WORKSPACE
-## ###############################################################
-plt.switch_backend("agg") # use a non-interactive plotting backend
+# ## ###############################################################
+# ## PREPARE WORKSPACE
+# ## ###############################################################
+# plt.switch_backend("agg") # use a non-interactive plotting backend
 
 
 ## ###############################################################
@@ -257,7 +257,7 @@ def main():
   ax_inset.tick_params(axis="x", bottom=True, top=True, labelbottom=False, labeltop=True)
   ax_inset.set_xlim([ 7, 73 ])
   ax_inset.set_xticks([ 10, 20, 30, 40, 50, 60, 70 ])
-  ax_inset.set_xticklabels([ 10, "", 30, "", 50, "", 70 ])
+  ax_inset.set_xticklabels([ r"$10$", "", r"$30$", "", r"$50$", "", r"$70$" ])
   ax_inset.xaxis.set_minor_locator(NullLocator())
   ax_inset.set_ylim([ -0.09, 0.8 ])
   ## annotate figure
@@ -277,8 +277,8 @@ def main():
     bbox               = (1.0, 0.0),
     fontsize           = 17
   )
-  addText(axs[0], (0.675, 0.195), r"$\mathcal{M}0.3{\rm Re}600{\rm Pm}5$")
-  addText(axs[0], (0.675, 0.095), r"$\mathcal{M}5{\rm Re}600{\rm Pm}5$")
+  addText(axs[0], (0.65, 0.21), r"$\mathcal{M}0.3{\rm Re}600{\rm Pm}5$")
+  addText(axs[0], (0.65, 0.105), r"$\mathcal{M}5{\rm Re}600{\rm Pm}5$")
   PlotFuncs.addLegend_fromArtists(
     axs[1],
     list_artists       = [
@@ -297,10 +297,10 @@ def main():
     bbox               = (1.0, 0.835),
     fontsize           = 17
   )
-  addText(axs[1], (0.047, 0.5), r"transient phase", rotation=90)
-  addText(axs[1], (0.62, 0.74), r"exponential growth")
-  addText(axs[1], (0.62, 0.63), r"linear growth")
-  addText(axs[1], (0.62, 0.53), r"saturated")
+  addText(axs[1], (0.047, 0.5), r"${\rm transient\, phase}$", rotation=90)
+  addText(axs[1], (0.62, 0.74), r"${\rm exponential\, growth}$")
+  addText(axs[1], (0.62, 0.63), r"${\rm linear\, growth}$")
+  addText(axs[1], (0.62, 0.53), r"${\rm saturated}$")
   ## save figure
   print("Saving figure...")
   fig_name     = f"time_evolution.pdf"

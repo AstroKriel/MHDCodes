@@ -91,23 +91,6 @@ class PlotTNBBasis():
     self.index_bounds_growth, self.index_end_growth = self.dict_sim_outputs["index_bounds_growth"]
     self.sim_name = SimParams.getSimName(self.dict_sim_inputs)
 
-  def _plotStreamline(self, ax, vector_field, color):
-    num_cells = self.dict_sim_inputs["num_blocks"][0] * self.dict_sim_inputs["num_procs"][0]
-    x = np.linspace(-1.0, 1.0, num_cells)
-    y = np.linspace(-1.0, 1.0, num_cells)
-    X, Y = np.meshgrid(x, -y)
-    ax.streamplot(
-      X, Y,
-      vector_field[0][:,:,0],
-      vector_field[1][:,:,0],
-      color      = color,
-      arrowstyle = "->",
-      linewidth  = 1.5,
-      density    = 1,
-      arrowsize  = 1,
-      zorder     = 5
-    )
-
   def _plotContours(self, ax, scalar_field, color):
     num_cells = self.dict_sim_inputs["num_blocks"][0] * self.dict_sim_inputs["num_procs"][0]
     x = np.linspace(-1.0, 1.0, num_cells)
@@ -132,38 +115,34 @@ class PlotTNBBasis():
       vmin = 5,
       vmax = self.index_end_growth
     )
-    step_size = (self.index_end_growth - 5) // 5
-    for file_index in range(5, self.index_end_growth, step_size):
-      print(file_index)
-      filename = FileNames.FILENAME_FLASH_PLT_FILES + str(int(file_index)).zfill(4)
-      filepath_file = f"{self.filepath_sim_res}/plt/{filename}"
-      b_field = LoadData.loadFlashDataCube(
-        filepath_file = filepath_file,
-        num_blocks    = self.dict_sim_inputs["num_blocks"],
-        num_procs     = self.dict_sim_inputs["num_procs"],
-        field_name    = "mag"
-      )
-      Bmagn = WWFields.fieldMagnitude(b_field)
-      Brms = WWFields.fieldRMS(Bmagn)
-      ## magnetic field slice
-      print("Plotting magnetic field...")
-      _, _, _, kappa_B = WWFields.computeTNBBasis(b_field)
-      ## magnetic field curvature
-      print("Plotting field curvature...")
-      Mach = self.dict_sim_inputs["desired_Mach"]
-      plotScatter(
-        ax      = self.axs,
-        list_x  = np.log10(kappa_B)[:,:,0],
-        list_y  = np.log10(Bmagn)[:,:,0],
-        # cutofff = 0.75 if (Mach > 1) else None
-        color = cmap(norm(file_index))
-      )
+    file_index = (self.index_end_growth - 5) // 2
+    filename = FileNames.FILENAME_FLASH_PLT_FILES + str(int(file_index)).zfill(4)
+    filepath_file = f"{self.filepath_sim_res}/plt/{filename}"
+    b_field = LoadData.loadFlashDataCube(
+      filepath_file = filepath_file,
+      num_blocks    = self.dict_sim_inputs["num_blocks"],
+      num_procs     = self.dict_sim_inputs["num_procs"],
+      field_name    = "mag"
+    )
+    b_magn = WWFields.fieldMagnitude(b_field)
+    b_rms = WWFields.fieldRMS(b_magn)
+    ## magnetic field slice
+    print("Plotting magnetic field...")
+    _, _, _, kappa_B = WWFields.computeTNBBasis(b_field)
+    ## magnetic field curvature
+    print("Plotting field curvature...")
+    plotScatter(
+      ax      = self.axs,
+      list_x  = np.log10(kappa_B)[:,:,0],
+      list_y  = np.log10(b_magn/b_rms)[:,:,0],
+      color = cmap(norm(file_index))
+    )
     # self.axs.set_xlim([ -1, 3.5 ])
     # self.axs.set_ylim([ -2.5, 1 ])
     self.axs.set_xlabel(r"$\kappa$")
     self.axs.set_ylabel(r"$b$")
     ## save figure
-    filepath_fig = f"/home/586/nk7952/MHDCodes/ii6/curvature/{self.sim_name}_kappa.png"
+    filepath_fig = f"{self.filepath_sim_res}/vis_folder/{self.sim_name}_kappa.png"
     self.fig.savefig(filepath_fig, dpi=200)
     plt.close(self.fig)
     print("Saved figure:", filepath_fig)
@@ -204,7 +183,7 @@ LIST_BASE_PATHS = [
 
 LIST_SUITE_FOLDERS = [ "Rm3000" ]
 LIST_MACH_REGIMES  = [ "Mach0.3", "Mach5" ]
-LIST_SIM_FOLDERS   = [ "Pm1", "Pm125" ]
+LIST_SIM_FOLDERS   = [ "Pm1" ]
 LIST_SIM_RES       = [ "144" ]
 
 

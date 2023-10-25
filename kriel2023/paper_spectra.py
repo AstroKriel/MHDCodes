@@ -8,6 +8,9 @@ import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+plt.rcParams["axes.axisbelow"] = False
+
+
 ## load user defined modules
 from TheFlashModule import LoadData, SimParams
 from TheUsefulModule import WWFnF
@@ -30,7 +33,7 @@ def plotPowerLawPassingThroughPoint(
     lw = 2.0
   ):
   x1, y1 = coord
-  a0 = y1 / x1**(slope)
+  a0 = y1 * x1**(-slope)
   x = np.logspace(np.log10(x_domain[0]), np.log10(x_domain[1]), 100)
   y = a0 * x**(slope)
   PlotFuncs.plotData_noAutoAxisScale(ax, x, y, ls=ls, lw=lw, zorder=10)
@@ -117,6 +120,7 @@ def plotSpectrum(
   for t_index in range(len(list_power_group_t)):
     array_power = np.array(list_power_group_t[t_index])
     if bool_norm: array_power = WWSpectra.normSpectra(array_power)
+    if BOOL_DEBUG and len(list_k) > 200: array_power[250:] = 1e-9
     if comp_factor is not None: array_power *= np.array(list_k)**(comp_factor)
     array_power_group_t.append(array_power)
   ## plot time-averaged spectrum
@@ -194,19 +198,25 @@ class PlotSpectra():
     self.desired_Mach     = self.dict_sim_inputs["desired_Mach"]
     self.time_bounds      = self.dict_sim_outputs["time_bounds_growth"]
 
-  def _plotScales(self, ax, kscale_group_t, color, label=None):
+  def _plotScales(self, ax, kscale_group_t, color, label=None, factor=1):
     index_start = self.dict_sim_outputs["index_bounds_growth"][0]
     index_end   = self.dict_sim_outputs["index_bounds_growth"][1]
     kscale_group_t = kscale_group_t[index_start : index_end]
-    kscale_ave = np.mean(kscale_group_t)
-    kscale_std = np.std(kscale_group_t)
+    kscale_group_t = [
+      kscale
+      for kscale in kscale_group_t
+      if kscale is not None
+    ]
+    if len(kscale_group_t) < 5: return
+    kscale_ave = factor * np.nanmean(kscale_group_t)
+    kscale_std = np.nanstd(kscale_group_t)
     ax.axvline(x=kscale_ave, color=color, ls="--", lw=1.5, zorder=2)
     ax.axvspan(kscale_ave-kscale_std, kscale_ave+kscale_std, color=color, alpha=0.25, zorder=1)
 
   def plotKinSpectrumRatios(self, ax, color="black"):
     dict_lgt_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "kin",
+      spect_field        = "vel",
       spect_comp         = "lgt",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -215,7 +225,7 @@ class PlotSpectra():
     )
     dict_trv_data = LoadData.loadAllSpectra(
       directory          = self.filepath_spect,
-      spect_field        = "kin",
+      spect_field        = "vel",
       spect_comp         = "trv",
       file_start_time    = self.time_bounds[0],
       file_end_time      = self.time_bounds[1],
@@ -242,9 +252,10 @@ class PlotSpectra():
       outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
       bool_verbose       = False
     )
+    list_k = dict_data["list_k_group_t"][0]
     plotSpectrum(
       ax                 = ax,
-      list_k             = dict_data["list_k_group_t"][0],
+      list_k             = list_k,
       list_power_group_t = dict_data["list_power_group_t"],
       bool_norm          = True,
       comp_factor        = comp_factor,
@@ -252,47 +263,9 @@ class PlotSpectra():
       color              = color,
       label              = label
     )
-    if bool_plot_scale: self._plotScales(ax, self.dict_sim_outputs["k_nu_kin_group_t"], color)
-
-  def plotKinLgtSpectrum(self, ax, label="lgt", color="#bc5090", comp_factor=None, zorder=3):
-    dict_data = LoadData.loadAllSpectra(
-      directory          = self.filepath_spect,
-      spect_field        = "kin",
-      spect_comp         = "lgt",
-      file_start_time    = self.time_bounds[0],
-      file_end_time      = self.time_bounds[1],
-      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
-      bool_verbose       = False
-    )
-    plotSpectrum(
-      ax                 = ax,
-      list_k             = dict_data["list_k_group_t"][0],
-      list_power_group_t = dict_data["list_power_group_t"],
-      comp_factor        = comp_factor,
-      zorder             = zorder,
-      color              = color,
-      label              = label
-    )
-
-  def plotKinTrvSpectrum(self, ax, label="trv", color="#ffa600", comp_factor=None, zorder=3):
-    dict_data = LoadData.loadAllSpectra(
-      directory          = self.filepath_spect,
-      spect_field        = "kin",
-      spect_comp         = "trv",
-      file_start_time    = self.time_bounds[0],
-      file_end_time      = self.time_bounds[1],
-      outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
-      bool_verbose       = False
-    )
-    plotSpectrum(
-      ax                 = ax,
-      list_k             = dict_data["list_k_group_t"][0],
-      list_power_group_t = dict_data["list_power_group_t"],
-      comp_factor        = comp_factor,
-      zorder             = zorder,
-      color              = color,
-      label              = label
-    )
+    factor = 1
+    if len(list_k) > 500 and (self.desired_Mach > 1): factor = 0.975
+    if bool_plot_scale: self._plotScales(ax, self.dict_sim_outputs["k_nu_kin_group_t"], color, factor=factor)
 
   def plotKinReynoldsSpectrum(self, ax, color="black", bool_plot_scale=False, zorder=5):
     dict_data = LoadData.loadAllSpectra(
@@ -304,16 +277,19 @@ class PlotSpectra():
       outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"],
       bool_verbose       = False
     )
+    list_k = dict_data["list_k_group_t"][0]
     plotReynoldsSpectrum(
       ax                 = ax,
-      list_k             = dict_data["list_k_group_t"][0],
+      list_k             = list_k,
       list_power_group_t = dict_data["list_power_group_t"],
       diss_rate          = self.dict_sim_inputs["nu"],
       color              = color,
       label              = r"$" + self.dict_sim_inputs["sim_res"] + r"^3$",
       zorder             = zorder
     )
-    if bool_plot_scale: self._plotScales(ax, self.dict_sim_outputs["k_nu_kin_group_t"], color)
+    factor = 1
+    if len(list_k) > 500 and (self.desired_Mach > 1): factor = 0.975
+    if bool_plot_scale: self._plotScales(ax, self.dict_sim_outputs["k_nu_kin_group_t"], color, factor=factor)
 
   def plotMagSpectrum(self, ax, color="black", label="mag", zorder=3):
     dict_mag_tot_data = LoadData.loadAllSpectra(
@@ -380,14 +356,15 @@ def plotKinSpectra():
     obj_plot = PlotSpectra(filepath_highest_sim_res)
     label = getSimLabel(mach_regime, obj_plot.dict_sim_inputs["Re"])
     if obj_plot.desired_Mach < 1:
-      obj_plot.plotKinTotSpectrum(ax, label=label, color=COLOR_SUBSONIC, bool_plot_scale=True, zorder=7)
-    else: obj_plot.plotKinTotSpectrum(ax, label=label, color=COLOR_SUPERSONIC, bool_plot_scale=True, zorder=5)
+      obj_plot.plotKinTotSpectrum(ax, label=label, color=COLOR_SUBSONIC, bool_plot_scale=True, zorder=3)
+    else: obj_plot.plotKinTotSpectrum(ax, label=label, color=COLOR_SUPERSONIC, bool_plot_scale=True, zorder=3)
   ## label main axis
   ax.set_xscale("log")
   ax.set_yscale("log")
-  ax.set_xlim([ 0.9, 200 ])
-  ax.set_ylim([ 1e-7, 1 ])
-  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
+  ax.set_xlim([ 0.9, 300 ])
+  ax.set_ylim([ 0.5*10**(-7), 2*10**(0) ])
+  PlotFuncs.addAxisTicks_log10(ax, bool_y_axis=True, bool_major_ticks=True, num_major_ticks=9)
+  ax.set_xticklabels([ ])
   ax.set_ylabel(r"$\widehat{E}_{\rm kin}(k)$", fontsize=22)
   ax.legend(loc="lower left", fontsize=18)
   plotPowerLawPassingThroughPoint(
@@ -399,7 +376,7 @@ def plotKinSpectra():
     lw       = 1.75
   )
   ax.text(
-    0.375, 0.4,
+    0.35, 0.4,
     r"$k^{-2}$",
     va        = "top",
     ha        = "left",
@@ -417,7 +394,7 @@ def plotKinSpectra():
     lw       = 1.75
   )
   ax.text(
-    0.375, 0.525,
+    0.35, 0.525,
     r"$k^{-5/3}$",
     va        = "bottom",
     ha        = "left",
@@ -427,7 +404,7 @@ def plotKinSpectra():
     zorder    = 10
   )
   ax.text(
-    0.65, 0.95,
+    0.605, 0.95,
     r"$k_\nu$",
     va        = "top",
     ha        = "left",
@@ -470,13 +447,14 @@ def plotKinReynoldsSpectra():
   ## label main axis
   ax.set_xscale("log")
   ax.set_yscale("log")
-  ax.set_xlim([ 0.9, 200 ])
-  ax.set_ylim([ 1e-2, 1e4 ])
+  ax.set_xlim([ 0.9, 300 ])
+  ax.set_ylim([ 0.5*10**(-2), 2*10**(3) ])
+  PlotFuncs.addAxisTicks_log10(ax, bool_y_axis=True, bool_major_ticks=True, num_major_ticks=8)
   ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
   ax.set_ylabel(r"${\rm Re}(k)$", fontsize=22)
   ax.axhline(y=1, color="black", ls=":", lw=2, zorder=15)
   ax.text(
-    0.65, 0.95,
+    0.605, 0.95,
     r"$k_\nu$",
     va        = "top",
     ha        = "left",
@@ -518,11 +496,16 @@ def plotKinCompRatioNres(mach_regime):
       obj_plot = PlotSpectra(filepath_sim_res)
       obj_plot.plotKinSpectrumRatios(ax, cmap(norm(sim_index)))
   ## label figure
-  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
-  ax.set_ylabel(r"$E_{{\rm kin}, \parallel}(k) / E_{{\rm kin}, \perp}(k)$", fontsize=22)
   ax.set_xscale("log")
   ax.set_yscale("log")
-  ax.set_ylim(top=1.2*10**(1))
+  if obj_plot.desired_Mach < 2:
+    ax.set_xticklabels([ ])
+    ax.set_ylim([ 0.8*10**(-5), 1.2*10**(1) ])
+  else:
+    ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
+    ax.set_ylim([ 0.8*10**(-1), 1.5*10**(1) ])
+  ax.set_ylabel(r"$E_{{\rm kin}, \parallel}(k) / E_{{\rm kin}, \perp}(k)$", fontsize=22)
+  ax.set_xlim([ 0.8, 700 ])
   ax.axhline(y=1, color="black", ls=":", lw=2, zorder=1)
   ax.text(
     0.05, 0.925,
@@ -565,33 +548,35 @@ def plotKinReynoldsSpectraNres(mach_regime):
       if not os.path.exists(filepath_sim_res): continue
       print("Looking at:", filepath_sim_res)
       obj_plot = PlotSpectra(filepath_sim_res)
-      obj_plot.plotKinReynoldsSpectrum(ax, cmap(norm(sim_index)), bool_plot_scale=False)
+      obj_plot.plotKinReynoldsSpectrum(ax, cmap(norm(sim_index)), bool_plot_scale=True)
   ## label figure
-  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
-  ax.set_ylabel(r"${\rm Re}(k)$", fontsize=22)
   ax.set_xscale("log")
   ax.set_yscale("log")
-  ax.set_xlim([ 0.9, 7*10**(2) ])
-  ax.set_ylim([ 10**(-3), 10**(4) ])
+  if obj_plot.desired_Mach < 2:
+    ax.set_xticklabels([ ])
+    ax.legend(
+      loc            = "lower left",
+      ncol           = 2,
+      bbox_to_anchor = (0.0, -0.02),
+      columnspacing  = 1,
+      labelspacing   = 0.35,
+      handletextpad  = 0.5,
+      fontsize       = 16
+    )
+  else: ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
+  ax.set_ylabel(r"${\rm Re}(k)$", fontsize=22)
+  ax.set_xlim([ 0.8, 700 ])
+  ax.set_ylim([ 0.8*10**(-3), 1.2*10**(5) ])
   ax.axhline(y=1, color="black", ls=":", lw=2, zorder=1)
   ax.text(
-    0.935, 0.925,
+    0.05, 0.95,
     getSimLabel(mach_regime, obj_plot.dict_sim_inputs["Re"]),
     va        = "top",
-    ha        = "right",
+    ha        = "left",
     transform = ax.transAxes,
     color     = "black",
     fontsize  = 20,
     zorder    = 10
-  )
-  ax.legend(
-    loc            = "lower left",
-    ncol           = 2,
-    bbox_to_anchor = (0.0, -0.02),
-    columnspacing  = 1,
-    labelspacing   = 0.35,
-    handletextpad  = 0.5,
-    fontsize       = 16
   )
   ## save figure
   print("Saving figure...")
@@ -626,12 +611,13 @@ def plotCurSpectra():
       obj_plot.plotCurSpectrum(ax, label=label, color=COLOR_SUBSONIC)
     else: obj_plot.plotCurSpectrum(ax, label=label, color=COLOR_SUPERSONIC)
   ## label axis
-  ax.set_xlabel(r"$k \ell_{\rm box} / 2\pi$", fontsize=22)
-  ax.set_ylabel(r"$\widehat{E}_{\rm cur}(k)$", fontsize=22)
   ax.set_xscale("log")
   ax.set_yscale("log")
+  ax.set_xticklabels([ ])
+  ax.set_ylabel(r"$\widehat{E}_{\rm cur}(k)$", fontsize=22)
   ax.set_xlim([ 0.9, 300 ])
-  ax.set_ylim([ 0.9*10**(-5), 2.5*10**(-1) ])
+  ax.set_ylim([ 0.5*10**(-5), 2*10**(-1) ])
+  PlotFuncs.addAxisTicks_log10(ax, bool_y_axis=True, bool_major_ticks=True, num_major_ticks=6)
   ax.legend(loc="upper left", fontsize=18)
   ax.text(
     0.655, 0.95,
@@ -681,9 +667,10 @@ def plotMagSpectra():
   ax.set_xscale("log")
   ax.set_yscale("log")
   ax.set_xlim([ 0.9, 300 ])
-  ax.set_ylim([ 0.9*10**(-5), 2.5*10**(-1) ])
+  ax.set_ylim([ 0.5*10**(-5), 2*10**(-1) ])
+  PlotFuncs.addAxisTicks_log10(ax, bool_y_axis=True, bool_major_ticks=True, num_major_ticks=6)
   ax.text(
-    0.325, 0.95,
+    0.325, 0.965,
     r"$k_{\rm p}$",
     va        = "top",
     ha        = "left",
@@ -696,7 +683,7 @@ def plotMagSpectra():
     ax       = ax,
     slope    = 3/2,
     x_domain = ( 1.25, 7 ),
-    coord    = ( 1.25, 5e-4 ),
+    coord    = ( 1.25, 4e-4 ),
     ls       = ":"
   )
   ax.text(
@@ -724,21 +711,22 @@ def plotMagSpectra():
 ## ###############################################################
 def main():
   WWFnF.createFolder(PATH_PLOT, bool_verbose=False)
-  ## main study
-  plotKinSpectra()
+  # # ## main study
+  # plotKinSpectra()
   plotKinReynoldsSpectra()
   # plotCurSpectra()
-  # plotMagSpectra()
-  ## resolution study
-  # plotKinCompRatioNres("Mach0.3")
-  # plotKinCompRatioNres("Mach5")
+  plotMagSpectra()
+  # ## resolution study
   # plotKinReynoldsSpectraNres("Mach0.3")
   # plotKinReynoldsSpectraNres("Mach5")
+  # plotKinCompRatioNres("Mach0.3")
+  # plotKinCompRatioNres("Mach5")
 
 
 ## ###############################################################
 ## PROGRAM PARAMETERS
 ## ###############################################################
+BOOL_DEBUG       = True
 COLOR_SUBSONIC   = "#B80EF6"
 COLOR_SUPERSONIC = "#F4A123"
 PATH_PLOT = "/home/586/nk7952/MHDCodes/kriel2023/spectra/"

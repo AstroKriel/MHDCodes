@@ -10,9 +10,8 @@ import cmasher as cmr
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
-from scipy.stats import gaussian_kde
+from scipy import stats
 from scipy.optimize import curve_fit
-from matplotlib.patches import FancyArrowPatch
 
 ## load user defined modules
 from TheFlashModule import FileNames, LoadData, SimParams
@@ -46,11 +45,11 @@ def getSimLabel(dict_sim_inputs):
   Pm = dict_sim_inputs["Pm"]
   return "$" + dict_sim_inputs["mach_regime"].replace("Mach", "\mathcal{M}") + "\\text{Re}" + f"{Re:.0f}" + "\\text{Pm}" + f"{Pm:.0f}" + "$"
 
-def addText(ax, pos, text, color="black", ha="left", rotation=0, fontsize=24):
+def addText(ax, pos, text, color="black", ha="left", va="bottom", rotation=0, fontsize=24):
   ax.text(
     pos[0], pos[1],
     text,
-    va        = "bottom",
+    va        = va,
     ha        = ha,
     color     = color,
     rotation  = rotation,
@@ -92,26 +91,6 @@ def compute2DHistogramBins(field_x, field_y, num_bins):
   )
   return bins_x, bins_y
 
-def plotScatter(ax, list_x, list_y, cutofff=0.75, bool_fit=False):
-  list_x = np.array(list_x).flatten()
-  list_y = np.array(list_y).flatten()
-  xy_stack = np.vstack([ list_x, list_y ])
-  density = gaussian_kde(xy_stack)(xy_stack)
-  ax.scatter(list_x, list_y, c=density, s=1)
-  if bool_fit:
-    func_shallow = lambda x, a0: a0 - 1/2 * x
-    func_steep   = lambda x, a0: a0 - 10 * x
-    x_range = np.linspace(np.nanmin(list_x), np.nanmax(list_x), 100)
-    ## fit shallow
-    params_shallow, _ = curve_fit(func_shallow, list_x, list_y)
-    y_shallow = func_shallow(x_range, *params_shallow)
-    ax.plot(x_range, y_shallow, color="black", ls="--", lw=2.0)
-    ## fit steep
-    mask = (density >= cutofff * np.max(density))
-    params_steep, _ = curve_fit(func_steep, list_x[mask], list_y[mask])
-    y_steep = func_steep(x_range, *params_steep)
-    ax.plot(x_range, y_steep, color="black", ls="-", lw=2.0)
-
 
 ## ###############################################################
 ## OPERATOR CLASS
@@ -126,12 +105,13 @@ class PlotTNBBasis():
     ## read simulation parameters
     self.dict_sim_inputs  = SimParams.readSimInputs(self.filepath_sim_res, False)
     self.dict_sim_outputs = SimParams.readSimOutputs(self.filepath_sim_res, False)
+    self.outputs_per_t_turb = self.dict_sim_outputs["outputs_per_t_turb"]
     self.index_bounds_growth, self.index_end_growth = self.dict_sim_outputs["index_bounds_growth"]
     self.sim_name = SimParams.getSimName(self.dict_sim_inputs)
     self.num_cells = self.dict_sim_inputs["num_blocks"][0] * self.dict_sim_inputs["num_procs"][0]
 
   def getKinematicRange(self):
-    step_size = (self.index_end_growth - 5) // 10
+    step_size = (self.index_end_growth - 5*self.outputs_per_t_turb) // 10
     return range(5, self.index_end_growth, step_size)
 
   def getSaturatedRange(self):
@@ -164,9 +144,7 @@ class PlotTNBBasis():
       )
       b_magn = WWFields.fieldMagnitude(b_field)
       b_rms = WWFields.fieldRMS(b_magn)
-      ## magnetic field slice
       _, _, _, kappa = WWFields.computeTNBBasis(b_field)
-      ## magnetic field curvature
       if not(bins_defined):
         bins_x, bins_y = compute2DHistogramBins(
           field_x  = np.log10(kappa.flatten()),
@@ -224,8 +202,23 @@ class PlotTNBBasis():
       fontsize  = 24,
       zorder    = 10
     )
+    phi = stats.pearsonr(
+      np.log10(kappa.flatten()),
+      np.log10(b_magn.flatten()/b_rms)
+    )
+    self.ax.text(
+      0.95, 0.865,
+      r"$\phi =$ " + f"{phi[0]:.2f}",
+      va        = "top",
+      ha        = "right",
+      transform = self.ax.transAxes,
+      color     = "black",
+      fontsize  = 24,
+      zorder    = 10
+    )
     ## log_10(kappa ell) = log_10(ell/R), where R = ell_box / factor -> log_10(factor)
     self.ax.axvline(x=np.log10(2), ls="--", lw=2.0, color="red", zorder=5)
+    self.ax.axhline(y=0, ls="--", lw=2.0, color="red", zorder=5)
     return obj_plot
 
 
@@ -268,23 +261,25 @@ def main():
   axs[3].set_xlabel(r"$\log_{10}\big(\kappa \ell_\mathrm{box}\big)$", fontsize=28)
   axs[4].set_xlabel(r"$\log_{10}\big(\kappa \ell_\mathrm{box}\big)$", fontsize=28)
   axs[5].set_xlabel(r"$\log_{10}\big(\kappa \ell_\mathrm{box}\big)$", fontsize=28)
-  ax_cbar = fig.add_axes([ 0.068, 1.01, 0.93, 0.035 ]) # 655 255
+  ax_cbar = fig.add_axes([ 0.068, 1.01, 0.93, 0.035 ])
   fig.colorbar(mappable=obj_plot, cax=ax_cbar, orientation="horizontal")
   ax_cbar.set_title(r"$\log_{10}\big(\mathrm{PDF}\big)$", fontsize=28, pad=12.5)
   ax_cbar.xaxis.set_ticks_position("top")
-  addText(axs[0], (3.25, -0.25), r"$\kappa^{-1/4}$", fontsize=28)
-  addText(axs[0], (3.25, -2.75), r"$\kappa^{-1/2}$", fontsize=28)
+  addText(axs[0], (3.45, -0.1), r"$\kappa^{-1/4}$", fontsize=28, va="top")
+  addText(axs[0], (3.35, -2.75), r"$\kappa^{-1/2}$", fontsize=28)
   addText(axs[0], (0.75, -3), r"$\kappa^{-1}$", fontsize=28)
-  addText(axs[1], (0.5, -2.65), r"field reversals", fontsize=24, color="red")
+  addText(axs[1], (0.5, -2.425), r"field reversals", fontsize=24, color="red")
+  addText(axs[1], (np.log10(2)-0.15, -2.95), r"$\log_{10}(2)$", fontsize=24, rotation=90, color="red", ha="right")
   axs[1].arrow(
     x  = np.log10(2),
-    y  = -2.75,
+    y  = -2.5,
     dx = np.log10(2)+1.75,
     dy = 0,
     color = "red",
-    head_width = 0.15
+    width = 0.02,
+    head_width = 0.15,
+    head_length = 0.25
   )
-  addText(axs[1], (np.log10(2)-0.1, -2.95), r"$\log_{10}(2)$", fontsize=24, rotation=90, color="red", ha="right")
   ## top row
   axs[0].set_xticklabels([ ])
   axs[1].set_xticklabels([ ])
